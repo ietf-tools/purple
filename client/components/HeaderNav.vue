@@ -115,10 +115,24 @@
           </transition>
         </HeadlessMenu>
         <div v-else class="-m-1.5 flex items-center p-1.5">
-          <a href="/oidc/authenticate/" class="hidden lg:flex items-center text-sm dark:text-neutral-300">
-            <span class="font-semibold">Login</span>
-            <Icon name="solar:alt-arrow-right-line-duotone" size="1.5em" class="ml-1" />
-          </a>
+
+
+          <DialogRoot :open="!userStore.authenticated">
+            <DialogPortal class="">
+              <DialogOverlay class="backdrop-blur-sm z-[100] bg-black/30 fixed inset-0" />
+              <DialogContent
+                class="fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] rounded-xl bg-white shadow-xl focus:outline-none z-[100] text-center px-3 py-4"
+              >
+                <DialogTitle class="mb-6 text-xs text-left font-bold text-gray-800 pl-3">
+                  You're not logged in
+                </DialogTitle>
+                <a href="/oidc/authenticate/" class="border bg-sky-900 px-4 py-2 text-white dark:text-neutral-300">
+                  <span class="font-semibold">Login via Datatracker</span>
+                  <Icon name="solar:alt-arrow-right-line-duotone" size="1.5em" class="ml-1" />
+                </a>
+              </DialogContent>
+            </DialogPortal>
+          </DialogRoot>
         </div>
       </div>
     </div>
@@ -126,6 +140,14 @@
 </template>
 
 <script setup lang="ts">
+import {
+  DialogContent,
+  DialogDescription,
+  DialogOverlay,
+  DialogPortal,
+  DialogRoot,
+  DialogTitle,
+} from 'reka-ui'
 import { useSiteStore } from '@/stores/site'
 import { useUserStore } from '@/stores/user'
 
