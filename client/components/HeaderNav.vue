@@ -115,7 +115,7 @@
           </transition>
         </HeadlessMenu>
         <DialogRoot :open="!userStore.authenticated">
-          <DialogPortal class="">
+          <DialogPortal>
             <DialogOverlay class="backdrop-blur-sm z-[100] bg-black/30 fixed inset-0" />
             <DialogContent
               class="fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] rounded-xl bg-white shadow-xl focus:outline-none z-[100] text-center px-3 py-4"
