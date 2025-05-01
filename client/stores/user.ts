@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { LOGIN_PATH, onLoginRoute } from '~/utilities/url'
+import { LOGIN_PATH, isLoginRoute as isLoginRouteFn } from '~/utilities/url'
 
 export type ProfileData = {
   /**
@@ -51,10 +51,10 @@ export const useUserStore = defineStore('user', {
         console.error('Error loading profile', e)
       })
 
-      const isOnLoginPageAlready = onLoginRoute(location.pathname)
-      if (!isOnLoginPageAlready && (!profileData || profileData.authenticated === false)) {
-        console.log(isOnLoginPageAlready, location.pathname)
-        navigateTo(`${LOGIN_PATH}${!isOnLoginPageAlready ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`)
+      const isLoginRoute = isLoginRouteFn(location.pathname)
+      if (!isLoginRoute && (!profileData || profileData.authenticated === false)) {
+        console.log(isLoginRoute, location.pathname)
+        navigateTo(`${LOGIN_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`)
         return
       }
 

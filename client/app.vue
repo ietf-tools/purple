@@ -1,5 +1,5 @@
 <template>
-  <div v-if="!isOnLoginRoute && userStore.authenticated === undefined" class="w-[3.5em] mt-2 mx-auto">
+  <div v-if="!isLoginRoute && userStore.authenticated === undefined" class="w-[3.5em] mt-2 mx-auto">
     <Icon
       name="ei:spinner-3"
       size="3.5em"
@@ -13,12 +13,10 @@
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user'
-import { onLoginRoute } from './utilities/url'
+import { isLoginRoute as isLoginRouteFn } from './utilities/url'
 
 const route = useRoute()
 const userStore = useUserStore()
 
-const isOnLoginRoute = computed(() => onLoginRoute(route.fullPath))
-
-console.log(isOnLoginRoute.value)
+const isLoginRoute = computed(() => isLoginRouteFn(route.fullPath))
 </script>
