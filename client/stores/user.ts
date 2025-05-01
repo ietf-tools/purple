@@ -1,7 +1,11 @@
 import { defineStore } from 'pinia'
+import { LOGIN_PATH, onLoginRoute } from '~/utilities/url'
 
 export type ProfileData = {
-  authenticated: boolean
+  /**
+   * Until we fetch their profile their authentication state is unknown which we'll express as `undefined`
+   */
+  authenticated: undefined | boolean
   id: string | null
   name: string | null
   email: string | null
@@ -14,17 +18,25 @@ type PretendingToBe = {
   pretendingToBe: number | null
 }
 
+type State = ProfileData & PretendingToBe
+
+const getCurrentRelativePath = (): string => {
+  const locationStr = location.toString() // stringify the whole URL including path, query params, hash
+  const relativePath = locationStr.substring(locationStr.indexOf(location.host) + location.host.length)
+  return relativePath
+}
+
 export const useUserStore = defineStore('user', {
   state: () => {
-    const defaultState: ProfileData & PretendingToBe = {
-      authenticated: false,
+    const defaultState: State = {
+      authenticated: undefined,
       id: null,
-      name: 'Guest',
+      name: '',
       email: '',
       avatar: '',
       rpcPersonId: null,
       isManager: false,
-      pretendingToBe: null // demo/debug only!
+      pretendingToBe: null // demo/debug only! FIXME: disallow on prod?
     }
     return defaultState
   },
@@ -35,9 +47,23 @@ export const useUserStore = defineStore('user', {
         this.pretendingToBe
           ? `/api/rpc/profile/${this.pretendingToBe}`
           : '/api/rpc/profile/'
-      )
+      ).catch(e => {
+        console.error('Error loading profile', e)
+      })
+
+      const isOnLoginPageAlready = onLoginRoute(location.pathname)
+      if (!isOnLoginPageAlready && (!profileData || profileData.authenticated === false)) {
+        console.log(isOnLoginPageAlready, location.pathname)
+        navigateTo(`${LOGIN_PATH}${!isOnLoginPageAlready ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`)
+        return
+      }
+
+      if (!profileData) {
+        return
+      }
+
       this.authenticated = profileData.authenticated
-      if (profileData.authenticated) {
+      if (profileData.authenticated === true) {
         this.id = profileData.id
         this.name = profileData.name
         this.email = profileData.email
