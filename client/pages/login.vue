@@ -13,6 +13,7 @@
 </template>
 
 <script setup lang="ts">
+import { useDefaultHead } from '../utilities/head'
 
 const route = useRoute()
 
@@ -22,21 +23,7 @@ const nextParam = computed(() => {
   return typeof next === 'string' ? `?next=${encodeURIComponent(next)}` : ''
 })
 
-useHead({
-  link: [
-    { rel: 'preconnect', href: 'https://rsms.me' },
-    { rel: 'stylesheet', href: 'https://rsms.me/inter/inter.css' }
-  ],
-  bodyAttrs: {
-    class: 'h-full'
-  },
-  htmlAttrs: {
-    class: 'h-full'
-  },
-  titleTemplate: (titleChunk) => {
-    return titleChunk ? `${titleChunk} - RFC Production Center` : 'RFC Production Center'
-  }
-})
+useDefaultHead()
 
 definePageMeta({
   layout: false,

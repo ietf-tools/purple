@@ -1,39 +1,28 @@
 <template>
-  <SidebarNav />
-  <main class="lg:pl-72">
-    <HeaderNav />
-    <div class="px-4 py-10 sm:px-6 lg:px-8 lg:py-6">
-      <slot  />
-    </div>
-  </main>
-  <OverlayModal
-    v-model:is-shown="overlayModalState.isShown"
-    :opts="overlayModalState.opts"
-    @close-ok="overlayModalState.promiseResolve"
-    @close-cancel="overlayModalState.promiseReject"
-  />
-  <NuxtSnackbar />
+  <div>
+    <SidebarNav />
+    <main class="lg:pl-72">
+      <HeaderNav />
+      <div class="px-4 py-10 sm:px-6 lg:px-8 lg:py-6">
+        <slot  />
+      </div>
+    </main>
+    <OverlayModal
+      v-model:is-shown="overlayModalState.isShown"
+      :opts="overlayModalState.opts"
+      @close-ok="overlayModalState.promiseResolve"
+      @close-cancel="overlayModalState.promiseReject"
+    />
+    <NuxtSnackbar />
+  </div>
 </template>
 
 <script setup lang="ts">
+import { useDefaultHead } from '../utilities/head'
 import { overlayModalKey } from './providers/providerKeys'
 import type { OverlayModal } from './providers/providerKeys'
 
-useHead({
-  link: [
-    { rel: 'preconnect', href: 'https://rsms.me' },
-    { rel: 'stylesheet', href: 'https://rsms.me/inter/inter.css' }
-  ],
-  bodyAttrs: {
-    class: 'h-full'
-  },
-  htmlAttrs: {
-    class: 'h-full'
-  },
-  titleTemplate: (titleChunk) => {
-    return titleChunk ? `${titleChunk} - RFC Production Center` : 'RFC Production Center'
-  }
-})
+useDefaultHead()
 
 // OVERLAY MODAL
 
