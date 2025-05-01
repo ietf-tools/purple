@@ -1,0 +1,45 @@
+<template>
+  <div class="w-full h-full bg-gray-200 pt-10">
+    <div class="bg-white mx-auto max-w-lg text-center rounded-xl border border-gray-300 shadow-m">
+      <h1 class="text-xl font-bold py-3 border-b text-gray-700">You're not logged in</h1>
+      <div class="py-10">
+        <a :href="`/oidc/authenticate/${nextParam}`" class="flex-inline border bg-sky-900 px-4 py-2 text-white dark:text-neutral-300">
+          <span class="font-semibold">Login via Datatracker</span>
+          <Icon name="solar:alt-arrow-right-line-duotone" size="1.5em" class="ml-1" />
+        </a>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+
+const route = useRoute()
+
+// mozilla_django_oidc supports a url param `next` to return to the current path https://mozilla-django-oidc.readthedocs.io/en/stable/settings.html?highlight=next#OIDC_REDIRECT_FIELD_NAME
+const nextParam = computed(() => {
+  const { next } = route.query
+  return typeof next === 'string' ? `?next=${encodeURIComponent(next)}` : ''
+})
+
+useHead({
+  link: [
+    { rel: 'preconnect', href: 'https://rsms.me' },
+    { rel: 'stylesheet', href: 'https://rsms.me/inter/inter.css' }
+  ],
+  bodyAttrs: {
+    class: 'h-full'
+  },
+  htmlAttrs: {
+    class: 'h-full'
+  },
+  titleTemplate: (titleChunk) => {
+    return titleChunk ? `${titleChunk} - RFC Production Center` : 'RFC Production Center'
+  }
+})
+
+definePageMeta({
+  layout: false,
+})
+
+</script>

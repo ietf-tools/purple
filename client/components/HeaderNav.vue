@@ -114,42 +114,15 @@
             </HeadlessMenuItems>
           </transition>
         </HeadlessMenu>
-        <DialogRoot :open="!userStore.authenticated">
-          <DialogPortal>
-            <DialogOverlay class="backdrop-blur-sm z-[100] bg-black/30 fixed inset-0" />
-            <DialogContent
-              class="fixed top-[50%] left-[50%] max-h-[85vh] w-[90vw] max-w-[450px] translate-x-[-50%] translate-y-[-50%] rounded-xl bg-white shadow-xl focus:outline-none z-[100] text-center px-3 py-4"
-            >
-              <DialogTitle class="mb-6 text-xs text-left font-bold text-gray-800 pl-3">
-                You're not logged in
-              </DialogTitle>
-              <a :href="`/oidc/authenticate/${nextParam}`" class="border bg-sky-900 px-4 py-2 text-white dark:text-neutral-300">
-                <span class="font-semibold">Login via Datatracker</span>
-                <Icon name="solar:alt-arrow-right-line-duotone" size="1.5em" class="ml-1" />
-              </a>
-            </DialogContent>
-          </DialogPortal>
-        </DialogRoot>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import {
-  DialogContent,
-  DialogOverlay,
-  DialogPortal,
-  DialogRoot,
-  DialogTitle,
-} from 'reka-ui'
 import { useSiteStore } from '@/stores/site'
 import { useUserStore } from '@/stores/user'
 
-const route = useRoute()
-
-// mozilla_django_oidc supports a url param `next` to return to the current path https://mozilla-django-oidc.readthedocs.io/en/stable/settings.html?highlight=next#OIDC_REDIRECT_FIELD_NAME
-const nextParam = computed(() => route.fullPath ? `?next=${encodeURIComponent(route.fullPath)}` : '')
 const api = useApi()
 const csrf = useCookie('csrftoken', { sameSite: 'strict' })
 const buttonId = useId() // avoid a hydration error - see https://github.com/nuxt/ui/issues/1171
