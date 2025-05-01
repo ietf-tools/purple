@@ -22,6 +22,7 @@
   - [Getting Started](#getting-started)
   - [Using VS Code](#using-vs-code)
   - [Using Generic](#using-generic)
+  - [Using pgAdmin](#using-pgadmin)
   - [Commands](#commands)
   - [Cleanup](#cleanup)
 
@@ -63,6 +64,13 @@
 
 - The tmux default prefix binding is set to `Ctrl+Space` and mouse control is enabled by default.
 - If you exit tmux, you'll land in a normal zsh prompt. Type `exit` again to quit and stop the containers.
+
+## Using pgAdmin
+
+- Access pg Admin from http://localhost:8088/pgadmin/
+- Username: `dev@ietf.org`
+- Password: `dev`
+- Password to access the local database: `abcd1234`
 
 ## Commands
 
