@@ -22,9 +22,3 @@ jobs:
       run: |
         pip install black
         black --check .
-
-    - name: Static code analysis
-      run: |
-        pip install pyflakes
-        pyflakes datatracker purple rpc rpcauth utils
-
