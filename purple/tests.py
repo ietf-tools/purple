@@ -5,6 +5,7 @@ from django.test import TestCase
 
 class HealthTests(TestCase):
     """Health check tests"""
+
     def test_health(self):
         """health check should return a k8s-compatible status
 

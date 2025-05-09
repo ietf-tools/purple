@@ -6,12 +6,14 @@ from pythonjsonlogger import jsonlogger
 
 class JsonFormatter(jsonlogger.JsonFormatter):
     """JSON formatter class with UTC timestamps and '.' decimal separators"""
+
     converter = time.gmtime  # use UTC
     default_msec_format = "%s.%03d"  # '.' instead of ','
 
 
 class GunicornRequestJsonFormatter(JsonFormatter):
     """Only works with Gunicorn's logging"""
+
     def add_fields(self, log_record, record, message_dict):
         super().add_fields(log_record, record, message_dict)
         log_record.setdefault("method", record.args["m"])
@@ -31,5 +33,7 @@ class GunicornRequestJsonFormatter(JsonFormatter):
         log_record.setdefault("x_forwarded_for", record.args["{x-forwarded-for}i"])
         log_record.setdefault("x_forwarded_proto", record.args["{x-forwarded-proto}i"])
         log_record.setdefault("cf_connecting_ip", record.args["{cf-connecting-ip}i"])
-        log_record.setdefault("cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"])
+        log_record.setdefault(
+            "cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"]
+        )
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])

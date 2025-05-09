@@ -6,7 +6,7 @@ from email.utils import parseaddr
 import json
 
 from ietf import __release_hash__
-from ietf.settings import *                                          # pyflakes:ignore
+from ietf.settings import *  # pyflakes:ignore
 
 
 def _multiline_to_list(s):
@@ -102,7 +102,9 @@ DATABASES = {
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
 # A string "none" means unlimited age.
-DATABASES["default"]["CONN_MAX_AGE"] = None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+DATABASES["default"]["CONN_MAX_AGE"] = (
+    None if _conn_max_age.lower() == "none" else int(_conn_max_age)
+)
 # Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
 _conn_health_checks = bool(
     os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
@@ -116,7 +118,9 @@ if _admins_str is not None:
 else:
     raise RuntimeError("DATATRACKER_ADMINS must be set")
 
-USING_DEBUG_EMAIL_SERVER = os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
+USING_DEBUG_EMAIL_SERVER = (
+    os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
+)
 EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
 
@@ -126,7 +130,7 @@ if _celery_password is None:
 CELERY_BROKER_URL = "amqp://datatracker:{password}@{host}/{queue}".format(
     host=os.environ.get("RABBITMQ_HOSTNAME", "dt-rabbitmq"),
     password=_celery_password,
-    queue=os.environ.get("RABBITMQ_QUEUE", "dt")
+    queue=os.environ.get("RABBITMQ_QUEUE", "dt"),
 )
 
 IANA_SYNC_USERNAME = "ietfsync"
@@ -140,10 +144,10 @@ if _registration_api_key is None:
     raise RuntimeError("DATATRACKER_REGISTRATION_API_KEY must be set")
 STATS_REGISTRATION_ATTENDEES_JSON_URL = f"https://registration.ietf.org/{{number}}/attendees/?apikey={_registration_api_key}"
 
-#FIRST_CUTOFF_DAYS = 12
-#SECOND_CUTOFF_DAYS = 12
-#SUBMISSION_CUTOFF_DAYS = 26
-#SUBMISSION_CORRECTION_DAYS = 57
+# FIRST_CUTOFF_DAYS = 12
+# SECOND_CUTOFF_DAYS = 12
+# SUBMISSION_CUTOFF_DAYS = 26
+# SUBMISSION_CORRECTION_DAYS = 57
 MEETING_MATERIALS_SUBMISSION_CUTOFF_DAYS = 26
 MEETING_MATERIALS_SUBMISSION_CORRECTION_DAYS = 54
 
@@ -173,7 +177,9 @@ if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
         raise RuntimeError(
             "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
-    _APP_API_TOKENS_JSON = b64decode(os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64"))
+    _APP_API_TOKENS_JSON = b64decode(
+        os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")
+    )
 else:
     _APP_API_TOKENS_JSON = os.environ.get("DATATRACKER_APP_API_TOKENS_JSON", None)
 
@@ -189,7 +195,9 @@ IDSUBMIT_MAX_DAILY_SAME_SUBMITTER = 5000
 
 # Leave DATATRACKER_MATOMO_SITE_ID unset to disable Matomo reporting
 if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
-    MATOMO_DOMAIN_PATH = os.environ.get("DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org")
+    MATOMO_DOMAIN_PATH = os.environ.get(
+        "DATATRACKER_MATOMO_DOMAIN_PATH", "analytics.ietf.org"
+    )
     MATOMO_SITE_ID = os.environ.get("DATATRACKER_MATOMO_SITE_ID")
     MATOMO_DISABLE_COOKIES = True
 
@@ -197,9 +205,13 @@ if "DATATRACKER_MATOMO_SITE_ID" in os.environ:
 _SCOUT_KEY = os.environ.get("DATATRACKER_SCOUT_KEY", None)
 if _SCOUT_KEY is not None:
     if SERVER_MODE == "production":
-        PROD_PRE_APPS = ["scout_apm.django", ]
+        PROD_PRE_APPS = [
+            "scout_apm.django",
+        ]
     else:
-        DEV_PRE_APPS = ["scout_apm.django", ]
+        DEV_PRE_APPS = [
+            "scout_apm.django",
+        ]
     SCOUT_MONITOR = True
     SCOUT_KEY = _SCOUT_KEY
     SCOUT_NAME = os.environ.get("DATATRACKER_SCOUT_NAME", "Datatracker")
@@ -216,16 +228,17 @@ if _SCOUT_KEY is not None:
 STATIC_URL = os.environ.get("DATATRACKER_STATIC_URL", None)
 if STATIC_URL is None:
     from ietf import __version__
+
     STATIC_URL = f"https://static.ietf.org/dt/{__version__}/"
 
 # Set these to the same as "production" in settings.py, whether production mode or not
 MEDIA_ROOT = "/a/www/www6s/lib/dt/media/"
-MEDIA_URL  = "https://www.ietf.org/lib/dt/media/"
+MEDIA_URL = "https://www.ietf.org/lib/dt/media/"
 PHOTOS_DIRNAME = "photo"
 PHOTOS_DIR = MEDIA_ROOT + PHOTOS_DIRNAME
 
 # Normally only set for debug, but needed until we have a real FS
-DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, 'static/dist-neue/manifest.json')
+DJANGO_VITE_MANIFEST_PATH = os.path.join(BASE_DIR, "static/dist-neue/manifest.json")
 
 # Binaries that are different in the docker image
 DE_GFM_BINARY = "/usr/local/bin/de-gfm"

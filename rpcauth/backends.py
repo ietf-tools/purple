@@ -124,6 +124,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
       sub - pk of the Person who was authenticated, as a string
       roles - list of 2-tuples corresponding to Person's active roles
     """
+
     ADMIN_ACCESS_ROLE = ["leadmaintainer", "tools"]
 
     def __init__(self, *args, **kwargs):

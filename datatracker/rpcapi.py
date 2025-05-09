@@ -20,9 +20,16 @@ class ApiClient(rpcapi_client.ApiClient):
 
         # Include CF service tokens in the header if configured to do so
         if getattr(settings, "CF_SERVICE_TOKEN_HOSTS", None) is not None:
-            if urlparse(self.configuration.host).hostname in settings.CF_SERVICE_TOKEN_HOSTS:
-                self.default_headers["CF-Access-Client-Id"] = settings.CF_SERVICE_TOKEN_ID
-                self.default_headers["CF-Access-Client-Secret"] = settings.CF_SERVICE_TOKEN_SECRET
+            if (
+                urlparse(self.configuration.host).hostname
+                in settings.CF_SERVICE_TOKEN_HOSTS
+            ):
+                self.default_headers["CF-Access-Client-Id"] = (
+                    settings.CF_SERVICE_TOKEN_ID
+                )
+                self.default_headers["CF-Access-Client-Secret"] = (
+                    settings.CF_SERVICE_TOKEN_SECRET
+                )
 
 
 def with_rpcapi(f):
