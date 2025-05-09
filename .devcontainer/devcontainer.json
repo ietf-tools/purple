@@ -67,7 +67,8 @@
           "oderwat.indent-rainbow",
           "redhat.vscode-yaml",
           "spmeesseman.vscode-taskexplorer",
-          "visualstudioexptteam.vscodeintellicode"
+          "visualstudioexptteam.vscodeintellicode",
+          "ms-python.pylint"
       ],
       "settings": {
           "terminal.integrated.defaultProfile.linux": "zsh",
