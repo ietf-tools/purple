@@ -111,6 +111,12 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.all()
 
+    def get_queryset(self):
+        queryset = RpcPerson.objects.all()
+        if self.request.query_params.get("all") in ("true", "1"):
+            queryset = queryset.filter(is_active=True)
+        return queryset
+
     @with_rpcapi
     def get_serializer_context(self, rpcapi: rpcapi_client.DefaultApi):
         """Add context to the serializer"""
