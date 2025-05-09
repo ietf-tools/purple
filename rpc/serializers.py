@@ -303,7 +303,7 @@ class RpcPersonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RpcPerson
-        fields = ["id", "name", "hours_per_week", "capabilities", "roles"]
+        fields = ["id", "name", "hours_per_week", "capabilities", "roles", "is_active"]
 
     def __init__(self, *args, **kwargs):
         self.name_map: dict[str, str] = kwargs.pop(
