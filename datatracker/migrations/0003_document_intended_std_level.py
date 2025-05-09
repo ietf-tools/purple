@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('datatracker', '0002_initial'),
+        ("datatracker", "0002_initial"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='document',
-            name='intended_std_level',
+            model_name="document",
+            name="intended_std_level",
             field=models.CharField(blank=True, max_length=32),
         ),
     ]
