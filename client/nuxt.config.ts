@@ -27,7 +27,8 @@ export default defineNuxtConfig({
     'nuxt-icon',
     'nuxt-snackbar',
     'nuxt-svgo',
-    'nuxt-security'
+    'nuxt-security',
+    'reka-ui/nuxt',
   ],
   robots: {
     credits: false,

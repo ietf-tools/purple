@@ -114,12 +114,6 @@
             </HeadlessMenuItems>
           </transition>
         </HeadlessMenu>
-        <div v-else class="-m-1.5 flex items-center p-1.5">
-          <a href="/oidc/authenticate/" class="hidden lg:flex items-center text-sm dark:text-neutral-300">
-            <span class="font-semibold">Login</span>
-            <Icon name="solar:alt-arrow-right-line-duotone" size="1.5em" class="ml-1" />
-          </a>
-        </div>
       </div>
     </div>
   </div>
