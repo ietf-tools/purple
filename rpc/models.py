@@ -37,6 +37,7 @@ class RpcPerson(models.Model):
         limit_choices_to={"can_hold_role__slug": "manager"},
         related_name="managed_people",
     )
+    is_active = models.BooleanField(default=True)
 
     def __str__(self):
         return str(self.datatracker_person)
