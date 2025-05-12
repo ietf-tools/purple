@@ -6,8 +6,7 @@
   // The .devcontainer/docker-compose.yml file contains any overrides you need/want to make.
   "dockerComposeFile": [
     "../docker-compose.yml",
-    "docker-compose.extend.yml",
-    "docker-compose.extend-custom.yml"
+    "docker-compose.extend.yml"
   ],
   // The 'service' property is the name of the service for the container that VS Code should
   // use. Update this value and .devcontainer/docker-compose.yml to the real service name.
@@ -66,7 +65,7 @@
         "python.analysis.extraPaths": [
           "/home/dev/.local/lib/python3.12/site-packages/"
         ],
-        "python.languageServer": "Default",
+        "python.languageServer": "Default"
       }
     }
   },
