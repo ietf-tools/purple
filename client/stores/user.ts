@@ -53,7 +53,6 @@ export const useUserStore = defineStore('user', {
 
       const isLoginRoute = isLoginRouteFn(location.pathname)
       if (!isLoginRoute && (!profileData || profileData.authenticated === false)) {
-        console.log(isLoginRoute, location.pathname)
         navigateTo(`${LOGIN_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`)
         return
       }
