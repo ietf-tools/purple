@@ -1,4 +1,5 @@
 Django>=5.0
+django-filter>=25.1
 django-simple-history>=3.4
 djangorestframework>=3.14
 drf-spectacular>=0.27

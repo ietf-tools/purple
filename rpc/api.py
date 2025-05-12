@@ -3,6 +3,7 @@
 import datetime
 
 from django.http import JsonResponse
+from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.decorators import (
     action,
@@ -110,6 +111,8 @@ def profile_as_person(request, rpc_person_id):
 class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.all()
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["is_active"]
 
     def get_queryset(self):
         queryset = RpcPerson.objects.all()
