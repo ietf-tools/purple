@@ -3,10 +3,10 @@
 
 import os
 
-deployment_mode = os.environ.get("PURPLE_DEPLOYMENT_MODE", "production")
-if deployment_mode == "development":
+DEPLOYMENT_MODE = os.environ.get("PURPLE_DEPLOYMENT_MODE", "production")
+if DEPLOYMENT_MODE == "development":
     from .development import *
-elif deployment_mode == "build":
+elif DEPLOYMENT_MODE == "build":
     from .build import *
 else:
     from .production import *

@@ -55,6 +55,9 @@ OIDC_OP_TOKEN_ENDPOINT = os.environ.get(
 OIDC_OP_USER_ENDPOINT = os.environ.get(
     "PURPLE_OIDC_OP_USER_ENDPOINT", f"{OIDC_OP_ISSUER_ID}/userinfo/"
 )
+OIDC_OP_END_SESSION_ENDPOINT = os.environ.get(
+    "PURPLE_OIDC_OP_END_SESSION_ENDPOINT", f"{OIDC_OP_ISSUER_ID}/end-session/"
+)
 
 
 # Config for Cloudflare service token auth

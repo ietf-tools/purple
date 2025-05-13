@@ -73,6 +73,9 @@ AUTHENTICATION_BACKENDS = (
 # OIDC configuration (see also production.py/development.py)
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid profile roles"
+OIDC_STORE_ID_TOKEN = True  # store id_token in session (used for RP-initiated logout)
+ALLOW_LOGOUT_GET_METHOD = True  # for now anyway
+OIDC_OP_LOGOUT_URL_METHOD = "rpcauth.utils.op_logout_url"
 
 # How often to renew tokens? Default is 15 minutes. Needs SessionRefresh middleware.
 # OIDC_RENEW_ID_TOKEN_EXPIRY_SECONDS = 15 * 60

@@ -28,7 +28,7 @@ OIDC_OP_AUTHORIZATION_ENDPOINT = (
 )
 OIDC_OP_TOKEN_ENDPOINT = "http://host.docker.internal:8000/api/openid/token/"
 OIDC_OP_USER_ENDPOINT = "http://host.docker.internal:8000/api/openid/userinfo/"
-
+OIDC_OP_END_SESSION_ENDPOINT = "http://localhost:8000/api/openid/end-session/"
 
 # Misc
 SESSION_COOKIE_NAME = (
