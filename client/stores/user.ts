@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { LOGIN_PATH, isLoginRoute as isLoginRouteFn } from '~/utilities/url'
+import { AUTH_PATH, testIsAuthRoute } from '~/utilities/url'
 
 export type ProfileData = {
   /**
@@ -51,9 +51,9 @@ export const useUserStore = defineStore('user', {
         console.error('Error loading profile', e)
       })
 
-      const isLoginRoute = isLoginRouteFn(location.pathname)
+      const isLoginRoute = testIsAuthRoute(location.pathname)
       if (!isLoginRoute && (!profileData || profileData.authenticated === false)) {
-        const redirectPath = `${LOGIN_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`
+        const redirectPath = `${AUTH_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`
         window.location.assign(redirectPath)
         return
       }

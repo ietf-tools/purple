@@ -1,3 +1,3 @@
-export const LOGIN_PATH = '/login/'
+export const AUTH_PATH = '/auth'
 
-export const isLoginRoute = (path: string) => path.startsWith(LOGIN_PATH)
+export const testIsAuthRoute = (path: string) => path.startsWith(AUTH_PATH)
