@@ -124,7 +124,6 @@ class HistorySerializer(serializers.Serializer):
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = RfcAuthor
         fields = [

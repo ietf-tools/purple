@@ -230,7 +230,6 @@ class Command(BaseCommand):
 
     @with_rpcapi
     def create_documents(self, *, rpcapi: rpcapi_client.DefaultApi):
-
         # submission, not yet an RfcToBe (not shown on "The Queue" wireframe)
         rpcapi.create_demo_draft(
             rpcapi_client.CreateDemoDraftRequest(

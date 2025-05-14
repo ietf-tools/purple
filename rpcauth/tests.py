@@ -26,8 +26,7 @@ class RpcOIDCAuthBackendTests(TestCase):
             "aud": "test-client-id",
             "exp": int(
                 # now + 10 minutes
-                datetime.datetime.now(datetime.timezone.utc).timestamp()
-                + 600
+                datetime.datetime.now(datetime.timezone.utc).timestamp() + 600
             ),
             "sub": "test-subject-id",
         }
@@ -118,8 +117,7 @@ class RpcOIDCAuthBackendTests(TestCase):
             "aud": "test-client-id",
             "exp": int(
                 # now + 10 minutes
-                datetime.datetime.now(datetime.timezone.utc).timestamp()
-                + 600
+                datetime.datetime.now(datetime.timezone.utc).timestamp() + 600
             ),
             "sub": "test-subject-id",
         }

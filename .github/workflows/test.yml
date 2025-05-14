@@ -20,5 +20,5 @@ jobs:
 
     - name: Check code style
       run: |
-        pip install black
-        black --check --diff .
+        pip install ruff
+        ruff format --check --diff .

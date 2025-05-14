@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Tests"""
+
 from django.test import TestCase
 
 
