@@ -1,14 +1,12 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
-
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import Optional
 
 from django.db import models
 from django.utils import timezone
+from simple_history.models import HistoricalRecords
 
 from rpc.dt_v1_api_utils import (
     DatatrackerFetchFailure,
@@ -16,7 +14,6 @@ from rpc.dt_v1_api_utils import (
     datatracker_stdlevelname,
     datatracker_streamname,
 )
-from simple_history.models import HistoricalRecords
 
 
 class DumpInfo(models.Model):
@@ -108,7 +105,7 @@ class RfcToBe(models.Model):
     @dataclass
     class Interval:
         start: datetime.datetime
-        end: Optional[datetime.datetime] = None
+        end: datetime.datetime | None = None
 
     def time_intervals_with_label(self, label) -> list[Interval]:
         hist = list(self.history.all())
@@ -132,9 +129,7 @@ class RfcToBe(models.Model):
                 if len(intervals) > 0 and intervals[-1].end is None:
                     intervals[-1].end = ch.new_record.history_date
         if len(intervals) > 0 and intervals[-1].end is None:
-            intervals[-1].end = datetime.datetime.now().astimezone(
-                datetime.timezone.utc
-            )
+            intervals[-1].end = datetime.datetime.now().astimezone(datetime.UTC)
         return intervals
 
 
@@ -495,7 +490,9 @@ class Label(models.Model):
     slug = models.CharField(max_length=64)
     is_exception = models.BooleanField(default=False)
     color = models.CharField(
-        max_length=7, default="purple", choices=zip(TAILWIND_COLORS, TAILWIND_COLORS)
+        max_length=7,
+        default="purple",
+        choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
     history = HistoricalRecords()
 

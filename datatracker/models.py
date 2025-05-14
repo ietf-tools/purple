@@ -1,11 +1,10 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import rpcapi_client
-from rpcapi_client.rest import ApiException
-from datatracker.rpcapi import with_rpcapi
-
 from django.db import models
+from rpcapi_client.rest import ApiException
+
+from datatracker.rpcapi import with_rpcapi
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):

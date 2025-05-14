@@ -18,7 +18,14 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Check code style
+    - name: Check code style black
       run: |
         pip install black
         black --check --diff .
+
+    - name: Check code style ruff
+      run: |
+        pip install ruff
+        ruff check .
+
+

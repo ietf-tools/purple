@@ -2,22 +2,20 @@
 
 import datetime
 
+import rpcapi_client
 from django.http import JsonResponse
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import mixins, serializers, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
-    permission_classes,
 )
 from rest_framework.response import Response
-from rest_framework import serializers
-from rest_framework import mixins, views, viewsets
-from drf_spectacular.utils import extend_schema, inline_serializer
-
-import rpcapi_client
-from datatracker.rpcapi import with_rpcapi
 
 from datatracker.models import Document
+from datatracker.rpcapi import with_rpcapi
+
 from .models import (
     Assignment,
     Capability,
@@ -41,12 +39,12 @@ from .serializers import (
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRoleSerializer,
-    SubmissionListItemSerializer,
-    Submission,
-    SubmissionSerializer,
     SourceFormatNameSerializer,
     StdLevelNameSerializer,
     StreamNameSerializer,
+    Submission,
+    SubmissionListItemSerializer,
+    SubmissionSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
 )

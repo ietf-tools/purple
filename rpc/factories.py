@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
-import factory
 
+import factory
 from django.db.models import Max
 
 from .models import (
@@ -116,7 +115,7 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
         "date_time_between",
         start_date="+1d",
         end_date="+15d",
-        tzinfo=datetime.timezone.utc,
+        tzinfo=datetime.UTC,
     )
 
 
