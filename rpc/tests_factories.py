@@ -4,7 +4,7 @@
 from django.test import TestCase
 
 from .factories import (
-    ActionHolderFactory,
+    RfcToBeActionHolderFactory,
     AprilFirstRfcToBeFactory,
     AssignmentFactory,
     CapabilityFactory,
@@ -28,7 +28,7 @@ class BasicRpcFactoryTests(TestCase):
         DispositionNameFactory()
         RfcToBeFactory()
         AprilFirstRfcToBeFactory()
-        ActionHolderFactory()
+        RfcToBeActionHolderFactory()
         RpcAuthorCommentFactory()
         ClusterFactory()
         UnusableRfcNumberFactory()

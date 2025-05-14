@@ -149,11 +149,19 @@ class RpcOIDCAuthBackendTests(TestCase):
         # good roles and sub
         self.assertTrue(
             self.backend.verify_claims(
-                {"sub": "test-subject-id", "roles": [["auth", "rpc"]]}
+                {
+                    "sub": "test-subject-id",
+                    "name": "test-name",
+                    "roles": [["auth", "rpc"]],
+                }
             )
         )
         self.assertTrue(
             self.backend.verify_claims(
-                {"sub": "test-subject-id", "roles": [["secr", "secretariat"]]}
+                {
+                    "sub": "test-subject-id",
+                    "name": "test-name",
+                    "roles": [["secr", "secretariat"]],
+                }
             )
         )

@@ -96,7 +96,11 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
         model = RfcToBe
 
     disposition = factory.SubFactory(DispositionNameFactory, slug="in_progress")
-    draft = factory.SubFactory("datatracker.factories.DocumentFactory")
+    draft = factory.SubFactory(
+        "datatracker.factories.DocumentFactory",
+        name=factory.Faker("sentence"),
+        pages=factory.Faker("random_int", min=1, max=100),
+    )
     submitted_format = factory.SubFactory(
         "rpc.factories.SourceFormatNameFactory", slug="xml-v3"
     )
