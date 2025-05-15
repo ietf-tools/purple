@@ -336,6 +336,8 @@ class ActionHolderSerializer(serializers.ModelSerializer):
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    rfc_to_be = RfcToBeSerializer(read_only=True)
+
     class Meta:
         model = Assignment
         fields = [

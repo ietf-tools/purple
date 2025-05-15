@@ -50,6 +50,7 @@ from .serializers import (
     StreamNameSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
+    UserSerializer,
 )
 from .utils import VersionInfo
 
@@ -263,6 +264,20 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
+
+    def get_queryset(self):
+
+        user = self.request.user
+
+        person_id = UserSerializer().get_person_id(user)
+
+        if person_id is None:
+            return Assignment.objects.none()
+
+        # Filter assignments for the logged-in RpcPerson
+        return Assignment.objects.filter(person_id=person_id).select_related(
+            "rfc_to_be"
+        )
 
 
 class RfcToBeViewSet(viewsets.ModelViewSet):
