@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "datatracker.apps.DatatrackerConfig",
     "rpc.apps.RpcConfig",
     "rpcauth.apps.RpcAuthConfig",
+    "errata.apps.ErrataConfig",
 ]
 
 MIDDLEWARE = [
