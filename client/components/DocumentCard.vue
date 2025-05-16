@@ -50,74 +50,63 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
       </div>
       <div class="flex justify-between gap-x-4 py-3">
         <dt class="text-gray-500">Assignments</dt>
-        <dd class="grow flex items-start gap-x-2">
+        <dd class="">
 
-          <HeadlessListbox
+          {{  cookedDocument.assignmentsPersonIds }}
+
+          <SelectRoot
             :model-value="cookedDocument.assignmentsPersonIds"
             multiple
             @update:model-value="toggleEditor"
           >
-            <div class="relative w-full">
-              <HeadlessListboxButton
-                class="flex flex-row gap-1 items-center relative w-full cursor-default rounded-lg bg-white py-2 pl-3 pr-1 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
-              >
-                <div class="flex-auto ">
-                  <div v-for="person in uniqBy(cookedDocument.assignmentsPersons, person => person?.id)"
-                       :key="person?.id">
-                    {{ person.name }}
-                  </div>
+            <SelectTrigger
+              class="flex flex-row gap-1 items-center relative cursor-pointer rounded-lg bg-white py-2 pl-3 pr-1 text-left shadow-md focus:outline-none focus-visible:border-indigo-500 focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 focus-visible:ring-offset-2 focus-visible:ring-offset-orange-300 sm:text-sm"
+            >
+              <div>
+                <div
+                  v-for="person in uniqBy(cookedDocument.assignmentsPersons, person => person?.id)"
+                  :key="person?.id">
+                  {{ person.name }}
                 </div>
-                <Icon name="heroicons:chevron-up-down-solid" class="h-5 w-5" aria-hidden="true"/>
-              </HeadlessListboxButton>
+              </div>
+              <Icon name="heroicons:chevron-up-down-solid" class="h-5 w-5" aria-hidden="true"/>
+            </SelectTrigger>
+            <SelectPortal>
+              <SelectContent
 
-              <transition
-                leave-active-class="transition duration-100 ease-in"
-                leave-from-class="opacity-100"
-                leave-to-class="opacity-0"
+                position="popper"
+        :side-offset="5"
+class="overflow-scroll max-h-[40vh]"
               >
-                <HeadlessListboxOptions
-                  class="absolute mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm z-50"
-                >
-                  <HeadlessListboxOption
-                    v-for="editor in cookedDocument.editors"
-                    v-slot="{ active, isSelected }"
-                    :key="editor.id"
-                    :value="editor.id"
-                    as="template"
-                  >
-                    <li
-                      :class="[
-                        active ? 'bg-amber-100 text-amber-900' : 'text-gray-900',
-                        'relative cursor-default select-none py-1 pl-1 pr-4',
-                      ]"
+                <SelectViewport class="p-[5px] overflow-scroll">
+                  <SelectGroup>
+                    <SelectItem
+                      v-for="editor in cookedDocument.editors"
+                      :key="editor.id"
+                      :value="editor.id"
+                      class="data-[highlighted]:bg-amber-100 data-[highlighted]:text-amber-900 relative cursor-default select-none py-1 pl-1 pr-4"
                     >
-                      <div class="flex flex-column items-center">
-                        <span
-                          class="w-8 pl-1"
-                        >
-                          <Icon v-if="isSelected" name="heroicons:check-16-solid" class="h-5 w-5" aria-hidden="true"/>
-                        </span>
-                        <div class="flex-1">
-                          {{ editor.name }}
-                          <p class="text-gray-500">
-                            <template v-if="editor.assignedDocuments">
-                              Currently assigned
-                              <span v-for="doc in editor.assignedDocuments" :key="doc.id">
-                                {{ doc.name }}, {{ doc.pages }} pages
-                              </span>
-                            </template>
-                            <template v-else>
-                              Can complete by {{ editor.completeBy.toLocaleString(DateTime.DATE_MED) }}
-                            </template>
-                          </p>
-                        </div>
-                      </div>
-                    </li>
-                  </HeadlessListboxOption>
-                </HeadlessListboxOptions>
-              </transition>
-            </div>
-          </HeadlessListbox>
+                      <SelectItemIndicator>
+                        <Icon name="heroicons:check-16-solid" class="h-5 w-5" aria-hidden="true"/>
+                      </SelectItemIndicator>
+                      {{ editor.name }}
+                      <p class="text-gray-500">
+                        <template v-if="editor.assignedDocuments">
+                          Currently assigned
+                          <span v-for="doc in editor.assignedDocuments" :key="doc.id">
+                            {{ doc.name }}, {{ doc.pages }} pages
+                          </span>
+                        </template>
+                        <template v-else>
+                          Can complete by {{ editor.completeBy.toLocaleString(DateTime.DATE_MED) }}
+                        </template>
+                      </p>
+                  </SelectItem>
+                </SelectGroup>
+              </SelectViewport>
+            </SelectContent>
+          </SelectPortal>
+          </SelectRoot>
         </dd>
       </div>
     </dl>
@@ -127,8 +116,11 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
 import { inject } from 'vue'
 import { DateTime } from 'luxon'
 import { uniqBy } from 'lodash-es'
+import { SelectRoot, SelectTrigger, SelectPortal, SelectContent, SelectViewport, SelectGroup, SelectItem, SelectItemIndicator } from 'reka-ui'
+import type { AcceptableValue } from 'reka-ui'
 import { assignEditorKey, deleteAssignmentKey } from '~/providers/providerKeys'
 import type { ResolvedDocument, ResolvedPerson } from './AssignmentsTypes'
+import { assert, assertIsArrayOfNumbers, assertIsNumber } from '../utilities/typescript'
 
 type Props = {
   document: ResolvedDocument
@@ -152,7 +144,9 @@ if (!_deleteAssignment) {
 }
 const deleteAssignment = _deleteAssignment
 
-function toggleEditor (editorIds: number[]) {
+function toggleEditor (editorIds: AcceptableValue) {
+  assertIsArrayOfNumbers(editorIds)
+
   const existingAssignmentEditorIds = props.document.assignments?.map(
     assignment => assignment.person?.id
   )
@@ -174,20 +168,40 @@ const cookedDocument = computed(() => {
   const assignmentsPersons = props.document?.assignments?.map(
     assignment => props?.editors?.find(editor => editor.id === assignment.person?.id)
   ).filter(editor => !!editor) ?? []
+  const assignmentsPersonIds = uniqBy(assignmentsPersons, editor => editor.id)
+    .map(editor => editor.id)
+    .filter(id => typeof id === 'number')
+
+  const shouldLog = props.document.name === 'draft-ietf-foo-bar'
 
   return ({
     ...props.document,
     externalDeadline: props.document.externalDeadline && DateTime.fromJSDate(props.document.externalDeadline),
     assignments: props.document.assignments,
     assignmentsPersons,
-    assignmentsPersonIds: assignmentsPersons?.map(editor => editor?.id),
-    editors: props?.editors
-      ?.map(editor => ({
-        ...editor,
-        assignedDocuments: props?.editorAssignedDocuments?.[editor.id],
-        // @ts-expect-error - drf-spectacular incorrectly marks hoursPerWeek as possibly undefined in the API schema
-        completeBy: currentTime.value.plus({ days: 7 * props.document.pages / teamPagesPerHour / editor.hoursPerWeek })
-      }))
+    assignmentsPersonIds,
+    editors: props.editors
+      ?.map(editor => {
+        const { id, hoursPerWeek } = editor
+        assert(typeof id === 'number', 'sdfsdf')
+        assertIsNumber(hoursPerWeek)
+        const { pages } = props.document
+        assertIsNumber(pages)
+
+        const assignedDocuments = props.editorAssignedDocuments?.[id]
+        const completeBy = currentTime.value.plus({ days: 7 * pages / teamPagesPerHour / hoursPerWeek })
+
+        if (shouldLog && assignedDocuments && assignmentsPersonIds.includes(id)) {
+          console.log(editor.name, editor.id, assignmentsPersonIds)
+        }
+
+        return {
+          ...editor,
+          id,
+          assignedDocuments,
+          completeBy,
+        }
+      })
       .sort((a, b) => a.completeBy.toMillis() - b.completeBy.toMillis())
   })
 })

@@ -190,7 +190,8 @@ const {
   data: assignments,
   pending: pendingAssignments,
   refresh: refreshAssignments
-} = await useFetch<Assignment[]>('/api/rpc/assignments/', { baseURL: '/', server: false })
+} = await useAsyncData('assignments', () => api.assignmentsList())
+
 const { data: roles } = await useAsyncData<RpcRole[]>(
   'roles',
   async () => {
