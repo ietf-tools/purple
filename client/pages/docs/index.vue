@@ -50,11 +50,18 @@ const columns: Column[] = [
   }
 ]
 
-const { data: myAssignments } = await useAsyncData(
+const { data: myAssignments, status: assignmentStatus } = await useAsyncData(
   'myAssignments',
-  () => api.assignmentsList(),
+  async () => {
+    if (userStore.rpcPersonId === null) {
+      return []
+    }
+    return api.rpcPersonAssignmentsList({ personId: userStore.rpcPersonId })
+  },
   { server: false, default: () => ([]) }
 )
+
+const pending = computed(() => assignmentStatus.value === 'pending')
 
 const { data: labels } = await useAsyncData(
   'labels',

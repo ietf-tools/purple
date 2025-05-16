@@ -11,6 +11,7 @@ from rest_framework.decorators import (
     permission_classes,
 )
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import serializers
 from rest_framework import mixins, views, viewsets
 from drf_spectacular.utils import extend_schema, inline_serializer
@@ -266,18 +267,22 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     serializer_class = AssignmentSerializer
 
     def get_queryset(self):
-
         user = self.request.user
 
+        base_queryset = Assignment.objects.select_related("rfc_to_be")
+
+        if user.is_superuser:
+            return base_queryset
+
+        # Non-superusers should only see their own assignments
+        # more granular permission to be added later
         person_id = UserSerializer().get_person_id(user)
 
         if person_id is None:
-            return Assignment.objects.none()
+            raise PermissionDenied("Unauthorized user")
 
         # Filter assignments for the logged-in RpcPerson
-        return Assignment.objects.filter(person_id=person_id).select_related(
-            "rfc_to_be"
-        )
+        return base_queryset.filter(person_id=person_id)
 
 
 class RfcToBeViewSet(viewsets.ModelViewSet):
