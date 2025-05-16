@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """JSON Logger Utilities"""
 import time
+
 from pythonjsonlogger import jsonlogger
 
 

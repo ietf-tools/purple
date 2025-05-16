@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.test import TestCase
 
@@ -12,10 +11,10 @@ from .factories import (
     DispositionNameFactory,
     FinalApprovalFactory,
     RfcAuthorFactory,
-    RpcPersonFactory,
-    RpcRoleFactory,
     RfcToBeFactory,
     RpcAuthorCommentFactory,
+    RpcPersonFactory,
+    RpcRoleFactory,
     UnusableRfcNumberFactory,
 )
 

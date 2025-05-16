@@ -3,6 +3,7 @@
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from datatracker.models import DatatrackerPerson, Document
+
 from ...models import (
     ActionHolder,
     Assignment,

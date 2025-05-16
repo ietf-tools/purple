@@ -1,23 +1,22 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
 
+import rpcapi_client
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
-import rpcapi_client
 from datatracker.rpcapi import with_rpcapi
 
 from ...factories import (
     AssignmentFactory,
     ClusterFactory,
     LabelFactory,
-    RfcToBeFactory,
     RfcToBeActionHolderFactory,
+    RfcToBeFactory,
     RpcPersonFactory,
 )
-from ...models import ClusterMember, RfcToBe, RpcPerson, Label
+from ...models import ClusterMember, Label, RfcToBe, RpcPerson
 
 
 class Command(BaseCommand):
@@ -340,8 +339,7 @@ class Command(BaseCommand):
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
                 rpcapi_client.CreateDemoPersonRequest(name="Artimus Ad"),
             ).person_pk,
-            deadline=datetime.datetime.now(datetime.timezone.utc)
-            + datetime.timedelta(days=14),
+            deadline=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=14),
         )
 
         #

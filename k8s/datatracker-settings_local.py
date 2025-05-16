@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
 
+import json
 from base64 import b64decode
 from email.utils import parseaddr
-import json
 
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore

@@ -1,15 +1,14 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import datetime
-
 from dataclasses import dataclass
-from django.conf import settings
 from itertools import pairwise
+from urllib.parse import urljoin
+
+from django.conf import settings
 from rest_framework import serializers
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
-from typing import Optional
-from urllib.parse import urljoin
 
 from .models import (
     ActionHolder,
@@ -48,7 +47,7 @@ class UserSerializer(serializers.Serializer):
             return dt_person.plain_name()
         return str(user)
 
-    def get_person_id(self, user) -> Optional[RpcPerson]:
+    def get_person_id(self, user) -> RpcPerson | None:
         rpc_person = RpcPerson.objects.filter(
             datatracker_person=user.datatracker_person()
         ).first()
@@ -201,7 +200,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             rfc_to_be.draft.pages if rfc_to_be.draft else 0
         )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
 
-    def get_cluster(self, rfc_to_be) -> Optional[int]:
+    def get_cluster(self, rfc_to_be) -> int | None:
         if rfc_to_be.draft:
             cluster = rfc_to_be.draft.cluster_set.first()
             return None if cluster is None else cluster.number

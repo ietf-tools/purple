@@ -1,0 +1,26 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.format]
+docstring-code-line-length = 100
+indent-style = "space"  # Use spaces for indentation
+quote-style = "single" # Use single quotes for strings
+
+[tool.ruff.lint]
+extend-select = [
+    "E",   # pycodestyle
+    "F",   # Pyflakes
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+#    "SIM", # flake8-simplify
+    "I",   # isort
+]
+extend-ignore = [
+    "E501",  # no line length errors
+    "F841",  # local variable is assigned to but never used
+    "F401",  # unused import
+    "F405",  # variable may be undefined, or defined from star imports
+    "F403",  # unable to detect undefined names
+    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`...
+]
