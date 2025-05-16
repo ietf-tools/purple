@@ -35,7 +35,6 @@ def remove_status_data(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("errata", "0001_initial"),
     ]

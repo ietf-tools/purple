@@ -20,7 +20,6 @@ def remove_type_data(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("errata", "0002_populate_status"),
     ]
