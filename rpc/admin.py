@@ -34,7 +34,7 @@ admin.site.register(DumpInfo)
 
 class RpcPersonAdmin(admin.ModelAdmin):
     search_fields = ["datatracker_person__datatracker_id"]
-    list_display = ["datatracker_person", "can_hold_role__name"]
+    list_display = ["id", "datatracker_person", "can_hold_role__name"]
 
 
 admin.site.register(RpcPerson, RpcPersonAdmin)
@@ -66,7 +66,14 @@ class RpcRoleAdmin(admin.ModelAdmin):
 
 admin.site.register(RpcRole, RpcRoleAdmin)
 admin.site.register(Capability)
-admin.site.register(Assignment)
+
+
+class AssignmentAdmin(admin.ModelAdmin):
+    search_fields = ["person__datatracker_person__datatracker_id"]
+    list_display = ["id", "rfc_to_be", "person", "role", "state"]
+
+
+admin.site.register(Assignment, AssignmentAdmin)
 
 
 class RfcAuthorAdmin(admin.ModelAdmin):

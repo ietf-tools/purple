@@ -29,16 +29,6 @@ import type { Column } from '~/components/DocumentTableTypes'
 const api = useApi()
 const userStore = useUserStore()
 
-// COMPUTED
-
-const myAssignments = computed(() => allAssignments.value?.filter(
-  (a) => a.person === userStore.rpcPersonId
-).map(
-  (a) => ({ ...a, rfcToBe: allDocuments.value?.find(d => d.id === a.rfcToBe) })
-))
-
-const pending = computed(() => assignmentsPending.value || documentsPending.value)
-
 // DATA
 
 const columns: Column[] = [
@@ -60,17 +50,18 @@ const columns: Column[] = [
   }
 ]
 
-const { data: allAssignments, pending: assignmentsPending } = await useAsyncData(
-  'allAssignments',
-  () => api.rpcPersonAssignmentsList({ personId: userStore.rpcPersonId }),
+const { data: myAssignments, status: assignmentStatus } = await useAsyncData(
+  'myAssignments',
+  async () => {
+    if (userStore.rpcPersonId === null) {
+      return []
+    }
+    return api.rpcPersonAssignmentsList({ personId: userStore.rpcPersonId })
+  },
   { server: false, default: () => ([]) }
 )
 
-const { data: allDocuments, pending: documentsPending } = await useAsyncData(
-  'allDocuments',
-  () => api.documentsList(),
-  { server: false, default: () => ([]) }
-)
+const pending = computed(() => assignmentStatus.value === 'pending')
 
 const { data: labels } = await useAsyncData(
   'labels',

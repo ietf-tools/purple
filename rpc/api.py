@@ -11,6 +11,7 @@ from rest_framework.decorators import (
     permission_classes,
 )
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework import serializers
 from rest_framework import mixins, views, viewsets
 from drf_spectacular.utils import extend_schema, inline_serializer
@@ -50,6 +51,7 @@ from .serializers import (
     StreamNameSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
+    UserSerializer,
 )
 from .utils import VersionInfo
 
@@ -140,7 +142,21 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     serializer_class = AssignmentSerializer
 
     def get_queryset(self):
-        return super().get_queryset().filter(person_id=self.kwargs["person_id"])
+        user = self.request.user
+        req_person_id = self.kwargs["person_id"]
+
+        queryset = super().get_queryset().filter(person_id=req_person_id)
+
+        is_manager = UserSerializer().has_role(user, "manager")
+        if user.is_superuser or is_manager:
+            return queryset
+
+        # Non-superusers/managers should only see their own assignments
+        person_id = UserSerializer().get_person_id(user)
+        if person_id is None or person_id != req_person_id:
+            raise PermissionDenied("Unauthorized request")
+
+        return queryset
 
 
 @extend_schema(
@@ -263,6 +279,25 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+
+        base_queryset = super().get_queryset()
+
+        is_manager = UserSerializer().has_role(user, "manager")
+        if user.is_superuser or is_manager:
+            return base_queryset
+
+        # Non-superusers/managers should only see their own assignments
+        # more granular permission to be added later
+        person_id = UserSerializer().get_person_id(user)
+
+        if person_id is None:
+            raise PermissionDenied("Unauthorized request")
+
+        # Filter assignments for the logged-in RpcPerson
+        return base_queryset.filter(person_id=person_id)
 
 
 class RfcToBeViewSet(viewsets.ModelViewSet):

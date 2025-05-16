@@ -56,6 +56,14 @@ class UserSerializer(serializers.Serializer):
             return rpc_person.pk
         return None
 
+    def has_role(self, user, role) -> Optional[RpcPerson]:
+        rpc_person = RpcPerson.objects.filter(
+            datatracker_person=user.datatracker_person()
+        ).first()
+        if rpc_person:
+            return rpc_person.can_hold_role.filter(slug=role).exists()
+        return None
+
 
 @dataclass
 class HistoryRecord:
@@ -336,6 +344,8 @@ class ActionHolderSerializer(serializers.ModelSerializer):
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
+    rfc_to_be = RfcToBeSerializer(read_only=True)
+
     class Meta:
         model = Assignment
         fields = [
