@@ -49,6 +49,7 @@
 3. Wait for the devcontainer to initialize. *(This can take a few seconds/minutes the first time)*
 4. The editor will automatically open 2 side-by-side terminals, running both the backend API server and the client dev server.
 5. Open http://localhost:8088 in your browser and login using some Datatracker user.
+6. If there are login problems try configuring VSCode's 'Remote: Local Port Host' to 'allInterfaces' and then reopen VSCode's devcontainers.
 
 ## Using Generic
 
