@@ -1052,9 +1052,7 @@ class Migration(migrations.Migration):
             model_name="finalapproval",
             constraint=models.CheckConstraint(
                 condition=models.Q(
-                    ("body", ""),
-                    ("overriding__approver__isnull", True),
-                    _connector="OR",
+                    ("body", ""), ("overriding_approver__isnull", True), _connector="OR"
                 ),
                 name="finalapproval_body_approval_no_override",
                 violation_error_message="body approval cant be overridden",
