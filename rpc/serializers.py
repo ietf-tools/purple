@@ -545,10 +545,10 @@ class SubmissionListItemSerializer(serializers.Serializer):
     submitted = serializers.DateTimeField()
 
 
-def check_user_has_role(user, role) -> Optional[bool]:
+def check_user_has_role(user, role) -> bool:
     rpc_person = RpcPerson.objects.filter(
         datatracker_person=user.datatracker_person()
     ).first()
     if rpc_person:
         return rpc_person.can_hold_role.filter(slug=role).exists()
-    return None
+    return False
