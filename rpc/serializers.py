@@ -130,7 +130,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "id",
             "titlepage_name",
             "is_editor",
-            "auth48_approved",
             "datatracker_person",
         ]
         read_only_fields = ["id", "datatracker_person"]
