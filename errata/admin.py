@@ -21,6 +21,7 @@ class ErrataAdmin(admin.ModelAdmin):
         "submitter_email",
         "submitted_at",
     ]
+    raw_id_fields = ["rfc_to_be", "verifier_dt_person"]
 
 
 admin.site.register(Errata, ErrataAdmin)
@@ -49,6 +50,7 @@ class LogAdmin(admin.ModelAdmin):
         "editor_dt_person",
         "created_at",
     ]
+    raw_id_fields = ["errata", "verifier_dt_person", "editor_dt_person"]
 
 
 admin.site.register(Log, LogAdmin)
@@ -57,6 +59,7 @@ admin.site.register(Log, LogAdmin)
 class AreaAssignmentAdmin(admin.ModelAdmin):
     search_fields = ["rfc_to_be__rfc_number", "area_acronym"]
     list_display = ["rfc_to_be", "area_acronym"]
+    raw_id_fields = ["rfc_to_be"]
 
 
 admin.site.register(AreaAssignment, AreaAssignmentAdmin)
