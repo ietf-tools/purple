@@ -298,7 +298,6 @@ class RfcAuthor(models.Model):
     rfc_to_be = models.ForeignKey(
         RfcToBe, on_delete=models.PROTECT, related_name="authors"
     )
-    auth48_approved = models.DateTimeField(null=True)
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
@@ -313,19 +312,77 @@ class AdditionalEmail(models.Model):
 
 
 class FinalApproval(models.Model):
+    """Captures approvals for publication
+
+    This model captures who is asked for approval, when they were asked, and
+    when they gave that approval. Lack of an approved date means approval
+    has not been provided.
+
+    The RPC may need to ask a body, like the IESG, for approval without knowing
+    which person will provide that approval. Body would be non-blank, approver
+    would be None, approved would be None. The body will have a person that
+    approves on their behalf, so once approved is not None, approver will also
+    be not None. Overriding approver will be None when body is used.
+
+    Overriding approver is used when someone has to step in for whoever is
+    pointed to as approver (such as when an author passes away or otherwise
+    becomes non-responsive). Overriding approver should never be not None if
+    approver is None.
+
+    Some approvals are Auth48 approvals from authors. Any FinalApproval with
+    an approval pointing to the same DatatrackerPerson as a RfcAuthor for that
+    RfcToBe is an Auth48 approval.
+    """
+
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    body = models.CharField(max_length=64, null=True)
+    body = models.CharField(max_length=64, blank=True, default="")
     approver = models.ForeignKey(
-        "datatracker.DatatrackerPerson", on_delete=models.PROTECT, null=True
+        "datatracker.DatatrackerPerson",
+        on_delete=models.PROTECT,
+        null=True,
+        related_name="approver_set",
+    )
+    overriding_approver = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        on_delete=models.PROTECT,
+        null=True,
+        related_name="overriding_approver_set",
     )
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True)
 
     def __str__(self):
         if self.approved:
-            return f"final approval from {self.approver}"
+            if self.overriding_approver:
+                return f"final approval from {self.overriding_approver} on behalf of {self.approver}"
+            else:
+                return f"final approval from {self.approver}"
         else:
-            return f"request for final approval from {self.approver}"
+            return f"request for final approval from {self.approver if self.approver else self.body}"
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                check=(
+                    models.Q(approved__isnull=True) | models.Q(approver__isnull=False)
+                ),
+                name="finalapproval_approval_requires_approver",
+                violation_error_message="approval requires an approver",
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(overriding_approver__isnull=True)
+                    | models.Q(approver__isnull=False)
+                ),
+                name="finalapproval_approval_override_requires_approver",
+                violation_error_message="approval override requires an approver be set",
+            ),
+            models.CheckConstraint(
+                check=(models.Q(body="") | models.Q(overriding__approver__isnull=True)),
+                name="finalapproval_body_approval_no_override",
+                violation_error_message="body approval cant be overridedn",
+            ),
+        ]
 
 
 class IanaAction(models.Model):

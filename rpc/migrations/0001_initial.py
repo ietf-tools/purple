@@ -517,7 +517,6 @@ class Migration(migrations.Migration):
                 ),
                 ("titlepage_name", models.CharField(max_length=128)),
                 ("is_editor", models.BooleanField(default=False)),
-                ("auth48_approved", models.DateTimeField(null=True)),
                 (
                     "datatracker_person",
                     models.ForeignKey(
@@ -624,7 +623,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("body", models.CharField(max_length=64, null=True)),
+                ("body", models.CharField(blank=True, default="", max_length=64)),
                 ("requested", models.DateTimeField(default=django.utils.timezone.now)),
                 ("approved", models.DateTimeField(null=True)),
                 (
@@ -632,6 +631,16 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
+                        related_name="approver_set",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "overriding_approver",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="overriding_approver_set",
                         to="datatracker.datatrackerperson",
                     ),
                 ),
@@ -821,6 +830,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("hours_per_week", models.PositiveSmallIntegerField(default=40)),
+                ("is_active", models.BooleanField(default=True)),
                 ("capable_of", models.ManyToManyField(to="rpc.capability")),
                 (
                     "datatracker_person",
@@ -1012,6 +1022,42 @@ class Migration(migrations.Migration):
                 fields=("doc",),
                 name="clustermember_unique_doc",
                 violation_error_message="A document may not appear in more than one cluster",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="finalapproval",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("approved__isnull", True),
+                    ("approver__isnull", False),
+                    _connector="OR",
+                ),
+                name="finalapproval_approval_requires_approver",
+                violation_error_message="approval requires an approver",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="finalapproval",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("overriding_approver__isnull", True),
+                    ("approver__isnull", False),
+                    _connector="OR",
+                ),
+                name="finalapproval_approval_override_requires_approver",
+                violation_error_message="approval override requires an approver be set",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="finalapproval",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("body", ""),
+                    ("overriding__approver__isnull", True),
+                    _connector="OR",
+                ),
+                name="finalapproval_body_approval_no_override",
+                violation_error_message="body approval cant be overridedn",
             ),
         ),
         migrations.AddConstraint(
