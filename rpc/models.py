@@ -331,7 +331,7 @@ class FinalApproval(models.Model):
 
     Some approvals are Auth48 approvals from authors. Any FinalApproval with
     an approval pointing to the same DatatrackerPerson as a RfcAuthor for that
-    RfcToBe is an Auth48 approval.
+    RfcToBe is an Auth48 approval. Such approvals will have a body of "".
     """
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
