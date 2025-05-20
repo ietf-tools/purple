@@ -380,7 +380,7 @@ class FinalApproval(models.Model):
             models.CheckConstraint(
                 check=(models.Q(body="") | models.Q(overriding__approver__isnull=True)),
                 name="finalapproval_body_approval_no_override",
-                violation_error_message="body approval cant be overridedn",
+                violation_error_message="body approval cant be overridden",
             ),
         ]
 

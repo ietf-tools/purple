@@ -1057,7 +1057,7 @@ class Migration(migrations.Migration):
                     _connector="OR",
                 ),
                 name="finalapproval_body_approval_no_override",
-                violation_error_message="body approval cant be overridedn",
+                violation_error_message="body approval cant be overridden",
             ),
         ),
         migrations.AddConstraint(
