@@ -56,14 +56,6 @@ class UserSerializer(serializers.Serializer):
             return rpc_person.pk
         return None
 
-    def has_role(self, user, role) -> Optional[RpcPerson]:
-        rpc_person = RpcPerson.objects.filter(
-            datatracker_person=user.datatracker_person()
-        ).first()
-        if rpc_person:
-            return rpc_person.can_hold_role.filter(slug=role).exists()
-        return None
-
 
 @dataclass
 class HistoryRecord:
@@ -551,3 +543,12 @@ class SubmissionListItemSerializer(serializers.Serializer):
     name = serializers.CharField()
     stream = serializers.CharField()
     submitted = serializers.DateTimeField()
+
+
+def check_user_has_role(user, role) -> Optional[bool]:
+    rpc_person = RpcPerson.objects.filter(
+        datatracker_person=user.datatracker_person()
+    ).first()
+    if rpc_person:
+        return rpc_person.can_hold_role.filter(slug=role).exists()
+    return None

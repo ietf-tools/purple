@@ -52,6 +52,7 @@ from .serializers import (
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
     UserSerializer,
+    check_user_has_role,
 )
 from .utils import VersionInfo
 
@@ -147,7 +148,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 
         queryset = super().get_queryset().filter(person_id=req_person_id)
 
-        is_manager = UserSerializer().has_role(user, "manager")
+        is_manager = check_user_has_role(user, "manager")
         if user.is_superuser or is_manager:
             return queryset
 
@@ -285,7 +286,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
         base_queryset = super().get_queryset()
 
-        is_manager = UserSerializer().has_role(user, "manager")
+        is_manager = check_user_has_role(user, "manager")
         if user.is_superuser or is_manager:
             return base_queryset
 
