@@ -552,6 +552,7 @@ class Label(models.Model):
 
     slug = models.CharField(max_length=64)
     is_exception = models.BooleanField(default=False)
+    is_complexity = models.BooleanField(default=False)
     color = models.CharField(
         max_length=7, default="purple", choices=zip(TAILWIND_COLORS, TAILWIND_COLORS)
     )

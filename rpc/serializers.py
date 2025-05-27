@@ -357,6 +357,7 @@ class LabelSerializer(serializers.ModelSerializer):
             "id",
             "slug",
             "is_exception",
+            "is_complexity",
             "color",
         ]
 
