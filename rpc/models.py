@@ -584,3 +584,27 @@ class RpcAuthorComment(models.Model):
             self.by,
             self.time.strftime("%Y-%m-%d"),
         )
+
+class ApprovalLogMessage(models.Model):
+    """Public log of final approval-related steps
+
+    These messages will be displayed on the approvals
+    views (historically the AUTH48 approvals page) and
+    will be publically visible.
+    """
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    log_message = models.TextField()
+    by = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        on_delete=models.PROTECT,
+        related_name="approvallogmessage_by",
+    )
+    time = models.DateTimeField(default=timezone.now)
+
+    def __str__(self):
+        return "ApprovalLogMessage for {} by {} on {}".format(
+            self.rfc_to_be,
+            self.by,
+            self.time.strftime("%Y-%m-%d"),
+        )
