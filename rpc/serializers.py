@@ -336,12 +336,14 @@ class ActionHolderSerializer(serializers.ModelSerializer):
 
 class AssignmentSerializer(serializers.ModelSerializer):
     rfc_to_be = RfcToBeSerializer(read_only=True)
+    rfc_to_be_id = serializers.IntegerField(write_only=True)
 
     class Meta:
         model = Assignment
         fields = [
             "id",
             "rfc_to_be",
+            "rfc_to_be_id",
             "person",
             "role",
             "state",
