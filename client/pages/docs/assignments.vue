@@ -127,7 +127,7 @@ const currentFilterDesc = computed(() => {
 async function saveAssignment (assignment: Pick<Assignment, 'rfcToBe' | 'person'>) {
   await $fetch('/api/rpc/assignments/', {
     body: {
-      rfc_to_be_id: assignment.rfcToBe,
+      rfc_to_be: assignment.rfcToBe,
       person: assignment.person,
       role: documents.value.find((d: any) => d.id === assignment.rfcToBe)?.needsAssignment?.slug ?? 'first_editor'
     },
