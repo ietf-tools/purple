@@ -45,9 +45,6 @@ export default defineNuxtConfig({
           '*.ietf.org'
         ],
         'script-src': [
-          "'self'",
-          'https:',
-          // "'unsafe-inline'", ignored because nonce is present; could uncomment to support old browsers
           "'strict-dynamic'",
           "'nonce-{{nonce}}'",
           // hash to allow inline script for the "warning" frame injected in staging
