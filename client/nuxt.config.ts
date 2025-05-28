@@ -37,6 +37,11 @@ export default defineNuxtConfig({
   security: {
     headers: {
       contentSecurityPolicy: {
+        'img-src': [
+          "'self'",
+          "'data:'",
+          '*.ietf.org'
+        ],
         'script-src': [
           "'self'",
           'https:',
