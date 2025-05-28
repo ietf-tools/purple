@@ -320,7 +320,7 @@ class FinalApproval(models.Model):
     Sometimes the titlepage author is not a person, such as when it is the IAB.
     The request for approval from such a body is captured in the body field.
     Body would be non-blank, approver would be None, approved would be None.
-    A person will provide approval on belahf of that body, so once approved
+    A person will provide approval on behalf of that body, so once approved
     is not None, approver will also be not None. Overriding approver will
     always be None when body is used.
 
