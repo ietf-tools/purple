@@ -34,6 +34,21 @@ export default defineNuxtConfig({
     credits: false,
     disallow: ['/']
   },
+  security: {
+    headers: {
+      contentSecurityPolicy: {
+        'script-src': [
+          "'self'",
+          'https:',
+          "'unsafe-inline'",
+          "'strict-dynamic'",
+          "'nonce-{{nonce}}'",
+          // hash to allow inline script for the CF "warning" frame in staging
+          "'sha256-/X+B2V+P0MtVhap6VXExBiZWClUu/o6SHAieH/S0mng='"
+        ]
+      }
+    }
+  },
   snackbar: {
     top: true,
     right: true,
