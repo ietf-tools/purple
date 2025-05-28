@@ -41,7 +41,7 @@ export default defineNuxtConfig({
       contentSecurityPolicy: {
         'img-src': [
           "'self'",
-          "'data:'",
+          'data:',
           '*.ietf.org'
         ],
         'script-src': [
