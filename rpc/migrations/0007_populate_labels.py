@@ -42,4 +42,6 @@ class Migration(migrations.Migration):
         ("rpc", "0006_historicallabel_is_complexity_label_is_complexity"),
     ]
 
-    operations = [migrations.RunPython(forward, reverse)]
+    # todo restore this migration when rfced-xfer label ID handling is fixed
+    # operations = [migrations.RunPython(forward, reverse)]
+    operations = []
