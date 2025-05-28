@@ -47,11 +47,11 @@ export default defineNuxtConfig({
         'script-src': [
           "'self'",
           'https:',
-          "'unsafe-inline'",
+          // "'unsafe-inline'", ignored because nonce is present; could uncomment to support old browsers
           "'strict-dynamic'",
           "'nonce-{{nonce}}'",
-          // hash to allow inline script for the CF "warning" frame in staging
-          "'sha256-/X+B2V+P0MtVhap6VXExBiZWClUu/o6SHAieH/S0mng='"
+          // hash to allow inline script for the "warning" frame injected in staging
+          "'sha256-btNpotFTgJ655QNrGLqUNHEjYGt/ywYAjo8Oxn1OkUM='"
         ]
       }
     }
