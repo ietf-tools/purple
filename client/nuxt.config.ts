@@ -35,6 +35,8 @@ export default defineNuxtConfig({
     disallow: ['/']
   },
   security: {
+    // adjusts the defaults, see
+    // https://nuxt-security.vercel.app/getting-started/configuration#defaults
     headers: {
       contentSecurityPolicy: {
         'img-src': [
