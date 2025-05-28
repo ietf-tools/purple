@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import rpcapi_client
-from rpcapi_client.rest import ApiException
 from datatracker.rpcapi import with_rpcapi
 
 from django.db import models
@@ -11,8 +10,9 @@ from django.db import models
 class DatatrackerPersonQuerySet(models.QuerySet):
     @with_rpcapi
     def by_subject_id(self, subject_id, *, rpcapi: rpcapi_client.DefaultApi):
-        dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
-        if dtpers is None:
+        try:
+            dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
+        except rpcapi_client.exceptions.NotFoundException:
             return super().none()
         return super().filter(datatracker_id=dtpers.id)
 
@@ -34,9 +34,7 @@ class DatatrackerPerson(models.Model):
     def plain_name(self, *, rpcapi: rpcapi_client.DefaultApi):
         try:
             person = rpcapi.get_person_by_id(int(self.datatracker_id))
-        except ApiException as e:
-            if e.status != 404:
-                print(f"Unexpected status: {e.status}")
+        except rpcapi_client.exceptions.NotFoundException:
             person = None
         return None if person is None else person.plain_name
 
