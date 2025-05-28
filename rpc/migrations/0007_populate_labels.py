@@ -28,7 +28,7 @@ def forward(apps, schema_editor):
             slug=slug, is_exception=False, is_complexity=True, color=COMPLEXITY_COLOR
         )
     Label.objects.create(
-        slug="expidited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
+        slug="expedited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
     )
 
 
