@@ -34,6 +34,11 @@ export default defineNuxtConfig({
     credits: false,
     disallow: ['/']
   },
+  runtimeConfig: {
+    public: {
+      cspScriptSrcHashes: '' // comma-separated list
+    }
+  },
   security: {
     // adjusts the defaults, see
     // https://nuxt-security.vercel.app/getting-started/configuration#defaults
