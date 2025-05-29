@@ -48,7 +48,6 @@ class DatatrackerPerson(models.Model):
         return cached_value
 
 
-
 class Document(models.Model):
     """Document known to the datatracker"""
 
