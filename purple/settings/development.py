@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Development-mode Django settings for RPC project"""
+from hashlib import sha384
 
 from .base import *
 
@@ -47,5 +48,17 @@ DATABASES = {
         "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
         "HOST": "db",
         "PORT": 5432,
+    }
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+        "LOCATION": "cache:11211",
+        "VERSION": "none",
+        "KEY_PREFIX": "ietf:purple",
+        "KEY_FUNCTION": lambda key, key_prefix, version: (
+            f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+        ),
     }
 }

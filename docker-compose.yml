@@ -33,6 +33,12 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  cache:
+    image: memcached:latest
+    restart: unless-stopped
+    command:
+      - --memory-limit=128
+
   pgadmin:
     image: dpage/pgadmin4:latest
     restart: unless-stopped
