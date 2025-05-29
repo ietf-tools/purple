@@ -35,11 +35,9 @@ class DatatrackerPerson(models.Model):
     @with_rpcapi
     def plain_name(self, *, rpcapi: rpcapi_client.DefaultApi):
         cache_key = f"datatracker_person-{self.datatracker_id}-plain_name"
-        print(f"cache_key = {cache_key}")
         no_value = object()
         cached_value = cache.get(cache_key, no_value)
         if cached_value is no_value:
-            print("cache miss")
             try:
                 person = rpcapi.get_person_by_id(int(self.datatracker_id))
             except rpcapi_client.exceptions.NotFoundException:
