@@ -364,13 +364,24 @@ class LabelSerializer(serializers.ModelSerializer):
 
 class QueueItemSerializer(RfcToBeSerializer):
     labels = LabelSerializer(many=True, read_only=True)
-    assignment_set = AssignmentSerializer(
-        many=True, read_only=True
-    )  # todo filter out "done"
-    actionholder_set = ActionHolderSerializer(
-        many=True, read_only=True
-    )  # todo filter out "completed"
+
+    assignment_set = serializers.SerializerMethodField()
+
+    actionholder_set = serializers.SerializerMethodField()
+
     requested_approvals = serializers.SerializerMethodField()
+
+    def get_assignment_set(self, obj):
+        filtered_assignments = obj.assignment_set.exclude(state="done")
+        return AssignmentSerializer(
+            filtered_assignments, many=True, read_only=True
+        ).data
+
+    def get_actionholder_set(self, obj):
+        filtered_actionholders = obj.actionholder_set.filter(completed__isnull=True)
+        return ActionHolderSerializer(
+            filtered_actionholders, many=True, read_only=True
+        ).data
 
     class Meta(RfcToBeSerializer.Meta):
         fields = RfcToBeSerializer.Meta.fields + [
