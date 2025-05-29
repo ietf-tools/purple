@@ -142,11 +142,29 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     queryset = Assignment.objects.exclude(state="done")
     serializer_class = AssignmentSerializer
 
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class()
+
+        # For GET requests only, use a custom serializer that includes nested RfcToBe data
+        if self.request.method == "GET":
+
+            class NestedAssignmentSerializer(serializer_class):
+                rfc_to_be = RfcToBeSerializer(read_only=True)
+
+            return NestedAssignmentSerializer(*args, **kwargs)
+
+        return serializer_class(*args, **kwargs)
+
     def get_queryset(self):
         user = self.request.user
         req_person_id = self.kwargs["person_id"]
 
-        queryset = super().get_queryset().filter(person_id=req_person_id)
+        queryset = (
+            super()
+            .get_queryset()
+            .select_related("rfc_to_be")
+            .filter(person_id=req_person_id)
+        )
 
         is_manager = check_user_has_role(user, "manager")
         if user.is_superuser or is_manager:
