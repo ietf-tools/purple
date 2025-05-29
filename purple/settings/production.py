@@ -96,3 +96,18 @@ _conn_health_checks = bool(
     os.environ.get("PURPLE_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
 )
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
+
+
+# Caches
+#
+# PURPLE_MEMCACHED_LOCATION is a newline-separated list of memcached locations (generally
+# expect only one entry, but memcached allows multiple servers). If not set, fall back to
+# default - caching disabled.
+_memcached_location = _multiline_to_list(os.environ.get("PURPLE_MEMCACHED_LOCATION", ""))
+if len(_memcached_location) > 0:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+            "LOCATION": _memcached_location,
+        }
+    }
