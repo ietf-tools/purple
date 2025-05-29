@@ -12,7 +12,7 @@ export default defineNitroPlugin((nitroApp) => {
         ?.split(',')
         .map(h => `'${h.trim()}'`)
         .filter(s => s !== "''") // exclude empty entries
-      if (scriptSrcHashes) {
+      if (scriptSrcHashes?.length > 0) {
         // defu() will add the hashes to the existing script-src array in the security options
         appSecurityOptions['/**'] = defu(
           {
