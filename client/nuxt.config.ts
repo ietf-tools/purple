@@ -51,9 +51,7 @@ export default defineNuxtConfig({
         ],
         'script-src': [
           "'strict-dynamic'",
-          "'nonce-{{nonce}}'",
-          // hash to allow inline script for the "warning" frame injected in staging
-          "'sha256-9d0wX/zjSHgriLlZ2/0kuEndnxQOqKv/OCur9Ty3CGM='"
+          "'nonce-{{nonce}}'"
         ]
       }
     }
