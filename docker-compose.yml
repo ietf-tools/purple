@@ -33,7 +33,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  cache:
+  memcache:
     image: memcached:latest
     restart: unless-stopped
     command:
