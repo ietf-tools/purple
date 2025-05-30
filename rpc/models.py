@@ -275,6 +275,7 @@ class AssignmentQuerySet(models.QuerySet):
 
 class Assignment(models.Model):
     """Assignment of an RpcPerson to an RfcToBe"""
+
     objects = AssignmentQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
@@ -422,6 +423,7 @@ class ActionHolder(models.Model):
           then change two is discovered)
         * Can be attached to a datatracker doc prior to an RfcToBe being created
     """
+
     objects = ActionHolderQuerySet.as_manager()
 
     target_document = models.ForeignKey(
