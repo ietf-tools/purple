@@ -348,6 +348,10 @@ class AssignmentSerializer(serializers.ModelSerializer):
         ]
 
 
+class NestedAssignmentSerializer(AssignmentSerializer):
+    rfc_to_be = RfcToBeSerializer(read_only=True)
+
+
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label

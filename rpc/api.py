@@ -39,6 +39,7 @@ from .serializers import (
     ClusterSerializer,
     CreateRfcToBeSerializer,
     LabelSerializer,
+    NestedAssignmentSerializer,
     QueueItemSerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
@@ -140,20 +141,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     """
 
     queryset = Assignment.objects.exclude(state="done")
-    serializer_class = AssignmentSerializer
-
-    def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class()
-
-        # For GET requests only, use a custom serializer that includes nested RfcToBe data
-        if self.request.method == "GET":
-
-            class NestedAssignmentSerializer(serializer_class):
-                rfc_to_be = RfcToBeSerializer(read_only=True)
-
-            return NestedAssignmentSerializer(*args, **kwargs)
-
-        return serializer_class(*args, **kwargs)
+    serializer_class = NestedAssignmentSerializer
 
     def get_queryset(self):
         user = self.request.user
