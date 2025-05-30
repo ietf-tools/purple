@@ -2,6 +2,8 @@
 """Production-mode Django settings for RPC project"""
 
 import json
+from hashlib import sha384
+
 from .base import *
 
 
@@ -111,5 +113,9 @@ if len(_memcached_location) > 0:
         "default": {
             "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
             "LOCATION": _memcached_location,
+            "KEY_PREFIX": "ietf:purple",
+            "KEY_FUNCTION": lambda key, key_prefix, version: (
+                f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+            ),
         }
     }
