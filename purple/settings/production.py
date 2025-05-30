@@ -117,5 +117,6 @@ if len(_memcached_location) > 0:
             "KEY_FUNCTION": lambda key, key_prefix, version: (
                 f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
             ),
+            "TIMEOUT": 600,  # 10 minute default timeout
         }
     }
