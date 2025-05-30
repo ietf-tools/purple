@@ -267,8 +267,15 @@ ASSIGNMENT_STATE_CHOICES = (
 )
 
 
+class AssignmentQuerySet(models.QuerySet):
+    def active(self):
+        """QuerySet including only active Assignments"""
+        return super().exclude(state="done")
+
+
 class Assignment(models.Model):
     """Assignment of an RpcPerson to an RfcToBe"""
+    objects = AssignmentQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
@@ -400,6 +407,12 @@ class IanaAction(models.Model):
         return answer
 
 
+class ActionHolderQuerySet(models.QuerySet):
+    def active(self):
+        """QuerySet including only not-completed ActionHolders"""
+        return super().filter(completed__isnull=True)
+
+
 class ActionHolder(models.Model):
     """Someone needs to do what the comment says to/about a document
 
@@ -409,6 +422,7 @@ class ActionHolder(models.Model):
           then change two is discovered)
         * Can be attached to a datatracker doc prior to an RfcToBe being created
     """
+    objects = ActionHolderQuerySet.as_manager()
 
     target_document = models.ForeignKey(
         "datatracker.Document",

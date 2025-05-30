@@ -365,11 +365,11 @@ class LabelSerializer(serializers.ModelSerializer):
 class QueueItemSerializer(RfcToBeSerializer):
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
-        many=True, read_only=True
-    )  # todo filter out "done"
+        source="assignment_set.active", many=True, read_only=True
+    )
     actionholder_set = ActionHolderSerializer(
-        many=True, read_only=True
-    )  # todo filter out "completed"
+        source="actionholder_set.active", many=True, read_only=True
+    )
     requested_approvals = serializers.SerializerMethodField()
 
     class Meta(RfcToBeSerializer.Meta):
