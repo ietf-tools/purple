@@ -264,7 +264,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       }
 
       // Retrieve the submission, first....
-      const submission = await api.submissionsRetrieve({ documentId.value })
+      const submission = await api.submissionsRetrieve({ documentId: documentId.value })
       // ...then the various name choices, which ensures that the backend has created any that
       // were new with this draft.
       const [boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices] = await Promise.all([
