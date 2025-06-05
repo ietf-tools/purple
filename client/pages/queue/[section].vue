@@ -302,7 +302,7 @@ const filteredDocuments = computed(() => {
 // INIT
 
 const { data: documents, pending, refresh } = await useAsyncData(
-  'queue',
+  () => `queue-${currentTab.value}`, // triggers reload on currentTab.value change
   async () => {
     try {
       if (currentTab.value === 'submissions') {
