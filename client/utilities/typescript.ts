@@ -20,6 +20,9 @@ export function assertIsNumber (val: any): asserts val is number {
   if (typeof val !== 'number') {
     throw new Error(`Not a number typeof=${typeof val} "${val}"`)
   }
+  if (Number.isNaN(val)) {
+    throw new Error(`Was a NaN typeof=${typeof val} "${val}"`)
+  }
 }
 
 export function assertIsArrayOfNumbers (val: any): asserts val is number[] {
