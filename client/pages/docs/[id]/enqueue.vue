@@ -109,7 +109,7 @@ const labels3 = computed(() => labels.value
 )
 
 const { data: defaultSelectedLabelIds } = await useAsyncData<number[]>(
-  computed(() => `user-selection-${id.value}`),
+  () => `user-selection-${id.value}`,
   async () => {
     return [] // FIXME: get user values
   }

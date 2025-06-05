@@ -167,9 +167,11 @@ const draft = computed(() => {
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
+const draftId = computed(() => route.params.id.toString())
+
 const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
-  computed(() => `draft-${route.params.id}`),
-  () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
+  () => `draft-${draftId.value}`,
+  () => api.documentsRetrieve({ draftName: draftId.value }),
   { server: false }
 )
 

@@ -304,7 +304,7 @@ const filteredDocuments = computed(() => {
 // INIT
 
 const { data: documents, pending, refresh } = await useAsyncData(
-  computed(() => `queue-${currentTab.value}`),
+  () => `queue-${currentTab.value}`,
   async () => {
     console.log(`currentTab.value = ${currentTab.value}`)
     try {
