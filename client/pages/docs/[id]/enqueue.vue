@@ -80,7 +80,7 @@ const relatedDocuments = [
 ]
 
 const { data: rfcToBe } = await useAsyncData<RfcToBe>(
-  'rfcToBe',
+  computed(() => `rfcToBe-${route.params.id}`),
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
   { server: false }
 )

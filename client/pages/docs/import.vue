@@ -254,7 +254,7 @@ const { data: labels } = await useAsyncData(
 )
 
 const { data: fetchedData, pending: backendPending } = await useAsyncData(
-  'backendFetch',
+  computed(() => `backendFetch-${route.query.documentId}`),
   async () => {
     try {
       const documentId = Number(route.query.documentId)

@@ -252,7 +252,9 @@ const columns = computed(() => {
 })
 
 const currentTab = computed(() => {
-  return route.params.section.toString() || 'submissions'
+  const tab = route.params.section.toString() || 'submissions'
+  console.log(`setting currentTab = ${tab}`)
+  return tab
 })
 
 const filteredDocuments = computed(() => {
@@ -302,8 +304,9 @@ const filteredDocuments = computed(() => {
 // INIT
 
 const { data: documents, pending, refresh } = await useAsyncData(
-  () => `queue-${currentTab.value}`, // triggers reload on currentTab.value change
+  computed(() => `queue-${currentTab.value}`),
   async () => {
+    console.log(`currentTab.value = ${currentTab.value}`)
     try {
       if (currentTab.value === 'submissions') {
         return await api.submissionsList()

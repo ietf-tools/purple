@@ -51,7 +51,7 @@ const columns: Column[] = [
 ]
 
 const { data: myAssignments, status: assignmentStatus } = await useAsyncData(
-  'myAssignments',
+  computed(() => `myAssignments-${userStore.rpcPersonId}`),
   async () => {
     if (userStore.rpcPersonId === null) {
       return []
