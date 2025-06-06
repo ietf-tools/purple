@@ -547,6 +547,11 @@ class SubmissionListItemSerializer(serializers.Serializer):
     submitted = serializers.DateTimeField()
 
 
+class MergePersonSerializer(serializers.Serializer):
+    old_person_id = serializers.IntegerField()
+    new_person_id = serializers.IntegerField()
+
+
 def check_user_has_role(user, role) -> bool:
     rpc_person = RpcPerson.objects.filter(
         datatracker_person=user.datatracker_person()

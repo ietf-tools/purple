@@ -5,21 +5,22 @@ import datetime
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
+
 from rest_framework.decorators import (
     action,
     api_view,
-    permission_classes,
 )
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
-from rest_framework import serializers
-from rest_framework import mixins, views, viewsets
+from rest_framework import mixins, views, viewsets, serializers, status
 from drf_spectacular.utils import extend_schema, inline_serializer
 
 import rpcapi_client
 from datatracker.rpcapi import with_rpcapi
-
-from datatracker.models import Document
+from datatracker.models import Document, DatatrackerPerson
+from utils.api import requires_api_token
+from utils.authentication import ApiKeyAuthentication
+from utils.permissions import HasApiKey
 from .models import (
     Assignment,
     Capability,
@@ -39,6 +40,7 @@ from .serializers import (
     ClusterSerializer,
     CreateRfcToBeSerializer,
     LabelSerializer,
+    MergePersonSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
     RfcToBeSerializer,
@@ -388,3 +390,21 @@ class StreamNameViewSet(viewsets.ReadOnlyModelViewSet):
 class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TlpBoilerplateChoiceName.objects.all()
     serializer_class = TlpBoilerplateChoiceNameSerializer
+
+
+class MergePersonView(views.APIView):
+    authentication_classes = [ApiKeyAuthentication]
+    permission_classes = [HasApiKey]
+    api_key_endpoint = "purple.merge_person"
+
+    @requires_api_token("purple.merge_person")
+    def post(self, request):
+        serializer = MergePersonSerializer(data=request.data)
+        if serializer.is_valid():
+            old_person_id = serializer.validated_data["old_person_id"]
+            new_person_id = serializer.validated_data["new_person_id"]
+            DatatrackerPerson.objects.filter(datatracker_id=old_person_id).update(
+                datatracker_id=new_person_id
+            )
+            return Response({"success": True}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
