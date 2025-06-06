@@ -389,25 +389,6 @@ class FinalApproval(models.Model):
         ]
 
 
-class IanaAction(models.Model):
-    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    requested = models.DateTimeField(default=timezone.now)
-    completed = models.DateTimeField(null=True)
-    iana_person = models.ForeignKey(
-        "datatracker.DatatrackerPerson", null=True, on_delete=models.PROTECT
-    )
-
-    def __str__(self):
-        if self.completed:
-            answer = f"IANA action completed {self.completed}"
-        else:
-            answer = f"IANA action requested {self.requested}"
-        if self.iana_person:
-            answer += " by " if self.completed else " of "
-            answer += self.iana_person.name
-        return answer
-
-
 class ActionHolderQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only not-completed ActionHolders"""

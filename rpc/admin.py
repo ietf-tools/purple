@@ -21,7 +21,6 @@ from .models import (
     RfcAuthor,
     AdditionalEmail,
     FinalApproval,
-    IanaAction,
     ActionHolder,
     RpcRelatedDocument,
     RpcDocumentComment,
@@ -90,7 +89,6 @@ class ApprovalLogMessageAdmin(admin.ModelAdmin):
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)
-admin.site.register(IanaAction)
 admin.site.register(ActionHolder)
 admin.site.register(RpcRelatedDocument)
 admin.site.register(RpcDocumentComment)
