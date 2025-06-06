@@ -423,6 +423,11 @@ class ActionHolder(models.Model):
     datatracker_person = models.ForeignKey(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT
     )
+    BODY_CHOICES = [
+        ("", "None"),
+        ("iana", "IANA"),
+    ]
+    body = models.CharField(max_length=64, choices=BODY_CHOICES, blank=True, default="")
     since_when = models.DateTimeField(default=timezone.now)
     completed = models.DateTimeField(null=True)
     deadline = models.DateTimeField(null=True)
@@ -437,7 +442,15 @@ class ActionHolder(models.Model):
                 ),
                 name="actionholder_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
-            )
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(completed__isnull=True)
+                    | models.Q(datatracker_person__isnull=False)
+                ),
+                name="actionholder_completion_requires_person",
+                violation_error_message="completion requires a person",
+            ),
         ]
 
     def __str__(self):
