@@ -395,9 +395,9 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
 class MergePersonView(views.APIView):
     authentication_classes = [ApiKeyAuthentication]
     permission_classes = [HasApiKey]
-    api_key_endpoint = "purple.merge_person"
+    api_key_endpoint = "purple.api.merge_person"
 
-    @requires_api_token("purple.merge_person")
+    @requires_api_token("purple.api.merge_person")
     def post(self, request):
         serializer = MergePersonSerializer(data=request.data)
         if serializer.is_valid():

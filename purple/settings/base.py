@@ -113,7 +113,7 @@ SPECTACULAR_SETTINGS = {
 
 # DRF API tokens
 APP_API_TOKENS = {
-    "purple.merge_person": ["not-a-secret"],
+    "purple.api.merge_person": ["not-a-secret"],
 }
 
 
