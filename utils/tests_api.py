@@ -3,10 +3,10 @@
 from django.test import TestCase, RequestFactory
 from django.test.utils import override_settings
 
-from purple.utils import is_valid_token, requires_api_token
+from utils.api import is_valid_token, requires_api_token
 
 
-class UtilsTests(TestCase):
+class ApiTests(TestCase):
     @override_settings(
         APP_API_TOKENS={
             "purple.api.foobar": ["valid-token"],

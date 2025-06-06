@@ -2,7 +2,7 @@
 
 from rest_framework import permissions
 
-from purple.utils import is_valid_token
+from utils.api import is_valid_token
 
 
 class HasApiKey(permissions.BasePermission):
