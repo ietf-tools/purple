@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
 
@@ -11,6 +11,7 @@ from simple_history.utils import update_change_reason
 from typing import Optional
 from urllib.parse import urljoin
 
+from datatracker.models import DatatrackerPerson
 from .models import (
     ActionHolder,
     Assignment,
@@ -26,6 +27,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    RpcDocumentComment,
 )
 
 
@@ -45,7 +47,7 @@ class UserSerializer(serializers.Serializer):
     def get_name(self, user) -> str:
         dt_person = user.datatracker_person()
         if dt_person:
-            return dt_person.plain_name()
+            return dt_person.plain_name
         return str(user)
 
     def get_person_id(self, user) -> Optional[RpcPerson]:
@@ -313,7 +315,7 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         cached_name = self.name_map.get(
             str(rpc_person.datatracker_person.datatracker_id), None
         )
-        return cached_name or rpc_person.datatracker_person.plain_name()
+        return cached_name or rpc_person.datatracker_person.plain_name
 
 
 class ActionHolderSerializer(serializers.ModelSerializer):
@@ -329,9 +331,7 @@ class ActionHolderSerializer(serializers.ModelSerializer):
         ]
 
     def get_name(self, actionholder) -> str:
-        return (
-            actionholder.datatracker_person.plain_name()
-        )  # allow prefetched name map?
+        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -554,3 +554,27 @@ def check_user_has_role(user, role) -> bool:
     if rpc_person:
         return rpc_person.can_hold_role.filter(slug=role).exists()
     return False
+
+
+class CommentBySerializer(serializers.ModelSerializer):
+    """Serialize the 'by' field on an RpcDocumentComment"""
+
+    class Meta:
+        model = DatatrackerPerson
+        fields = ["plain_name", "rpcperson"]
+        read_only_fields = ["plain_name", "rpcperson"]
+
+
+class RfcToBeCommentSerializer(serializers.ModelSerializer):
+    """Serialize a comment on an RfcToBe"""
+
+    by = CommentBySerializer(read_only=True)
+
+    class Meta:
+        model = RpcDocumentComment
+        fields = [
+            "comment",
+            "by",
+            "time",
+        ]
+        read_only_fields = ["rfc_to_be", "by", "time"]
