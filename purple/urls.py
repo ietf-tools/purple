@@ -54,7 +54,7 @@ router.register(r"clusters", rpc_api.ClusterViewSet)
 router.register(r"documents", rpc_api.RfcToBeViewSet)
 router.register(
     r"documents/(?P<draft_name>[^/.]+)/comments",
-    rpc_api.RfcToBeCommentViewSet,
+    rpc_api.DocumentCommentViewSet,
     basename="documents-comments",
 )
 router.register(r"labels", rpc_api.LabelViewSet)

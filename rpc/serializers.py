@@ -572,7 +572,7 @@ class CommentLastEditSerializer(serializers.Serializer):
     edit_time = serializers.DateTimeField(source="history_date", read_only=True)
 
 
-class RfcToBeCommentSerializer(serializers.ModelSerializer):
+class DocumentCommentSerializer(serializers.ModelSerializer):
     """Serialize a comment on an RfcToBe"""
 
     by = CommentBySerializer(read_only=True)

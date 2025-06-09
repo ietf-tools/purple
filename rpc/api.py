@@ -66,7 +66,7 @@ from .serializers import (
     VersionInfoSerializer,
     UserSerializer,
     check_user_has_role,
-    RfcToBeCommentSerializer,
+    DocumentCommentSerializer,
 )
 from .utils import VersionInfo
 
@@ -417,17 +417,22 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
         parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
     ),
 )
-class RfcToBeCommentViewSet(
+class DocumentCommentViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
+    """ViewSet for comments on an RfcToBe or datatracker Document"""
     queryset = RpcDocumentComment.objects.all()
-    serializer_class = RfcToBeCommentSerializer
+    serializer_class = DocumentCommentSerializer
     pagination_class = LimitOffsetPagination
 
     def get_queryset(self):
+        """Get queryset consisting of all comments for a given draft-name
+
+        Includes comments both on the RfcToBe and on the draft it came from.
+        """
         draft_name = self.kwargs["draft_name"]
         return super().get_queryset().filter(
             Q(rfc_to_be__draft__name=draft_name)
@@ -435,6 +440,12 @@ class RfcToBeCommentViewSet(
         )
 
     def perform_create(self, serializer):
+        """Create a new instance
+
+        The serializer instances has already been set up with validated input data in
+        the POST request. This performs additional checks and fills in implicit data
+        that are not part of the request body.
+        """
         user = self.request.user
         if not user.is_authenticated:
             raise NotAuthenticated
