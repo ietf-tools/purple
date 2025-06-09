@@ -424,6 +424,7 @@ class DocumentCommentViewSet(
     viewsets.GenericViewSet,
 ):
     """ViewSet for comments on an RfcToBe or datatracker Document"""
+
     queryset = RpcDocumentComment.objects.all()
     serializer_class = DocumentCommentSerializer
     pagination_class = LimitOffsetPagination
@@ -434,10 +435,12 @@ class DocumentCommentViewSet(
         Includes comments both on the RfcToBe and on the draft it came from.
         """
         draft_name = self.kwargs["draft_name"]
-        return super().get_queryset().filter(
-            Q(rfc_to_be__draft__name=draft_name)
-            | Q(document__name=draft_name)
-        ).order_by("-time")
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(rfc_to_be__draft__name=draft_name) | Q(document__name=draft_name))
+            .order_by("-time")
+        )
 
     def perform_create(self, serializer):
         """Create a new instance
@@ -458,9 +461,7 @@ class DocumentCommentViewSet(
 
         # First, see if we have an RfcToBe for the draft
         draft_name = self.kwargs["draft_name"]
-        rfc_to_be = RfcToBe.objects.filter(
-            draft__name=draft_name
-        ).first()
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
         if rfc_to_be is not None:
             save_kwargs["rfc_to_be"] = rfc_to_be
         else:

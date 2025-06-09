@@ -543,7 +543,9 @@ class RpcDocumentComment(models.Model):
 
     def last_edit(self):
         """Get HistoricalRecord of last edit event"""
-        return self.history.filter(history_type="~").first()  # "~" is "update", ignore create/delete
+        return self.history.filter(
+            history_type="~"
+        ).first()  # "~" is "update", ignore create/delete
 
 
 TAILWIND_COLORS = [
