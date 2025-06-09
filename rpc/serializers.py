@@ -565,10 +565,18 @@ class CommentBySerializer(serializers.ModelSerializer):
         read_only_fields = ["plain_name", "rpcperson"]
 
 
+class CommentLastEditSerializer(serializers.Serializer):
+    plain_name = serializers.CharField(
+        source="history_user.datatracker_person.plain_name", read_only=True
+    )
+    edit_time = serializers.DateTimeField(source="history_date", read_only=True)
+
+
 class RfcToBeCommentSerializer(serializers.ModelSerializer):
     """Serialize a comment on an RfcToBe"""
 
     by = CommentBySerializer(read_only=True)
+    last_edit = CommentLastEditSerializer(source="history.first", read_only=True)
 
     class Meta:
         model = RpcDocumentComment
@@ -577,5 +585,6 @@ class RfcToBeCommentSerializer(serializers.ModelSerializer):
             "comment",
             "by",
             "time",
+            "last_edit",
         ]
         read_only_fields = ["rfc_to_be", "by", "time"]
