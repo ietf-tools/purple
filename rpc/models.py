@@ -541,6 +541,10 @@ class RpcDocumentComment(models.Model):
         target = self.document if self.document else self.rfc_to_be
         return f"RpcDocumentComment about {target} by {self.by} on {self.time:%Y-%m-%d}"
 
+    def last_edit(self):
+        """Get HistoricalRecord of last edit event"""
+        return self.history.filter(history_type="~").first()  # "~" is "update", ignore create/delete
+
 
 TAILWIND_COLORS = [
     "slate",

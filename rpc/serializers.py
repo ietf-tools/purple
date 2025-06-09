@@ -576,7 +576,7 @@ class RfcToBeCommentSerializer(serializers.ModelSerializer):
     """Serialize a comment on an RfcToBe"""
 
     by = CommentBySerializer(read_only=True)
-    last_edit = CommentLastEditSerializer(source="history.first", read_only=True)
+    last_edit = CommentLastEditSerializer(read_only=True)
 
     class Meta:
         model = RpcDocumentComment
