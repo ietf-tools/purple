@@ -437,7 +437,7 @@ class DocumentCommentViewSet(
         return super().get_queryset().filter(
             Q(rfc_to_be__draft__name=draft_name)
             | Q(document__name=draft_name)
-        )
+        ).order_by("-time")
 
     def perform_create(self, serializer):
         """Create a new instance
