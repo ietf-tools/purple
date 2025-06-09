@@ -524,6 +524,7 @@ class RpcDocumentComment(models.Model):
     comment = models.TextField()
     by = models.ForeignKey("datatracker.DatatrackerPerson", on_delete=models.PROTECT)
     time = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
