@@ -573,6 +573,7 @@ class RfcToBeCommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RpcDocumentComment
         fields = [
+            "id",
             "comment",
             "by",
             "time",
