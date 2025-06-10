@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -52,6 +52,9 @@ class RfcToBeLabel(models.Model):
     rfctobe = models.ForeignKey("RfcToBe", on_delete=models.CASCADE)
     label = models.ForeignKey("Label", on_delete=models.PROTECT)
 
+    class Meta:
+        verbose_name_plural = "RfcToBe labels"
+
 
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""
@@ -100,6 +103,9 @@ class RfcToBe(models.Model):
     labels = models.ManyToManyField("Label", through=RfcToBeLabel)
 
     history = HistoricalRecords(m2m_fields=[labels])
+
+    class Meta:
+        verbose_name_plural = "RfcToBes"
 
     def __str__(self):
         return (
@@ -255,6 +261,9 @@ class Capability(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "capabilities"
 
     def __str__(self):
         return self.name
@@ -501,12 +510,15 @@ class RpcDocumentComment(models.Model):
     """Private RPC comment about a draft, RFC or RFC-to-be"""
 
     document = models.ForeignKey(
-        "datatracker.Document", null=True, on_delete=models.PROTECT
+        "datatracker.Document", null=True, blank=True, on_delete=models.PROTECT
     )
-    rfc_to_be = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
+    rfc_to_be = models.ForeignKey(
+        RfcToBe, null=True, blank=True, on_delete=models.PROTECT
+    )
     comment = models.TextField()
     by = models.ForeignKey("datatracker.DatatrackerPerson", on_delete=models.PROTECT)
     time = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
@@ -522,6 +534,12 @@ class RpcDocumentComment(models.Model):
     def __str__(self):
         target = self.document if self.document else self.rfc_to_be
         return f"RpcDocumentComment about {target} by {self.by} on {self.time:%Y-%m-%d}"
+
+    def last_edit(self):
+        """Get HistoricalRecord of last edit event"""
+        return self.history.filter(
+            history_type="~"
+        ).first()  # "~" is "update", ignore create/delete
 
 
 TAILWIND_COLORS = [
