@@ -45,6 +45,7 @@ class UserSerializer(serializers.Serializer):
 
     name = serializers.SerializerMethodField()
     person_id = serializers.SerializerMethodField()
+    avatar = serializers.URLField()
 
     def get_name(self, user) -> str:
         dt_person = user.datatracker_person()
