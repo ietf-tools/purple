@@ -6,6 +6,10 @@ import warnings
 from dataclasses import dataclass
 from django.conf import settings
 from itertools import pairwise
+
+from django.contrib.auth import get_user_model
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
@@ -580,10 +584,17 @@ def check_user_has_role(user, role) -> bool:
 class CommentBySerializer(serializers.ModelSerializer):
     """Serialize the 'by' field on an RpcDocumentComment"""
 
+    name = serializers.CharField(source="plain_name", read_only=True)
+    avatar = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = DatatrackerPerson
-        fields = ["plain_name", "rpcperson"]
-        read_only_fields = ["plain_name", "rpcperson"]
+        fields = ["name", "rpcperson", "avatar"]
+        read_only_fields = ["rpcperson"]
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_avatar(self, datatracker_person):
+        return None  # todo get the avatar when we plumb it
 
 
 class DocumentCommentSerializer(serializers.ModelSerializer):
