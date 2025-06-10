@@ -54,8 +54,9 @@ import { groupBy } from 'lodash-es'
 import { useSiteStore } from '@/stores/site'
 import Badge from '../../components/BaseBadge.vue'
 import type { Column, Row } from '~/components/DocumentTableTypes'
-import type { Assignment } from '~/purple_client'
+import type { Assignment, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
+import { assert } from '~/utilities/typescript'
 
 // ROUTING
 
@@ -258,24 +259,28 @@ const currentTab = computed(() => {
 })
 
 const filteredDocuments = computed(() => {
+  if(!documents.value) return []
+
   let docs = []
 
   // -> Filter based on selected tab
   switch (currentTab.value) {
     case 'submissions':
+      console.log('submissions', documents.value)
+
       docs = documents.value
       break
     case 'enqueuing':
-      docs = documents.value?.filter((d: any) => d.disposition === 'created')
+      docs = documents.value.filter((d: any) => d.disposition === 'created')
       break
     case 'pending':
-      docs = documents.value?.filter((d: any) => (d.disposition === 'in_progress') && (d.assignmentSet?.length === 0))
+      docs = documents.value.filter((d: any) => (d.disposition === 'in_progress') && (d.assignmentSet?.length === 0))
       break
     case 'exceptions':
-      docs = documents.value?.filter((d: any) => (d.disposition === 'in_progress') && (d.labels?.filter((lbl: any) => lbl.isException).length))
+      docs = documents.value.filter((d: any) => (d.disposition === 'in_progress') && (d.labels?.filter((lbl: any) => lbl.isException).length))
       break
     case 'inprocess':
-      docs = documents.value?.filter((d: any) => (d.disposition === 'in_progress') && (d.assignmentSet?.length > 0)).map((d: any) => ({
+      docs = documents.value.filter((d: any) => (d.disposition === 'in_progress') && (d.assignmentSet?.length > 0)).map((d: any) => ({
         ...d,
         currentState: `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})`,
         assignee: d.assignmentSet[0],
@@ -317,7 +322,7 @@ const { data: documents, pending, refresh } = await useAsyncData(
       snackbar.add({
         type: 'error',
         title: 'Fetch Failed',
-        text: err
+        text: String(err)
       })
     }
   },

@@ -3,14 +3,27 @@
     <TitleBlock
       class="pb-3"
       :title="`Prep for Queue: ${rfcToBe?.name || '&hellip;'}`"
-      summary="Ready the incoming document for the editing queue."/>
+      summary="Ready the incoming document for the editing queue."
+    />
 
     <div class="space-y-4">
-      <DocInfoCard :draft="rfcToBe"/>
+      <DocInfoCard :draft="rfcToBe" />
       <div class="flex w-full space-x-4">
-        <DocLabelsCard title="Complexities" v-model="selectedLabelIds" :labels="labels1" />
-        <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
-        <RpcLabelPicker item-label="slug" v-model="selectedLabelIds" :labels="labels3" />
+        <DocLabelsCard
+          title="Complexities"
+          v-model="selectedLabelIds"
+          :labels="labels1"
+        />
+        <DocLabelsCard
+          title="Exceptions"
+          v-model="selectedLabelIds"
+          :labels="labels2"
+        />
+        <RpcLabelPicker
+          item-label="slug"
+          v-model="selectedLabelIds"
+          :labels="labels3"
+        />
       </div>
       <BaseCard>
         <template #header>
@@ -23,20 +36,37 @@
         <DocumentTable
           :columns="columns"
           :data="relatedDocuments"
-          row-key="name"/>
+          row-key="name"
+        />
       </BaseCard>
       <BaseCard>
         <template #header>
-          <CardHeader title="Comments"/>
+          <CardHeader title="Comments" />
         </template>
-        <div class="flex flex-col items-center space-y-4">
-          <RpcTextarea class="w-4/5 min-w-100"/>
-          <HistoryFeed class="w-3/5 min-w-100"/>
+        <div
+          v-if="rfcToBe && rfcToBe.id"
+          class="flex flex-col items-center space-y-4"
+        >
+          <RpcTextarea
+            :id="rfcToBe.id"
+            :reload-comments="reloadComments"
+            class="w-4/5 min-w-100"
+          />
+          <HistoryFeed
+            :id="rfcToBe.id"
+            :is-loading="pending"
+            :error="error"
+            :comments="comments"
+            :reload-comments="reloadComments"
+            class="w-3/5 min-w-100"
+          />
         </div>
       </BaseCard>
 
       <div class="justify-end flex space-x-4">
-        <BaseButton btn-type="default">Document has exceptions&mdash;escalate</BaseButton>
+        <BaseButton btn-type="default"
+          >Document has exceptions&mdash;escalate</BaseButton
+        >
         <BaseButton btn-type="default">Add to queue</BaseButton>
       </div>
     </div>
@@ -69,7 +99,7 @@ const columns: Column[] = [
     label: 'Current State',
     field: 'currentState',
     classes: 'text-sm font-medium'
-  },
+  }
 ]
 
 const relatedDocuments = [
@@ -77,7 +107,7 @@ const relatedDocuments = [
     name: 'draft-some-other-draft',
     relationship: 'Normative Reference',
     currentState: 'Active WG document'
-  },
+  }
 ]
 
 const id = computed(() => route.params.id.toString())
@@ -94,17 +124,21 @@ const { data: rfcToBe } = await useAsyncData<RfcToBe>(
 //   { default: () => ([]), server: false }
 // )
 
-const { data: labels } = await useAsyncData(
-  'labels',
-  () => api.labelsList(),
-  { default: () => ([]), server: false }
+const { data: labels } = await useAsyncData('labels', () => api.labelsList(), {
+  default: () => [],
+  server: false
+})
+
+const labels1 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && !label.isException)
 )
 
-const labels1 = computed(() => labels.value.filter((label) => label.isComplexity && !label.isException))
+const labels2 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && label.isException)
+)
 
-const labels2 = computed(() => labels.value.filter((label) => label.isComplexity && label.isException))
-
-const labels3 = computed(() => labels.value
+const labels3 = computed(
+  () => labels.value
   //.filter((label) => !label.isComplexity)
 )
 
@@ -120,9 +154,23 @@ const selectedLabelIds = ref(defaultSelectedLabelIds.value ?? [])
 watch(
   selectedLabelIds,
   async () => {
-    console.log("CHANGE TO SEND TO API", { ids: selectedLabelIds.value ? Array.from(selectedLabelIds.value) : [] })
+    console.log('CHANGE TO SEND TO API', {
+      ids: selectedLabelIds.value ? Array.from(selectedLabelIds.value) : []
+    })
   },
   { deep: true }
 )
 
+const key = computed(() => `comments-${id.value}`)
+
+const {
+  data: comments,
+  pending,
+  error
+} = useAsyncData(key, () =>
+  // TODO: verify usage after this is merged https://github.com/ietf-tools/purple/pull/337
+  api.documentsCommentList({ id: id.value })
+)
+
+const reloadComments = () => refreshNuxtData([key.value])
 </script>

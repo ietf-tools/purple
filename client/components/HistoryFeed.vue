@@ -4,67 +4,107 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
 -->
 <template>
   <ul role="list" class="space-y-6">
-    <li v-for="(activityItem, activityItemIdx) in orderedActivity" :key="activityItem.id" class="relative flex gap-x-4">
+    <li
+      class="bg-red-700 text-red-100 p-2 flex flex-row rounded-md"
+      role="alert"
+    >
+      <h1
+        aria-atomic="true"
+        aria-live="polite"
+        class="flex flex-col justify-center flex-1"
+      >
+        {{ props.error?.message }}
+      </h1>
+      <button
+        @click="props.reloadComments()"
+        class="border ml-3 border-gray-200 px-2 py-1"
+      >
+        Try again
+      </button>
+    </li>
+    <li v-if="props.isLoading">
+      <Icon name="ei:spinner-3" size="3.5em" class="animate-spin" />
+    </li>
+    <li
+      v-for="(comment, commentIndex) in cookedComments"
+      :key="comment.id"
+      class="relative flex gap-x-4"
+    >
       <div
-        :class="[activityItemIdx === activity.length - 1 ? 'h-6' : '-bottom-6', 'absolute left-0 top-0 flex w-6 justify-center']">
-        <div class="w-px bg-gray-200"/>
+        :class="[
+          commentIndex === cookedComments.length - 1 ? 'h-6' : '-bottom-6',
+          'absolute left-0 top-0 flex w-6 justify-center'
+        ]"
+      >
+        <div class="w-px bg-gray-200" />
       </div>
-      <template v-if="activityItem.type === 'commented'">
-        <img :src="activityItem.person.imageUrl" alt=""
-             class="relative mt-3 h-6 w-6 flex-none rounded-full bg-gray-50"/>
-        <div class="flex-auto rounded-md p-3 ring-1 ring-inset ring-gray-200">
-          <div class="flex justify-between gap-x-4">
-            <div class="py-0.5 text-xs leading-5 text-gray-500">
-              <span class="font-medium text-gray-900">{{ activityItem.person.name }}</span> commented
-            </div>
-            <time :datetime="activityItem.dateTime" class="flex-none py-0.5 text-xs leading-5 text-gray-500">
-              {{ activityItem.date }}
-            </time>
+
+      <img
+        :src="comment.avatar"
+        alt=""
+        class="relative mt-3 h-6 w-6 flex-none rounded-full bg-gray-50"
+      />
+      <div class="flex-auto rounded-md p-3 ring-1 ring-inset ring-gray-200">
+        <div class="flex justify-between gap-x-4">
+          <div class="py-0.5 text-xs leading-5 text-gray-500">
+            <span
+              class="font-medium text-gray-900"
+              :title="`User #${comment.by.rpcperson}`"
+            >
+              {{ comment.by.plain_name }}
+            </span>
+            commented
           </div>
-          <p class="text-sm leading-6 text-gray-500">{{ activityItem.comment }}</p>
+          <time
+            :datetime="comment.time"
+            class="flex-none py-0.5 text-xs leading-5 text-gray-500"
+          >
+            {{ comment.ago }}
+          </time>
         </div>
-      </template>
-      <template v-else>
-        <div class="relative flex h-6 w-6 flex-none items-center justify-center bg-white">
-          <Icon name="heroicons:check-circle" v-if="activityItem.type === 'paid'" class="h-6 w-6 text-indigo-600"
-                aria-hidden="true"/>
-          <div v-else class="h-1.5 w-1.5 rounded-full bg-gray-100 ring-1 ring-gray-300"/>
-        </div>
-        <p class="flex-auto py-0.5 text-xs leading-5 text-gray-500">
-          <span class="font-medium text-gray-900">{{ activityItem.person.name }}</span> {{ activityItem.type }} the
-          invoice.
+        <p class="text-sm leading-6 text-gray-500">
+          {{ comment.comment }}
         </p>
-        <time :datetime="activityItem.dateTime" class="flex-none py-0.5 text-xs leading-5 text-gray-500">
-          {{ activityItem.date }}
-        </time>
-      </template>
+      </div>
     </li>
   </ul>
 </template>
 
 <script setup lang="ts">
-import { orderBy } from 'lodash-es'
+import { DateTime } from 'luxon'
+import type { NuxtError } from '#app'
 
-const activity = [
-  { id: 1, type: 'created', person: { name: 'Chelsea Hagon' }, date: '7d ago', dateTime: '2023-01-23T10:32' },
-  { id: 2, type: 'edited', person: { name: 'Chelsea Hagon' }, date: '6d ago', dateTime: '2023-01-23T11:03' },
-  { id: 3, type: 'sent', person: { name: 'Chelsea Hagon' }, date: '6d ago', dateTime: '2023-01-23T11:24' },
-  {
-    id: 4,
-    type: 'commented',
-    person: {
-      name: 'Chelsea Hagon',
-      imageUrl:
-        'https://images.unsplash.com/photo-1550525811-e5869dd03032?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80',
-    },
-    comment: 'Called client, they reassured me the invoice would be paid by the 25th.',
-    date: '3d ago',
-    dateTime: '2023-01-23T15:56',
-  },
-  { id: 5, type: 'viewed', person: { name: 'Alex Curren' }, date: '2d ago', dateTime: '2023-01-24T09:12' },
-  { id: 6, type: 'paid', person: { name: 'Alex Curren' }, date: '1d ago', dateTime: '2023-01-24T09:20' },
-]
+// TODO: replace with proper types when this is merged https://github.com/ietf-tools/purple/pull/337
+type Comment = {
+  id: number
+  comment: string
+  by: {
+    plain_name: string
+    rpcperson: number
+  }
+  time: string
+  last_edit?: {
+    plain_name: string
+    edit_time: string
+  }
+}
 
-const orderedActivity = computed(() => orderBy(activity, ['dateTime'], ['desc']))
+type Props = {
+  id: string
+  isLoading: boolean
+  error?: NuxtError
+  comments?: Comment[]
+  reloadComments: () => void
+}
 
+const props = defineProps<Props>()
+
+const cookedComments = computed(() => {
+  return (
+    props.comments?.map((comment) => ({
+      ...comment,
+      ago: DateTime.fromISO(comment.time).toRelative()
+    })) ?? []
+  )
+})
 </script>
