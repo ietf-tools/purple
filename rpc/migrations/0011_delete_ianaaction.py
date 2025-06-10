@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("datatracker", "0002_initial"),
-        ("rpc", "0008_alter_historicallabel_slug_alter_label_slug"),
+        ("rpc", "0010_historicalrpcdocumentcomment"),
     ]
 
     operations = [
