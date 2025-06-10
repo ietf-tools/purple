@@ -40,26 +40,17 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class UserSerializer(serializers.Serializer):
+class UserSerializer(serializers.ModelSerializer):
     """Serialize a User record"""
 
-    name = serializers.SerializerMethodField()
-    person_id = serializers.SerializerMethodField()
-    avatar = serializers.URLField()
+    name = serializers.CharField(source="datatracker_person.plain_name")
+    person_id = serializers.PrimaryKeyRelatedField(
+        source="datatracker_person", read_only=True
+    )
 
-    def get_name(self, user) -> str:
-        dt_person = user.datatracker_person()
-        if dt_person:
-            return dt_person.plain_name
-        return str(user)
-
-    def get_person_id(self, user) -> Optional[RpcPerson]:
-        rpc_person = RpcPerson.objects.filter(
-            datatracker_person=user.datatracker_person()
-        ).first()
-        if rpc_person:
-            return rpc_person.pk
-        return None
+    class Meta:
+        model = get_user_model()
+        fields = ["name", "person_id", "avatar"]
 
 
 @dataclass
