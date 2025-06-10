@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import warnings
 
 from dataclasses import dataclass
 from django.conf import settings
 from itertools import pairwise
 from rest_framework import serializers
+from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 from typing import Optional
@@ -114,7 +116,7 @@ class HistoryListSerializer(serializers.ListSerializer):
 
 
 class HistorySerializer(serializers.Serializer):
-    """Serialize the history for an RfcToBe"""
+    """Serialize a HistoricalRecord"""
 
     id = serializers.IntegerField()
     date = serializers.DateTimeField()
@@ -123,6 +125,33 @@ class HistorySerializer(serializers.Serializer):
 
     class Meta:
         list_serializer_class = HistoryListSerializer
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                )
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
+
+
+class HistoryLastEditSerializer(serializers.Serializer):
+    """Serialize the most recent change in a HistoricalRecord"""
+
+    by = UserSerializer(source="history_user", read_only=True)
+    date = serializers.DateTimeField(source="history_date", read_only=True)
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                )
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -565,18 +594,11 @@ class CommentBySerializer(serializers.ModelSerializer):
         read_only_fields = ["plain_name", "rpcperson"]
 
 
-class CommentLastEditSerializer(serializers.Serializer):
-    plain_name = serializers.CharField(
-        source="history_user.datatracker_person.plain_name", read_only=True
-    )
-    edit_time = serializers.DateTimeField(source="history_date", read_only=True)
-
-
 class DocumentCommentSerializer(serializers.ModelSerializer):
     """Serialize a comment on an RfcToBe"""
 
     by = CommentBySerializer(read_only=True)
-    last_edit = CommentLastEditSerializer(read_only=True)
+    last_edit = HistoryLastEditSerializer(read_only=True)
 
     class Meta:
         model = RpcDocumentComment
