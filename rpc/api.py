@@ -469,8 +469,8 @@ class DocumentCommentViewSet(
             draft = self._draft_by_name(draft_name)
             if draft is not None:
                 save_kwargs["document"] = draft
-        if not save_kwargs:
-            raise NotFound
+            else:
+                raise NotFound  # neither RfcToBe nor draft existed
         # todo permissions check
         serializer.save(**save_kwargs)
 
