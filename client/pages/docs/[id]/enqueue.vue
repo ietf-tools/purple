@@ -53,11 +53,13 @@
             :reload-comments="commentsReload"
             class="w-4/5 min-w-100"
           />
-          <HistoryFeed
+          <DocumentComments
             v-if="rfcToBe"
+            :draft-name="id"
+            :rfc-to-be-id="rfcToBe.id"
             :is-loading="commentsPending"
             :error="commentsError"
-            :comments="comments"
+            :comment-list="commentList"
             :reload-comments="commentsReload"
             class="w-3/5 min-w-100"
           />
@@ -164,11 +166,42 @@ watch(
 const key = computed(() => `comments-${id.value}`)
 
 const {
-  data: comments,
+  data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
 } = useAsyncData(key, () =>
   api.documentsCommentsList({ draftName: id.value })
 )
+
+watch([commentList, commentsError], () => {
+  // TODO: remove me
+  commentList.value = {
+    count: 1,
+    results: [
+      {
+      id: 1,
+      comment: "hello world ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem ",
+      by: {
+          name: "Bob",
+      },
+      time: new Date(),
+      lastEdit: {
+          by: { name: "harry" },
+          date: new Date()
+      }},
+      {
+        id: 2,
+        comment: "hello world ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem  ipsum lorem ",
+        by: {
+            name: "Bobette",
+        },
+        time: new Date(),
+        lastEdit: {
+            by: { name: "harry" },
+            date: new Date()
+        }}
+    ]
+  }
+})
 </script>
