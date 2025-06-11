@@ -28,6 +28,7 @@ from .models import (
     RpcAuthorComment,
     ApprovalLogMessage,
 )
+from simple_history.admin import SimpleHistoryAdmin
 
 admin.site.register(DumpInfo)
 
@@ -41,7 +42,7 @@ admin.site.register(RpcPerson, RpcPersonAdmin)
 admin.site.register(RfcToBeLabel)
 
 
-class RfcToBeAdmin(admin.ModelAdmin):
+class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
     list_display = ["draft", "draft__rev", "rfc_number"]
     search_fields = ["draft__name", "rfc_number"]
 

@@ -112,6 +112,15 @@ class RfcToBe(models.Model):
             f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
         )
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['rfc_number'],
+                name='unique_non_null_rfc_number',
+                condition=models.Q(rfc_number__isnull=False)
+            )
+        ]
+
     @dataclass
     class Interval:
         start: datetime.datetime
