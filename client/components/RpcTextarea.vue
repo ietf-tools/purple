@@ -56,9 +56,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { localStorageWrapper } from '~/utilities/localstorage'
+import { snackbarForErrors } from '~/utilities/snackbar'
 
 type Props = {
-  id: number
+  draftName: string
   reloadComments: () => void
 }
 
@@ -68,7 +69,7 @@ const api = useApi()
 
 const commentValue = ref('')
 
-const localStorageKey = computed(() => `rpc:saved-comment-${props.id}`)
+const localStorageKey = computed(() => `rpc:saved-comment-${props.draftName}`)
 
 onMounted(() => {
   const val = localStorageWrapper.getItem(localStorageKey.value)
@@ -90,21 +91,20 @@ const snackbar = useSnackbar()
 const handleSubmit = async () => {
   try {
     isSubmitting.value = true
-    // TODO: verify usage after this is merged https://github.com/ietf-tools/purple/pull/337
     await api.documentsCommentsCreate({
-      comment: commentValue.value
+      draftName: props.draftName,
+      documentComment: {
+        comment: commentValue.value
+      }
     })
     // assume comment was successfully created so clean up local state
     isSubmitting.value = false
     clearLocalStorage()
     commentValue.value = ''
-  } catch (e: unknown) {
+  } catch (error: unknown) {
     isSubmitting.value = false
-    snackbar.add({
-      type: 'error',
-      title: 'Add comment failed. Try again later.',
-      text: String(e)
-    })
+    // server can respond with validation errors that we should show users
+    snackbarForErrors({ snackbar, defaultTitle: 'Adding comment failed', error })
   }
 }
 

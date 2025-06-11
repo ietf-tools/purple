@@ -48,16 +48,17 @@
           class="flex flex-col items-center space-y-4"
         >
           <RpcTextarea
-            :id="rfcToBe.id"
-            :reload-comments="reloadComments"
+            v-if="rfcToBe"
+            :draft-name="id"
+            :reload-comments="commentsReload"
             class="w-4/5 min-w-100"
           />
           <HistoryFeed
-            :id="rfcToBe.id"
-            :is-loading="pending"
-            :error="error"
+            v-if="rfcToBe"
+            :is-loading="commentsPending"
+            :error="commentsError"
             :comments="comments"
-            :reload-comments="reloadComments"
+            :reload-comments="commentsReload"
             class="w-3/5 min-w-100"
           />
         </div>
@@ -138,8 +139,7 @@ const labels2 = computed(() =>
 )
 
 const labels3 = computed(
-  () => labels.value
-  //.filter((label) => !label.isComplexity)
+  () => labels.value.filter((label) => !label.isComplexity)
 )
 
 const { data: defaultSelectedLabelIds } = await useAsyncData<number[]>(
@@ -165,12 +165,10 @@ const key = computed(() => `comments-${id.value}`)
 
 const {
   data: comments,
-  pending,
-  error
+  pending: commentsPending,
+  error: commentsError,
+  refresh: commentsReload
 } = useAsyncData(key, () =>
-  // TODO: verify usage after this is merged https://github.com/ietf-tools/purple/pull/337
-  api.documentsCommentList({ id: id.value })
+  api.documentsCommentsList({ draftName: id.value })
 )
-
-const reloadComments = () => refreshNuxtData([key.value])
 </script>
