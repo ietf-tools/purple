@@ -10,7 +10,6 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
-from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotAuthenticated,
@@ -45,6 +44,7 @@ from .models import (
     TlpBoilerplateChoiceName,
     RpcDocumentComment,
 )
+from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
     CapabilitySerializer,
@@ -427,7 +427,7 @@ class DocumentCommentViewSet(
 
     queryset = RpcDocumentComment.objects.all()
     serializer_class = DocumentCommentSerializer
-    pagination_class = LimitOffsetPagination
+    pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
         """Get queryset consisting of all comments for a given draft-name
