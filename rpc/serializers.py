@@ -57,6 +57,23 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ["name", "person_id", "avatar"]
 
 
+class DatatrackerPersonSerializer(serializers.ModelSerializer):
+    """Serialize the 'by' field on an RpcDocumentComment"""
+
+    name = serializers.CharField(source="plain_name", read_only=True)
+    avatar = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = DatatrackerPerson
+        fields = ["name", "rpcperson", "avatar"]
+        read_only_fields = ["rpcperson"]
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_avatar(self, datatracker_person):
+        return None  # todo get the avatar when we plumb it
+
+
+
 @dataclass
 class HistoryRecord:
     id: int
@@ -581,26 +598,10 @@ def check_user_has_role(user, role) -> bool:
     return False
 
 
-class CommentBySerializer(serializers.ModelSerializer):
-    """Serialize the 'by' field on an RpcDocumentComment"""
-
-    name = serializers.CharField(source="plain_name", read_only=True)
-    avatar = serializers.SerializerMethodField(read_only=True)
-
-    class Meta:
-        model = DatatrackerPerson
-        fields = ["name", "rpcperson", "avatar"]
-        read_only_fields = ["rpcperson"]
-
-    @extend_schema_field(OpenApiTypes.URI)
-    def get_avatar(self, datatracker_person):
-        return None  # todo get the avatar when we plumb it
-
-
 class DocumentCommentSerializer(serializers.ModelSerializer):
     """Serialize a comment on an RfcToBe"""
 
-    by = CommentBySerializer(read_only=True)
+    by = DatatrackerPersonSerializer(read_only=True)
     last_edit = HistoryLastEditSerializer(read_only=True)
 
     class Meta:
