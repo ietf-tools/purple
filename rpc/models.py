@@ -441,12 +441,7 @@ class ActionHolder(models.Model):
     datatracker_person = models.ForeignKey(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT
     )
-    BODY_CHOICES = [
-        ("", "None"),
-        ("iana", "IANA"),
-        ("iab", "IAB")
-    ]
-    body = models.CharField(max_length=64, choices=BODY_CHOICES, blank=True, default="")
+    body = models.CharField(max_length=64, blank=True, default="")
     since_when = models.DateTimeField(default=timezone.now)
     completed = models.DateTimeField(null=True)
     deadline = models.DateTimeField(null=True)
