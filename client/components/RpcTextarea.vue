@@ -101,6 +101,7 @@ const handleSubmit = async () => {
     isSubmitting.value = false
     clearLocalStorage()
     commentValue.value = ''
+    await props.reloadComments()
   } catch (error: unknown) {
     isSubmitting.value = false
     // server can respond with validation errors that we should show users

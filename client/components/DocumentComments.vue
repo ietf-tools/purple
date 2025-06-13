@@ -29,17 +29,12 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         Try again
       </button>
     </div>
-    <div v-if="props.isLoading">
-      <Icon name="ei:spinner-3" size="3.5em" class="animate-spin" />
+    <div v-if="props.isLoading" class="text-center">
+      <Icon name="ei:spinner-3" size="3.5em" class="animate-spin mb-3" />
     </div>
-    <div v-if="props.commentList?.count === 0" class="flex flex-row">
-      <p class="italic bold">no comments (yet)</p>
-      <button
-        @click="props.reloadComments"
-        class="border ml-3 border-gray-200 px-2 py-1"
-      >
-        (check again)
-      </button>
+    <div v-if="props.commentList?.count === 0" class="text-center text-sm mt-4 mb-2">
+      <p class="italic text-gray-500">no comments</p>
+
     </div>
     <ul role="list" class="space-y-6">
       <li
@@ -79,7 +74,8 @@ const cookedComments = computed(() => {
   return (
     props.commentList?.results?.map((comment) => ({
       ...comment,
-      ago: comment.time ? DateTime.fromJSDate(comment.time).toRelative() : undefined
+      ago: comment.time ? DateTime.fromJSDate(comment.time).toRelative() : undefined,
+      lastEditAgo: comment.lastEdit?.date ? DateTime.fromJSDate(comment.lastEdit.date).toRelative() : undefined
     })) ?? []
   )
 })

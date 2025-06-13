@@ -1,3 +1,5 @@
+import type { NuxtError } from "#app"
+
 type SnackbarService = ReturnType<typeof useSnackbar>
 
 type Props = {
@@ -6,45 +8,37 @@ type Props = {
   defaultTitle?: string
 }
 
+const MAX_TEXT_LENGTH = 100
+
 export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props) => {
   let title = defaultTitle ?? 'Error.'
   let text = `${error}`
 
-  // handle Fetch exceptions
-  if (
-    error &&
-    typeof error === 'object' &&
-    'response' in error &&
-    error.response instanceof Response
-  ) {
-    const { response } = error
-    const contentType = response.headers.get('Content-Type')
-    switch (contentType) {
-      case 'application/json':
-        // format the JSON a bit
-        const data = await response.json()
-        const keys = Object.keys(data)
-        if (keys.length === 1) {
-          // DRF response, so extract comment
-          const containerKey = keys[0]
-          const value = data[containerKey]
-          text = Array.isArray(value) ? value.join(', ') : `${value}`
-        } else {
-          text = JSON.stringify(data, null, 2)
-        }
-        break
-      default:
-        text = await response.text()
-        break
-    }
-  } else if (error && typeof error === 'object') {
-
-    if ('message' in error && 'statusCode' in error) {
-      // useAsyncData errors are shaped like this
-      text = `HTTP ${error.statusCode}: ${error.message}`
+  if(error) {
+    if (
+      typeof error === 'object' &&
+      'response' in error &&
+      error.response instanceof Response
+    ) {
+      text = await getErrorTextFromFetchResponse(error.response, text)
+    } else if (isNuxtError(error)) {
+      text = await getErrorTextFromNuxtError(error, text)
     } else {
       text = JSON.stringify(error)
     }
+  }
+
+
+  // truncating text...
+  // showing too much text to users in a toast isn't good UX,
+  // so we'll truncate but tell them to read dev console for more
+  const wasTrunated = text.length > MAX_TEXT_LENGTH
+  if(wasTrunated) {
+    console.log("Error", error, "had text:", text)
+  }
+  text = text.substring(0, MAX_TEXT_LENGTH)
+  if (wasTrunated) {
+    text += '[...] See dev console for more.'
   }
 
   snackbar.add({
@@ -52,4 +46,35 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
     title,
     text
   })
+}
+
+const getErrorTextFromFetchResponse = async (response: Response, text: string): Promise<string> => {
+  const contentType = response.headers.get('Content-Type')
+  switch (contentType) {
+    case 'application/json':
+      // format the JSON a bit
+      const data = await response.json()
+      const keys = Object.keys(data)
+      if (keys.length === 1) {
+        // DRF response, so extract comment
+        const containerKey = keys[0]
+        const value = data[containerKey]
+        text = Array.isArray(value) ? value.join(', ') : `${value}`
+      } else {
+        text = JSON.stringify(data, null, 2)
+      }
+      break
+    default:
+      text = await response.text()
+      break
+  }
+  return text
+}
+
+const getErrorTextFromNuxtError = async (error: NuxtError, _text: string): Promise<string> => {
+  return `HTTP ${error.statusCode}: ${error.message}`
+}
+
+const isNuxtError = (error: unknown): error is NuxtError => {
+  return !!(error && typeof error === 'object' && 'message' in error && 'statusCode' in error)
 }

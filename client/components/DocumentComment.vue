@@ -21,7 +21,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
       <div v-if="comment.by" class="py-0.5 text-xs leading-5 text-gray-500">
         <span
           class="font-medium text-gray-900"
-          :title="comment.by.rpcperson ? `User #${comment.by.rpcperson}` : undefined"
+          :title="comment.by.rpcperson ? `${comment.by.name} (user #${comment.by.rpcperson})` : undefined"
         >
           {{ comment.by.name }}
         </span>
@@ -33,6 +33,26 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         >
           {{ comment.ago }}
         </time>
+        <span v-if="comment.lastEdit && comment.lastEdit.by">
+          (last edited
+          <span>
+            by
+            <span
+              v-if="comment.lastEdit.by.personId !== comment.by?.rpcperson"
+              class="font-medium text-gray-900"
+              :title="comment.lastEdit.by.personId ? `${comment.lastEdit.by.name} (user #${comment.lastEdit.by.personId})` : undefined"
+            >
+              {{ comment.lastEdit.by.name }} {{ ' ' }}
+            </span>
+          </span>
+          <time
+            v-if="comment.lastEdit.date"
+            :datetime="comment.lastEdit.date.toISOString()"
+            class="text-gray-500"
+          >
+            {{ comment.lastEditAgo }}
+          </time>)
+        </span>
       </div>
       <div class="flex-none py-0.5 text-xs leading-5">
         <button type="button" aria-label="Edit" class="border-0 ml-2" v-show="!isEditing" @click="handleEdit">
@@ -54,7 +74,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
       <div class="flex justify-between pt-1">
         <BaseButton btn-type="cancel" @click="isEditing = false" :disabled="isUpdating">Cancel</BaseButton>
         <BaseButton btn-type="default" @click="handleUpdateComment" :disabled="isUpdating">
-          <Icon v-show="isUpdating" name="ei:spinner-3" size="3.5em" class="animate-spin" />
+          <Icon v-show="isUpdating" name="ei:spinner-3" size="1.5em" class="animate-spin" />
           Update comment
         </BaseButton>
       </div>
@@ -70,8 +90,9 @@ type Props = {
   draftName: string
   rfcToBeId: number
   comment: PaginatedDocumentCommentList["results"][number] & {
-    // 'ago' added by parent component
+    // added by parent component
     ago?: string | null
+    lastEditAgo?: string | null
   }
   isLastComment: boolean,
   reloadComments: () => Promise<void>
@@ -83,6 +104,14 @@ const isEditing = ref(false)
 const isUpdating = ref(false)
 
 const editComment = ref(props.comment.comment)
+
+watch(props.comment, (newValue, oldValue) => {
+  if(newValue.comment !== oldValue.comment) {
+    // then a new comment has been saved and we're receiving the props,
+    // so clobber the editComment ref with the current value
+    editComment.value = newValue.comment
+  }
+})
 
 const handleEdit = () => {
   isEditing.value = true
@@ -97,9 +126,8 @@ const handleUpdateComment = async () => {
   try {
     await api.documentsCommentsUpdate({
       draftName: props.draftName,
-      id: props.rfcToBeId,
+      id: props.comment.id!,
       documentComment: {
-        id: props.comment.id,
         comment: editComment.value
       }
     })

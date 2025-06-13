@@ -54,7 +54,6 @@
             class="w-4/5 min-w-100"
           />
           <DocumentComments
-            v-if="rfcToBe"
             :draft-name="id"
             :rfc-to-be-id="rfcToBe.id"
             :is-loading="commentsPending"
@@ -170,7 +169,7 @@ const {
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = useAsyncData(key, () =>
+} = await useAsyncData(key, () =>
   api.documentsCommentsList({ draftName: id.value })
 )
 
