@@ -444,6 +444,7 @@ class ActionHolder(models.Model):
     BODY_CHOICES = [
         ("", "None"),
         ("iana", "IANA"),
+        ("iab", "IAB")
     ]
     body = models.CharField(max_length=64, choices=BODY_CHOICES, blank=True, default="")
     since_when = models.DateTimeField(default=timezone.now)
