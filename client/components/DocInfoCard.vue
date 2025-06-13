@@ -1,30 +1,35 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader title="Document Info"/>
+      <CardHeader title="Document Info" />
     </template>
     <div v-if="draft">
       <DescriptionList>
-        <DescriptionListItem term="Title" :details="draft.title"/>
+        <DescriptionListItem term="Title" :details="draft.title" />
         <DescriptionListItem term="Authors">
           <DescriptionListDetails>
-            <div class="mx-4 text-sm font-medium ">
-              <div v-if="draft.authors.length === 0">
-                None
-              </div>
+            <div class="mx-4 text-sm font-medium">
+              <div v-if="draft.authors.length === 0">None</div>
               <div v-else>
                 <div
                   v-for="author of draft.authors"
                   :key="author.id"
-                  class="py-1 grid grid-cols-2">
+                  class="py-1 grid grid-cols-2"
+                >
                   <div>{{ author.titlepageName }}</div>
                 </div>
               </div>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Pages" :details="draft.pages?.toString()"/>
-        <DescriptionListItem term="Document Shepherd" details="Dolly Shepherd (mocked)"/>
+        <DescriptionListItem
+          term="Submitted Pages"
+          :details="draft.pages?.toString()"
+        />
+        <DescriptionListItem
+          term="Document Shepherd"
+          details="Dolly Shepherd (mocked)"
+        />
         <DescriptionListItem term="Stream">
           <DescriptionListDetails>
             {{ draft.stream }}
@@ -33,11 +38,20 @@
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Stream Manager" details="Ari Drecker (mocked)"/>
-        <DescriptionListItem term="Submitted Format" :details="draft.submittedFormat"/>
+        <DescriptionListItem
+          term="Stream Manager"
+          details="Ari Drecker (mocked)"
+        />
+        <DescriptionListItem
+          term="Submitted Format"
+          :details="draft.submittedFormat"
+        />
         <DescriptionListItem term="Submitted Boilerplate">
-          <DescriptionListDetails>{{ draft.intendedBoilerplate }}
-            <span v-if="draft.submittedBoilerplate !== draft.intendedBoilerplate">
+          <DescriptionListDetails
+            >{{ draft.intendedBoilerplate }}
+            <span
+              v-if="draft.submittedBoilerplate !== draft.intendedBoilerplate"
+            >
               (submitted as {{ draft.submittedBoilerplate }})
             </span>
           </DescriptionListDetails>
@@ -46,11 +60,11 @@
           <DescriptionListDetails>
             {{ draft.intendedStdLevel }}
             <span v-if="draft.submittedStdLevel !== draft.intendedStdLevel">
-                        (submitted as {{ draft.submittedStdLevel }})
-                      </span>
+              (submitted as {{ draft.submittedStdLevel }})
+            </span>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Disposition" :details="draft.disposition"/>
+        <DescriptionListItem term="Disposition" :details="draft.disposition" />
       </DescriptionList>
     </div>
   </BaseCard>
