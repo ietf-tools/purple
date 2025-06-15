@@ -119,9 +119,12 @@ const selectedLabelIds = ref(defaultSelectedLabelIds.value ?? [])
 
 watch(
   selectedLabelIds,
-  async () => {
-    console.log("CHANGE TO SEND TO API", { ids: selectedLabelIds.value ? Array.from(selectedLabelIds.value) : [] })
-  },
+  async () => api.documentsPartialUpdate({
+    draftName: id.value,
+    patchedRfcToBe: {
+      labels: selectedLabelIds.value,
+    }
+  }),
   { deep: true }
 )
 
