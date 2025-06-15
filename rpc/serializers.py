@@ -1,16 +1,23 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import warnings
 
 from dataclasses import dataclass
 from django.conf import settings
 from itertools import pairwise
+
+from django.contrib.auth import get_user_model
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 from typing import Optional
 from urllib.parse import urljoin
 
+from datatracker.models import DatatrackerPerson
 from .models import (
     ActionHolder,
     Assignment,
@@ -26,6 +33,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    RpcDocumentComment,
 )
 
 
@@ -36,25 +44,17 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class UserSerializer(serializers.Serializer):
+class UserSerializer(serializers.ModelSerializer):
     """Serialize a User record"""
 
-    name = serializers.SerializerMethodField()
-    person_id = serializers.SerializerMethodField()
+    name = serializers.CharField(source="datatracker_person.plain_name")
+    person_id = serializers.PrimaryKeyRelatedField(
+        source="datatracker_person", read_only=True
+    )
 
-    def get_name(self, user) -> str:
-        dt_person = user.datatracker_person()
-        if dt_person:
-            return dt_person.plain_name()
-        return str(user)
-
-    def get_person_id(self, user) -> Optional[RpcPerson]:
-        rpc_person = RpcPerson.objects.filter(
-            datatracker_person=user.datatracker_person()
-        ).first()
-        if rpc_person:
-            return rpc_person.pk
-        return None
+    class Meta:
+        model = get_user_model()
+        fields = ["name", "person_id", "avatar"]
 
 
 @dataclass
@@ -112,7 +112,7 @@ class HistoryListSerializer(serializers.ListSerializer):
 
 
 class HistorySerializer(serializers.Serializer):
-    """Serialize the history for an RfcToBe"""
+    """Serialize a HistoricalRecord"""
 
     id = serializers.IntegerField()
     date = serializers.DateTimeField()
@@ -121,6 +121,33 @@ class HistorySerializer(serializers.Serializer):
 
     class Meta:
         list_serializer_class = HistoryListSerializer
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                )
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
+
+
+class HistoryLastEditSerializer(serializers.Serializer):
+    """Serialize the most recent change in a HistoricalRecord"""
+
+    by = UserSerializer(source="history_user", read_only=True)
+    date = serializers.DateTimeField(source="history_date", read_only=True)
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                )
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -313,7 +340,7 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         cached_name = self.name_map.get(
             str(rpc_person.datatracker_person.datatracker_id), None
         )
-        return cached_name or rpc_person.datatracker_person.plain_name()
+        return cached_name or rpc_person.datatracker_person.plain_name
 
 
 class ActionHolderSerializer(serializers.ModelSerializer):
@@ -329,9 +356,7 @@ class ActionHolderSerializer(serializers.ModelSerializer):
         ]
 
     def get_name(self, actionholder) -> str:
-        return (
-            actionholder.datatracker_person.plain_name()
-        )  # allow prefetched name map?
+        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -554,3 +579,37 @@ def check_user_has_role(user, role) -> bool:
     if rpc_person:
         return rpc_person.can_hold_role.filter(slug=role).exists()
     return False
+
+
+class CommentBySerializer(serializers.ModelSerializer):
+    """Serialize the 'by' field on an RpcDocumentComment"""
+
+    name = serializers.CharField(source="plain_name", read_only=True)
+    avatar = serializers.SerializerMethodField(read_only=True)
+
+    class Meta:
+        model = DatatrackerPerson
+        fields = ["name", "rpcperson", "avatar"]
+        read_only_fields = ["rpcperson"]
+
+    @extend_schema_field(OpenApiTypes.URI)
+    def get_avatar(self, datatracker_person):
+        return None  # todo get the avatar when we plumb it
+
+
+class DocumentCommentSerializer(serializers.ModelSerializer):
+    """Serialize a comment on an RfcToBe"""
+
+    by = CommentBySerializer(read_only=True)
+    last_edit = HistoryLastEditSerializer(read_only=True)
+
+    class Meta:
+        model = RpcDocumentComment
+        fields = [
+            "id",
+            "comment",
+            "by",
+            "time",
+            "last_edit",
+        ]
+        read_only_fields = ["rfc_to_be", "by", "time"]

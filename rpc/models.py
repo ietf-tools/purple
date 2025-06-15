@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
 
 import datetime
@@ -52,6 +52,9 @@ class RfcToBeLabel(models.Model):
     rfctobe = models.ForeignKey("RfcToBe", on_delete=models.CASCADE)
     label = models.ForeignKey("Label", on_delete=models.PROTECT)
 
+    class Meta:
+        verbose_name_plural = "RfcToBe labels"
+
 
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""
@@ -61,7 +64,7 @@ class RfcToBe(models.Model):
     draft = models.ForeignKey(
         "datatracker.Document", null=True, on_delete=models.PROTECT
     )
-    rfc_number = models.PositiveIntegerField(null=True)
+    rfc_number = models.PositiveIntegerField(null=True, unique=True)
 
     submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(
@@ -101,10 +104,22 @@ class RfcToBe(models.Model):
 
     history = HistoricalRecords(m2m_fields=[labels])
 
+    class Meta:
+        verbose_name_plural = "RfcToBes"
+
     def __str__(self):
         return (
             f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
         )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_number"],
+                name="unique_non_null_rfc_number",
+                nulls_distinct=True,
+            )
+        ]
 
     @dataclass
     class Interval:
@@ -256,6 +271,9 @@ class Capability(models.Model):
     name = models.CharField(max_length=255)
     desc = models.TextField(blank=True)
 
+    class Meta:
+        verbose_name_plural = "capabilities"
+
     def __str__(self):
         return self.name
 
@@ -389,25 +407,6 @@ class FinalApproval(models.Model):
         ]
 
 
-class IanaAction(models.Model):
-    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    requested = models.DateTimeField(default=timezone.now)
-    completed = models.DateTimeField(null=True)
-    iana_person = models.ForeignKey(
-        "datatracker.DatatrackerPerson", null=True, on_delete=models.PROTECT
-    )
-
-    def __str__(self):
-        if self.completed:
-            answer = f"IANA action completed {self.completed}"
-        else:
-            answer = f"IANA action requested {self.requested}"
-        if self.iana_person:
-            answer += " by " if self.completed else " of "
-            answer += self.iana_person.name
-        return answer
-
-
 class ActionHolderQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only not-completed ActionHolders"""
@@ -442,6 +441,7 @@ class ActionHolder(models.Model):
     datatracker_person = models.ForeignKey(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT
     )
+    body = models.CharField(max_length=64, blank=True, default="")
     since_when = models.DateTimeField(default=timezone.now)
     completed = models.DateTimeField(null=True)
     deadline = models.DateTimeField(null=True)
@@ -456,7 +456,15 @@ class ActionHolder(models.Model):
                 ),
                 name="actionholder_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
-            )
+            ),
+            models.CheckConstraint(
+                check=(
+                    models.Q(completed__isnull=True)
+                    | models.Q(datatracker_person__isnull=False)
+                ),
+                name="actionholder_completion_requires_person",
+                violation_error_message="completion requires a person",
+            ),
         ]
 
     def __str__(self):
@@ -507,12 +515,15 @@ class RpcDocumentComment(models.Model):
     """Private RPC comment about a draft, RFC or RFC-to-be"""
 
     document = models.ForeignKey(
-        "datatracker.Document", null=True, on_delete=models.PROTECT
+        "datatracker.Document", null=True, blank=True, on_delete=models.PROTECT
     )
-    rfc_to_be = models.ForeignKey(RfcToBe, null=True, on_delete=models.PROTECT)
+    rfc_to_be = models.ForeignKey(
+        RfcToBe, null=True, blank=True, on_delete=models.PROTECT
+    )
     comment = models.TextField()
     by = models.ForeignKey("datatracker.DatatrackerPerson", on_delete=models.PROTECT)
     time = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
@@ -528,6 +539,12 @@ class RpcDocumentComment(models.Model):
     def __str__(self):
         target = self.document if self.document else self.rfc_to_be
         return f"RpcDocumentComment about {target} by {self.by} on {self.time:%Y-%m-%d}"
+
+    def last_edit(self):
+        """Get HistoricalRecord of last edit event"""
+        return self.history.filter(
+            history_type="~"
+        ).first()  # "~" is "update", ignore create/delete
 
 
 TAILWIND_COLORS = [

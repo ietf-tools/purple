@@ -1,25 +1,35 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
 
+from django.db.models import Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from rest_framework.decorators import (
     action,
     api_view,
-    permission_classes,
 )
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import (
+    NotAuthenticated,
+    PermissionDenied,
+    NotFound,
+)
 from rest_framework import serializers
 from rest_framework import mixins, views, viewsets
-from drf_spectacular.utils import extend_schema, inline_serializer
+from drf_spectacular.utils import (
+    extend_schema,
+    inline_serializer,
+    extend_schema_view,
+    OpenApiParameter,
+)
 
 import rpcapi_client
 from datatracker.rpcapi import with_rpcapi
 
 from datatracker.models import Document
+from rpcauth.models import User
 from .models import (
     Assignment,
     Capability,
@@ -32,7 +42,9 @@ from .models import (
     StdLevelName,
     StreamName,
     TlpBoilerplateChoiceName,
+    RpcDocumentComment,
 )
+from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
     CapabilitySerializer,
@@ -54,6 +66,7 @@ from .serializers import (
     VersionInfoSerializer,
     UserSerializer,
     check_user_has_role,
+    DocumentCommentSerializer,
 )
 from .utils import VersionInfo
 
@@ -100,7 +113,7 @@ def profile_as_person(request, rpc_person_id):
         {
             "authenticated": request.user.is_authenticated,
             "id": None,
-            "name": rpcperson.datatracker_person.plain_name(),
+            "name": rpcperson.datatracker_person.plain_name,
             "avatar": f"https://i.pravatar.cc/150?u={rpcperson.datatracker_person.datatracker_id}",
             "rpcPersonId": rpcperson.id,
             "isManager": (
@@ -388,3 +401,100 @@ class StreamNameViewSet(viewsets.ReadOnlyModelViewSet):
 class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = TlpBoilerplateChoiceName.objects.all()
     serializer_class = TlpBoilerplateChoiceNameSerializer
+
+
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+    ),
+    update=extend_schema(
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+    ),
+    partial_update=extend_schema(
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+    ),
+    create=extend_schema(
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+    ),
+)
+class DocumentCommentViewSet(
+    mixins.ListModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """ViewSet for comments on an RfcToBe or datatracker Document"""
+
+    queryset = RpcDocumentComment.objects.all()
+    serializer_class = DocumentCommentSerializer
+    pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        """Get queryset consisting of all comments for a given draft-name
+
+        Includes comments both on the RfcToBe and on the draft it came from.
+        """
+        draft_name = self.kwargs["draft_name"]
+        return (
+            super()
+            .get_queryset()
+            .filter(Q(rfc_to_be__draft__name=draft_name) | Q(document__name=draft_name))
+            .order_by("-time")
+        )
+
+    def perform_create(self, serializer):
+        """Create a new instance
+
+        The serializer instances has already been set up with validated input data in
+        the POST request. This performs additional checks and fills in implicit data
+        that are not part of the request body.
+        """
+        user = self.request.user
+        if not user.is_authenticated:
+            raise NotAuthenticated
+        dt_person = user.datatracker_person()
+        if dt_person is None or not hasattr(dt_person, "rpcperson"):
+            raise PermissionDenied
+
+        # Get ready to save...
+        save_kwargs = {"by": dt_person}
+
+        # First, see if we have an RfcToBe for the draft
+        draft_name = self.kwargs["draft_name"]
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfc_to_be is not None:
+            save_kwargs["rfc_to_be"] = rfc_to_be
+        else:
+            # No RfcToBe exists - see if datatracker knows about the draft
+            draft = self._draft_by_name(draft_name)
+            if draft is not None:
+                save_kwargs["document"] = draft
+            else:
+                raise NotFound  # neither RfcToBe nor draft existed
+        # todo permissions check
+        serializer.save(**save_kwargs)
+
+    @staticmethod
+    @with_rpcapi
+    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.DefaultApi):
+        """Get a datatracker Document for a draft given its name
+
+        n.b., creates a Document object if needed
+        """
+        drafts = rpcapi.get_drafts_by_names([draft_name])
+        draft_info = drafts.get(draft_name, None)
+        if draft_info is None:
+            return None
+        # todo manage updates if the details below change before draft reaches pubreq!
+        document, _ = Document.objects.get_or_create(
+            datatracker_id=draft_info.id,
+            defaults={
+                "name": draft_info.name,
+                "rev": draft_info.rev,
+                "title": draft_info.title,
+                "stream": draft_info.stream,
+                "pages": draft_info.pages,
+                "intended_std_level": draft_info.intended_std_level or "",
+            },
+        )
+        return document
