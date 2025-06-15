@@ -33,15 +33,11 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         >
           {{ comment.ago }}
         </time>
-        <span v-if="comment.lastEdit && comment.lastEdit.by">
+        <span v-if="comment.lastEdit && comment.lastEdit.by" :title="comment.lastEdit.by.personId ? `${comment.lastEdit.by.name} (user #${comment.lastEdit.by.personId})` : undefined">
           (last edited
-          <span>
+          <span v-if="isEditedByAnotherUser">
             by
-            <span
-              v-if="comment.lastEdit.by.personId !== comment.by?.rpcperson"
-              class="font-medium text-gray-900"
-              :title="comment.lastEdit.by.personId ? `${comment.lastEdit.by.name} (user #${comment.lastEdit.by.personId})` : undefined"
-            >
+            <span class="font-medium text-gray-900">
               {{ comment.lastEdit.by.name }} {{ ' ' }}
             </span>
           </span>
@@ -117,6 +113,11 @@ const handleEdit = () => {
   isEditing.value = true
 }
 
+const isEditedByAnotherUser = computed(()=>
+  // TODO: this just compares name strings, but should be changed to user ids when available
+  props.comment.lastEdit?.by?.name !== props.comment.by?.name
+)
+
 const snackbar = useSnackbar()
 
 const api = useApi()
@@ -143,5 +144,7 @@ const handleUpdateComment = async () => {
   }
   isUpdating.value = false
 }
+
+
 
 </script>
