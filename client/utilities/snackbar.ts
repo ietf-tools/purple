@@ -32,12 +32,12 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   // truncating text...
   // showing too much text to users in a toast isn't good UX,
   // so we'll truncate but tell them to read dev console for more
-  const wasTrunated = text.length > MAX_TEXT_LENGTH
-  if(wasTrunated) {
+  const wasTruncated = text.length > MAX_TEXT_LENGTH
+  if(wasTruncated) {
     console.log("Error", error, "had text:", text)
   }
   text = text.substring(0, MAX_TEXT_LENGTH)
-  if (wasTrunated) {
+  if (wasTruncated) {
     text += '[...] See dev console for more.'
   }
 
