@@ -42,19 +42,6 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class UserSerializer(serializers.ModelSerializer):
-    """Serialize a User record"""
-
-    name = serializers.CharField(source="datatracker_person.plain_name")
-    person_id = serializers.PrimaryKeyRelatedField(
-        source="datatracker_person", read_only=True
-    )
-
-    class Meta:
-        model = get_user_model()
-        fields = ["name", "person_id", "avatar"]
-
-
 class DatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize the a DatatrackerPerson"""
 

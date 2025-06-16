@@ -29,7 +29,6 @@ import rpcapi_client
 from datatracker.rpcapi import with_rpcapi
 
 from datatracker.models import Document
-from rpcauth.models import User
 from .models import (
     Assignment,
     Capability,
@@ -64,7 +63,6 @@ from .serializers import (
     StreamNameSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
-    UserSerializer,
     check_user_has_role,
     DocumentCommentSerializer,
 )
@@ -172,8 +170,14 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
             return queryset
 
         # Non-superusers/managers should only see their own assignments
-        person_id = UserSerializer().get_person_id(user)
-        if person_id is None or person_id != req_person_id:
+        dt_person = (
+            user.datatracker_person() if hasattr(user, "datatracker_person") else None
+        )
+        if (
+            dt_person is None
+            or not hasattr(dt_person, "rpcperson")
+            or dt_person.rpc_person.id != req_person_id
+        ):
             raise PermissionDenied("Unauthorized request")
 
         return queryset
@@ -311,13 +315,14 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
         # Non-superusers/managers should only see their own assignments
         # more granular permission to be added later
-        person_id = UserSerializer().get_person_id(user)
-
-        if person_id is None:
+        dt_person = (
+            user.datatracker_person() if hasattr(user, "datatracker_person") else None
+        )
+        if dt_person is None or not hasattr(dt_person, "rpcperson"):
             raise PermissionDenied("Unauthorized request")
 
         # Filter assignments for the logged-in RpcPerson
-        return base_queryset.filter(person_id=person_id)
+        return base_queryset.filter(person=dt_person.rpcperson)
 
 
 class RfcToBeViewSet(viewsets.ModelViewSet):
