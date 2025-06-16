@@ -76,10 +76,11 @@ class HistoryRecord:
 
     @classmethod
     def from_simple_history(cls, sh, desc):
+        dt_person = None if sh.history_user is None else sh.history_user.datatracker_person()
         return cls(
             id=sh.id,
             date=sh.history_date,
-            by=sh.history_user.datatracker_person(),
+            by=dt_person,
             desc=desc,
         )
 
