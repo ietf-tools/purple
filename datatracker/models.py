@@ -34,12 +34,17 @@ class DatatrackerPerson(models.Model):
 
     @property
     def plain_name(self) -> str:
-        return self._plain_name() or "<Unknown>"
+        return self._datatracker_fetch("plain_name") or "<Unknown>"
+
+    @property
+    def picture(self) -> str:
+        return self._datatracker_fetch("picture")
+
 
     @with_rpcapi
-    def _plain_name(self, *, rpcapi: rpcapi_client.DefaultApi):
-        """Get plain_name for person (uses cache)"""
-        cache_key = f"datatracker_person-{self.datatracker_id}-plain_name"
+    def _datatracker_fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
+        """Get f for person (uses cache)"""
+        cache_key = f"datatracker_person-{self.datatracker_id}-{field_name}"
         no_value = object()
         cached_value = cache.get(cache_key, no_value)
         if cached_value is no_value:
@@ -48,7 +53,7 @@ class DatatrackerPerson(models.Model):
             except rpcapi_client.exceptions.NotFoundException:
                 cached_value = None
             else:
-                cached_value = person.plain_name
+                cached_value = getattr(person, field_name)
             cache.set(cache_key, cached_value)
         return cached_value
 
