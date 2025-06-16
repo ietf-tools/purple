@@ -11,8 +11,8 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
   >
   </div>
   <img
-    v-if="comment.by?.avatar"
-    :src="comment.by.avatar"
+    v-if="comment.by?.picture"
+    :src="comment.by.picture"
     alt=""
     class="relative mt-3 h-6 w-6 flex-none rounded-full bg-gray-50"
   />

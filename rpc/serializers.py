@@ -61,17 +61,11 @@ class DatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize the 'by' field on an RpcDocumentComment"""
 
     name = serializers.CharField(source="plain_name", read_only=True)
-    avatar = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["name", "rpcperson", "avatar"]
+        fields = ["name", "rpcperson", "picture"]
         read_only_fields = ["rpcperson"]
-
-    @extend_schema_field(OpenApiTypes.URI)
-    def get_avatar(self, datatracker_person):
-        return None  # todo get the avatar when we plumb it
-
 
 
 @dataclass
