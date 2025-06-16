@@ -40,7 +40,6 @@ class DatatrackerPerson(models.Model):
     def picture(self) -> str:
         return self._datatracker_fetch("picture")
 
-
     @with_rpcapi
     def _datatracker_fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
         """Get f for person (uses cache)"""

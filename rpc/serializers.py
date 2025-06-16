@@ -76,7 +76,9 @@ class HistoryRecord:
 
     @classmethod
     def from_simple_history(cls, sh, desc):
-        dt_person = None if sh.history_user is None else sh.history_user.datatracker_person()
+        dt_person = (
+            None if sh.history_user is None else sh.history_user.datatracker_person()
+        )
         return cls(
             id=sh.id,
             date=sh.history_date,
@@ -147,7 +149,9 @@ class HistorySerializer(serializers.Serializer):
 class HistoryLastEditSerializer(serializers.Serializer):
     """Serialize the most recent change in a HistoricalRecord"""
 
-    by = DatatrackerPersonSerializer(source="history_user.datatracker_person", read_only=True)
+    by = DatatrackerPersonSerializer(
+        source="history_user.datatracker_person", read_only=True
+    )
     date = serializers.DateTimeField(source="history_date", read_only=True)
 
     def __init__(self, instance=None, data=empty, **kwargs):
