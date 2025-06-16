@@ -56,7 +56,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class DatatrackerPersonSerializer(serializers.ModelSerializer):
-    """Serialize the 'by' field on an RpcDocumentComment"""
+    """Serialize the a DatatrackerPerson"""
 
     person_id = serializers.IntegerField(source="id")
     name = serializers.CharField(source="plain_name", read_only=True)
