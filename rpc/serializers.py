@@ -8,8 +8,6 @@ from django.conf import settings
 from itertools import pairwise
 
 from django.contrib.auth import get_user_model
-from drf_spectacular.types import OpenApiTypes
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
@@ -60,11 +58,12 @@ class UserSerializer(serializers.ModelSerializer):
 class DatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize the 'by' field on an RpcDocumentComment"""
 
+    person_id = serializers.IntegerField(source="id")
     name = serializers.CharField(source="plain_name", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["name", "rpcperson", "picture"]
+        fields = ["person_id", "name", "rpcperson", "picture"]
         read_only_fields = ["rpcperson"]
 
 
@@ -72,7 +71,7 @@ class DatatrackerPersonSerializer(serializers.ModelSerializer):
 class HistoryRecord:
     id: int
     date: datetime.datetime
-    by: str
+    by: Optional[DatatrackerPerson]
     desc: str
 
     @classmethod
@@ -80,7 +79,7 @@ class HistoryRecord:
         return cls(
             id=sh.id,
             date=sh.history_date,
-            by=sh.history_user,
+            by=sh.history_user.datatracker_person(),
             desc=desc,
         )
 
@@ -127,7 +126,7 @@ class HistorySerializer(serializers.Serializer):
 
     id = serializers.IntegerField()
     date = serializers.DateTimeField()
-    by = UserSerializer()
+    by = DatatrackerPersonSerializer()
     desc = serializers.CharField()
 
     class Meta:
@@ -147,7 +146,7 @@ class HistorySerializer(serializers.Serializer):
 class HistoryLastEditSerializer(serializers.Serializer):
     """Serialize the most recent change in a HistoricalRecord"""
 
-    by = UserSerializer(source="history_user", read_only=True)
+    by = DatatrackerPersonSerializer(source="history_user.datatracker_person", read_only=True)
     date = serializers.DateTimeField(source="history_date", read_only=True)
 
     def __init__(self, instance=None, data=empty, **kwargs):
