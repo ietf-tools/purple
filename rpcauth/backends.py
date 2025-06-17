@@ -139,7 +139,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
 
         try:
             new_user = self.UserModel.objects.create(
-                username=f"dt-person-{subject_id}",
+                username=f"dt-subject-{subject_id}",
                 datatracker_subject_id=subject_id,
                 name=claims["name"],  # required claim,
                 avatar=claims.get("picture", ""),
