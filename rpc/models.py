@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import Optional
 
-import rules
 from django.db import models
 from django.utils import timezone
+from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
@@ -542,7 +542,8 @@ class RpcDocumentComment(RulesModel):
         rules_permissions = {
             "add": is_rpc_person,
             "change": is_comment_author,
-            "delete": rules.always_deny,
+            "delete": always_deny,
+            "view": is_rpc_person,
         }
 
     def __str__(self):
