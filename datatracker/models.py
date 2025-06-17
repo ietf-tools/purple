@@ -42,7 +42,7 @@ class DatatrackerPerson(models.Model):
 
     @with_rpcapi
     def _datatracker_fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
-        """Get f for person (uses cache)"""
+        """Get field_name value for person (uses cache)"""
         cache_key = f"datatracker_person-{self.datatracker_id}-{field_name}"
         no_value = object()
         cached_value = cache.get(cache_key, no_value)

@@ -43,7 +43,7 @@ class VersionInfoSerializer(serializers.Serializer):
 
 
 class DatatrackerPersonSerializer(serializers.ModelSerializer):
-    """Serialize the a DatatrackerPerson"""
+    """Serialize a DatatrackerPerson"""
 
     person_id = serializers.IntegerField(source="id")
     name = serializers.CharField(source="plain_name", read_only=True)
