@@ -32,4 +32,3 @@ class User(AbstractUser):
         except DatatrackerPerson.DoesNotExist:
             dt_person = None
         return dt_person
-
