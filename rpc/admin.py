@@ -78,7 +78,12 @@ admin.site.register(Assignment, AssignmentAdmin)
 
 
 class RfcAuthorAdmin(admin.ModelAdmin):
-    search_fields = ["datatracker_person__datatracker_id"]
+    search_fields = [
+        "datatracker_person__datatracker_id",
+        "titlepage_name",
+        "rfc_to_be__rfc_number",
+    ]
+    list_display = ["titlepage_name", "rfc_to_be", "is_editor"]
 
 
 class ApprovalLogMessageAdmin(admin.ModelAdmin):

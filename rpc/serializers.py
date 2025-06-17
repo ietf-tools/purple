@@ -164,6 +164,11 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "datatracker_person"]
 
 
+class CreateRfcAuthorSerializer(RfcAuthorSerializer):
+    class Meta(RfcAuthorSerializer.Meta):
+        read_only_fields = ["id"]
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     rev = serializers.SerializerMethodField()
