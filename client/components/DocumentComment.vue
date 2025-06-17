@@ -42,8 +42,8 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
             </span>
           </span>
           <time
-            v-if="comment.lastEdit.date"
-            :datetime="comment.lastEdit.date.toISOString()"
+            v-if="comment.lastEdit.time"
+            :datetime="comment.lastEdit.time.toISOString()"
             class="text-gray-500"
           >
             {{ comment.lastEditAgo }}

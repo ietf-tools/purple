@@ -115,7 +115,7 @@ class HistorySerializer(serializers.Serializer):
     """Serialize a HistoricalRecord"""
 
     id = serializers.IntegerField()
-    date = serializers.DateTimeField()
+    time = serializers.DateTimeField(source="date")
     by = UserSerializer()
     desc = serializers.CharField()
 
@@ -137,7 +137,7 @@ class HistoryLastEditSerializer(serializers.Serializer):
     """Serialize the most recent change in a HistoricalRecord"""
 
     by = UserSerializer(source="history_user", read_only=True)
-    date = serializers.DateTimeField(source="history_date", read_only=True)
+    time = serializers.DateTimeField(source="history_date", read_only=True)
 
     def __init__(self, instance=None, data=empty, **kwargs):
         if not kwargs.get("read_only", True):
