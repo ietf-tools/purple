@@ -75,7 +75,7 @@ const cookedComments = computed(() => {
     props.commentList?.results?.map((comment) => ({
       ...comment,
       ago: comment.time ? DateTime.fromJSDate(comment.time).toRelative() : undefined,
-      lastEditAgo: comment.lastEdit?.date ? DateTime.fromJSDate(comment.lastEdit.date).toRelative() : undefined
+      lastEditAgo: comment.lastEdit?.time ? DateTime.fromJSDate(comment.lastEdit.time).toRelative() : undefined
     })) ?? []
   )
 })
