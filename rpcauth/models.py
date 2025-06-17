@@ -25,6 +25,11 @@ class User(AbstractUser):
     avatar = models.URLField(blank=True)
 
     def datatracker_person(self):
-        return DatatrackerPerson.objects.by_subject_id(
-            self.datatracker_subject_id
-        ).first()
+        try:
+            dt_person, _ = DatatrackerPerson.objects.get_or_create_by_subject_id(
+                self.datatracker_subject_id
+            )
+        except DatatrackerPerson.DoesNotExist:
+            dt_person = None
+        return dt_person
+

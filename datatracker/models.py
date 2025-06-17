@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 # -*- coding: utf-8 -*-
+from typing import cast
 
 import rpcapi_client
 from django.core.cache import cache
@@ -11,12 +12,18 @@ from django.db import models
 
 class DatatrackerPersonQuerySet(models.QuerySet):
     @with_rpcapi
-    def by_subject_id(self, subject_id, *, rpcapi: rpcapi_client.DefaultApi):
+    def get_or_create_by_subject_id(
+        self, subject_id, *, rpcapi: rpcapi_client.DefaultApi
+    ) -> tuple["DatatrackerPerson", bool]:
+        """Get an instance by subject id, creating it if necessary"""
         try:
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
         except rpcapi_client.exceptions.NotFoundException:
-            return super().none()
-        return super().filter(datatracker_id=dtpers.id)
+            raise DatatrackerPerson.DoesNotExist
+        return cast(
+            tuple[DatatrackerPerson, bool],
+            super().get_or_create(datatracker_id=dtpers.id),
+        )
 
 
 class DatatrackerPerson(models.Model):
