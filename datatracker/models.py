@@ -34,14 +34,14 @@ class DatatrackerPerson(models.Model):
 
     @property
     def plain_name(self) -> str:
-        return self._datatracker_fetch("plain_name") or "<Unknown>"
+        return self._fetch("plain_name") or "<Unknown>"
 
     @property
     def picture(self) -> str:
-        return self._datatracker_fetch("picture")
+        return self._fetch("picture")
 
     @with_rpcapi
-    def _datatracker_fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
+    def _fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
         """Get field_name value for person (uses cache)"""
         cache_key = f"datatracker_person-{self.datatracker_id}-{field_name}"
         no_value = object()
