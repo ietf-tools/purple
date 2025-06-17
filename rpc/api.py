@@ -24,10 +24,10 @@ from drf_spectacular.utils import (
     extend_schema_view,
     OpenApiParameter,
 )
-
 import rpcapi_client
-from datatracker.rpcapi import with_rpcapi
+from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
+from datatracker.rpcapi import with_rpcapi
 from datatracker.models import Document
 from .models import (
     Assignment,
@@ -423,6 +423,7 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
     ),
 )
 class DocumentCommentViewSet(
+    AutoPermissionViewSetMixin,
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
     mixins.UpdateModelMixin,

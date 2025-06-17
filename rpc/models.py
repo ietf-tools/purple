@@ -7,16 +7,19 @@ from dataclasses import dataclass
 from itertools import pairwise
 from typing import Optional
 
+import rules
 from django.db import models
 from django.utils import timezone
+from rules.contrib.models import RulesModel
+from simple_history.models import HistoricalRecords
 
-from rpc.dt_v1_api_utils import (
+from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
     NoSuchSlug,
     datatracker_stdlevelname,
     datatracker_streamname,
 )
-from simple_history.models import HistoricalRecords
+from .rules import is_comment_author, is_rpc_person
 
 
 class DumpInfo(models.Model):
@@ -511,7 +514,7 @@ class RpcRelatedDocument(models.Model):
         return f"{self.relationship} relationship from {self.source} to {target}"
 
 
-class RpcDocumentComment(models.Model):
+class RpcDocumentComment(RulesModel):
     """Private RPC comment about a draft, RFC or RFC-to-be"""
 
     document = models.ForeignKey(
@@ -535,6 +538,12 @@ class RpcDocumentComment(models.Model):
                 violation_error_message="exactly one of document or rfc_to_be must be set",
             )
         ]
+        # Permissions applied via AutoPermissionViewSetMixin
+        rules_permissions = {
+            "add": is_rpc_person,
+            "change": is_comment_author,
+            "delete": rules.always_deny,
+        }
 
     def __str__(self):
         target = self.document if self.document else self.rfc_to_be
