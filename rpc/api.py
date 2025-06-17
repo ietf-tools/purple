@@ -459,7 +459,7 @@ class DocumentCommentViewSet(
         if not user.is_authenticated:
             raise NotAuthenticated
         dt_person = user.datatracker_person()
-        if dt_person is None or not hasattr(dt_person, "rpcperson"):
+        if dt_person is None:
             raise PermissionDenied
 
         # Get ready to save...
