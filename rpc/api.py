@@ -348,7 +348,11 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = RfcToBe.objects.get(draft__name=self.kwargs["draft_name"])
+        rfc_to_be = RfcToBe.objects.filter(
+            draft__name=self.kwargs["draft_name"]
+        ).first()
+        if rfc_to_be is None:
+            raise NotFound("RfcToBe with the given draft name does not exist")
         serializer.save(rfc_to_be=rfc_to_be)
 
     def get_serializer_class(self):
