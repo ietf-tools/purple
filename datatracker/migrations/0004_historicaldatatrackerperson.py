@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("datatracker", "0003_alter_datatrackerperson_datatracker_id"),
+        ("datatracker", "0003_alter_datatrackerperson_datatracker_id_and_options"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
