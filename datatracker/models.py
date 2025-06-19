@@ -4,6 +4,7 @@ from typing import cast
 
 import rpcapi_client
 from django.core.cache import cache
+from simple_history.models import HistoricalRecords
 
 from datatracker.rpcapi import with_rpcapi
 
@@ -33,11 +34,12 @@ class DatatrackerPerson(models.Model):
 
     # datatracker uses AutoField for this, which is only an IntegerField, but might as well go big
     datatracker_id = models.BigIntegerField(
-        unique=True, help_text="ID of the Person in the datatracker"
+        help_text="ID of the Person in the datatracker"
     )
+    history = HistoricalRecords()
 
     def __str__(self):
-        return f"Datatracker Person {self.datatracker_id}"
+        return f"Datatracker Person {self.pk} ({self.datatracker_id})"
 
     @property
     def plain_name(self) -> str:
