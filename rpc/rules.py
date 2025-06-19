@@ -9,4 +9,4 @@ def is_rpc_person(user):
 
 @rules.predicate
 def is_comment_author(user, comment):
-    return comment.by_id == user.datatracker_person().pk
+    return comment.by.datatracker_id == user.datatracker_person().datatracker_id
