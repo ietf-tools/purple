@@ -33,7 +33,7 @@ from simple_history.admin import SimpleHistoryAdmin
 admin.site.register(DumpInfo)
 
 
-class RpcPersonAdmin(admin.ModelAdmin):
+class RpcPersonAdmin(SimpleHistoryAdmin):
     search_fields = ["datatracker_person__datatracker_id"]
     list_display = ["id", "datatracker_person", "can_hold_role__name"]
 
