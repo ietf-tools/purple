@@ -10,8 +10,8 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.AlterModelOptions(
-            name='datatrackerperson',
-            options={'ordering': ['id']},
+            name="datatrackerperson",
+            options={"ordering": ["id"]},
         ),
         migrations.AlterField(
             model_name="datatrackerperson",
