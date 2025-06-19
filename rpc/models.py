@@ -30,11 +30,12 @@ class RpcPerson(models.Model):
     datatracker_person = models.OneToOneField(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT
     )
-    can_hold_role = models.ManyToManyField("RpcRole")
-    capable_of = models.ManyToManyField("Capability")
+    can_hold_role = models.ManyToManyField("RpcRole", blank=True)
+    capable_of = models.ManyToManyField("Capability", blank=True)
     hours_per_week = models.PositiveSmallIntegerField(default=40)
     manager = models.ForeignKey(
         "RpcPerson",
+        blank=True,
         null=True,
         on_delete=models.RESTRICT,
         limit_choices_to={"can_hold_role__slug": "manager"},
