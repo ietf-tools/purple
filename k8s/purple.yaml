@@ -95,13 +95,9 @@ spec:
         - name: statics
           image: "ghcr.io/ietf-tools/purple-statics:$APP_IMAGE_TAG"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 80
-              name: http
-              protocol: TCP
           livenessProbe:
             httpGet:
-              port: 80
+              port: 8042
               path: /
           securityContext:
             readOnlyRootFilesystem: true
