@@ -26,6 +26,7 @@ from .models import (
     Label,
     RfcAuthor,
     RfcToBe,
+    RpcRelatedDocument,
     RpcPerson,
     RpcRole,
     SourceFormatName,
@@ -307,6 +308,14 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
         inst = super().create(validated_data | extra_data)
         update_change_reason(inst, "Added to the queue")
         return inst
+
+
+class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for related document for an RfcToBe"""
+
+    class Meta:
+        model = RpcRelatedDocument
+        fields = ["relationship", "source", "target_document", "target_rfctobe"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):

@@ -62,6 +62,11 @@ router.register(
     rpc_api.RpcAuthorViewSet,
     basename="documents-authors",
 )
+router.register(
+    r"documents/(?P<draft_name>[^/.]+)/references",
+    rpc_api.RpcRelatedDocumentViewSet,
+    basename="documents-references",
+)
 router.register(r"labels", rpc_api.LabelViewSet)
 router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
