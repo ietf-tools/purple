@@ -289,11 +289,11 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "submitted_stream",
             "external_deadline",
             "labels",
+            "draft",
         ]
 
     def create(self, validated_data):
         extra_data = {
-            "draft": self.context["draft"],
             "disposition": DispositionName.objects.get(slug="created"),
             "intended_boilerplate": validated_data["submitted_boilerplate"],
             "intended_std_level": validated_data["submitted_std_level"],
