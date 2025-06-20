@@ -406,7 +406,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         return RfcAuthorSerializer
 
 
-class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
+class RpcRelatedDocumentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = RpcRelatedDocumentSerializer
 
     def get_queryset(self):
