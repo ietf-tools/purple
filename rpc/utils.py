@@ -51,7 +51,5 @@ def create_rpc_related_document(
         raise ValueError(f"Invalid target type: {target_type}")
 
     serializer = RpcRelatedDocumentSerializer(data=data)
-    if serializer.is_valid():
+    if serializer.is_valid(raise_exception=True):
         return serializer.save()
-
-    return Response(serializer.errors, status=400)

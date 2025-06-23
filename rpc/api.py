@@ -305,7 +305,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
                     except Document.DoesNotExist:
                         draft_info = rpcapi.get_draft_by_id(reference.id)
                         if draft_info is None:
-                            return Response(status=404)
+                            raise NotFound("Unable to get draft info for reference")
                         draft, _ = Document.objects.get_or_create(
                             datatracker_id=reference.id,
                             defaults={
@@ -317,21 +317,15 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
                                 "intended_std_level": draft_info.intended_std_level,
                             },
                         )
-                    rel_doc = create_rpc_related_document(
-                        "missref", rfctobe.pk, draft.pk
-                    )
-                    if isinstance(rel_doc, Response):
-                        raise transaction.TransactionManagementError(rel_doc.data)
+                    create_rpc_related_document("missref", rfctobe.pk, draft.pk)
 
                 if reference.id in already_in_queue:
-                    rel_doc = create_rpc_related_document(
+                    create_rpc_related_document(
                         "refqueue",
                         rfctobe.pk,
                         already_in_queue[reference.id],
                         "rfctobe",
                     )
-                    if isinstance(rel_doc, Response):
-                        raise transaction.TransactionManagementError(rel_doc.data)
 
         return Response(RfcToBeSerializer(rfctobe).data)
     else:
