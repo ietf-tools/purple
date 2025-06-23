@@ -450,18 +450,17 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    update=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    partial_update=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    create=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
+    **{
+        action: extend_schema(
+            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+        )
+        for action in [
+            "list",
+            "create",
+            "update",
+            "partial_update",
+        ]
+    }
 )
 class DocumentCommentViewSet(
     AutoPermissionViewSetMixin,
