@@ -15,8 +15,7 @@ COPY ./dev/build/gunicorn.conf.py ./gunicorn.conf.py
 RUN pip3 --disable-pip-version-check --no-cache-dir install -r requirements.txt
 
 # Generate Purple openapi schema
-RUN PURPLE_DEPLOYMENT_MODE=build \
-    ./manage.py spectacular --file purple_api.yaml --validate # --fail-on-warn (when we can)
+RUN PURPLE_DEPLOYMENT_MODE=build ./manage.py spectacular --file purple_api.yaml --validate # --fail-on-warn (when we can)
 
 RUN chmod +x start.sh && \
     chmod +x backend-start.sh && \
