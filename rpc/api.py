@@ -341,6 +341,21 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    **{
+        action: extend_schema(
+            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+        )
+        for action in [
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ]
+    }
+)
 class RpcAuthorViewSet(viewsets.ModelViewSet):
     queryset = RfcAuthor.objects.all()
 
