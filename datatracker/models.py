@@ -64,9 +64,7 @@ class DatatrackerPerson(models.Model):
         if cached_value is None:
             return None
         return getattr(
-            rpcapi_client.models.person.Person.from_json(cached_value),
-            field_name,
-            None
+            rpcapi_client.models.person.Person.from_json(cached_value), field_name, None
         )
 
 

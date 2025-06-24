@@ -1,7 +1,10 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import requests
+from urllib.parse import urlparse, urlunparse, urlencode
 
+from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
@@ -29,7 +32,7 @@ import rpcapi_client
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.rpcapi import with_rpcapi
-from datatracker.models import Document
+from datatracker.models import Document, DatatrackerPerson
 from .models import (
     Assignment,
     Capability,
@@ -71,6 +74,7 @@ from .serializers import (
     DocumentCommentSerializer,
     RfcAuthorSerializer,
     CreateRfcAuthorSerializer,
+    DatatrackerPersonSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
@@ -605,3 +609,26 @@ class DocumentCommentViewSet(
             },
         )
         return document
+
+
+class DatatrackerPersonSearch(views.APIView):
+    def get(self, request):
+        query_string = request.GET.get("q", None)
+        page = request.GET.get("p", 1)
+
+        if query_string is None:
+            raise RuntimeError("fixme")
+
+        url_parts = urlparse(settings.DATATRACKER_RPC_API_BASE)
+        datatracker_url = urlunparse(
+            url_parts._replace(
+                path="/person/search/person/",
+                query=urlencode({"q": query_string, "p": page}),
+            )
+        )
+        response = requests.get(datatracker_url)
+        data = [
+            DatatrackerPerson(datatracker_id=record["id"]) for record in response.json()
+        ]
+        serializer = DatatrackerPersonSerializer(data, many=True)
+        return Response(serializer.data)
