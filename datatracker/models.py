@@ -50,7 +50,7 @@ class DatatrackerPerson(models.Model):
     @with_rpcapi
     def _fetch(self, field_name, *, rpcapi: rpcapi_client.DefaultApi):
         """Get field_name value for person (uses cache)"""
-        cache_key = f"datatracker_person-{self.datatracker_id}-{field_name}"
+        cache_key = f"datatracker_person-{self.datatracker_id}"
         no_value = object()
         cached_value = cache.get(cache_key, no_value)
         if cached_value is no_value:
@@ -59,9 +59,15 @@ class DatatrackerPerson(models.Model):
             except rpcapi_client.exceptions.NotFoundException:
                 cached_value = None
             else:
-                cached_value = getattr(person, field_name)
+                cached_value = person.to_json()
             cache.set(cache_key, cached_value)
-        return cached_value
+        if cached_value is None:
+            return None
+        return getattr(
+            rpcapi_client.models.person.Person.from_json(cached_value),
+            field_name,
+            None
+        )
 
 
 class Document(models.Model):
