@@ -28,7 +28,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0014_rfcauthor_unique_author_per_document"),
+        ("rpc", "0015_alter_rpcperson_can_hold_role_and_more"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]
