@@ -46,13 +46,13 @@ class VersionInfoSerializer(serializers.Serializer):
 class DatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize a DatatrackerPerson"""
 
-    person_id = serializers.IntegerField(source="id")
+    person_id = serializers.IntegerField(source="datatracker_id")
     name = serializers.CharField(source="plain_name", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
         fields = ["person_id", "name", "rpcperson", "picture"]
-        read_only_fields = ["rpcperson"]
+        read_only_fields = ["rpcperson", "picture"]
 
 
 @dataclass
