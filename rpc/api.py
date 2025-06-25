@@ -14,14 +14,14 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
     NotFound,
 )
-from rest_framework import serializers
-from rest_framework import mixins, views, viewsets
+from rest_framework import mixins, serializers, views, viewsets
 from drf_spectacular.utils import (
     extend_schema,
     inline_serializer,
@@ -612,23 +612,17 @@ class DocumentCommentViewSet(
 
 
 class DatatrackerPersonSearch(views.APIView):
-    def get(self, request):
-        query_string = request.GET.get("q", None)
-        page = request.GET.get("p", 1)
+    @with_rpcapi
+    def get(self, request, *, rpcapi: rpcapi_client.DefaultApi):
+        search = request.GET.get("search", None)
 
-        if query_string is None:
+        if search is None:
             raise RuntimeError("fixme")
 
-        url_parts = urlparse(settings.DATATRACKER_RPC_API_BASE)
-        datatracker_url = urlunparse(
-            url_parts._replace(
-                path="/person/search/person/",
-                query=urlencode({"q": query_string, "p": page}),
-            )
-        )
-        response = requests.get(datatracker_url)
-        data = [
-            DatatrackerPerson(datatracker_id=record["id"]) for record in response.json()
+        paginated_results = rpcapi.rpc_person_search_list(search=search)
+
+        search_results = [
+            DatatrackerPerson(datatracker_id=record.id) for record in paginated_results.results
         ]
-        serializer = DatatrackerPersonSerializer(data, many=True)
+        serializer = DatatrackerPersonSerializer(search_results, many=True)
         return Response(serializer.data)
