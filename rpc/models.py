@@ -65,7 +65,7 @@ class RfcToBe(models.Model):
 
     disposition = models.ForeignKey("DispositionName", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
-    draft = models.OneToOneField(
+    draft = models.ForeignKey(
         "datatracker.Document", null=True, on_delete=models.PROTECT
     )
     rfc_number = models.PositiveIntegerField(null=True, unique=True)
