@@ -96,6 +96,10 @@
             @update:model-value="saveLabels"/>
         </BaseCard>
 
+        [
+        <EditAuthors v-if="draft" :authors="draft.authors"/>
+        ]
+
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">History</h3>
