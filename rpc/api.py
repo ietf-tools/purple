@@ -14,7 +14,7 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotAuthenticated,
@@ -611,6 +611,28 @@ class DocumentCommentViewSet(
         return document
 
 
+class PassthroughWrapper:
+    def __init__(self, paginated_result):
+        self._data = paginated_result
+
+    def count(self):
+        return self._data.count
+
+    def __getitem__(self, item):
+        return self._data.results[item]
+
+
+class PassthroughLimitOffsetPagination(LimitOffsetPagination):
+    default_limit = 10
+
+    def paginate_queryset(self, queryset, request, view=None):
+        return super().paginate_queryset(
+            PassthroughWrapper(queryset),
+            request,
+            view,
+        )
+
+
 class DatatrackerPersonSearch(views.APIView):
     @with_rpcapi
     def get(self, request, *, rpcapi: rpcapi_client.DefaultApi):
@@ -619,10 +641,12 @@ class DatatrackerPersonSearch(views.APIView):
         if search is None:
             raise RuntimeError("fixme")
 
-        paginated_results = rpcapi.rpc_person_search_list(search=search)
-
-        search_results = [
-            DatatrackerPerson(datatracker_id=record.id) for record in paginated_results.results
-        ]
-        serializer = DatatrackerPersonSerializer(search_results, many=True)
-        return Response(serializer.data)
+        upstream_results = rpcapi.rpc_person_search_list(search=search)
+        paginator = PassthroughLimitOffsetPagination()
+        page = paginator.paginate_queryset(upstream_results, request)
+        assert page is not None
+        serializer = DatatrackerPersonSerializer(
+            [DatatrackerPerson(datatracker_id=record.id) for record in page],
+            many=True,
+        )
+        return paginator.get_paginated_response(serializer.data)
