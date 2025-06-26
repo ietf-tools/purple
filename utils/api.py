@@ -6,6 +6,7 @@ from typing import Callable, Optional, Union
 from django.conf import settings
 from django.http import HttpResponseForbidden
 from rest_framework.request import Request
+from rest_framework.views import APIView
 
 
 def is_valid_token(endpoint, token):
@@ -58,7 +59,7 @@ def requires_api_token(func_or_endpoint: Optional[Union[Callable, str]] = None):
 
         @wraps(f)
         def wrapped(request, *args, **kwargs):
-            if not isinstance(request, Request):
+            if not isinstance(request, Request) and isinstance(request, APIView):
                 request = request.request
             authtoken = request.META.get("HTTP_X_API_KEY", None)
             if authtoken is None or not is_valid_token(endpoint, authtoken):
