@@ -609,7 +609,19 @@ class DocumentCommentViewSet(
         return document
 
 
-class PassthroughWrapper:
+class PaginationPassthroughWrapper:
+    """Helper class to make a paginated upstream result work like a queryset for DRF
+
+    Works with a LimitOffsetPagination result the default structure but only cares that
+    it contains a .count member with the total number of results available and a
+    .results member with the current page of results. The limit and offset that were
+    used for the upstream pagination _must_ be the same as the limit and offset used
+    for the downstream pagination or this will give nonsense results.
+
+    Exposes the .count as a `.count()` method and passes indexing operations through
+    to the .results list, adjusting the indexes to compensate for the offset that was
+    already applied.
+    """
     def __init__(self, paginated_result, offset):
         self._data = paginated_result
         self._offset = offset
@@ -618,7 +630,11 @@ class PassthroughWrapper:
         return self._data.count
 
     def __getitem__(self, item):
+        # Pass item lookups through to the results from upstream. Because this was already
+        # paginated, remove the offset. LimitOffsetPagination only ever uses queryset[offset:offset+limit],
+        # so we don't need to implement esoteric corner cases. Offset and limit are always non-negative.
         if isinstance(item, slice):
+            # A slice represents `results[start:stop:step]` - subtract offset from start and stop
             if (item.start is not None and item.start < 0) or (item.stop is not None and item.stop < 0):
                 raise NotImplementedError("Negative indexing not supported")
             adjusted_item = slice(
@@ -627,6 +643,7 @@ class PassthroughWrapper:
                 item.step,
             )
         else:
+            # Other than a slice is a single index lookup.  Don't need to support this, but it's easy enough.
             if item < 0:
                 raise NotImplementedError("Negative indexing not supported")
             adjusted_item = item - self._offset
@@ -640,6 +657,26 @@ class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
 
 @extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
 class SearchDatatrackerPersons(ListAPIView):
+    """Datatracker person search API
+
+    Search for a datatracker person by name/email fragment.
+
+    Warning: this is a tricky view!
+
+    Rather than querying the database, the `get_queryset()` method makes a datatracker API call
+    to perform the Person search. It uses the same pagination limit/offset on the API call as the
+    downstream request being handled. The paginated results from the API call are packaged in
+    the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination internals work
+    with the already-paginated results as though they came from a local database lookup.
+
+    Note that despite the naming, DRF APIViews and pagination explicitly support using a list
+    rather than a Django queryset. We only need the shim because the list we get from the API only
+    contains a single page of results.
+
+    The other piece of shimming is in the `get_serializer()` method. Rather than serializing the
+    API results from datatracker, this creates un-saved `DatatrackerPerson` instances with a
+    datatracker_id corresponding to each API result's ID.
+    """
     serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination
 
@@ -653,7 +690,7 @@ class SearchDatatrackerPersons(ListAPIView):
             limit=self.paginator.get_limit(self.request),
             offset=offset,
         )
-        return PassthroughWrapper(upstream_results, offset)
+        return PaginationPassthroughWrapper(upstream_results, offset)
 
     def get_serializer(self, *args, **kwargs):
         if len(args) > 0:
