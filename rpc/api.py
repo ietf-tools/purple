@@ -644,6 +644,9 @@ class SearchDatatrackerPersons(ListAPIView):
     pagination_class = SearchDatatrackerPersonsPagination
 
     def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            # Be sure we don't make an API call during schema generation
+            return DatatrackerPerson.objects.none()
         offset = self.paginator.get_offset(self.request)
         upstream_results = self.upstream_search(
             search=self.request.GET.get("search", ""),
