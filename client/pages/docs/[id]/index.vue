@@ -96,9 +96,9 @@
             @update:model-value="saveLabels"/>
         </BaseCard>
 
-        [
-        <EditAuthors v-if="draft" :authors="draft.authors"/>
-        ]
+        <div>
+          <EditAuthors v-if="draft" v-model:authors="authors"/>
+        </div>
 
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
@@ -144,6 +144,7 @@
 <script setup lang="ts">
 
 import { DateTime } from 'luxon'
+import type { RfcAuthor } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -199,4 +200,36 @@ async function saveLabels (labels: number[]) {
   }
   draftRefresh()
 }
+
+const authors = ref<RfcAuthor[]>([
+  {
+    id: 1,
+    titlepageName: 'Bob',
+    isEditor: true,
+    datatrackerPerson: 101,
+  },
+  {
+    id: 2,
+    titlepageName: 'Bill',
+    isEditor: true,
+    datatrackerPerson: 102,
+  },
+  {
+    id: 3,
+    titlepageName: 'Box',
+    isEditor: true,
+    datatrackerPerson: 103,
+  }
+])
+
+watch(authors, () => {
+  console.log("Update authors with", authors.value)
+  // TODO: send authors to API
+  // api.documentsAuthorsUpdate(
+  //   draftName: draftId.value,
+  // )
+},
+  { deep: true }
+)
+
 </script>

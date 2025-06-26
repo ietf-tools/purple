@@ -1,34 +1,33 @@
 <template>
-  <ComboboxRoot v-model="props.authors" class="relative">
+  <ComboboxRoot v-model="selectedAuthor" class="relative">
     <ComboboxAnchor
-      class="min-w-[160px] inline-flex items-center justify-between rounded-lg border px-[15px] text-xs leading-none h-[35px] gap-[5px] bg-white text-grass11 hover:bg-stone-50 shadow-sm focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-grass9 outline-none"
+      class="mt-3 inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 text-xs leading-none gap-[5px] bg-white text-grass11 hover:bg-stone-50 shadow-sm focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-grass9 outline-none"
     >
       <ComboboxInput
         v-model="inputRef"
-        class="!bg-transparent outline-none text-grass11 h-full selection:bg-grass5 placeholder-stone-400"
-        placeholder="type name..."
+        class="outline-none border-none h-full placeholder-gray-400"
+        placeholder="Search authors to add..."
       />
-      <ComboboxTrigger> v </ComboboxTrigger>
+      <ComboboxTrigger class="px-2">
+        <Icon name="fluent:chevron-down-12-filled" />
+      </ComboboxTrigger>
     </ComboboxAnchor>
 
     <ComboboxContent
-      class="absolute z-10 w-full mt-1 min-w-[160px] bg-white overflow-hidden rounded-lg shadow-sm border will-change-[opacity,transform] data-[side=top]:animate-slideDownAndFade data-[side=right]:animate-slideLeftAndFade data-[side=bottom]:animate-slideUpAndFade data-[side=left]:animate-slideRightAndFade"
+      class="absolute z-10 w-full mt-1 min-w-[160px] bg-white overflow-hidden rounded-lg shadow-sm border shadow-xl"
     >
       <ComboboxViewport class="p-[5px]">
         <ComboboxEmpty
           class="text-mauve8 text-xs font-medium text-center py-2"
-        />
+        >
+        (no matches)
+      </ComboboxEmpty>
         <ComboboxItem
           v-for="(searchResult, index) in searchResults"
           :key="searchResult.id"
-          :value="searchResult.id!.toString()"
-          class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[disabled]:text-mauve8 data-[disabled]:pointer-events-none data-[highlighted]:outline-none data-[highlighted]:bg-grass9 data-[highlighted]:text-grass1"
+          :value="searchResult"
+          class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
         >
-          <ComboboxItemIndicator
-            class="absolute left-0 w-[25px] inline-flex items-center justify-center"
-          >
-            ✓
-          </ComboboxItemIndicator>
           <span>
             {{ searchResult.titlepageName }}
           </span>
@@ -45,18 +44,37 @@ import {
   ComboboxContent,
   ComboboxInput,
   ComboboxItem,
-  ComboboxItemIndicator,
   ComboboxRoot,
   ComboboxTrigger,
   ComboboxViewport,
 } from "reka-ui";
-import type { RfcAuthor,  } from "~/purple_client";
+import type { RfcAuthor } from "~/purple_client";
 
-type Props = {
-  authors: RfcAuthor[];
-};
+type Props = {};
 
 const props = defineProps<Props>();
+
+const authors = defineModel<RfcAuthor[]>('authors', { required: true })
+
+const selectedAuthor = ref<RfcAuthor | undefined>()
+
+const snackbar = useSnackbar()
+
+watch(selectedAuthor, () => {
+  if(selectedAuthor.value) {
+    const { value } = selectedAuthor
+    if(!authors.value.find(author => author.id === value.id)) {
+      authors.value.push(selectedAuthor.value)
+    } else {
+      snackbar.add({
+        type: 'error',
+        title: `${selectedAuthor.value.titlepageName} already added`,
+        text: ''
+      })
+    }
+  }
+  selectedAuthor.value = undefined
+})
 
 const api = useApi();
 
@@ -66,9 +84,29 @@ const mockDatatrackerPersonSearch = async (props: {
   query: string;
   page: number;
 }, initOverrides?: Parameters<typeof api.assignmentsCreate>[1]): Promise<RfcAuthor[]> => {
-  return [
-    // TODO return mock responses until API available
+  // TODO replace this mock with API usage
+  const allAuthors = [
+    {
+      id: 5,
+      titlepageName: 'Bobby',
+      isEditor: true,
+      datatrackerPerson: 105,
+    },
+    {
+      id: 6,
+      titlepageName: 'Billy',
+      isEditor: true,
+      datatrackerPerson: 106,
+    },
+    {
+      id: 7,
+      titlepageName: 'Boxy',
+      isEditor: true,
+      datatrackerPerson: 107,
+    }
   ]
+
+  return allAuthors.filter(author => JSON.stringify(author).toLowerCase().includes(props.query.toLowerCase()))
 }
 
 type PurpleApiExtension = typeof api & {
