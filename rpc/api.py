@@ -662,14 +662,14 @@ class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
 
 @dataclass
 class DatatrackerPersonModelShim:
-    """Stand-in for a DatatrackerPerson using results from the rpc_person_search_list() API"""
+    """Stand-in for a DatatrackerPerson using results from the search_person() API"""
 
     datatracker_id: int
     plain_name: str
     picture: str
 
     @classmethod
-    def from_rpcapi_rpcperson(cls, obj: rpcapi_client.models.rpc_person.RpcPerson):
+    def from_rpcapi_person(cls, obj: rpcapi_client.models.person.Person):
         return cls(
             datatracker_id=obj.id,
             plain_name=obj.plain_name,
@@ -711,7 +711,7 @@ class SearchDatatrackerPersons(ListAPIView):
         )
         return PaginationPassthroughWrapper(
             data=[
-                DatatrackerPersonModelShim.from_rpcapi_rpcperson(r)
+                DatatrackerPersonModelShim.from_rpcapi_person(r)
                 for r in upstream_results.results
             ],
             total_count=upstream_results.count,
@@ -722,4 +722,4 @@ class SearchDatatrackerPersons(ListAPIView):
     def upstream_search(
         self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
     ):
-        return rpcapi.rpc_person_search_list(search=search, limit=limit, offset=offset)
+        return rpcapi.search_person(search=search, limit=limit, offset=offset)
