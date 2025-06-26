@@ -612,22 +612,36 @@ class DocumentCommentViewSet(
 
 
 class PassthroughWrapper:
-    def __init__(self, paginated_result):
+    def __init__(self, paginated_result, offset):
         self._data = paginated_result
+        self._offset = offset
 
     def count(self):
         return self._data.count
 
     def __getitem__(self, item):
-        return self._data.results[item]
+        if isinstance(item, slice):
+            if (item.start is not None and item.start < 0) or (item.stop is not None and item.stop < 0):
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = slice(
+                None if item.start is None else item.start - self._offset,
+                None if item.stop is None else item.stop - self._offset,
+                item.step,
+            )
+        else:
+            if item < 0:
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = item - self._offset
+        return self._data.results[adjusted_item]
 
 
 class PassthroughLimitOffsetPagination(LimitOffsetPagination):
     default_limit = 10
+    max_limit = 100
 
     def paginate_queryset(self, queryset, request, view=None):
         return super().paginate_queryset(
-            PassthroughWrapper(queryset),
+            PassthroughWrapper(queryset, offset=self.get_offset(request)),
             request,
             view,
         )
@@ -636,13 +650,16 @@ class PassthroughLimitOffsetPagination(LimitOffsetPagination):
 class DatatrackerPersonSearch(views.APIView):
     @with_rpcapi
     def get(self, request, *, rpcapi: rpcapi_client.DefaultApi):
-        search = request.GET.get("search", None)
+        search = request.GET.get("search", "")
 
-        if search is None:
-            raise RuntimeError("fixme")
-
-        upstream_results = rpcapi.rpc_person_search_list(search=search)
+        # Set up the paginator and get its limit/offset parameters
         paginator = PassthroughLimitOffsetPagination()
+        upstream_results = rpcapi.rpc_person_search_list(
+            search=search,
+            limit=paginator.get_limit(request),
+            offset=paginator.get_offset(request),
+        )
+
         page = paginator.paginate_queryset(upstream_results, request)
         assert page is not None
         serializer = DatatrackerPersonSerializer(
