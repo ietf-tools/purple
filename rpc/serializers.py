@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from django.conf import settings
 from itertools import pairwise
 
-from django.contrib.auth import get_user_model
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
@@ -63,7 +62,9 @@ class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
 
     class Meta(BaseDatatrackerPersonSerializer.Meta):
         fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
-        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + ["rpcperson"]
+        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + [
+            "rpcperson"
+        ]
 
 
 @dataclass

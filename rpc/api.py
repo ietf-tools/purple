@@ -622,6 +622,7 @@ class PaginationPassthroughWrapper:
     to the .results list, adjusting the indexes to compensate for the offset that was
     already applied.
     """
+
     def __init__(self, paginated_result, offset):
         self._data = paginated_result
         self._offset = offset
@@ -635,7 +636,9 @@ class PaginationPassthroughWrapper:
         # so we don't need to implement esoteric corner cases. Offset and limit are always non-negative.
         if isinstance(item, slice):
             # A slice represents `results[start:stop:step]` - subtract offset from start and stop
-            if (item.start is not None and item.start < 0) or (item.stop is not None and item.stop < 0):
+            if (item.start is not None and item.start < 0) or (
+                item.stop is not None and item.stop < 0
+            ):
                 raise NotImplementedError("Negative indexing not supported")
             adjusted_item = slice(
                 None if item.start is None else item.start - self._offset,
@@ -677,6 +680,7 @@ class SearchDatatrackerPersons(ListAPIView):
     API results from datatracker, this creates un-saved `DatatrackerPerson` instances with a
     datatracker_id corresponding to each API result's ID.
     """
+
     serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination
 
@@ -694,9 +698,13 @@ class SearchDatatrackerPersons(ListAPIView):
 
     def get_serializer(self, *args, **kwargs):
         if len(args) > 0:
-            args = ([DatatrackerPerson(datatracker_id=record.id) for record in args[0]],) + args[1:]
+            args = (
+                [DatatrackerPerson(datatracker_id=record.id) for record in args[0]],
+            ) + args[1:]
         return super().get_serializer(*args, **kwargs)
 
     @with_rpcapi
-    def upstream_search(self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi):
+    def upstream_search(
+        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+    ):
         return rpcapi.rpc_person_search_list(search=search, limit=limit, offset=offset)
