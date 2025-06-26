@@ -663,6 +663,7 @@ class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
 @dataclass
 class DatatrackerPersonModelShim:
     """Stand-in for a DatatrackerPerson using results from the rpc_person_search_list() API"""
+
     datatracker_id: int
     plain_name: str
     picture: str
@@ -682,6 +683,7 @@ class SearchDatatrackerPersons(ListAPIView):
 
     Search for a datatracker person by name/email fragment.
     """
+
     # Warning: this is a tricky view!
     #
     # Rather than querying the database, the `get_queryset()` method makes a datatracker API call
@@ -708,7 +710,10 @@ class SearchDatatrackerPersons(ListAPIView):
             offset=offset,
         )
         return PaginationPassthroughWrapper(
-            data=[DatatrackerPersonModelShim.from_rpcapi_rpcperson(r) for r in upstream_results.results],
+            data=[
+                DatatrackerPersonModelShim.from_rpcapi_rpcperson(r)
+                for r in upstream_results.results
+            ],
             total_count=upstream_results.count,
             offset=offset,
         )
