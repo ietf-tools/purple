@@ -1,10 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
-import requests
-from urllib.parse import urlparse, urlunparse, urlencode
 
-from django.conf import settings
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
@@ -14,6 +11,7 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
+from rest_framework.generics import GenericAPIView, ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
@@ -639,31 +637,26 @@ class PassthroughLimitOffsetPagination(LimitOffsetPagination):
     default_limit = 10
     max_limit = 100
 
-    def paginate_queryset(self, queryset, request, view=None):
-        return super().paginate_queryset(
-            PassthroughWrapper(queryset, offset=self.get_offset(request)),
-            request,
-            view,
+
+@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+class DatatrackerPersonSearch(ListAPIView):
+    serializer_class = DatatrackerPersonSerializer
+    pagination_class = PassthroughLimitOffsetPagination
+
+    def get_queryset(self):
+        offset = self.paginator.get_offset(self.request)
+        upstream_results = self.upstream_search(
+            search=self.request.GET.get("search", ""),
+            limit=self.paginator.get_limit(self.request),
+            offset=offset,
         )
+        return PassthroughWrapper(upstream_results, offset)
 
+    def get_serializer(self, *args, **kwargs):
+        if len(args) > 0:
+            args = ([DatatrackerPerson(datatracker_id=record.id) for record in args[0]],) + args[1:]
+        return super().get_serializer(*args, **kwargs)
 
-class DatatrackerPersonSearch(views.APIView):
     @with_rpcapi
-    def get(self, request, *, rpcapi: rpcapi_client.DefaultApi):
-        search = request.GET.get("search", "")
-
-        # Set up the paginator and get its limit/offset parameters
-        paginator = PassthroughLimitOffsetPagination()
-        upstream_results = rpcapi.rpc_person_search_list(
-            search=search,
-            limit=paginator.get_limit(request),
-            offset=paginator.get_offset(request),
-        )
-
-        page = paginator.paginate_queryset(upstream_results, request)
-        assert page is not None
-        serializer = DatatrackerPersonSerializer(
-            [DatatrackerPerson(datatracker_id=record.id) for record in page],
-            many=True,
-        )
-        return paginator.get_paginated_response(serializer.data)
+    def upstream_search(self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi):
+        return rpcapi.rpc_person_search_list(search=search, limit=limit, offset=offset)
