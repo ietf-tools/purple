@@ -633,10 +633,15 @@ class PassthroughWrapper:
         return self._data.results[adjusted_item]
 
 
+class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
 @extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
 class SearchDatatrackerPersons(ListAPIView):
     serializer_class = DatatrackerPersonSerializer
-    pagination_class = DefaultLimitOffsetPagination
+    pagination_class = SearchDatatrackerPersonsPagination
 
     def get_queryset(self):
         offset = self.paginator.get_offset(self.request)
