@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+from dataclasses import dataclass
 
 from django.db import transaction
 from django.db.models import Q
@@ -623,12 +624,13 @@ class PaginationPassthroughWrapper:
     already applied.
     """
 
-    def __init__(self, paginated_result, offset):
-        self._data = paginated_result
+    def __init__(self, data, total_count, offset):
+        self._data = data
+        self._total_count = total_count
         self._offset = offset
 
     def count(self):
-        return self._data.count
+        return self._total_count
 
     def __getitem__(self, item):
         # Pass item lookups through to the results from upstream. Because this was already
@@ -650,7 +652,7 @@ class PaginationPassthroughWrapper:
             if item < 0:
                 raise NotImplementedError("Negative indexing not supported")
             adjusted_item = item - self._offset
-        return self._data.results[adjusted_item]
+        return self._data[adjusted_item]
 
 
 class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
@@ -658,28 +660,39 @@ class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
     max_limit = 100
 
 
+@dataclass
+class DatatrackerPersonModelShim:
+    """Stand-in for a DatatrackerPerson using results from the rpc_person_search_list() API"""
+    datatracker_id: int
+    plain_name: str
+    picture: str
+
+    @classmethod
+    def from_rpcapi_rpcperson(cls, obj: rpcapi_client.models.rpc_person.RpcPerson):
+        return cls(
+            datatracker_id=obj.id,
+            plain_name=obj.plain_name,
+            picture=obj.picture,
+        )
+
+
 @extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
 class SearchDatatrackerPersons(ListAPIView):
     """Datatracker person search API
 
     Search for a datatracker person by name/email fragment.
-
-    Warning: this is a tricky view!
-
-    Rather than querying the database, the `get_queryset()` method makes a datatracker API call
-    to perform the Person search. It uses the same pagination limit/offset on the API call as the
-    downstream request being handled. The paginated results from the API call are packaged in
-    the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination internals work
-    with the already-paginated results as though they came from a local database lookup.
-
-    Note that despite the naming, DRF APIViews and pagination explicitly support using a list
-    rather than a Django queryset. We only need the shim because the list we get from the API only
-    contains a single page of results.
-
-    The other piece of shimming is in the `get_serializer()` method. Rather than serializing the
-    API results from datatracker, this creates un-saved `DatatrackerPerson` instances with a
-    datatracker_id corresponding to each API result's ID.
     """
+    # Warning: this is a tricky view!
+    #
+    # Rather than querying the database, the `get_queryset()` method makes a datatracker API call
+    # to perform the Person search. It uses the same pagination limit/offset on the API call as the
+    # downstream request being handled. The paginated results from the API call are packaged in
+    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination internals work
+    # with the already-paginated results as though they came from a local database lookup.
+    #
+    # Note that despite the naming, DRF APIViews and pagination explicitly support using a list
+    # rather than a Django queryset. We need the shim because the list we get from the API only
+    # contains a single page of results.
 
     serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination
@@ -694,14 +707,11 @@ class SearchDatatrackerPersons(ListAPIView):
             limit=self.paginator.get_limit(self.request),
             offset=offset,
         )
-        return PaginationPassthroughWrapper(upstream_results, offset)
-
-    def get_serializer(self, *args, **kwargs):
-        if len(args) > 0:
-            args = (
-                [DatatrackerPerson(datatracker_id=record.id) for record in args[0]],
-            ) + args[1:]
-        return super().get_serializer(*args, **kwargs)
+        return PaginationPassthroughWrapper(
+            data=[DatatrackerPersonModelShim.from_rpcapi_rpcperson(r) for r in upstream_results.results],
+            total_count=upstream_results.count,
+            offset=offset,
+        )
 
     @with_rpcapi
     def upstream_search(
