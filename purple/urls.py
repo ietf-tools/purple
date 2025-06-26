@@ -89,7 +89,7 @@ urlpatterns = [
     path("oidc/", include("mozilla_django_oidc.urls")),
     path("login/", views.index),
     path(
-        "api/rpc/search/datatrackerpersons/", rpc_api.DatatrackerPersonSearch.as_view()
+        "api/rpc/search/datatrackerpersons/", rpc_api.SearchDatatrackerPersons.as_view()
     ),
     path("api/rpc/profile/", rpc_api.profile),
     path(

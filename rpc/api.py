@@ -11,7 +11,7 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
-from rest_framework.generics import GenericAPIView, ListAPIView
+from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
@@ -633,15 +633,10 @@ class PassthroughWrapper:
         return self._data.results[adjusted_item]
 
 
-class PassthroughLimitOffsetPagination(LimitOffsetPagination):
-    default_limit = 10
-    max_limit = 100
-
-
 @extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
-class DatatrackerPersonSearch(ListAPIView):
+class SearchDatatrackerPersons(ListAPIView):
     serializer_class = DatatrackerPersonSerializer
-    pagination_class = PassthroughLimitOffsetPagination
+    pagination_class = DefaultLimitOffsetPagination
 
     def get_queryset(self):
         offset = self.paginator.get_offset(self.request)
