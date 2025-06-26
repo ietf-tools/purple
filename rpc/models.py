@@ -607,6 +607,9 @@ class Label(models.Model):
     )
     history = HistoricalRecords()
 
+    def __str__(self):
+        return self.slug
+
 
 class RpcAuthorComment(models.Model):
     """Private RPC comment about an author

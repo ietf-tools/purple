@@ -92,12 +92,18 @@ class ApprovalLogMessageAdmin(admin.ModelAdmin):
     search_fields = ["rfc_to_be", "by", "log_message"]
 
 
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ["slug", "is_complexity", "is_exception", "color"]
+    search_fields = ["slug"]
+    list_filter = ["is_complexity", "is_exception", "color"]
+
+
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)
 admin.site.register(ActionHolder)
 admin.site.register(RpcRelatedDocument)
 admin.site.register(RpcDocumentComment)
-admin.site.register(Label)
+admin.site.register(Label, LabelAdmin)
 admin.site.register(RpcAuthorComment)
 admin.site.register(ApprovalLogMessage, ApprovalLogMessageAdmin)
