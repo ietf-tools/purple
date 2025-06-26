@@ -43,16 +43,27 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class DatatrackerPersonSerializer(serializers.ModelSerializer):
-    """Serialize a DatatrackerPerson"""
+class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
+    """Serialize a minimal DatatrackerPerson
+
+    This is the serializer to use if you may be working with non-persisted DatatrackerPerson instances.
+    """
 
     person_id = serializers.IntegerField(source="datatracker_id")
     name = serializers.CharField(source="plain_name", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["person_id", "name", "rpcperson", "picture"]
-        read_only_fields = ["rpcperson", "picture"]
+        fields = ["person_id", "name", "picture"]
+        read_only_fields = ["picture"]
+
+
+class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
+    """Serializer a DatatrackerPerson, including all the bells and whistles"""
+
+    class Meta(BaseDatatrackerPersonSerializer.Meta):
+        fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
+        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + ["rpcperson"]
 
 
 @dataclass

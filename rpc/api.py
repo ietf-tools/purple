@@ -72,7 +72,7 @@ from .serializers import (
     DocumentCommentSerializer,
     RfcAuthorSerializer,
     CreateRfcAuthorSerializer,
-    DatatrackerPersonSerializer,
+    BaseDatatrackerPersonSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
@@ -640,7 +640,7 @@ class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
 
 @extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
 class SearchDatatrackerPersons(ListAPIView):
-    serializer_class = DatatrackerPersonSerializer
+    serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination
 
     def get_queryset(self):
