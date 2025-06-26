@@ -75,16 +75,35 @@ from .serializers import (
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
     check_user_has_role,
+    DocumentCommentSerializer,
+    RfcAuthorSerializer,
+    CreateRfcAuthorSerializer,
+    CreateRpcRelatedDocumentSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
 
+@extend_schema(operation_id="version", responses=VersionInfoSerializer)
 @api_view(["GET"])
 def version(request):
     """Get application version information"""
     return JsonResponse(VersionInfoSerializer(VersionInfo()).data)
 
 
+@extend_schema(
+    operation_id="profile",
+    responses=inline_serializer(
+        name="Profile",
+        fields={
+            "authenticated": serializers.BooleanField(),
+            "id": serializers.IntegerField(),
+            "name": serializers.CharField(),
+            "avatar": serializers.CharField(),
+            "rpcPersonId": serializers.IntegerField(allow_null=True),
+            "isManager": serializers.BooleanField(),
+        },
+    ),
+)
 @api_view(["GET"])
 def profile(request):
     """Get profile of current user"""
@@ -129,6 +148,26 @@ def profile_as_person(request, rpc_person_id):
                 if rpcperson is None
                 else rpcperson.can_hold_role.filter(slug="manager").exists()
             ),
+        }
+    )
+
+
+def extend_schema_with_draft_name(actions=None):
+    if actions is None:
+        actions = [
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ]
+    return extend_schema_view(
+        **{
+            action: extend_schema(
+                parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+            )
+            for action in actions
         }
     )
 
@@ -401,21 +440,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema_view(
-    **{
-        action: extend_schema(
-            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-        )
-        for action in [
-            "list",
-            "retrieve",
-            "create",
-            "update",
-            "partial_update",
-            "destroy",
-        ]
-    }
-)
+@extend_schema_with_draft_name()
 class RpcAuthorViewSet(viewsets.ModelViewSet):
     queryset = RfcAuthor.objects.all()
 
@@ -441,13 +466,20 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         return RfcAuthorSerializer
 
 
-class RpcRelatedDocumentViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = RpcRelatedDocumentSerializer
+@extend_schema_with_draft_name()
+class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
+    queryset = RpcRelatedDocument.objects.all()
 
     def get_queryset(self):
-        return RpcRelatedDocument.objects.filter(
-            source__draft__name=self.kwargs["draft_name"]
+        return (
+            super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
         )
+
+    def get_serializer_class(self):
+        """Use different serializer for create vs other operations"""
+        if self.action == "create":
+            return CreateRpcRelatedDocumentSerializer
+        return RpcRelatedDocumentSerializer
 
 
 class LabelViewSet(viewsets.ModelViewSet):
@@ -520,19 +552,7 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TlpBoilerplateChoiceNameSerializer
 
 
-@extend_schema_view(
-    **{
-        action: extend_schema(
-            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-        )
-        for action in [
-            "list",
-            "create",
-            "update",
-            "partial_update",
-        ]
-    }
-)
+@extend_schema_with_draft_name(actions=["list", "create", "update", "partial_update"])
 class DocumentCommentViewSet(
     AutoPermissionViewSetMixin,
     mixins.ListModelMixin,

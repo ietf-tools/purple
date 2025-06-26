@@ -333,7 +333,12 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = RpcRelatedDocument
-        fields = ["relationship", "source", "target_document", "target_rfctobe"]
+        fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
+
+
+class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
+    class Meta(RpcRelatedDocumentSerializer.Meta):
+        read_only_fields = ["id"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
