@@ -66,6 +66,11 @@
 - The tmux default prefix binding is set to `Ctrl+Space` and mouse control is enabled by default.
 - If you exit tmux, you'll land in a normal zsh prompt. Type `exit` again to quit and stop the containers.
 
+## Using MailHog
+
+Emails sentout from dev enviroment is caught by [MailHog](https://github.com/mailhog/MailHog).
+Access MailHog from http://localhost:8025/
+
 ## Using pgAdmin
 
 - Access pg Admin from http://localhost:8088/pgadmin/
