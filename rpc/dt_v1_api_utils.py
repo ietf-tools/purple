@@ -17,8 +17,8 @@ def datatracker_name(namemodel: str, slug: str) -> tuple[str, str, str]:
         response = requests.get(
             f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}"
         )
-    except requests.exceptions.ConnectionError:
-        raise DatatrackerFetchFailure
+    except requests.exceptions.ConnectionError as err:
+        raise DatatrackerFetchFailure from err
     if not response.ok:
         raise DatatrackerFetchFailure
     api_response = response.json()

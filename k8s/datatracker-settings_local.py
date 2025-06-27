@@ -1,9 +1,8 @@
 # Copyright The IETF Trust 2007-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
 
+import json
 from base64 import b64decode
 from email.utils import parseaddr
-import json
 
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
@@ -14,10 +13,12 @@ def _multiline_to_list(s):
     return [item.strip() for item in s.split("\n")]
 
 
-# Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production" in the env!
+# Default to "development". Production _must_ set DATATRACKER_SERVER_MODE="production"
+# in the env!
 SERVER_MODE = os.environ.get("DATATRACKER_SERVER_MODE", "development")
 
-# Use X-Forwarded-Proto to determine request.is_secure(). This relies on CloudFlare overwriting the
+# Use X-Forwarded-Proto to determine request.is_secure(). This relies on CloudFlare
+# overwriting the
 # value of the header if an incoming request sets it, which it does:
 # https://developers.cloudflare.com/fundamentals/reference/http-request-headers/#x-forwarded-proto
 # See also, especially the warnings:
@@ -105,13 +106,15 @@ _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
 DATABASES["default"]["CONN_MAX_AGE"] = (
     None if _conn_max_age.lower() == "none" else int(_conn_max_age)
 )
-# Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the string "true"
+# Enable connection health checks if DATATRACKER_DB_CONN_HEALTH_CHECK is the
+# string "true"
 _conn_health_checks = bool(
     os.environ.get("DATATRACKER_DB_CONN_HEALTH_CHECKS", "false").lower() == "true"
 )
 DATABASES["default"]["CONN_HEALTH_CHECKS"] = _conn_health_checks
 
-# DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by email.utils.parseaddr
+# DATATRACKER_ADMINS is a newline-delimited list of addresses parseable by
+# email.utils.parseaddr
 _admins_str = os.environ.get("DATATRACKER_ADMINS", None)
 if _admins_str is not None:
     ADMINS = [parseaddr(admin) for admin in _multiline_to_list(_admins_str)]
@@ -164,18 +167,21 @@ if _MEETECHO_CLIENT_ID is not None and _MEETECHO_CLIENT_SECRET is not None:
         ),
         "client_id": _MEETECHO_CLIENT_ID,
         "client_secret": _MEETECHO_CLIENT_SECRET,
-        "request_timeout": 3.01,  # python-requests doc recommend slightly > a multiple of 3 seconds
+        "request_timeout": 3.01,  # python-requests doc recommend slightly > a
+        # multiple of 3 seconds
     }
 else:
     raise RuntimeError(
-        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be set"
+        "DATATRACKER_MEETECHO_CLIENT_ID and DATATRACKER_MEETECHO_CLIENT_SECRET must be "
+        "set"
     )
 
 # For APP_API_TOKENS, ccept either base64-encoded JSON or raw JSON, but not both
 if "DATATRACKER_APP_API_TOKENS_JSON_B64" in os.environ:
     if "DATATRACKER_APP_API_TOKENS_JSON" in os.environ:
         raise RuntimeError(
-            "Only one of DATATRACKER_APP_API_TOKENS_JSON and DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
+            "Only one of DATATRACKER_APP_API_TOKENS_JSON and "
+            "DATATRACKER_APP_API_TOKENS_JSON_B64 may be set"
         )
     _APP_API_TOKENS_JSON = b64decode(
         os.environ.get("DATATRACKER_APP_API_TOKENS_JSON_B64")

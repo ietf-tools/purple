@@ -1,11 +1,8 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
-
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import Optional
 
 from django.db import models
 from django.utils import timezone
@@ -78,7 +75,8 @@ class RfcToBe(models.Model):
         "TlpBoilerplateChoiceName",
         on_delete=models.PROTECT,
         related_name="+",
-        help_text="TLP IPR boilerplate option applicable when document entered the queue",
+        help_text="TLP IPR boilerplate option applicable when document entered the "
+        "queue",
     )
     submitted_stream = models.ForeignKey(
         "StreamName", on_delete=models.PROTECT, related_name="+"
@@ -91,7 +89,8 @@ class RfcToBe(models.Model):
         "TlpBoilerplateChoiceName",
         on_delete=models.PROTECT,
         related_name="+",
-        help_text="TLP IPR boilerplate option intended to apply upon publication as RFC",
+        help_text="TLP IPR boilerplate option intended to apply upon publication "
+        "as RFC",
     )
     intended_stream = models.ForeignKey(
         "StreamName", on_delete=models.PROTECT, related_name="+"
@@ -102,7 +101,8 @@ class RfcToBe(models.Model):
 
     # Labels applied to this instance. To track history, see
     # https://django-simple-history.readthedocs.io/en/latest/historical_model.html#tracking-many-to-many-relationships
-    # It seems that django-simple-history does not get along with through models declared using a string
+    # It seems that django-simple-history does not get along with through models
+    # declared using a string
     # reference, so we must use the model class itself.
     labels = models.ManyToManyField("Label", through=RfcToBeLabel)
 
@@ -110,13 +110,6 @@ class RfcToBe(models.Model):
 
     class Meta:
         verbose_name_plural = "RfcToBes"
-
-    def __str__(self):
-        return (
-            f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
-        )
-
-    class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["rfc_number"],
@@ -125,10 +118,15 @@ class RfcToBe(models.Model):
             )
         ]
 
+    def __str__(self):
+        return (
+            f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
+        )
+
     @dataclass
     class Interval:
         start: datetime.datetime
-        end: Optional[datetime.datetime] = None
+        end: datetime.datetime | None = None
 
     def time_intervals_with_label(self, label) -> list[Interval]:
         hist = list(self.history.all())
@@ -152,9 +150,7 @@ class RfcToBe(models.Model):
                 if len(intervals) > 0 and intervals[-1].end is None:
                     intervals[-1].end = ch.new_record.history_date
         if len(intervals) > 0 and intervals[-1].end is None:
-            intervals[-1].end = datetime.datetime.now().astimezone(
-                datetime.timezone.utc
-            )
+            intervals[-1].end = datetime.datetime.now().astimezone(datetime.UTC)
         return intervals
 
 
@@ -187,8 +183,8 @@ class StdLevelNameManager(models.Manager):
             try:
                 _, name, desc = datatracker_stdlevelname(slug)
                 return self.create(slug=slug, name=name, desc=desc)
-            except (DatatrackerFetchFailure, NoSuchSlug):
-                raise self.model.DoesNotExist
+            except (DatatrackerFetchFailure, NoSuchSlug) as err:
+                raise self.model.DoesNotExist() from err
 
 
 class StdLevelName(Name):
@@ -207,8 +203,8 @@ class StreamNameManager(models.Manager):
             try:
                 _, name, desc = datatracker_streamname(slug)
                 return self.create(slug=slug, name=name, desc=desc)
-            except (DatatrackerFetchFailure, NoSuchSlug):
-                raise self.model.DoesNotExist
+            except (DatatrackerFetchFailure, NoSuchSlug) as err:
+                raise self.model.DoesNotExist() from err
 
 
 class StreamName(Name):
@@ -235,7 +231,8 @@ class ClusterMember(models.Model):
             models.UniqueConstraint(
                 fields=["doc"],
                 name="clustermember_unique_doc",
-                violation_error_message="A document may not appear in more than one cluster",
+                violation_error_message="A document may not appear in more than one "
+                "cluster",
                 deferrable=models.Deferrable.DEFERRED,
             ),
         ]
@@ -337,7 +334,8 @@ class RfcAuthor(models.Model):
             models.UniqueConstraint(
                 fields=["datatracker_person", "rfc_to_be"],
                 name="unique_author_per_document",
-                violation_error_message="the person is already an author of this document",
+                violation_error_message="the person is already an author of this "
+                "document",
             )
         ]
 
@@ -389,11 +387,17 @@ class FinalApproval(models.Model):
     def __str__(self):
         if self.approved:
             if self.overriding_approver:
-                return f"final approval from {self.overriding_approver} on behalf of {self.approver}"
+                return (
+                    f"final approval from {self.overriding_approver} on behalf of "
+                    f"{self.approver}"
+                )
             else:
                 return f"final approval from {self.approver}"
         else:
-            return f"request for final approval from {self.approver if self.approver else self.body}"
+            return (
+                "request for final approval from "
+                f"{self.approver if self.approver else self.body}"
+            )
 
     class Meta:
         constraints = [
@@ -481,7 +485,10 @@ class ActionHolder(models.Model):
         ]
 
     def __str__(self):
-        return f"{'Completed' if self.completed else 'Pending'} action held by {self.datatracker_person}"
+        return (
+            f"{'Completed' if self.completed else 'Pending'} action held by "
+            f"{self.datatracker_person}"
+        )
 
 
 class RpcRelatedDocument(models.Model):
@@ -545,7 +552,7 @@ class RpcDocumentComment(RulesModel):
                     models.Q(document__isnull=True) ^ models.Q(rfc_to_be__isnull=True)
                 ),
                 name="rpcdocumentcomment_exactly_one_target",
-                violation_error_message="exactly one of document or rfc_to_be must be set",
+                violation_error_message="exactly one of doc or rfc_to_be must be set",
             )
         ]
         # Permissions applied via AutoPermissionViewSetMixin
@@ -603,7 +610,9 @@ class Label(models.Model):
     is_exception = models.BooleanField(default=False)
     is_complexity = models.BooleanField(default=False)
     color = models.CharField(
-        max_length=7, default="purple", choices=zip(TAILWIND_COLORS, TAILWIND_COLORS)
+        max_length=7,
+        default="purple",
+        choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
     history = HistoricalRecords()
 

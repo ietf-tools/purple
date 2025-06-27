@@ -1,12 +1,8 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
 from django.db.models import Max
 
-from .models import RfcToBe, UnusableRfcNumber, DumpInfo
-
+from .models import DumpInfo, RfcToBe, UnusableRfcNumber
 from .serializers import RpcRelatedDocumentSerializer
-
-from rest_framework.response import Response
 
 
 class VersionInfo:

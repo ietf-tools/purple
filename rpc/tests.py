@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.test import TestCase
-
 
 from .factories import RfcToBeFactory, UnusableRfcNumberFactory
 from .utils import next_rfc_number

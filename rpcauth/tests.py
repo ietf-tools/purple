@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
 from unittest.mock import patch
@@ -26,7 +25,7 @@ class RpcOIDCAuthBackendTests(TestCase):
             "aud": "test-client-id",
             "exp": int(
                 # now + 10 minutes
-                datetime.datetime.now(datetime.timezone.utc).timestamp() + 600
+                datetime.datetime.now(datetime.UTC).timestamp() + 600
             ),
             "sub": "test-subject-id",
         }
@@ -117,7 +116,7 @@ class RpcOIDCAuthBackendTests(TestCase):
             "aud": "test-client-id",
             "exp": int(
                 # now + 10 minutes
-                datetime.datetime.now(datetime.timezone.utc).timestamp() + 600
+                datetime.datetime.now(datetime.UTC).timestamp() + 600
             ),
             "sub": "test-subject-id",
         }
