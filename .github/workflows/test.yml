@@ -21,4 +21,4 @@ jobs:
     - name: Check code style
       run: |
         pip install ruff
-        ruff format --check --diff .
+        ruff check .
