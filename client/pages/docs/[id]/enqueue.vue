@@ -9,16 +9,21 @@
     <div class="space-y-4">
       <DocInfoCard :draft="rfcToBe" />
       <div class="flex w-full space-x-4">
-        <DocLabelsCard
-          title="Complexities"
-          v-model="selectedLabelIds"
-          :labels="labels1"
-        />
-        <DocLabelsCard
-          title="Exceptions"
-          v-model="selectedLabelIds"
-          :labels="labels2"
-        />
+        <div class="flex flex-col">
+          <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
+          <div class="flex flex-row">
+            <DocLabelsCard
+              title="Other complexities"
+              v-model="selectedLabelIds"
+              :labels="labels1"
+            />
+            <DocLabelsCard
+              title="Exceptions"
+              v-model="selectedLabelIds"
+              :labels="labels2"
+            />
+          </div>
+        </div>
         <RpcLabelPicker
           item-label="slug"
           v-model="selectedLabelIds"
