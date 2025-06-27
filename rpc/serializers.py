@@ -44,7 +44,8 @@ class VersionInfoSerializer(serializers.Serializer):
 class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize a minimal DatatrackerPerson
 
-    This is the serializer to use if you may be working with non-persisted DatatrackerPerson instances.
+    This is the serializer to use if you may be working with non-persisted
+    DatatrackerPerson instances.
     """
 
     person_id = serializers.IntegerField(source="datatracker_id")
@@ -138,7 +139,8 @@ class HistorySerializer(serializers.Serializer):
         if not kwargs.get("read_only", True):
             warnings.warn(
                 RuntimeWarning(
-                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
                 ),
                 stacklevel=2,
             )
@@ -158,7 +160,8 @@ class HistoryLastEditSerializer(serializers.Serializer):
         if not kwargs.get("read_only", True):
             warnings.warn(
                 RuntimeWarning(
-                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
                 ),
                 stacklevel=2,
             )
@@ -272,7 +275,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         f'"{label.slug}"' for label in hist_labels.filter(id__in=added)
                     ]
                     changes.append(
-                        f"Added label{'s' if len(added_strs) > 1 else ''} {', '.join(added_strs)}"
+                        f"Added label{'s' if len(added_strs) > 1 else ''} "
+                        f"{', '.join(added_strs)}"
                     )
                 if removed:
                     removed_strs = [
@@ -280,7 +284,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         for label in hist_labels.filter(id__in=removed)
                     ]
                     changes.append(
-                        f"Removed label{'s' if len(removed_strs) > 1 else ''} {', '.join(removed_strs)}"
+                        f"Removed label{'s' if len(removed_strs) > 1 else ''} "
+                        f"{', '.join(removed_strs)}"
                     )
                 yield " and ".join(changes)
             else:

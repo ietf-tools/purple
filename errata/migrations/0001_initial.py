@@ -78,7 +78,8 @@ class Migration(migrations.Migration):
                         ),
                         blank=True,
                         default=list,
-                        help_text="A list of formats. Possible values: 'HTML', 'PDF', and 'TXT'.",
+                        help_text="A list of formats. Possible values: 'HTML', 'PDF', "
+                        "and 'TXT'.",
                         size=None,
                     ),
                 ),

@@ -264,13 +264,17 @@ class Command(BaseCommand):
         )
 
         # Exceptions:
-        # <!> Stream hold - a stream manager has temporarily halted RPC work on the doc and will let us know when we can start on it again
-        # <!> Missing norm ref - the document is part of a cluster and one of its normative references is not in the queue yet
-        # <!> IANA action - RPC is waiting for IANA to update or create the registry for this doc
+        # <!> Stream hold - a stream manager has temporarily halted RPC work on the doc
+        # and will let us know when we can start on it again
+        # <!> Missing norm ref - the document is part of a cluster and one of its
+        # normative references is not in the queue yet
+        # <!> IANA action - RPC is waiting for IANA to update or create the registry
+        # for this doc
         # Informational labels to help with assignments:
         # IANA Considerations - the document has an IANA Considerations section
         # ABNF - the document contains ABNF sourcecode
-        # Needs Formatting - the document requires an XML expert to format complex tables, nested lists, etc.
+        # Needs Formatting - the document requires an XML expert to format complex
+        # tables, nested lists, etc.
         LabelFactory(slug="Stream hold", is_exception=True, color="yellow")
         LabelFactory(slug="Missing norm ref", is_exception=True, color="pink")
         LabelFactory(slug="IANA action", is_exception=True, color="rose")
@@ -384,5 +388,6 @@ class Command(BaseCommand):
             return rfctobe
         except IntegrityError:
             print(
-                f">>> Warning: Failed to create RfcToBe for {dtdoc.name}, already exists?"
+                f">>> Warning: Failed to create RfcToBe for {dtdoc.name}, already "
+                "exists?"
             )

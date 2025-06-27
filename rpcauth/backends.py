@@ -83,7 +83,8 @@ class ServiceTokenOIDCAuthenticationBackend(OIDCAuthenticationBackend):
 
         auth = None
         if self.get_settings("OIDC_TOKEN_USE_BASIC_AUTH", False):
-            # When Basic auth is defined, create the Auth Header and remove secret from payload.
+            # When Basic auth is defined, create the Auth Header and remove secret from
+            # payload.
             user = payload.get("client_id")
             pw = payload.get("client_secret")
 
@@ -186,21 +187,27 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
     def verify_token(self, token, **kwargs):
         """Verify the ID token"""
         payload = super().verify_token(token, **kwargs)
-        # Validation mandated by sect 3.1.3.7 of the spec not performed by base backend class
+        # Validation mandated by sect 3.1.3.7 of the spec not performed
+        # by base backend class
         issuer_id = payload.get("iss", None)
         if issuer_id is None or issuer_id != self.OIDC_OP_ISSUER_ID:
             raise SuspiciousOperation(
-                f'issuer "{issuer_id}" does not match configured issuer "{self.OIDC_OP_ISSUER_ID}"'
+                f'issuer "{issuer_id}" does not match configured issuer '
+                f'"{self.OIDC_OP_ISSUER_ID}"'
             )
-        # Check audience. Per spec, we must reject the token if it "does not list the Client as a
-        # valid audience, or if it contains additional audiences not trusted by the Client." We only
-        # expect one audience from the datatracker, so let's assume any other audiences are untrusted.
+        # Check audience. Per spec, we must reject the token if it
+        # "does not list the Client as a
+        # valid audience, or if it contains additional audiences not trusted by the
+        # Client." We only
+        # expect one audience from the datatracker, so let's assume any other audiences
+        # are untrusted.
         audience = payload.get("aud", [])
         if isinstance(audience, str):
             audience = [audience]
         if len(set(audience)) != 1 or audience[0] != self.OIDC_RP_CLIENT_ID:
             raise SuspiciousOperation(f'token has invalid audience "{audience}"')
-        # azp should be present if token contains multiple audiences, but we rejected such a token already.
+        # azp should be present if token contains multiple audiences, but we rejected
+        # such a token already.
         # Just check that, if present, azp is us
         if "azp" in payload and payload["azp"] != self.OIDC_RP_CLIENT_ID:
             raise SuspiciousOperation(

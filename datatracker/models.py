@@ -29,7 +29,8 @@ class DatatrackerPerson(models.Model):
 
     objects = DatatrackerPersonQuerySet.as_manager()
 
-    # datatracker uses AutoField for this, which is only an IntegerField, but might as well go big
+    # datatracker uses AutoField for this, which is only an IntegerField,
+    # but might as well go big
     datatracker_id = models.BigIntegerField(
         unique=True, help_text="ID of the Person in the datatracker"
     )
@@ -69,7 +70,8 @@ class DatatrackerPerson(models.Model):
 class Document(models.Model):
     """Document known to the datatracker"""
 
-    # datatracker uses AutoField for this, which is only an IntegerField, but might as well go big
+    # datatracker uses AutoField for this, which is only an IntegerField,
+    # but might as well go big
     datatracker_id = models.BigIntegerField(unique=True)
 
     name = models.CharField(max_length=255, unique=True, help_text="Name of draft")

@@ -16,7 +16,6 @@ extend-select = [
     "I",   # isort
 ]
 extend-ignore = [
-    "E501",  # no line length errors
     "F405",  # variable may be undefined, or defined from star imports
     "F403",  # unable to detect undefined names
 ]

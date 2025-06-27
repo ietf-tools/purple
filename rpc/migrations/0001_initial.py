@@ -443,7 +443,8 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option intended to apply upon publication as RFC",
+                        help_text="TLP IPR boilerplate option intended to apply upon "
+                        "publication as RFC",
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -455,7 +456,8 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option applicable when document entered the queue",
+                        help_text="TLP IPR boilerplate option applicable when document "
+                        "entered the queue",
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -991,7 +993,8 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="intended_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option intended to apply upon publication as RFC",
+                help_text="TLP IPR boilerplate option intended to apply upon "
+                "publication as RFC",
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1001,7 +1004,8 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="submitted_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option applicable when document entered the queue",
+                help_text="TLP IPR boilerplate option applicable when document entered "
+                "the queue",
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1022,7 +1026,8 @@ class Migration(migrations.Migration):
                 deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
                 fields=("doc",),
                 name="clustermember_unique_doc",
-                violation_error_message="A document may not appear in more than one cluster",
+                violation_error_message="A document may not appear in more than "
+                "one cluster",
             ),
         ),
         migrations.AddConstraint(
@@ -1080,7 +1085,8 @@ class Migration(migrations.Migration):
                     _connector="XOR",
                 ),
                 name="rpcdocumentcomment_exactly_one_target",
-                violation_error_message="exactly one of document or rfc_to_be must be set",
+                violation_error_message="exactly one of document or rfc_to_be must "
+                "be set",
             ),
         ),
         migrations.AddConstraint(

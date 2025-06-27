@@ -199,7 +199,8 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 @api_view(["GET"])
 @with_rpcapi
 def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
-    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
+    """Return documents in datatracker that have been submitted to the RPC but are
+        not yet in the queue
 
     [
         {
@@ -212,14 +213,16 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     ]
 
     Fed by doing a server->server API query that returns essentially the union of:
-    >> Document.objects.filter(states__type_id="draft-iesg",states__slug__in=["approved","ann"])
+    >> Document.objects.filter(states__type_id="draft-iesg",
+    states__slug__in=["approved","ann"])
     <QuerySet [
         <Document: draft-ietf-bess-pbb-evpn-isid-cmacflush>,
         <Document: draft-ietf-dnssd-update-lease>,
         ...
     ]>
     and
-    >> Document.objects.filter(states__type_id__in=["draft-stream-iab","draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
+    >> Document.objects.filter(states__type_id__in=["draft-stream-iab",
+    "draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
     <QuerySet [
         <Document: draft-iab-m-ten-workshop>,
         <Document: draft-irtf-cfrg-spake2>,
@@ -227,7 +230,8 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     ]>
     and SOMETHING ABOUT THE EDITORIAL STREAM...
 
-    Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
+    Those queries overreturn - there may be things, particularly not from the IETF
+    stream that are already in the queue.
     This api will filter those out.
     """
     # Get submissions list from Datatracker
@@ -636,11 +640,15 @@ class PaginationPassthroughWrapper:
         return self._total_count
 
     def __getitem__(self, item):
-        # Pass item lookups through to the results from upstream. Because this was already
-        # paginated, remove the offset. LimitOffsetPagination only ever uses queryset[offset:offset+limit],
-        # so we don't need to implement esoteric corner cases. Offset and limit are always non-negative.
+        # Pass item lookups through to the results from upstream.
+        # Because this was already
+        # paginated, remove the offset. LimitOffsetPagination only ever uses
+        # queryset[offset:offset+limit],
+        # so we don't need to implement esoteric corner cases. Offset and limit
+        # are always non-negative.
         if isinstance(item, slice):
-            # A slice represents `results[start:stop:step]` - subtract offset from start and stop
+            # A slice represents `results[start:stop:step]` - subtract offset from
+            # start and stop
             if (item.start is not None and item.start < 0) or (
                 item.stop is not None and item.stop < 0
             ):
@@ -651,7 +659,8 @@ class PaginationPassthroughWrapper:
                 item.step,
             )
         else:
-            # Other than a slice is a single index lookup.  Don't need to support this, but it's easy enough.
+            # Other than a slice is a single index lookup.  Don't need to support
+            # this, but it's easy enough.
             if item < 0:
                 raise NotImplementedError("Negative indexing not supported")
             adjusted_item = item - self._offset
@@ -689,14 +698,21 @@ class SearchDatatrackerPersons(ListAPIView):
 
     # Warning: this is a tricky view!
     #
-    # Rather than querying the database, the `get_queryset()` method makes a datatracker API call
-    # to perform the Person search. It uses the same pagination limit/offset on the API call as the
-    # downstream request being handled. The paginated results from the API call are packaged in
-    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination internals work
-    # with the already-paginated results as though they came from a local database lookup.
+    # Rather than querying the database, the `get_queryset()` method makes a
+    # datatracker API call
+    # to perform the Person search. It uses the same pagination limit/offset on the
+    # API call as the
+    # downstream request being handled. The paginated results from the API call are
+    # packaged in
+    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination
+    # internals work
+    # with the already-paginated results as though they came from a local database
+    # lookup.
     #
-    # Note that despite the naming, DRF APIViews and pagination explicitly support using a list
-    # rather than a Django queryset. We need the shim because the list we get from the API only
+    # Note that despite the naming, DRF APIViews and pagination explicitly support
+    # using a list
+    # rather than a Django queryset. We need the shim because the list we get from
+    # the API only
     # contains a single page of results.
 
     serializer_class = BaseDatatrackerPersonSerializer
