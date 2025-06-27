@@ -17,8 +17,6 @@ extend-select = [
 ]
 extend-ignore = [
     "E501",  # no line length errors
-    "F841",  # local variable is assigned to but never used
-    "F401",  # unused import
     "F405",  # variable may be undefined, or defined from star imports
     "F403",  # unable to detect undefined names
     "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`...

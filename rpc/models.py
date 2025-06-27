@@ -3,7 +3,6 @@
 import datetime
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import Optional
 
 from django.db import models
 from django.utils import timezone

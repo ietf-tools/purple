@@ -4,7 +4,6 @@ import datetime
 import warnings
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import Optional
 from urllib.parse import urljoin
 
 from django.conf import settings

@@ -199,9 +199,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
         if isinstance(audience, str):
             audience = [audience]
         if len(set(audience)) != 1 or audience[0] != self.OIDC_RP_CLIENT_ID:
-            raise SuspiciousOperation(
-                f'token has invalid audience "{audience}"'
-            )
+            raise SuspiciousOperation(f'token has invalid audience "{audience}"')
         # azp should be present if token contains multiple audiences, but we rejected such a token already.
         # Just check that, if present, azp is us
         if "azp" in payload and payload["azp"] != self.OIDC_RP_CLIENT_ID:

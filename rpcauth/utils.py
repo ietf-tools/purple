@@ -21,7 +21,7 @@ def op_logout_url(request):
     if settings.DEPLOYMENT_MODE == "production" and endpoint_parts.scheme != "https":
         warnings.warn(
             "OIDC_OP_END_SESSION_ENDPOINT must be an https URI. Not initiating logout from OP.",
-            stacklevel=2
+            stacklevel=2,
         )
         return logout_redirect_url
 
@@ -33,7 +33,7 @@ def op_logout_url(request):
     ):
         warnings.warn(
             "OIDC_OP_END_SESSION_ENDPOINT has an inappropriate query param. Not initiating logout from OP.",
-            stacklevel=2
+            stacklevel=2,
         )
         return logout_redirect_url
 
