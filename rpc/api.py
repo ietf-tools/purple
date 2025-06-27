@@ -77,8 +77,6 @@ from .serializers import (
     check_user_has_role,
     DocumentCommentSerializer,
     RfcAuthorSerializer,
-    CreateRfcAuthorSerializer,
-    CreateRpcRelatedDocumentSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
@@ -443,6 +441,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 @extend_schema_with_draft_name()
 class RpcAuthorViewSet(viewsets.ModelViewSet):
     queryset = RfcAuthor.objects.all()
+    serializer_class = RfcAuthorSerializer
 
     def get_queryset(self):
         return (
@@ -459,27 +458,16 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             raise NotFound("RfcToBe with the given draft name does not exist")
         serializer.save(rfc_to_be=rfc_to_be)
 
-    def get_serializer_class(self):
-        """Use different serializer for create vs other operations"""
-        if self.action == "create":
-            return CreateRfcAuthorSerializer
-        return RfcAuthorSerializer
-
 
 @extend_schema_with_draft_name()
 class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
+    serializer_class = RpcRelatedDocumentSerializer
 
     def get_queryset(self):
         return (
             super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
         )
-
-    def get_serializer_class(self):
-        """Use different serializer for create vs other operations"""
-        if self.action == "create":
-            return CreateRpcRelatedDocumentSerializer
-        return RpcRelatedDocumentSerializer
 
 
 class LabelViewSet(viewsets.ModelViewSet):

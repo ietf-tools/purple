@@ -181,11 +181,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "datatracker_person"]
 
 
-class CreateRfcAuthorSerializer(RfcAuthorSerializer):
-    class Meta(RfcAuthorSerializer.Meta):
-        read_only_fields = ["id"]
-
-
 class RfcToBeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     rev = serializers.SerializerMethodField()
@@ -334,11 +329,6 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = RpcRelatedDocument
         fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
-
-
-class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
-    class Meta(RpcRelatedDocumentSerializer.Meta):
-        read_only_fields = ["id"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
