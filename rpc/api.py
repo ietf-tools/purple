@@ -141,14 +141,17 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     @with_rpcapi
     def get_serializer_context(self, rpcapi: rpcapi_client.DefaultApi):
         """Add context to the serializer"""
-        # use bulk endpoint to get names
-        name_map = rpcapi.get_persons(
-            list(
-                RpcPerson.objects.values_list(
-                    "datatracker_person__datatracker_id", flat=True
-                )
+        # todo don't fetch _everybody_; use memcache
+        person_ids = list(
+            RpcPerson.objects.values_list(
+                "datatracker_person__datatracker_id", flat=True
             )
         )
+        # use bulk endpoint to get names
+        name_map = {
+            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
+        }
+        name_map |= {missing_id: "Unknown" for missing_id in person_ids if missing_id not in name_map}
         return super().get_serializer_context() | {"name_map": name_map}
 
 
