@@ -145,11 +145,11 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
                 is_staff=admin_access,
                 is_superuser=admin_access,
             )
-        except IntegrityError:
+        except IntegrityError as err:
             # exception message gets logged - user only sees a failed auth
             raise SuspiciousOperation(
                 f"User already exists for datatracker user {subject_id}"
-            )
+            ) from err
         return new_user
 
     def update_user(self, user, claims):

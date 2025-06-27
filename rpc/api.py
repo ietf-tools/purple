@@ -306,10 +306,12 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
                     # Get the draft for the reference, otherwise create it
                     try:
                         draft = Document.objects.get(datatracker_id=reference.id)
-                    except Document.DoesNotExist:
+                    except Document.DoesNotExist as err:
                         draft_info = rpcapi.get_draft_by_id(reference.id)
                         if draft_info is None:
-                            raise NotFound("Unable to get draft info for reference")
+                            raise NotFound(
+                                "Unable to get draft info for reference"
+                            ) from err
                         draft, _ = Document.objects.get_or_create(
                             datatracker_id=reference.id,
                             defaults={

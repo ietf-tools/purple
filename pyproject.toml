@@ -19,5 +19,4 @@ extend-ignore = [
     "E501",  # no line length errors
     "F405",  # variable may be undefined, or defined from star imports
     "F403",  # unable to detect undefined names
-    "B904",  # Within an `except` clause, raise exceptions with `raise ... from err`...
 ]

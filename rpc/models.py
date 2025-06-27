@@ -180,8 +180,8 @@ class StdLevelNameManager(models.Manager):
             try:
                 _, name, desc = datatracker_stdlevelname(slug)
                 return self.create(slug=slug, name=name, desc=desc)
-            except (DatatrackerFetchFailure, NoSuchSlug):
-                raise self.model.DoesNotExist
+            except (DatatrackerFetchFailure, NoSuchSlug) as err:
+                raise self.model.DoesNotExist() from err
 
 
 class StdLevelName(Name):
@@ -200,8 +200,8 @@ class StreamNameManager(models.Manager):
             try:
                 _, name, desc = datatracker_streamname(slug)
                 return self.create(slug=slug, name=name, desc=desc)
-            except (DatatrackerFetchFailure, NoSuchSlug):
-                raise self.model.DoesNotExist
+            except (DatatrackerFetchFailure, NoSuchSlug) as err:
+                raise self.model.DoesNotExist() from err
 
 
 class StreamName(Name):

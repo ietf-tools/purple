@@ -16,8 +16,8 @@ class DatatrackerPersonQuerySet(models.QuerySet):
         """Get an instance by subject id, creating it if necessary"""
         try:
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
-        except rpcapi_client.exceptions.NotFoundException:
-            raise DatatrackerPerson.DoesNotExist
+        except rpcapi_client.exceptions.NotFoundException as err:
+            raise DatatrackerPerson.DoesNotExist() from err
         return cast(
             tuple[DatatrackerPerson, bool],
             super().get_or_create(datatracker_id=dtpers.id),
