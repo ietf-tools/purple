@@ -1,13 +1,11 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
 from typing import cast
 
 import rpcapi_client
 from django.core.cache import cache
+from django.db import models
 
 from datatracker.rpcapi import with_rpcapi
-
-from django.db import models
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):

@@ -2,6 +2,7 @@
 """JSON Logger Utilities"""
 
 import time
+
 from pythonjsonlogger import jsonlogger
 
 

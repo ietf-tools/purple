@@ -2,19 +2,19 @@
 
 import datetime
 import warnings
-
 from dataclasses import dataclass
-from django.conf import settings
 from itertools import pairwise
+from typing import Optional
+from urllib.parse import urljoin
 
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
-from typing import Optional
-from urllib.parse import urljoin
 
 from datatracker.models import DatatrackerPerson
+
 from .models import (
     ActionHolder,
     Assignment,
@@ -25,13 +25,13 @@ from .models import (
     Label,
     RfcAuthor,
     RfcToBe,
-    RpcRelatedDocument,
+    RpcDocumentComment,
     RpcPerson,
+    RpcRelatedDocument,
     RpcRole,
     SourceFormatName,
     StdLevelName,
     StreamName,
-    RpcDocumentComment,
 )
 
 
@@ -71,7 +71,7 @@ class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
 class HistoryRecord:
     id: int
     date: datetime.datetime
-    by: Optional[DatatrackerPerson]
+    by: DatatrackerPerson | None
     desc: str
 
     @classmethod
@@ -140,7 +140,8 @@ class HistorySerializer(serializers.Serializer):
             warnings.warn(
                 RuntimeWarning(
                     f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
-                )
+                ),
+                stacklevel=2,
             )
         kwargs["read_only"] = True
         super().__init__(instance, data, **kwargs)
@@ -159,7 +160,8 @@ class HistoryLastEditSerializer(serializers.Serializer):
             warnings.warn(
                 RuntimeWarning(
                     f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
-                )
+                ),
+                stacklevel=2,
             )
         kwargs["read_only"] = True
         super().__init__(instance, data, **kwargs)
@@ -246,7 +248,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             rfc_to_be.draft.pages if rfc_to_be.draft else 0
         )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
 
-    def get_cluster(self, rfc_to_be) -> Optional[int]:
+    def get_cluster(self, rfc_to_be) -> int | None:
         if rfc_to_be.draft:
             cluster = rfc_to_be.draft.cluster_set.first()
             return None if cluster is None else cluster.number

@@ -1,16 +1,15 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
-import requests
+from urllib.parse import urlparse
 
+import requests
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.utils.encoding import smart_str
 from josepy.jws import JWS, Header
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend, import_from_settings
 from requests.auth import HTTPBasicAuth
-from urllib.parse import urlparse
 
 
 class ServiceTokenOIDCAuthenticationBackend(OIDCAuthenticationBackend):
@@ -108,7 +107,7 @@ class ServiceTokenOIDCAuthenticationBackend(OIDCAuthenticationBackend):
 
         user_response = self._request_get(
             self.OIDC_OP_USER_ENDPOINT,
-            headers={"Authorization": "Bearer {0}".format(access_token)},
+            headers={"Authorization": f"Bearer {access_token}"},
             verify=self.get_settings("OIDC_VERIFY_SSL", True),
             timeout=self.get_settings("OIDC_TIMEOUT", None),
             proxies=self.get_settings("OIDC_PROXY", None),
@@ -191,9 +190,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
         issuer_id = payload.get("iss", None)
         if issuer_id is None or issuer_id != self.OIDC_OP_ISSUER_ID:
             raise SuspiciousOperation(
-                'issuer "{}" does not match configured issuer "{}"'.format(
-                    issuer_id, self.OIDC_OP_ISSUER_ID
-                )
+                f'issuer "{issuer_id}" does not match configured issuer "{self.OIDC_OP_ISSUER_ID}"'
             )
         # Check audience. Per spec, we must reject the token if it "does not list the Client as a
         # valid audience, or if it contains additional audiences not trusted by the Client." We only
@@ -203,7 +200,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
             audience = [audience]
         if len(set(audience)) != 1 or audience[0] != self.OIDC_RP_CLIENT_ID:
             raise SuspiciousOperation(
-                'token has invalid audience "{}"'.format(audience)
+                f'token has invalid audience "{audience}"'
             )
         # azp should be present if token contains multiple audiences, but we rejected such a token already.
         # Just check that, if present, azp is us
@@ -221,9 +218,9 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
                 'token exp ("{}") is not an integer'.format(payload["exp"])
             )
         expiration_time = datetime.datetime.fromtimestamp(
-            payload["exp"], tz=datetime.timezone.utc
+            payload["exp"], tz=datetime.UTC
         )
-        if expiration_time < datetime.datetime.now(tz=datetime.timezone.utc):
+        if expiration_time < datetime.datetime.now(tz=datetime.UTC):
             raise SuspiciousOperation(f"token expired at {expiration_time}")
 
         # remember the subject ID so we can validate claims later

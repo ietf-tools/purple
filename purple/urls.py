@@ -20,8 +20,9 @@ from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path, register_converter
 from rest_framework import routers
-from rpc import views
+
 from rpc import api as rpc_api
+from rpc import views
 
 
 class DraftNameConverter:

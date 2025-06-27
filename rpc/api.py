@@ -3,42 +3,44 @@
 import datetime
 from dataclasses import dataclass
 
+import rpcapi_client
 from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from rest_framework import mixins, serializers, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
 )
+from rest_framework.exceptions import (
+    NotAuthenticated,
+    NotFound,
+    PermissionDenied,
+)
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
-from rest_framework.exceptions import (
-    NotAuthenticated,
-    PermissionDenied,
-    NotFound,
-)
-from rest_framework import mixins, serializers, views, viewsets
-from drf_spectacular.utils import (
-    extend_schema,
-    inline_serializer,
-    extend_schema_view,
-    OpenApiParameter,
-)
-import rpcapi_client
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
+from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from datatracker.models import Document, DatatrackerPerson
+
 from .models import (
     Assignment,
     Capability,
     Cluster,
     Label,
-    RfcToBe,
     RfcAuthor,
+    RfcToBe,
+    RpcDocumentComment,
     RpcPerson,
     RpcRelatedDocument,
     RpcRole,
@@ -46,34 +48,33 @@ from .models import (
     StdLevelName,
     StreamName,
     TlpBoilerplateChoiceName,
-    RpcDocumentComment,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
+    BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
+    CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
+    DocumentCommentSerializer,
     LabelSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
+    RfcAuthorSerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
     RpcRoleSerializer,
-    SubmissionListItemSerializer,
-    Submission,
-    SubmissionSerializer,
     SourceFormatNameSerializer,
     StdLevelNameSerializer,
     StreamNameSerializer,
+    Submission,
+    SubmissionListItemSerializer,
+    SubmissionSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
     check_user_has_role,
-    DocumentCommentSerializer,
-    RfcAuthorSerializer,
-    CreateRfcAuthorSerializer,
-    BaseDatatrackerPersonSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 

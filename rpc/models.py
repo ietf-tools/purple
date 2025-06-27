@@ -1,8 +1,6 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 import datetime
-
 from dataclasses import dataclass
 from itertools import pairwise
 from typing import Optional
@@ -110,13 +108,6 @@ class RfcToBe(models.Model):
 
     class Meta:
         verbose_name_plural = "RfcToBes"
-
-    def __str__(self):
-        return (
-            f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
-        )
-
-    class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["rfc_number"],
@@ -125,10 +116,15 @@ class RfcToBe(models.Model):
             )
         ]
 
+    def __str__(self):
+        return (
+            f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
+        )
+
     @dataclass
     class Interval:
         start: datetime.datetime
-        end: Optional[datetime.datetime] = None
+        end: datetime.datetime | None = None
 
     def time_intervals_with_label(self, label) -> list[Interval]:
         hist = list(self.history.all())
@@ -152,9 +148,7 @@ class RfcToBe(models.Model):
                 if len(intervals) > 0 and intervals[-1].end is None:
                     intervals[-1].end = ch.new_record.history_date
         if len(intervals) > 0 and intervals[-1].end is None:
-            intervals[-1].end = datetime.datetime.now().astimezone(
-                datetime.timezone.utc
-            )
+            intervals[-1].end = datetime.datetime.now().astimezone(datetime.UTC)
         return intervals
 
 
@@ -603,7 +597,9 @@ class Label(models.Model):
     is_exception = models.BooleanField(default=False)
     is_complexity = models.BooleanField(default=False)
     color = models.CharField(
-        max_length=7, default="purple", choices=zip(TAILWIND_COLORS, TAILWIND_COLORS)
+        max_length=7,
+        default="purple",
+        choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
     history = HistoricalRecords()
 
