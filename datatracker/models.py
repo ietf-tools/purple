@@ -13,7 +13,7 @@ from django.db import models
 class DatatrackerPersonQuerySet(models.QuerySet):
     @with_rpcapi
     def get_or_create_by_subject_id(
-        self, subject_id, *, rpcapi: rpcapi_client.RpcApi
+        self, subject_id, *, rpcapi: rpcapi_client.PurpleApi
     ) -> tuple["DatatrackerPerson", bool]:
         """Get an instance by subject id, creating it if necessary"""
         try:
@@ -48,7 +48,7 @@ class DatatrackerPerson(models.Model):
         return self._fetch("picture")
 
     @with_rpcapi
-    def _fetch(self, field_name, *, rpcapi: rpcapi_client.RpcApi):
+    def _fetch(self, field_name, *, rpcapi: rpcapi_client.PurpleApi):
         """Get field_name value for person (uses cache)"""
         cache_key = f"datatracker_person-{self.datatracker_id}"
         no_value = object()
