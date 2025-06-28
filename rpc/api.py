@@ -151,7 +151,11 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
         name_map = {
             person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
         }
-        name_map |= {missing_id: "Unknown" for missing_id in person_ids if missing_id not in name_map}
+        name_map |= {
+            missing_id: "Unknown"
+            for missing_id in person_ids
+            if missing_id not in name_map
+        }
         return super().get_serializer_context() | {"name_map": name_map}
 
 
