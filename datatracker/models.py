@@ -59,7 +59,7 @@ class DatatrackerPerson(models.Model):
             except rpcapi_client.exceptions.NotFoundException:
                 cached_value = None
             else:
-                cached_value = person.to_json()
+                cached_value = person.json()
             cache.set(cache_key, cached_value)
         if cached_value is None:
             return None
