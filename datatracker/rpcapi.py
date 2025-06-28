@@ -14,7 +14,7 @@ class ApiClient(rpcapi_client.ApiClient):
         super().__init__(
             rpcapi_client.Configuration(
                 host=settings.DATATRACKER_RPC_API_BASE,
-                api_key={"ApiKeyAuth": settings.DATATRACKER_RPC_API_TOKEN},
+                api_key={"apiKeyAuth": settings.DATATRACKER_RPC_API_TOKEN},
             )
         )
 
@@ -41,7 +41,7 @@ def with_rpcapi(f):
 
         # Create our own api instance and pass it to the wrapped function
         with ApiClient() as client:
-            kwargs["rpcapi"] = rpcapi_client.DefaultApi(client)
+            kwargs["rpcapi"] = rpcapi_client.PurpleApi(client)
             return f(*args, **kwargs)
 
     return wrapper
