@@ -359,14 +359,15 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "hours_per_week", "capabilities", "roles", "is_active"]
 
     def __init__(self, *args, **kwargs):
-        self.name_map: dict[str, str] = kwargs.pop(
+        context = kwargs.get("context", {})
+        self.name_map: dict[int, str] = context.pop(
             "name_map", {}
         )  # datatracker_id -> name
         super().__init__(*args, **kwargs)
 
     def get_name(self, rpc_person) -> str:
         cached_name = self.name_map.get(
-            str(rpc_person.datatracker_person.datatracker_id), None
+            rpc_person.datatracker_person.datatracker_id, None
         )
         return cached_name or rpc_person.datatracker_person.plain_name
 
