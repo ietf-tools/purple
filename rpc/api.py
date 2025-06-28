@@ -289,8 +289,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.RpcApi):
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
-            response = rpcapi.get_draft_references(document_id)
-            references = response.references
+            references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
             already_in_queue = dict(
                 RfcToBe.objects.filter(
