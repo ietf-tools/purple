@@ -526,7 +526,7 @@ class SubmissionAuthor:
 
     @classmethod
     def from_rpcapi_draft_author(cls, author):
-        return cls(id=author.id, plain_name=author.plain_name)
+        return cls(id=author.person, plain_name=author.plain_name)
 
 
 @dataclass
