@@ -30,7 +30,7 @@ class Command(BaseCommand):
         self.create_real_people()
 
     @with_rpcapi
-    def create_real_people(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_real_people(self, *, rpcapi: rpcapi_client.RpcApi):
         """Create RpcPerson / DatatrackerPerson records for real people"""
         self.people["jennifer"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.get_subject_person_by_id(
@@ -64,7 +64,7 @@ class Command(BaseCommand):
         )
 
     @with_rpcapi
-    def create_rpc_people(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_rpc_people(self, *, rpcapi: rpcapi_client.RpcApi):
         # From "Manage Team Members" wireframe
 
         self.people["bjenkins"] = RpcPersonFactory(
@@ -229,7 +229,7 @@ class Command(BaseCommand):
         )
 
     @with_rpcapi
-    def create_documents(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_documents(self, *, rpcapi: rpcapi_client.RpcApi):
         # submission, not yet an RfcToBe (not shown on "The Queue" wireframe)
         rpcapi.create_demo_draft(
             rpcapi_client.CreateDemoDraftRequest(
@@ -356,7 +356,7 @@ class Command(BaseCommand):
     def _demo_rfctobe_factory(
         self,
         *,
-        rpcapi: rpcapi_client.DefaultApi,
+        rpcapi: rpcapi_client.RpcApi,
         name,
         rev,
         states=None,

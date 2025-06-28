@@ -139,7 +139,7 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filterset_fields = ["is_active"]
 
     @with_rpcapi
-    def get_serializer_context(self, rpcapi: rpcapi_client.DefaultApi):
+    def get_serializer_context(self, rpcapi: rpcapi_client.RpcApi):
         """Add context to the serializer"""
         # todo don't fetch _everybody_; use memcache
         person_ids = list(
@@ -200,7 +200,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 )
 @api_view(["GET"])
 @with_rpcapi
-def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
+def submissions(request, *, rpcapi: rpcapi_client.RpcApi):
     """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
 
     [
@@ -245,7 +245,7 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
 @extend_schema(operation_id="submissions_retrieve", responses=SubmissionSerializer)
 @api_view(["GET"])
 @with_rpcapi
-def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def submission(request, document_id, rpcapi: rpcapi_client.RpcApi):
     # Create a Document to which the RfcToBe can refer. If it already exists, update
     # its values with whatever the datatracker currently says.
     draft = rpcapi.get_draft_by_id(document_id)
@@ -260,7 +260,7 @@ def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
 )
 @api_view(["POST"])
 @with_rpcapi
-def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def import_submission(request, document_id, rpcapi: rpcapi_client.RpcApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
     try:
@@ -588,7 +588,7 @@ class DocumentCommentViewSet(
 
     @staticmethod
     @with_rpcapi
-    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.DefaultApi):
+    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.RpcApi):
         """Get a datatracker Document for a draft given its name
 
         n.b., creates a Document object if needed
@@ -722,6 +722,6 @@ class SearchDatatrackerPersons(ListAPIView):
 
     @with_rpcapi
     def upstream_search(
-        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+        self, search, limit, offset, *, rpcapi: rpcapi_client.RpcApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)

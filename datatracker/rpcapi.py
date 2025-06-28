@@ -41,7 +41,7 @@ def with_rpcapi(f):
 
         # Create our own api instance and pass it to the wrapped function
         with ApiClient() as client:
-            kwargs["rpcapi"] = rpcapi_client.DefaultApi(client)
+            kwargs["rpcapi"] = rpcapi_client.RpcApi(client)
             return f(*args, **kwargs)
 
     return wrapper
