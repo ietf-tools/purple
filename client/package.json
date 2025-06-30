@@ -41,8 +41,10 @@
     "vue-tsc": "2.2.10"
   },
   "dependencies": {
+    "@vueuse/core": "13.4.0",
     "canvas-confetti": "1.9.3",
     "defu": "6.1.4",
+    "fluid-dnd": "2.4.0",
     "fuse.js": "7.1.0",
     "humanize-duration": "3.33.0",
     "lodash-es": "4.17.21",
