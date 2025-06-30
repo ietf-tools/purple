@@ -65,7 +65,7 @@ class RfcToBe(models.Model):
 
     disposition = models.ForeignKey("DispositionName", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
-    draft = models.OneToOneField(
+    draft = models.ForeignKey(
         "datatracker.Document", null=True, on_delete=models.PROTECT
     )
     rfc_number = models.PositiveIntegerField(null=True, unique=True)
@@ -606,6 +606,9 @@ class Label(models.Model):
         max_length=7, default="purple", choices=zip(TAILWIND_COLORS, TAILWIND_COLORS)
     )
     history = HistoricalRecords()
+
+    def __str__(self):
+        return self.slug
 
 
 class RpcAuthorComment(models.Model):

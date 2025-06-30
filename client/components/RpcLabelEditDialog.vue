@@ -54,6 +54,17 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+          <label for="is-complexity" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Is
+            Complexity</label>
+          <div class="mt-2 sm:col-span-2 sm:mt-0">
+            <input
+              id="is-complexity" v-model="label.isComplexity" name="is-complexity" type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+            <p class="text-gray-500">This label indicates a complexity.</p>
+          </div>
+        </div>
+
+        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label for="color" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <select
@@ -98,6 +109,7 @@ async function save () {
     id: 0, // FIXME: is this ok?
     slug: label.slug,
     isException: label.isException,
+    isComplexity: label.isComplexity,
     color: label.color
   }
   try {

@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+from dataclasses import dataclass
 
 from django.db import transaction
 from django.db.models import Q
@@ -11,14 +12,15 @@ from rest_framework.decorators import (
     action,
     api_view,
 )
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotAuthenticated,
     PermissionDenied,
     NotFound,
 )
-from rest_framework import serializers
-from rest_framework import mixins, views, viewsets
+from rest_framework import mixins, serializers, views, viewsets
 from drf_spectacular.utils import (
     extend_schema,
     inline_serializer,
@@ -29,7 +31,7 @@ import rpcapi_client
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.rpcapi import with_rpcapi
-from datatracker.models import Document
+from datatracker.models import Document, DatatrackerPerson
 from .models import (
     Assignment,
     Capability,
@@ -71,6 +73,7 @@ from .serializers import (
     DocumentCommentSerializer,
     RfcAuthorSerializer,
     CreateRfcAuthorSerializer,
+    BaseDatatrackerPersonSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
@@ -605,3 +608,118 @@ class DocumentCommentViewSet(
             },
         )
         return document
+
+
+class PaginationPassthroughWrapper:
+    """Helper class to make a paginated upstream result work like a queryset for DRF
+
+    Works with a LimitOffsetPagination result the default structure but only cares that
+    it contains a .count member with the total number of results available and a
+    .results member with the current page of results. The limit and offset that were
+    used for the upstream pagination _must_ be the same as the limit and offset used
+    for the downstream pagination or this will give nonsense results.
+
+    Exposes the .count as a `.count()` method and passes indexing operations through
+    to the .results list, adjusting the indexes to compensate for the offset that was
+    already applied.
+    """
+
+    def __init__(self, data, total_count, offset):
+        self._data = data
+        self._total_count = total_count
+        self._offset = offset
+
+    def count(self):
+        return self._total_count
+
+    def __getitem__(self, item):
+        # Pass item lookups through to the results from upstream. Because this was already
+        # paginated, remove the offset. LimitOffsetPagination only ever uses queryset[offset:offset+limit],
+        # so we don't need to implement esoteric corner cases. Offset and limit are always non-negative.
+        if isinstance(item, slice):
+            # A slice represents `results[start:stop:step]` - subtract offset from start and stop
+            if (item.start is not None and item.start < 0) or (
+                item.stop is not None and item.stop < 0
+            ):
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = slice(
+                None if item.start is None else item.start - self._offset,
+                None if item.stop is None else item.stop - self._offset,
+                item.step,
+            )
+        else:
+            # Other than a slice is a single index lookup.  Don't need to support this, but it's easy enough.
+            if item < 0:
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = item - self._offset
+        return self._data[adjusted_item]
+
+
+class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
+@dataclass
+class DatatrackerPersonModelShim:
+    """Stand-in for a DatatrackerPerson using results from the search_person() API"""
+
+    datatracker_id: int
+    plain_name: str
+    picture: str
+
+    @classmethod
+    def from_rpcapi_person(cls, obj: rpcapi_client.models.person.Person):
+        return cls(
+            datatracker_id=obj.id,
+            plain_name=obj.plain_name,
+            picture=obj.picture,
+        )
+
+
+@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+class SearchDatatrackerPersons(ListAPIView):
+    """Datatracker person search API
+
+    Search for a datatracker person by name/email fragment.
+    """
+
+    # Warning: this is a tricky view!
+    #
+    # Rather than querying the database, the `get_queryset()` method makes a datatracker API call
+    # to perform the Person search. It uses the same pagination limit/offset on the API call as the
+    # downstream request being handled. The paginated results from the API call are packaged in
+    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination internals work
+    # with the already-paginated results as though they came from a local database lookup.
+    #
+    # Note that despite the naming, DRF APIViews and pagination explicitly support using a list
+    # rather than a Django queryset. We need the shim because the list we get from the API only
+    # contains a single page of results.
+
+    serializer_class = BaseDatatrackerPersonSerializer
+    pagination_class = SearchDatatrackerPersonsPagination
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            # Be sure we don't make an API call during schema generation
+            return DatatrackerPerson.objects.none()
+        offset = self.paginator.get_offset(self.request)
+        upstream_results = self.upstream_search(
+            search=self.request.GET.get("search", ""),
+            limit=self.paginator.get_limit(self.request),
+            offset=offset,
+        )
+        return PaginationPassthroughWrapper(
+            data=[
+                DatatrackerPersonModelShim.from_rpcapi_person(r)
+                for r in upstream_results.results
+            ],
+            total_count=upstream_results.count,
+            offset=offset,
+        )
+
+    @with_rpcapi
+    def upstream_search(
+        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+    ):
+        return rpcapi.search_person(search=search, limit=limit, offset=offset)
