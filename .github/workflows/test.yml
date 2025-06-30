@@ -18,7 +18,13 @@ jobs:
       with:
         python-version: "3.12"
 
-    - name: Check code style
+    - name: Install Ruff
+      run: pip install ruff
+
+    - name: Check code format
       run: |
-        pip install ruff
+        ruff format --check --diff .
+
+    - name: Check code style and linting
+      run: |
         ruff check .
