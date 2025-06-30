@@ -24,6 +24,8 @@
       </div>
     </header>
 
+
+
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
@@ -83,6 +85,8 @@
         <!-- Document Info -->
         <DocInfoCard :draft="draft"/>
 
+        <EditAuthors v-if="draft" v-model="draft"/>
+
         <!-- Labels -->
         <BaseCard class="lg:col-start-3 lg:row-start-2 lg:row-span-1 grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">Labels</h3>
@@ -95,10 +99,6 @@
             :labels="labels" :model-value="draft?.labels" item-label="slug"
             @update:model-value="saveLabels"/>
         </BaseCard>
-
-        <div>
-          <EditAuthors v-if="draft" v-model:authors="authors"/>
-        </div>
 
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
@@ -144,7 +144,7 @@
 <script setup lang="ts">
 
 import { DateTime } from 'luxon'
-import type { RfcAuthor } from '~/purple_client'
+import type { CookedDraft } from '~/utilities/rpc'
 
 const route = useRoute()
 const api = useApi()
@@ -155,7 +155,7 @@ const appliedLabels = computed(() => labels.value.filter((lbl) => rawDraft.value
 
 const draftAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === draft.value?.id))
 
-const draft = computed(() => {
+const draft = computed((): CookedDraft | null => {
   if (rawDraft?.value) {
     return {
       ...rawDraft.value,
@@ -200,36 +200,4 @@ async function saveLabels (labels: number[]) {
   }
   draftRefresh()
 }
-
-const authors = ref<RfcAuthor[]>([
-  {
-    id: 1,
-    titlepageName: 'Bob',
-    isEditor: true,
-    datatrackerPerson: 101,
-  },
-  {
-    id: 2,
-    titlepageName: 'Bill',
-    isEditor: true,
-    datatrackerPerson: 102,
-  },
-  {
-    id: 3,
-    titlepageName: 'Box',
-    isEditor: true,
-    datatrackerPerson: 103,
-  }
-])
-
-watch(authors, () => {
-  console.log("Update authors with", authors.value)
-  // TODO: send authors to API
-  // api.documentsAuthorsUpdate(
-  //   draftName: draftId.value,
-  // )
-},
-  { deep: true }
-)
-
 </script>

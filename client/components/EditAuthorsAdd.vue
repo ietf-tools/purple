@@ -23,13 +23,14 @@
         (no matches)
       </ComboboxEmpty>
         <ComboboxItem
-          v-for="(searchResult, index) in searchResults"
-          :key="searchResult.id"
+          v-if="searchResults"
+          v-for="searchResult in searchResults.results"
+          :key="searchResult.personId"
           :value="searchResult"
           class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
         >
           <span>
-            {{ searchResult.titlepageName }}
+            {{ searchResult.name }}
           </span>
         </ComboboxItem>
       </ComboboxViewport>
@@ -48,27 +49,45 @@ import {
   ComboboxTrigger,
   ComboboxViewport,
 } from "reka-ui";
-import type { RfcAuthor } from "~/purple_client";
+import type { BaseDatatrackerPerson } from "~/purple_client";
+import type { CookedDraft } from "~/utilities/rpc";
 
-type Props = {};
+const draft = defineModel<CookedDraft>({ required: true })
 
-const props = defineProps<Props>();
-
-const authors = defineModel<RfcAuthor[]>('authors', { required: true })
-
-const selectedAuthor = ref<RfcAuthor | undefined>()
+const selectedAuthor = ref<BaseDatatrackerPerson | undefined>()
 
 const snackbar = useSnackbar()
 
-watch(selectedAuthor, () => {
+const api = useApi()
+
+watch(selectedAuthor, async () => {
   if(selectedAuthor.value) {
+    const draftName = draft.value.name
+    if(draftName === undefined) {
+      throw Error(`Expected draft to have name but was ${draft.value.name}`)
+    }
     const { value } = selectedAuthor
-    if(!authors.value.find(author => author.id === value.id)) {
-      authors.value.push(selectedAuthor.value)
+    if(!draft.value.authors.find(author => author.datatrackerPerson === value.personId)) {
+      try {
+        const rpcAuthor = await api.documentsAuthorsCreate({
+          draftName,
+          createRfcAuthor: {
+            titlepageName: value.name!,
+            datatrackerPerson: value.personId,
+          }
+        })
+        draft.value.authors.push(rpcAuthor)
+      } catch (e: unknown) {
+        snackbar.add({
+          type: 'error',
+          title: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
+          text: `Possible reason: ${e}`
+        })
+      }
     } else {
       snackbar.add({
         type: 'error',
-        title: `${selectedAuthor.value.titlepageName} already added`,
+        title: `Author "${selectedAuthor.value.name}" already added`,
         text: ''
       })
     }
@@ -76,49 +95,13 @@ watch(selectedAuthor, () => {
   selectedAuthor.value = undefined
 })
 
-const api = useApi();
+type SearchDatatrackerpersonsResponse = Awaited<ReturnType<typeof api.searchDatatrackerpersons>>
 
-const searchResults = ref<RfcAuthor[]>([])
+  type X = SearchDatatrackerpersonsResponse['results'][number]
 
-const mockDatatrackerPersonSearch = async (props: {
-  query: string;
-  page: number;
-}, initOverrides?: Parameters<typeof api.assignmentsCreate>[1]): Promise<RfcAuthor[]> => {
-  // TODO replace this mock with API usage
-  const allAuthors = [
-    {
-      id: 5,
-      titlepageName: 'Bobby',
-      isEditor: true,
-      datatrackerPerson: 105,
-    },
-    {
-      id: 6,
-      titlepageName: 'Billy',
-      isEditor: true,
-      datatrackerPerson: 106,
-    },
-    {
-      id: 7,
-      titlepageName: 'Boxy',
-      isEditor: true,
-      datatrackerPerson: 107,
-    }
-  ]
+const searchResults = ref<SearchDatatrackerpersonsResponse>()
 
-  return allAuthors.filter(author => JSON.stringify(author).toLowerCase().includes(props.query.toLowerCase()))
-}
-
-type PurpleApiExtension = typeof api & {
-  datatrackerPersonSearch: typeof mockDatatrackerPersonSearch;
-};
-
-const apiWithExtension = (function(){
-  (api as PurpleApiExtension).datatrackerPersonSearch = mockDatatrackerPersonSearch;
-  return api as PurpleApiExtension
-})()
-
-const inputRef = ref("");
+const inputRef = ref('');
 
 const debouncedInputRef = refDebounced(inputRef, 100);
 
@@ -134,8 +117,10 @@ watch(
 
     previousAbortController = new AbortController();
 
-    searchResults.value = await apiWithExtension.datatrackerPersonSearch(
-      { query: debouncedInputRef.value, page: 0 },
+    searchResults.value = await api.searchDatatrackerpersons(
+      {
+        // FIXME: add a search param from inputRef when the API supports it
+      },
       { signal: previousAbortController.signal }
     )
   });
