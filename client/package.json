@@ -12,12 +12,12 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "3.3.1",
-    "@eslint/js": "9.29.0",
-    "@nuxt/devtools": "2.5.0",
+    "@eslint/js": "9.30.0",
+    "@nuxt/devtools": "2.6.0",
     "@nuxt/eslint": "1.4.1",
     "@nuxt/eslint-config": "1.4.1",
     "@nuxtjs/color-mode": "3.5.2",
-    "@nuxtjs/robots": "5.2.10",
+    "@nuxtjs/robots": "5.2.11",
     "@nuxtjs/tailwindcss": "6.14.0",
     "@pinia/nuxt": "0.11.1",
     "@tailwindcss/forms": "0.5.10",
@@ -27,7 +27,7 @@
     "@types/luxon": "3.6.2",
     "@types/node": "22.15.30",
     "@types/sortablejs": "1.15.8",
-    "eslint": "9.29.0",
+    "eslint": "9.30.0",
     "eslint-plugin-nuxt": "4.0.0",
     "eslint-plugin-vue": "10.2.0",
     "globals": "16.2.0",
@@ -52,7 +52,7 @@
     "reka-ui": "2.3.1",
     "sortablejs": "1.15.6",
     "sortablejs-vue3": "1.2.11",
-    "vue": "3.5.16"
+    "vue": "3.5.17"
   },
   "peerDependencies": {
     "typescript": "5.8.3"
