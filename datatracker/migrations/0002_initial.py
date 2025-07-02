@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
-from django.db import migrations, models
 import django.db.models.deletion
+from django.db import migrations, models
 
 
 class Migration(migrations.Migration):

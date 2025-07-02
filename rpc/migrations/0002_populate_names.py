@@ -45,7 +45,8 @@ def forward(apps, schema_editor):
         name="noModificationTrust200902",
         desc="Notice from the text of sections 6.b and 6.c.i of the TLP "
         "(may be appropriate when republishing standards produced by a standards body "
-        "other than the IETF, industry consortia, or companies, typically as an Informational "
+        "other than the IETF, industry consortia, or companies, typically as an "
+        "Informational "
         "RFC)",
     )
     TlpBoilerplateChoiceName.objects.create(

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Development-mode Django settings for RPC project"""
 
-from hashlib import sha384
+import os
 
 from .base import *
 

@@ -1,6 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import warnings
-from urllib.parse import urlsplit, parse_qsl, urlunsplit, urlencode
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 from django.conf import settings
 
@@ -20,7 +20,9 @@ def op_logout_url(request):
 
     if settings.DEPLOYMENT_MODE == "production" and endpoint_parts.scheme != "https":
         warnings.warn(
-            "OIDC_OP_END_SESSION_ENDPOINT must be an https URI. Not initiating logout from OP."
+            "OIDC_OP_END_SESSION_ENDPOINT must be an https URI. Not initiating logout "
+            "from OP.",
+            stacklevel=2,
         )
         return logout_redirect_url
 
@@ -31,7 +33,9 @@ def op_logout_url(request):
         for name, _ in query_params
     ):
         warnings.warn(
-            "OIDC_OP_END_SESSION_ENDPOINT has an inappropriate query param. Not initiating logout from OP."
+            "OIDC_OP_END_SESSION_ENDPOINT has an inappropriate query param. "
+            "Not initiating logout from OP.",
+            stacklevel=2,
         )
         return logout_redirect_url
 

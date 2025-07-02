@@ -15,10 +15,11 @@
         :checked="selectedLabelIds?.includes(label.id ?? 0)"
         :class="[
           'pl-1 mb-1 pr-2 rounded-md text-xs font-medium ring-1 ring-inset text-xs',
-          label.color && badgeColors[label.color]
+          badgeColors[label.color ?? 'violet']
         ]"
         @change="handleCheckboxChange"
         size='small'
+        :title="label.slug"
       />
       <div v-else class="ml-0.5">
         <DocLabelsListbox v-model="selectedLabelIds!" :value="labelGroupRefs[slugGroup]" :labels="groupOfLabels" :slug-group="slugGroup.toString()" />
@@ -33,6 +34,7 @@ import type { Label } from '~/purple_client'
 import { SLUG_SEPARATOR, UNGROUPED } from '../utilities/labels'
 import { badgeColors } from '~/utilities/badge'
 import { assert } from '~/utilities/typescript'
+import { sortObject } from '~/utilities/sort'
 
 type Props = {
   title: string
@@ -68,12 +70,15 @@ const handleCheckboxChange = (e: Event) => {
 }
 
 
-const groupsOfLabels = computed(() => groupBy(
-  props.labels,
-  (label) => label.slug.includes(SLUG_SEPARATOR) ?
-              label.slug.substring(0, label.slug.indexOf(SLUG_SEPARATOR)) :
-              UNGROUPED
-))
+const groupsOfLabels = computed(() => sortObject(
+    groupBy(
+      props.labels,
+      (label) => label.slug.includes(SLUG_SEPARATOR) ?
+                  label.slug.substring(0, label.slug.indexOf(SLUG_SEPARATOR)) :
+                  UNGROUPED
+    )
+  )
+)
 
 const labelGroupRefs = computed(() => {
     assert(selectedLabelIds.value)

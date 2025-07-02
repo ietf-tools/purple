@@ -1,34 +1,35 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
+
 from .models import (
-    DumpInfo,
-    RpcPerson,
-    RfcToBeLabel,
-    RfcToBe,
+    ActionHolder,
+    AdditionalEmail,
+    ApprovalLogMessage,
+    Assignment,
+    Capability,
+    Cluster,
+    ClusterMember,
     DispositionName,
+    DocRelationshipName,
+    DumpInfo,
+    FinalApproval,
+    Label,
+    RfcAuthor,
+    RfcToBe,
+    RfcToBeLabel,
+    RpcAuthorComment,
+    RpcDocumentComment,
+    RpcPerson,
+    RpcRelatedDocument,
+    RpcRole,
     SourceFormatName,
     StdLevelName,
-    TlpBoilerplateChoiceName,
     StreamName,
-    DocRelationshipName,
-    ClusterMember,
-    Cluster,
+    TlpBoilerplateChoiceName,
     UnusableRfcNumber,
-    RpcRole,
-    Capability,
-    Assignment,
-    RfcAuthor,
-    AdditionalEmail,
-    FinalApproval,
-    ActionHolder,
-    RpcRelatedDocument,
-    RpcDocumentComment,
-    Label,
-    RpcAuthorComment,
-    ApprovalLogMessage,
 )
-from simple_history.admin import SimpleHistoryAdmin
 
 admin.site.register(DumpInfo)
 
@@ -92,12 +93,18 @@ class ApprovalLogMessageAdmin(admin.ModelAdmin):
     search_fields = ["rfc_to_be", "by", "log_message"]
 
 
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ["slug", "is_complexity", "is_exception", "color"]
+    search_fields = ["slug"]
+    list_filter = ["is_complexity", "is_exception", "color"]
+
+
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)
 admin.site.register(ActionHolder)
 admin.site.register(RpcRelatedDocument)
 admin.site.register(RpcDocumentComment)
-admin.site.register(Label)
+admin.site.register(Label, LabelAdmin)
 admin.site.register(RpcAuthorComment)
 admin.site.register(ApprovalLogMessage, ApprovalLogMessageAdmin)

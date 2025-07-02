@@ -19,7 +19,8 @@ def add_status_data(apps, schema_editor):
         {
             "slug": "held_for_doc_update",
             "name": "Held for Document Update",
-            "desc": "Erratum not verified, but should be reexamined when the RFC is updated or deprecated.",
+            "desc": "Erratum not verified, but should be reexamined when the RFC is "
+            "updated or deprecated.",
         },
         {"slug": "sort_fix", "name": "Sort-Fix", "desc": "Fixing sort order."},
         {"slug": "rejected", "name": "Rejected", "desc": "This erratum was rejected."},

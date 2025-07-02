@@ -1,75 +1,82 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+from dataclasses import dataclass
 
+import rpcapi_client
+from django.db import transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import (
+    OpenApiParameter,
+    extend_schema,
+    extend_schema_view,
+    inline_serializer,
+)
+from rest_framework import mixins, serializers, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
 )
-from rest_framework.response import Response
 from rest_framework.exceptions import (
     NotAuthenticated,
-    PermissionDenied,
     NotFound,
+    PermissionDenied,
 )
-from rest_framework import serializers
-from rest_framework import mixins, views, viewsets
-from drf_spectacular.utils import (
-    extend_schema,
-    inline_serializer,
-    extend_schema_view,
-    OpenApiParameter,
-)
-import rpcapi_client
+from rest_framework.generics import ListAPIView
+from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
+from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from datatracker.models import Document
+
 from .models import (
     Assignment,
     Capability,
     Cluster,
     Label,
-    RfcToBe,
     RfcAuthor,
+    RfcToBe,
+    RpcDocumentComment,
     RpcPerson,
+    RpcRelatedDocument,
     RpcRole,
     SourceFormatName,
     StdLevelName,
     StreamName,
     TlpBoilerplateChoiceName,
-    RpcDocumentComment,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
+    BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
+    CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
+    DocumentCommentSerializer,
     LabelSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
+    RfcAuthorSerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
+    RpcRelatedDocumentSerializer,
     RpcRoleSerializer,
-    SubmissionListItemSerializer,
-    Submission,
-    SubmissionSerializer,
     SourceFormatNameSerializer,
     StdLevelNameSerializer,
     StreamNameSerializer,
+    Submission,
+    SubmissionListItemSerializer,
+    SubmissionSerializer,
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
     check_user_has_role,
-    DocumentCommentSerializer,
-    RfcAuthorSerializer,
-    CreateRfcAuthorSerializer,
 )
-from .utils import VersionInfo
+from .utils import VersionInfo, create_rpc_related_document
 
 
 @api_view(["GET"])
@@ -192,7 +199,8 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 @api_view(["GET"])
 @with_rpcapi
 def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
-    """Return documents in datatracker that have been submitted to the RPC but are not yet in the queue
+    """Return documents in datatracker that have been submitted to the RPC but are
+        not yet in the queue
 
     [
         {
@@ -205,14 +213,16 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     ]
 
     Fed by doing a server->server API query that returns essentially the union of:
-    >> Document.objects.filter(states__type_id="draft-iesg",states__slug__in=["approved","ann"])
+    >>> Document.objects.filter(states__type_id="draft-iesg",
+    ... states__slug__in=["approved","ann"])
     <QuerySet [
         <Document: draft-ietf-bess-pbb-evpn-isid-cmacflush>,
         <Document: draft-ietf-dnssd-update-lease>,
         ...
     ]>
     and
-    >> Document.objects.filter(states__type_id__in=["draft-stream-iab","draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
+    >>> Document.objects.filter(states__type_id__in=["draft-stream-iab",
+    ... "draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
     <QuerySet [
         <Document: draft-iab-m-ten-workshop>,
         <Document: draft-irtf-cfrg-spake2>,
@@ -220,7 +230,8 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     ]>
     and SOMETHING ABOUT THE EDITORIAL STREAM...
 
-    Those queries overreturn - there may be things, particularly not from the IETF stream that are already in the queue.
+    Those queries overreturn - there may be things, particularly not from the IETF
+    stream that are already in the queue.
     This api will filter those out.
     """
     # Get submissions list from Datatracker
@@ -274,9 +285,58 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
         )
 
     # Create the RfcToBe
-    serializer = CreateRfcToBeSerializer(data=request.data, context={"draft": draft})
+    serializer = CreateRfcToBeSerializer(data=request.data | {"draft": draft.pk})
     if serializer.is_valid():
-        rfctobe = serializer.save()
+        with transaction.atomic():
+            rfctobe = serializer.save()
+
+            # Find normative references and store them as RelatedDocs
+            # Get ref list from Datatracker
+            response = rpcapi.get_draft_references(document_id)
+            references = response.references
+            # Filter out I-Ds that already have an RfcToBe
+            already_in_queue = dict(
+                RfcToBe.objects.filter(
+                    draft__datatracker_id__in=[s.id for s in references],
+                    disposition__slug__in=("created", "in_progress"),
+                ).values_list("draft__datatracker_id", "pk")
+            )
+            rfc_to_be_exists = RfcToBe.objects.filter(
+                draft__datatracker_id__in=[s.id for s in references],
+            ).values_list("draft__datatracker_id", flat=True)
+            for reference in references:
+                # Create a RelatedDoc for each normative reference
+                if reference.id not in rfc_to_be_exists:
+                    # Get the draft for the reference, otherwise create it
+                    try:
+                        draft = Document.objects.get(datatracker_id=reference.id)
+                    except Document.DoesNotExist as err:
+                        draft_info = rpcapi.get_draft_by_id(reference.id)
+                        if draft_info is None:
+                            raise NotFound(
+                                "Unable to get draft info for reference"
+                            ) from err
+                        draft, _ = Document.objects.get_or_create(
+                            datatracker_id=reference.id,
+                            defaults={
+                                "name": draft_info.name,
+                                "rev": draft_info.rev,
+                                "title": draft_info.title,
+                                "stream": draft_info.stream,
+                                "pages": draft_info.pages,
+                                "intended_std_level": draft_info.intended_std_level,
+                            },
+                        )
+                    create_rpc_related_document("missref", rfctobe.pk, draft.pk)
+
+                if reference.id in already_in_queue:
+                    create_rpc_related_document(
+                        "refqueue",
+                        rfctobe.pk,
+                        already_in_queue[reference.id],
+                        "rfctobe",
+                    )
+
         return Response(RfcToBeSerializer(rfctobe).data)
     else:
         return Response(serializer.errors, status=400)
@@ -341,10 +401,29 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+@extend_schema_view(
+    **{
+        action: extend_schema(
+            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+        )
+        for action in [
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ]
+    }
+)
 class RpcAuthorViewSet(viewsets.ModelViewSet):
+    queryset = RfcAuthor.objects.all()
+
     def get_queryset(self):
-        return RfcAuthor.objects.filter(
-            rfc_to_be__draft__name=self.kwargs["draft_name"]
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
         )
 
     def perform_create(self, serializer):
@@ -360,6 +439,15 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return CreateRfcAuthorSerializer
         return RfcAuthorSerializer
+
+
+class RpcRelatedDocumentViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = RpcRelatedDocumentSerializer
+
+    def get_queryset(self):
+        return RpcRelatedDocument.objects.filter(
+            source__draft__name=self.kwargs["draft_name"]
+        )
 
 
 class LabelViewSet(viewsets.ModelViewSet):
@@ -433,18 +521,17 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 @extend_schema_view(
-    list=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    update=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    partial_update=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
-    create=extend_schema(
-        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-    ),
+    **{
+        action: extend_schema(
+            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+        )
+        for action in [
+            "list",
+            "create",
+            "update",
+            "partial_update",
+        ]
+    }
 )
 class DocumentCommentViewSet(
     AutoPermissionViewSetMixin,
@@ -528,3 +615,130 @@ class DocumentCommentViewSet(
             },
         )
         return document
+
+
+class PaginationPassthroughWrapper:
+    """Helper class to make a paginated upstream result work like a queryset for DRF
+
+    Works with a LimitOffsetPagination result the default structure but only cares that
+    it contains a .count member with the total number of results available and a
+    .results member with the current page of results. The limit and offset that were
+    used for the upstream pagination _must_ be the same as the limit and offset used
+    for the downstream pagination or this will give nonsense results.
+
+    Exposes the .count as a `.count()` method and passes indexing operations through
+    to the .results list, adjusting the indexes to compensate for the offset that was
+    already applied.
+    """
+
+    def __init__(self, data, total_count, offset):
+        self._data = data
+        self._total_count = total_count
+        self._offset = offset
+
+    def count(self):
+        return self._total_count
+
+    def __getitem__(self, item):
+        # Pass item lookups through to the results from upstream.
+        # Because this was already
+        # paginated, remove the offset. LimitOffsetPagination only ever uses
+        # queryset[offset:offset+limit],
+        # so we don't need to implement esoteric corner cases. Offset and limit
+        # are always non-negative.
+        if isinstance(item, slice):
+            # A slice represents `results[start:stop:step]` - subtract offset from
+            # start and stop
+            if (item.start is not None and item.start < 0) or (
+                item.stop is not None and item.stop < 0
+            ):
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = slice(
+                None if item.start is None else item.start - self._offset,
+                None if item.stop is None else item.stop - self._offset,
+                item.step,
+            )
+        else:
+            # Other than a slice is a single index lookup.  Don't need to support
+            # this, but it's easy enough.
+            if item < 0:
+                raise NotImplementedError("Negative indexing not supported")
+            adjusted_item = item - self._offset
+        return self._data[adjusted_item]
+
+
+class SearchDatatrackerPersonsPagination(LimitOffsetPagination):
+    default_limit = 10
+    max_limit = 100
+
+
+@dataclass
+class DatatrackerPersonModelShim:
+    """Stand-in for a DatatrackerPerson using results from the search_person() API"""
+
+    datatracker_id: int
+    plain_name: str
+    picture: str
+
+    @classmethod
+    def from_rpcapi_person(cls, obj: rpcapi_client.models.person.Person):
+        return cls(
+            datatracker_id=obj.id,
+            plain_name=obj.plain_name,
+            picture=obj.picture,
+        )
+
+
+@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+class SearchDatatrackerPersons(ListAPIView):
+    """Datatracker person search API
+
+    Search for a datatracker person by name/email fragment.
+    """
+
+    # Warning: this is a tricky view!
+    #
+    # Rather than querying the database, the `get_queryset()` method makes a
+    # datatracker API call
+    # to perform the Person search. It uses the same pagination limit/offset on the
+    # API call as the
+    # downstream request being handled. The paginated results from the API call are
+    # packaged in
+    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination
+    # internals work
+    # with the already-paginated results as though they came from a local database
+    # lookup.
+    #
+    # Note that despite the naming, DRF APIViews and pagination explicitly support
+    # using a list
+    # rather than a Django queryset. We need the shim because the list we get from
+    # the API only
+    # contains a single page of results.
+
+    serializer_class = BaseDatatrackerPersonSerializer
+    pagination_class = SearchDatatrackerPersonsPagination
+
+    def get_queryset(self):
+        if getattr(self, "swagger_fake_view", False):
+            # Be sure we don't make an API call during schema generation
+            return DatatrackerPerson.objects.none()
+        offset = self.paginator.get_offset(self.request)
+        upstream_results = self.upstream_search(
+            search=self.request.GET.get("search", ""),
+            limit=self.paginator.get_limit(self.request),
+            offset=offset,
+        )
+        return PaginationPassthroughWrapper(
+            data=[
+                DatatrackerPersonModelShim.from_rpcapi_person(r)
+                for r in upstream_results.results
+            ],
+            total_count=upstream_results.count,
+            offset=offset,
+        )
+
+    @with_rpcapi
+    def upstream_search(
+        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+    ):
+        return rpcapi.search_person(search=search, limit=limit, offset=offset)
