@@ -52,6 +52,7 @@ from .models import (
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
+    AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
@@ -454,6 +455,39 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         if rfc_to_be is None:
             raise NotFound("RfcToBe with the given draft name does not exist")
         serializer.save(rfc_to_be=rfc_to_be)
+
+    @action(detail=False, methods=["post"], url_path="order")
+    def set_order(self, request, draft_name=None):
+        serializer = AuthorOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order_list = serializer.validated_data["order"]
+
+        authors = list(RfcAuthor.objects.filter(rfc_to_be__draft__name=draft_name))
+        # check that the authors passed in list are identical to the ones currently set
+        if len(order_list) != len(authors):
+            raise serializers.ValidationError(
+                "The number of authors in the order list does not match the number of "
+                "authors in the database."
+            )
+        if set(order_list) != set(author.id for author in authors):
+            raise serializers.ValidationError(
+                "The author IDs in the order list do not match the author IDs in the "
+                "database."
+            )
+        author_dict = {author.id: author for author in authors}
+
+        # first reset order for all authors (to avoid unique constraint violations)
+        for author in authors:
+            author.order = 0
+            author.save(update_fields=["order"])
+
+        for idx, author_id in enumerate(order_list, start=1):
+            author = author_dict.get(author_id)
+            if author:
+                author.order = idx
+                author.save(update_fields=["order"])
+
+        return Response({"status": "RfcAuthor order updated"})
 
 
 @extend_schema_with_draft_name()

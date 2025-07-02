@@ -181,6 +181,13 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "datatracker_person"]
 
 
+class AuthorOrderSerializer(serializers.Serializer):
+    order = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="List of RfcAuthor IDs in the desired order",
+    )
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     rev = serializers.SerializerMethodField()
