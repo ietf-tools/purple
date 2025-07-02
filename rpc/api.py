@@ -15,7 +15,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
-from rest_framework import mixins, serializers, views, viewsets
+from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
@@ -28,14 +28,10 @@ from rest_framework.exceptions import (
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
 from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
-from rest_framework import mixins, views, viewsets, serializers, status
-from drf_spectacular.utils import extend_schema, inline_serializer
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from datatracker.models import Document, DatatrackerPerson
 from utils.api import requires_api_token
 from utils.authentication import ApiKeyAuthentication
 from utils.permissions import HasApiKey
