@@ -213,16 +213,16 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     ]
 
     Fed by doing a server->server API query that returns essentially the union of:
-    >> Document.objects.filter(states__type_id="draft-iesg",
-    states__slug__in=["approved","ann"])
+    >>> Document.objects.filter(states__type_id="draft-iesg",
+    ... states__slug__in=["approved","ann"])
     <QuerySet [
         <Document: draft-ietf-bess-pbb-evpn-isid-cmacflush>,
         <Document: draft-ietf-dnssd-update-lease>,
         ...
     ]>
     and
-    >> Document.objects.filter(states__type_id__in=["draft-stream-iab",
-    "draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
+    >>> Document.objects.filter(states__type_id__in=["draft-stream-iab",
+    ... "draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
     <QuerySet [
         <Document: draft-iab-m-ten-workshop>,
         <Document: draft-irtf-cfrg-spake2>,
