@@ -10,7 +10,8 @@ class HealthTests(TestCase):
     def test_health(self):
         """health check should return a k8s-compatible status
 
-        The test does not use the URL reverse() tool because we want to be sure that the specific
+        The test does not use the URL reverse() tool because we want to be sure that
+        the specific
         URL path `/health/` is functioning as intended.
         """
         r = self.client.get("/health/")

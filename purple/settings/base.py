@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
 """Django settings for RPC project common to all environments"""
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.

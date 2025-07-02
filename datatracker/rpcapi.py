@@ -2,8 +2,8 @@
 
 from functools import wraps
 from urllib.parse import urlparse
-import rpcapi_client
 
+import rpcapi_client
 from django.conf import settings
 
 
