@@ -3,8 +3,9 @@
 import django.contrib.postgres.fields
 import django.db.models.deletion
 import django.utils.timezone
-import errata.models
 from django.db import migrations, models
+
+import errata.models
 
 
 class Migration(migrations.Migration):
@@ -77,7 +78,8 @@ class Migration(migrations.Migration):
                         ),
                         blank=True,
                         default=list,
-                        help_text="A list of formats. Possible values: 'HTML', 'PDF', and 'TXT'.",
+                        help_text="A list of formats. Possible values: 'HTML', 'PDF', "
+                        "and 'TXT'.",
                         size=None,
                     ),
                 ),

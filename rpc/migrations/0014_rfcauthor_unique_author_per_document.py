@@ -15,7 +15,8 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 fields=("datatracker_person", "rfc_to_be"),
                 name="unique_author_per_document",
-                violation_error_message="the person is already an author of this document",
+                violation_error_message="the person is already an author of this"
+                " document",
             ),
         ),
     ]

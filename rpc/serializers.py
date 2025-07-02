@@ -2,20 +2,18 @@
 
 import datetime
 import warnings
-
 from dataclasses import dataclass
-from django.conf import settings
 from itertools import pairwise
+from urllib.parse import urljoin
 
-from django.contrib.auth import get_user_model
+from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
-from typing import Optional
-from urllib.parse import urljoin
 
 from datatracker.models import DatatrackerPerson
+
 from .models import (
     ActionHolder,
     Assignment,
@@ -26,13 +24,13 @@ from .models import (
     Label,
     RfcAuthor,
     RfcToBe,
-    RpcRelatedDocument,
+    RpcDocumentComment,
     RpcPerson,
+    RpcRelatedDocument,
     RpcRole,
     SourceFormatName,
     StdLevelName,
     StreamName,
-    RpcDocumentComment,
 )
 
 
@@ -43,23 +41,37 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class DatatrackerPersonSerializer(serializers.ModelSerializer):
-    """Serialize a DatatrackerPerson"""
+class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
+    """Serialize a minimal DatatrackerPerson
 
-    person_id = serializers.IntegerField(source="id")
+    This is the serializer to use if you may be working with non-persisted
+    DatatrackerPerson instances.
+    """
+
+    person_id = serializers.IntegerField(source="datatracker_id")
     name = serializers.CharField(source="plain_name", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["person_id", "name", "rpcperson", "picture"]
-        read_only_fields = ["rpcperson"]
+        fields = ["person_id", "name", "picture"]
+        read_only_fields = ["picture"]
+
+
+class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
+    """Serializer a DatatrackerPerson, including all the bells and whistles"""
+
+    class Meta(BaseDatatrackerPersonSerializer.Meta):
+        fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
+        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + [
+            "rpcperson"
+        ]
 
 
 @dataclass
 class HistoryRecord:
     id: int
     date: datetime.datetime
-    by: Optional[DatatrackerPerson]
+    by: DatatrackerPerson | None
     desc: str
 
     @classmethod
@@ -127,8 +139,10 @@ class HistorySerializer(serializers.Serializer):
         if not kwargs.get("read_only", True):
             warnings.warn(
                 RuntimeWarning(
-                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
-                )
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
+                ),
+                stacklevel=2,
             )
         kwargs["read_only"] = True
         super().__init__(instance, data, **kwargs)
@@ -146,8 +160,10 @@ class HistoryLastEditSerializer(serializers.Serializer):
         if not kwargs.get("read_only", True):
             warnings.warn(
                 RuntimeWarning(
-                    f"{self.__class__} initialized with read_only=False, which is not supported. Ignoring."
-                )
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
+                ),
+                stacklevel=2,
             )
         kwargs["read_only"] = True
         super().__init__(instance, data, **kwargs)
@@ -234,7 +250,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             rfc_to_be.draft.pages if rfc_to_be.draft else 0
         )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
 
-    def get_cluster(self, rfc_to_be) -> Optional[int]:
+    def get_cluster(self, rfc_to_be) -> int | None:
         if rfc_to_be.draft:
             cluster = rfc_to_be.draft.cluster_set.first()
             return None if cluster is None else cluster.number
@@ -259,7 +275,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         f'"{label.slug}"' for label in hist_labels.filter(id__in=added)
                     ]
                     changes.append(
-                        f"Added label{'s' if len(added_strs) > 1 else ''} {', '.join(added_strs)}"
+                        f"Added label{'s' if len(added_strs) > 1 else ''} "
+                        f"{', '.join(added_strs)}"
                     )
                 if removed:
                     removed_strs = [
@@ -267,7 +284,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         for label in hist_labels.filter(id__in=removed)
                     ]
                     changes.append(
-                        f"Removed label{'s' if len(removed_strs) > 1 else ''} {', '.join(removed_strs)}"
+                        f"Removed label{'s' if len(removed_strs) > 1 else ''} "
+                        f"{', '.join(removed_strs)}"
                     )
                 yield " and ".join(changes)
             else:

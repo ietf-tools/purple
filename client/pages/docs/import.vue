@@ -229,7 +229,7 @@ async function importSubmission () {
       title: 'Success',
       text: 'Document successfully added'
     })
-    await navigateTo(`/docs/${imported.name}/`)
+    await navigateTo(`/docs/${imported.name}/enqueue`)
   }
 }
 
