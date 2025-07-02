@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.core import mail
 from django.test import TestCase, override_settings

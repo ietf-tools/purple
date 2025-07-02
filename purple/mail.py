@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.conf import settings
 from django.core.mail import send_mail as dj_send
