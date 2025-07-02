@@ -55,7 +55,6 @@ from .serializers import (
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
-    CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     DocumentCommentSerializer,
     LabelSerializer,
@@ -75,8 +74,6 @@ from .serializers import (
     TlpBoilerplateChoiceNameSerializer,
     VersionInfoSerializer,
     check_user_has_role,
-    DocumentCommentSerializer,
-    RfcAuthorSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document
 
