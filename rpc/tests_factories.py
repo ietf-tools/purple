@@ -1,10 +1,8 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
-# -*- coding: utf-8 -*-
 
 from django.test import TestCase
 
 from .factories import (
-    RfcToBeActionHolderFactory,
     AprilFirstRfcToBeFactory,
     AssignmentFactory,
     CapabilityFactory,
@@ -12,10 +10,11 @@ from .factories import (
     DispositionNameFactory,
     FinalApprovalFactory,
     RfcAuthorFactory,
-    RpcPersonFactory,
-    RpcRoleFactory,
+    RfcToBeActionHolderFactory,
     RfcToBeFactory,
     RpcAuthorCommentFactory,
+    RpcPersonFactory,
+    RpcRoleFactory,
     UnusableRfcNumberFactory,
 )
 

@@ -1,3 +1,21 @@
 [tool.ruff]
-line-length = 88
 target-version = "py312"
+line-length = 88
+
+[tool.ruff.format]
+indent-style = "space"  # Use spaces for indentation
+quote-style = "double"
+
+[tool.ruff.lint]
+extend-select = [
+    "E",      # pycodestyle
+    "F",      # Pyflakes
+    "UP",     # pyupgrade
+    "B",      # flake8-bugbear
+    "I",      # isort
+    "RUF100", # unused-noqa
+]
+extend-ignore = [
+    "F405",  # variable may be undefined, or defined from star imports
+    "F403",  # unable to detect undefined names
+]
