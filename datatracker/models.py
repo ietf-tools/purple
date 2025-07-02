@@ -16,8 +16,8 @@ class DatatrackerPersonQuerySet(models.QuerySet):
     ) -> tuple["DatatrackerPerson", bool]:
         """Get an instance by subject id, creating it if necessary
 
-        Like get_or_create(), but returns the first matching instance rather than raising
-        an exception if more than one match is found.
+        Like get_or_create(), but returns the first matching instance rather than
+        raising an exception if more than one match is found.
         """
         try:
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
