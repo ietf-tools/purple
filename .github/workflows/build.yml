@@ -39,6 +39,18 @@ jobs:
           push: true
           tags: ghcr.io/ietf-tools/purple-backend:latest
 
+      - name: Build statics image
+        uses: docker/build-push-action@v6
+        env:
+          DOCKER_BUILD_SUMMARY: false
+          DOCKER_BUILD_RECORD_UPLOAD: false
+        with:
+          context: .
+          file: dev/build/statics.Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/ietf-tools/purple-statics:latest
+
       - name: Generate Purple API client
         run: |
           container_id="$(docker create ghcr.io/ietf-tools/purple-backend:latest)"

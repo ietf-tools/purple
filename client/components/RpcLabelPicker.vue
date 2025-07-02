@@ -54,7 +54,7 @@ type Props = {
    */
   labels?: Label[]
   /**
-   * Slugs of applied labels
+   * ids of applied labels
    */
   modelValue?: number[]
   /**

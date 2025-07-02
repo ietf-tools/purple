@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
-# -*- coding: utf-8 -*-
 from django.db.models import Max
 
-from .models import RfcToBe, UnusableRfcNumber, DumpInfo
+from .models import DumpInfo, RfcToBe, UnusableRfcNumber
+from .serializers import RpcRelatedDocumentSerializer
 
 
 class VersionInfo:
@@ -30,3 +30,22 @@ def next_rfc_number(count=1) -> list[int]:
     )
     # todo consider holes in the unavailable number sequence
     return list(range(last_unavailable_number + 1, last_unavailable_number + 1 + count))
+
+
+def create_rpc_related_document(
+    relationship_slug, rfctobe, target, target_type="draft"
+):
+    data = {
+        "relationship": relationship_slug,
+        "source": rfctobe,
+    }
+    if target_type == "rfctobe":
+        data["target_rfctobe"] = target
+    elif target_type == "draft":
+        data["target_document"] = target
+    else:
+        raise ValueError(f"Invalid target type: {target_type}")
+
+    serializer = RpcRelatedDocumentSerializer(data=data)
+    if serializer.is_valid(raise_exception=True):
+        return serializer.save()

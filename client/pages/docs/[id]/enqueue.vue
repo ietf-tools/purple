@@ -3,13 +3,32 @@
     <TitleBlock
       class="pb-3"
       :title="`Prep for Queue: ${rfcToBe?.name || '&hellip;'}`"
-      summary="Ready the incoming document for the editing queue."/>
+      summary="Ready the incoming document for the editing queue."
+    />
 
     <div class="space-y-4">
-      <DocInfoCard :draft="rfcToBe"/>
-      <div class="flex space-x-4">
-        <DocComplexityCard :capabilities="capabilities"/>
-        <DocExceptionsCard :labels="labels"/>
+      <DocInfoCard :draft="rfcToBe" />
+      <div class="flex w-full space-x-4">
+        <div class="flex flex-col">
+          <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
+          <div class="flex flex-row">
+            <DocLabelsCard
+              title="Other complexities"
+              v-model="selectedLabelIds"
+              :labels="labels1"
+            />
+            <DocLabelsCard
+              title="Exceptions"
+              v-model="selectedLabelIds"
+              :labels="labels2"
+            />
+          </div>
+        </div>
+        <RpcLabelPicker
+          item-label="slug"
+          v-model="selectedLabelIds"
+          :labels="labels3"
+        />
       </div>
       <BaseCard>
         <template #header>
@@ -22,20 +41,39 @@
         <DocumentTable
           :columns="columns"
           :data="relatedDocuments"
-          row-key="name"/>
+          row-key="name"
+        />
       </BaseCard>
       <BaseCard>
         <template #header>
-          <CardHeader title="Comments"/>
+          <CardHeader title="Comments" />
         </template>
-        <div class="flex flex-col items-center space-y-4">
-          <RpcTextarea class="w-4/5 min-w-100"/>
-          <HistoryFeed class="w-3/5 min-w-100"/>
+        <div
+          v-if="rfcToBe && rfcToBe.id"
+          class="flex flex-col items-center space-y-4"
+        >
+          <RpcTextarea
+            v-if="rfcToBe"
+            :draft-name="id"
+            :reload-comments="commentsReload"
+            class="w-4/5 min-w-100"
+          />
+          <DocumentComments
+            :draft-name="id"
+            :rfc-to-be-id="rfcToBe.id"
+            :is-loading="commentsPending"
+            :error="commentsError"
+            :comment-list="commentList"
+            :reload-comments="commentsReload"
+            class="w-3/5 min-w-100"
+          />
         </div>
       </BaseCard>
 
       <div class="justify-end flex space-x-4">
-        <BaseButton btn-type="default">Document has exceptions&mdash;escalate</BaseButton>
+        <BaseButton btn-type="default"
+          >Document has exceptions&mdash;escalate</BaseButton
+        >
         <BaseButton btn-type="default">Add to queue</BaseButton>
       </div>
     </div>
@@ -43,9 +81,9 @@
 </template>
 
 <script setup lang="ts">
-
-import type { Capability, Label, RfcToBe } from '~/purple_client'
+import { watch } from 'vue'
 import type { Column } from '~/components/DocumentTableTypes'
+import type { RfcToBe } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -68,7 +106,7 @@ const columns: Column[] = [
     label: 'Current State',
     field: 'currentState',
     classes: 'text-sm font-medium'
-  },
+  }
 ]
 
 const relatedDocuments = [
@@ -76,24 +114,69 @@ const relatedDocuments = [
     name: 'draft-some-other-draft',
     relationship: 'Normative Reference',
     currentState: 'Active WG document'
-  },
+  }
 ]
 
+const id = computed(() => route.params.id.toString())
+
 const { data: rfcToBe } = await useAsyncData<RfcToBe>(
-  'rfcToBe',
+  computed(() => `rfcToBe-${id.value}`),
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
   { server: false }
 )
 
-const { data: capabilities } = await useAsyncData<Capability[]>(
-  'capabilities',
-  () => api.capabilitiesList(),
-  { default: () => ([]), server: false }
+// const { data: capabilities } = await useAsyncData<Capability[]>(
+//   'capabilities',
+//   () => api.capabilitiesList(),
+//   { default: () => ([]), server: false }
+// )
+
+const { data: labels } = await useAsyncData('labels', () => api.labelsList(), {
+  default: () => [],
+  server: false
+})
+
+const labels1 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && !label.isException)
 )
 
-const { data: labels } = await useAsyncData<Label[]>(
-  'labels',
-  () => api.labelsList(),
-  { default: () => ([]), server: false }
+const labels2 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && label.isException)
 )
+
+const labels3 = computed(
+  () => labels.value.filter((label) => !label.isComplexity)
+)
+
+const { data: defaultSelectedLabelIds } = await useAsyncData<number[]>(
+  () => `user-selection-${id.value}`,
+  async () => {
+    return [] // FIXME: get user values
+  }
+)
+
+const selectedLabelIds = ref(defaultSelectedLabelIds.value ?? [])
+
+watch(
+  selectedLabelIds,
+  async () => api.documentsPartialUpdate({
+    draftName: id.value,
+    patchedRfcToBe: {
+      labels: selectedLabelIds.value,
+    }
+  }),
+  { deep: true }
+)
+
+const key = computed(() => `comments-${id.value}`)
+
+const {
+  data: commentList,
+  pending: commentsPending,
+  error: commentsError,
+  refresh: commentsReload
+} = await useAsyncData(key, () =>
+  api.documentsCommentsList({ draftName: id.value })
+)
+
 </script>

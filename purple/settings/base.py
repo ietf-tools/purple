@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
 """Django settings for RPC project common to all environments"""
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -26,6 +25,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "drf_spectacular",
     "rest_framework",
+    "rules.apps.AutodiscoverRulesConfig",
     "simple_history",
     "datatracker.apps.DatatrackerConfig",
     "rpc.apps.RpcConfig",
@@ -68,6 +68,7 @@ WSGI_APPLICATION = "purple.wsgi.application"
 # Authentication
 AUTHENTICATION_BACKENDS = (
     "rpcauth.backends.RpcOIDCAuthBackend",
+    "rules.permissions.ObjectPermissionBackend",
     "django.contrib.auth.backends.ModelBackend",  # default backend
 )
 

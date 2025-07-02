@@ -1,15 +1,18 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
-
+import warnings
 from dataclasses import dataclass
-from django.conf import settings
 from itertools import pairwise
+from urllib.parse import urljoin
+
+from django.conf import settings
 from rest_framework import serializers
+from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
-from typing import Optional
-from urllib.parse import urljoin
+
+from datatracker.models import DatatrackerPerson
 
 from .models import (
     ActionHolder,
@@ -21,7 +24,9 @@ from .models import (
     Label,
     RfcAuthor,
     RfcToBe,
+    RpcDocumentComment,
     RpcPerson,
+    RpcRelatedDocument,
     RpcRole,
     SourceFormatName,
     StdLevelName,
@@ -36,40 +41,48 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
-class UserSerializer(serializers.Serializer):
-    """Serialize a User record"""
+class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
+    """Serialize a minimal DatatrackerPerson
 
-    name = serializers.SerializerMethodField()
-    person_id = serializers.SerializerMethodField()
+    This is the serializer to use if you may be working with non-persisted
+    DatatrackerPerson instances.
+    """
 
-    def get_name(self, user) -> str:
-        dt_person = user.datatracker_person()
-        if dt_person:
-            return dt_person.plain_name()
-        return str(user)
+    person_id = serializers.IntegerField(source="datatracker_id")
+    name = serializers.CharField(source="plain_name", read_only=True)
 
-    def get_person_id(self, user) -> Optional[RpcPerson]:
-        rpc_person = RpcPerson.objects.filter(
-            datatracker_person=user.datatracker_person()
-        ).first()
-        if rpc_person:
-            return rpc_person.pk
-        return None
+    class Meta:
+        model = DatatrackerPerson
+        fields = ["person_id", "name", "picture"]
+        read_only_fields = ["picture"]
+
+
+class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
+    """Serializer a DatatrackerPerson, including all the bells and whistles"""
+
+    class Meta(BaseDatatrackerPersonSerializer.Meta):
+        fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
+        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + [
+            "rpcperson"
+        ]
 
 
 @dataclass
 class HistoryRecord:
     id: int
     date: datetime.datetime
-    by: str
+    by: DatatrackerPerson | None
     desc: str
 
     @classmethod
     def from_simple_history(cls, sh, desc):
+        dt_person = (
+            None if sh.history_user is None else sh.history_user.datatracker_person()
+        )
         return cls(
             id=sh.id,
             date=sh.history_date,
-            by=sh.history_user,
+            by=dt_person,
             desc=desc,
         )
 
@@ -112,15 +125,48 @@ class HistoryListSerializer(serializers.ListSerializer):
 
 
 class HistorySerializer(serializers.Serializer):
-    """Serialize the history for an RfcToBe"""
+    """Serialize a HistoricalRecord"""
 
     id = serializers.IntegerField()
-    date = serializers.DateTimeField()
-    by = UserSerializer()
+    time = serializers.DateTimeField(source="date")
+    by = DatatrackerPersonSerializer()
     desc = serializers.CharField()
 
     class Meta:
         list_serializer_class = HistoryListSerializer
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
+                ),
+                stacklevel=2,
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
+
+
+class HistoryLastEditSerializer(serializers.Serializer):
+    """Serialize the most recent change in a HistoricalRecord"""
+
+    by = DatatrackerPersonSerializer(
+        source="history_user.datatracker_person", read_only=True
+    )
+    time = serializers.DateTimeField(source="history_date", read_only=True)
+
+    def __init__(self, instance=None, data=empty, **kwargs):
+        if not kwargs.get("read_only", True):
+            warnings.warn(
+                RuntimeWarning(
+                    f"{self.__class__} initialized with read_only=False, which is not "
+                    "supported. Ignoring."
+                ),
+                stacklevel=2,
+            )
+        kwargs["read_only"] = True
+        super().__init__(instance, data, **kwargs)
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -133,6 +179,11 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "datatracker_person",
         ]
         read_only_fields = ["id", "datatracker_person"]
+
+
+class CreateRfcAuthorSerializer(RfcAuthorSerializer):
+    class Meta(RfcAuthorSerializer.Meta):
+        read_only_fields = ["id"]
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
@@ -199,7 +250,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             rfc_to_be.draft.pages if rfc_to_be.draft else 0
         )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
 
-    def get_cluster(self, rfc_to_be) -> Optional[int]:
+    def get_cluster(self, rfc_to_be) -> int | None:
         if rfc_to_be.draft:
             cluster = rfc_to_be.draft.cluster_set.first()
             return None if cluster is None else cluster.number
@@ -224,7 +275,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         f'"{label.slug}"' for label in hist_labels.filter(id__in=added)
                     ]
                     changes.append(
-                        f"Added label{'s' if len(added_strs) > 1 else ''} {', '.join(added_strs)}"
+                        f"Added label{'s' if len(added_strs) > 1 else ''} "
+                        f"{', '.join(added_strs)}"
                     )
                 if removed:
                     removed_strs = [
@@ -232,7 +284,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
                         for label in hist_labels.filter(id__in=removed)
                     ]
                     changes.append(
-                        f"Removed label{'s' if len(removed_strs) > 1 else ''} {', '.join(removed_strs)}"
+                        f"Removed label{'s' if len(removed_strs) > 1 else ''} "
+                        f"{', '.join(removed_strs)}"
                     )
                 yield " and ".join(changes)
             else:
@@ -254,11 +307,11 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "submitted_stream",
             "external_deadline",
             "labels",
+            "draft",
         ]
 
     def create(self, validated_data):
         extra_data = {
-            "draft": self.context["draft"],
             "disposition": DispositionName.objects.get(slug="created"),
             "intended_boilerplate": validated_data["submitted_boilerplate"],
             "intended_std_level": validated_data["submitted_std_level"],
@@ -273,6 +326,14 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
         inst = super().create(validated_data | extra_data)
         update_change_reason(inst, "Added to the queue")
         return inst
+
+
+class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for related document for an RfcToBe"""
+
+    class Meta:
+        model = RpcRelatedDocument
+        fields = ["relationship", "source", "target_document", "target_rfctobe"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
@@ -313,7 +374,7 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         cached_name = self.name_map.get(
             str(rpc_person.datatracker_person.datatracker_id), None
         )
-        return cached_name or rpc_person.datatracker_person.plain_name()
+        return cached_name or rpc_person.datatracker_person.plain_name
 
 
 class ActionHolderSerializer(serializers.ModelSerializer):
@@ -329,9 +390,7 @@ class ActionHolderSerializer(serializers.ModelSerializer):
         ]
 
     def get_name(self, actionholder) -> str:
-        return (
-            actionholder.datatracker_person.plain_name()
-        )  # allow prefetched name map?
+        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
@@ -559,3 +618,21 @@ def check_user_has_role(user, role) -> bool:
     if rpc_person:
         return rpc_person.can_hold_role.filter(slug=role).exists()
     return False
+
+
+class DocumentCommentSerializer(serializers.ModelSerializer):
+    """Serialize a comment on an RfcToBe"""
+
+    by = DatatrackerPersonSerializer(read_only=True)
+    last_edit = HistoryLastEditSerializer(read_only=True)
+
+    class Meta:
+        model = RpcDocumentComment
+        fields = [
+            "id",
+            "comment",
+            "by",
+            "time",
+            "last_edit",
+        ]
+        read_only_fields = ["rfc_to_be", "by", "time"]

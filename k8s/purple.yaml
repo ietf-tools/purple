@@ -90,6 +90,21 @@ spec:
             runAsUser: 1000
             runAsGroup: 1000
         # -----------------------------------------------------
+        # Statics Container
+        # -----------------------------------------------------
+        - name: statics
+          image: "ghcr.io/ietf-tools/purple-statics:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          livenessProbe:
+            httpGet:
+              port: 8042
+              path: /
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - name: statics-tmp
+              mountPath: /tmp
+        # -----------------------------------------------------
         # Nginx Container
         # -----------------------------------------------------
         - name: nginx
@@ -146,6 +161,9 @@ spec:
           configMap:
             name: purple-files-cfgmap
         - name: nginx-tmp
+          emptyDir:
+            sizeLimit: "500Mi"
+        - name: statics-tmp
           emptyDir:
             sizeLimit: "500Mi"
       dnsPolicy: ClusterFirst

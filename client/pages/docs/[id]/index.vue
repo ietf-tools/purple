@@ -111,8 +111,8 @@
               <tbody class="divide-y divide-gray-200">
               <tr v-for="entry of draft?.history ?? []" :key="entry.id">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
-                  <time :datetime="DateTime.fromJSDate(entry.date).toString()">
-                    {{ DateTime.fromJSDate(entry.date).toLocaleString(DateTime.DATE_MED) }}
+                  <time :datetime="DateTime.fromJSDate(entry.time).toString()">
+                    {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
                   </time>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
@@ -167,8 +167,11 @@ const draft = computed(() => {
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
+const draftId = computed(() => route.params.id.toString())
+
 const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
-  () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
+  () => `draft-${draftId.value}`,
+  () => api.documentsRetrieve({ draftName: draftId.value }),
   { server: false }
 )
 

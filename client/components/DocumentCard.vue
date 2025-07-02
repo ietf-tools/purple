@@ -61,9 +61,13 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
             >
               <div>
                 <div
+                  v-if="cookedDocument.assignmentsPersons.length > 0"
                   v-for="person in uniqBy(cookedDocument.assignmentsPersons, person => person?.id)"
                   :key="person?.id">
                   {{ person.name }}
+                </div>
+                <div v-else>
+                  Choose...
                 </div>
               </div>
               <Icon name="heroicons:chevron-up-down-solid" class="h-5 w-5" aria-hidden="true"/>

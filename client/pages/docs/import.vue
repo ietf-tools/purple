@@ -229,7 +229,7 @@ async function importSubmission () {
       title: 'Success',
       text: 'Document successfully added'
     })
-    await navigateTo(`/docs/${imported.name}/`)
+    await navigateTo(`/docs/${imported.name}/enqueue`)
   }
 }
 
@@ -253,17 +253,18 @@ const { data: labels } = await useAsyncData(
   }
 )
 
+const documentId = computed(() => Number(route.query.documentId))
+
 const { data: fetchedData, pending: backendPending } = await useAsyncData(
-  'backendFetch',
+  () => `backendFetch-${documentId.value}`,
   async () => {
     try {
-      const documentId = Number(route.query.documentId)
-      if (!Number.isInteger(documentId)) {
+      if (!Number.isInteger(documentId.value)) {
         throw Error('Expected an integer value for documentId')
       }
 
       // Retrieve the submission, first....
-      const submission = await api.submissionsRetrieve({ documentId })
+      const submission = await api.submissionsRetrieve({ documentId: documentId.value })
       // ...then the various name choices, which ensures that the backend has created any that
       // were new with this draft.
       const [boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices] = await Promise.all([
@@ -277,7 +278,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       // state.boilerplate = boilerplateChoices ? boilerplateChoices[0] : null
       state.sourceFormat = submission.sourceFormat
       state.stream = submission.stream
-      state.stdLevel = submission.stdLevel || stdLevelChoices ? stdLevelChoices[0] : null
+      state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] : null)
       return {
         submission, boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices
       }

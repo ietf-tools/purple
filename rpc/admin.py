@@ -1,33 +1,34 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 from django.contrib import admin
+from simple_history.admin import SimpleHistoryAdmin
+
 from .models import (
-    DumpInfo,
-    RpcPerson,
-    RfcToBeLabel,
-    RfcToBe,
+    ActionHolder,
+    AdditionalEmail,
+    ApprovalLogMessage,
+    Assignment,
+    Capability,
+    Cluster,
+    ClusterMember,
     DispositionName,
+    DocRelationshipName,
+    DumpInfo,
+    FinalApproval,
+    Label,
+    RfcAuthor,
+    RfcToBe,
+    RfcToBeLabel,
+    RpcAuthorComment,
+    RpcDocumentComment,
+    RpcPerson,
+    RpcRelatedDocument,
+    RpcRole,
     SourceFormatName,
     StdLevelName,
-    TlpBoilerplateChoiceName,
     StreamName,
-    DocRelationshipName,
-    ClusterMember,
-    Cluster,
+    TlpBoilerplateChoiceName,
     UnusableRfcNumber,
-    RpcRole,
-    Capability,
-    Assignment,
-    RfcAuthor,
-    AdditionalEmail,
-    FinalApproval,
-    IanaAction,
-    ActionHolder,
-    RpcRelatedDocument,
-    RpcDocumentComment,
-    Label,
-    RpcAuthorComment,
-    ApprovalLogMessage,
 )
 
 admin.site.register(DumpInfo)
@@ -42,7 +43,7 @@ admin.site.register(RpcPerson, RpcPersonAdmin)
 admin.site.register(RfcToBeLabel)
 
 
-class RfcToBeAdmin(admin.ModelAdmin):
+class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
     list_display = ["draft", "draft__rev", "rfc_number"]
     search_fields = ["draft__name", "rfc_number"]
 
@@ -78,7 +79,12 @@ admin.site.register(Assignment, AssignmentAdmin)
 
 
 class RfcAuthorAdmin(admin.ModelAdmin):
-    search_fields = ["datatracker_person__datatracker_id"]
+    search_fields = [
+        "datatracker_person__datatracker_id",
+        "titlepage_name",
+        "rfc_to_be__rfc_number",
+    ]
+    list_display = ["titlepage_name", "rfc_to_be", "is_editor"]
 
 
 class ApprovalLogMessageAdmin(admin.ModelAdmin):
@@ -87,13 +93,18 @@ class ApprovalLogMessageAdmin(admin.ModelAdmin):
     search_fields = ["rfc_to_be", "by", "log_message"]
 
 
+class LabelAdmin(admin.ModelAdmin):
+    list_display = ["slug", "is_complexity", "is_exception", "color"]
+    search_fields = ["slug"]
+    list_filter = ["is_complexity", "is_exception", "color"]
+
+
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)
-admin.site.register(IanaAction)
 admin.site.register(ActionHolder)
 admin.site.register(RpcRelatedDocument)
 admin.site.register(RpcDocumentComment)
-admin.site.register(Label)
+admin.site.register(Label, LabelAdmin)
 admin.site.register(RpcAuthorComment)
 admin.site.register(ApprovalLogMessage, ApprovalLogMessageAdmin)
