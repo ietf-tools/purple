@@ -461,7 +461,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH)
         ],
         responses=AuthorOrderSerializer,
-        operation_id="documents_authors_order"
+        operation_id="documents_authors_order",
     )
     @action(detail=False, methods=["post"], url_path="order")
     def set_order(self, request, draft_name=None):
