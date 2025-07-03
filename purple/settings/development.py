@@ -15,7 +15,7 @@ ALLOWED_HOSTS = []
 
 # Datatracker
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
-DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000/api/rpc"
+DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000"
 DATATRACKER_API_V1_BASE = "http://host.docker.internal:8000/api/v1"
 DATATRACKER_BASE = "http://localhost:8000"
 

@@ -1,8 +1,23 @@
 #!/bin/sh -e
-# Run this in the container after updating rpcapi.yaml!
+# Updates APIs
+#
+# Tries to get a current schema from the local datatracker instance, falling back
+# to its current file if that does not succeed.
+#
+WORKSPACE=/workspace
 
 # Generate OpenAPI schema for the Purple api
 ./manage.py spectacular --file purple_api.yaml
+
+# Try to fetch schema from datatracker
+RPCAPI_TMPDIR=$(mktemp -d)
+trap '/bin/rm -rf -- "$RPCAPI_TMPDIR"' EXIT
+if curl -s http://host.docker.internal:8000/api/schema/ -o "$RPCAPI_TMPDIR/rpcapi.yaml"; then
+  /bin/cp "$RPCAPI_TMPDIR/rpcapi.yaml" "$WORKSPACE/rpcapi.yaml"
+  echo "Updated rpcapi.yaml from local datatracker, using new schema."
+else
+  echo "Unable to update rpc.yaml from local datatracker, using existing schema."
+fi
 
 # Generate clients
 # Configure the generator in openapitools.json

@@ -29,7 +29,7 @@ class Command(BaseCommand):
         self.create_real_people()
 
     @with_rpcapi
-    def create_real_people(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_real_people(self, *, rpcapi: rpcapi_client.PurpleApi):
         """Create RpcPerson / DatatrackerPerson records for real people"""
         self.people["jennifer"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.get_subject_person_by_id(
@@ -63,12 +63,12 @@ class Command(BaseCommand):
         )
 
     @with_rpcapi
-    def create_rpc_people(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_rpc_people(self, *, rpcapi: rpcapi_client.PurpleApi):
         # From "Manage Team Members" wireframe
 
         self.people["bjenkins"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="B. Jenkins"),
+                rpcapi_client.DemoPersonCreateRequest(name="B. Jenkins"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -89,7 +89,7 @@ class Command(BaseCommand):
         )
         self.people["atravis"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="A. Travis"),
+                rpcapi_client.DemoPersonCreateRequest(name="A. Travis"),
             ).person_pk,
             can_hold_role=["formatting", "first_editor", "final_review_editor"],
             capable_of=["codecomp-abnf", "clusters-beginner", "ianaconsid-beginner"],
@@ -97,7 +97,7 @@ class Command(BaseCommand):
         )
         self.people["cbrown"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="Chuck Brown"),
+                rpcapi_client.DemoPersonCreateRequest(name="Chuck Brown"),
             ).person_pk,
             can_hold_role=["formatting"],
             capable_of=["clusters-beginner"],
@@ -105,7 +105,7 @@ class Command(BaseCommand):
         )
         self.people["csimmons"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="C. Simmons"),
+                rpcapi_client.DemoPersonCreateRequest(name="C. Simmons"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -124,7 +124,7 @@ class Command(BaseCommand):
         )
         self.people["ffermat"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="F. Fermat"),
+                rpcapi_client.DemoPersonCreateRequest(name="F. Fermat"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -143,7 +143,7 @@ class Command(BaseCommand):
         )
         self.people["kstrawberry"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="K. Strawberry"),
+                rpcapi_client.DemoPersonCreateRequest(name="K. Strawberry"),
             ).person_pk,
             can_hold_role=["formatting", "first_editor"],
             capable_of=["ianaconsid-beginner", "xmlfmt-beginner"],
@@ -151,7 +151,7 @@ class Command(BaseCommand):
         )
         self.people["obleu"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="O. Bleu"),
+                rpcapi_client.DemoPersonCreateRequest(name="O. Bleu"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -171,7 +171,7 @@ class Command(BaseCommand):
         )
         self.people["pparker"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="Patricia Parker"),
+                rpcapi_client.DemoPersonCreateRequest(name="Patricia Parker"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -191,7 +191,7 @@ class Command(BaseCommand):
         )
         self.people["sbexar"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="S. Bexar"),
+                rpcapi_client.DemoPersonCreateRequest(name="S. Bexar"),
             ).person_pk,
             can_hold_role=[
                 "formatting",
@@ -212,7 +212,7 @@ class Command(BaseCommand):
         )
         self.people["tlangfeld"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="T. Langfeld"),
+                rpcapi_client.DemoPersonCreateRequest(name="T. Langfeld"),
             ).person_pk,
             can_hold_role=["formatting", "first_editor"],
             capable_of=["ianaconsid-beginner", "xmlfmt-beginner"],
@@ -220,7 +220,7 @@ class Command(BaseCommand):
         )
         self.people["ugarrison"] = RpcPersonFactory(
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="U. Garrison"),
+                rpcapi_client.DemoPersonCreateRequest(name="U. Garrison"),
             ).person_pk,
             can_hold_role=["formatting"],
             capable_of=["xmlfmt-expert"],
@@ -228,10 +228,10 @@ class Command(BaseCommand):
         )
 
     @with_rpcapi
-    def create_documents(self, *, rpcapi: rpcapi_client.DefaultApi):
+    def create_documents(self, *, rpcapi: rpcapi_client.PurpleApi):
         # submission, not yet an RfcToBe (not shown on "The Queue" wireframe)
         rpcapi.create_demo_draft(
-            rpcapi_client.CreateDemoDraftRequest(
+            rpcapi_client.DemoDraftCreateRequest(
                 name="draft-ietf-lizard-qol",
                 rev="00",
                 states=[("draft-iesg", "pub-req")],
@@ -340,7 +340,7 @@ class Command(BaseCommand):
                 draft__name="draft-irtf-improving-lizard-qol"
             ),
             datatracker_person__datatracker_id=rpcapi.create_demo_person(
-                rpcapi_client.CreateDemoPersonRequest(name="Artimus Ad"),
+                rpcapi_client.DemoPersonCreateRequest(name="Artimus Ad"),
             ).person_pk,
             deadline=datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=14),
         )
@@ -358,7 +358,7 @@ class Command(BaseCommand):
     def _demo_rfctobe_factory(
         self,
         *,
-        rpcapi: rpcapi_client.DefaultApi,
+        rpcapi: rpcapi_client.PurpleApi,
         name,
         rev,
         states=None,
@@ -370,7 +370,7 @@ class Command(BaseCommand):
         **kwargs are passed through to the RfcToBeFactory
         """
         resp = rpcapi.create_demo_draft(
-            rpcapi_client.CreateDemoDraftRequest(
+            rpcapi_client.DemoDraftCreateRequest(
                 name=name, rev=rev, states=states, stream=stream
             )
         )

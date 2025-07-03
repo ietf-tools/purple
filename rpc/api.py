@@ -174,16 +174,23 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filterset_fields = ["is_active"]
 
     @with_rpcapi
-    def get_serializer_context(self, rpcapi: rpcapi_client.DefaultApi):
+    def get_serializer_context(self, rpcapi: rpcapi_client.PurpleApi):
         """Add context to the serializer"""
-        # use bulk endpoint to get names
-        name_map = rpcapi.get_persons(
-            list(
-                RpcPerson.objects.values_list(
-                    "datatracker_person__datatracker_id", flat=True
-                )
+        # todo don't fetch _everybody_; use memcache
+        person_ids = list(
+            RpcPerson.objects.values_list(
+                "datatracker_person__datatracker_id", flat=True
             )
         )
+        # use bulk endpoint to get names
+        name_map = {
+            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
+        }
+        name_map |= {
+            missing_id: "Unknown"
+            for missing_id in person_ids
+            if missing_id not in name_map
+        }
         return super().get_serializer_context() | {"name_map": name_map}
 
 
@@ -232,9 +239,11 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 )
 @api_view(["GET"])
 @with_rpcapi
-def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
-    """Return documents in datatracker that have been submitted to the RPC but are
-        not yet in the queue
+def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
+    """Retrieve submitted docs not yet in the purple queue
+
+    Returns documents in datatracker that have been submitted to the RPC but are
+    not yet in the queue
 
     [
         {
@@ -269,8 +278,7 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     This api will filter those out.
     """
     # Get submissions list from Datatracker
-    response = rpcapi.submitted_to_rpc()
-    submitted = response.submitted_to_rpc
+    submitted = rpcapi.submitted_to_rpc()
     # Filter out I-Ds that already have an RfcToBe
     already_in_queue = RfcToBe.objects.filter(
         draft__datatracker_id__in=[s.id for s in submitted]
@@ -282,7 +290,7 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
 @extend_schema(operation_id="submissions_retrieve", responses=SubmissionSerializer)
 @api_view(["GET"])
 @with_rpcapi
-def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     # Create a Document to which the RfcToBe can refer. If it already exists, update
     # its values with whatever the datatracker currently says.
     draft = rpcapi.get_draft_by_id(document_id)
@@ -297,7 +305,7 @@ def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
 )
 @api_view(["POST"])
 @with_rpcapi
-def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
     try:
@@ -326,8 +334,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
-            response = rpcapi.get_draft_references(document_id)
-            references = response.references
+            references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
             already_in_queue = dict(
                 RfcToBe.objects.filter(
@@ -598,7 +605,7 @@ class DocumentCommentViewSet(
 
     @staticmethod
     @with_rpcapi
-    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.DefaultApi):
+    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.PurpleApi):
         """Get a datatracker Document for a draft given its name
 
         n.b., creates a Document object if needed
@@ -744,6 +751,6 @@ class SearchDatatrackerPersons(ListAPIView):
 
     @with_rpcapi
     def upstream_search(
-        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+        self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
