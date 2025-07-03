@@ -503,12 +503,14 @@ class RpcRelatedDocument(models.Model):
     source = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     target_document = models.ForeignKey(
         "datatracker.Document",
+        blank=True,
         null=True,
         on_delete=models.PROTECT,
         related_name="rpcrelateddocument_target_set",
     )
     target_rfctobe = models.ForeignKey(
         RfcToBe,
+        blank=True,
         null=True,
         on_delete=models.PROTECT,
         related_name="rpcrelateddocument_target_set",

@@ -25,7 +25,7 @@ class User(AbstractUser):
 
     def datatracker_person(self):
         try:
-            dt_person, _ = DatatrackerPerson.objects.get_or_create_by_subject_id(
+            dt_person, _ = DatatrackerPerson.objects.first_or_create_by_subject_id(
                 self.datatracker_subject_id
             )
         except DatatrackerPerson.DoesNotExist:

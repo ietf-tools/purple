@@ -4,24 +4,34 @@ from typing import cast
 import rpcapi_client
 from django.core.cache import cache
 from django.db import models
+from simple_history.models import HistoricalRecords
 
 from datatracker.rpcapi import with_rpcapi
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):
     @with_rpcapi
-    def get_or_create_by_subject_id(
+    def first_or_create_by_subject_id(
         self, subject_id, *, rpcapi: rpcapi_client.PurpleApi
     ) -> tuple["DatatrackerPerson", bool]:
-        """Get an instance by subject id, creating it if necessary"""
+        """Get an instance by subject id, creating it if necessary
+
+        Like get_or_create(), but returns the first matching instance rather than
+        raising an exception if more than one match is found.
+        """
         try:
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
         except rpcapi_client.exceptions.NotFoundException as err:
             raise DatatrackerPerson.DoesNotExist() from err
-        return cast(
-            tuple[DatatrackerPerson, bool],
-            super().get_or_create(datatracker_id=dtpers.id),
-        )
+        try:
+            return cast(
+                tuple[DatatrackerPerson, bool],
+                super().get_or_create(datatracker_id=dtpers.id),
+            )
+        except DatatrackerPerson.MultipleObjectsReturned:
+            return DatatrackerPerson.objects.filter(
+                datatracker_id=dtpers.id
+            ).first(), False
 
 
 class DatatrackerPerson(models.Model):
@@ -32,11 +42,15 @@ class DatatrackerPerson(models.Model):
     # datatracker uses AutoField for this, which is only an IntegerField,
     # but might as well go big
     datatracker_id = models.BigIntegerField(
-        unique=True, help_text="ID of the Person in the datatracker"
+        help_text="ID of the Person in the datatracker"
     )
+    history = HistoricalRecords()
 
     def __str__(self):
-        return f"Datatracker Person {self.datatracker_id}"
+        return f"Datatracker Person {self.pk} ({self.datatracker_id})"
+
+    class Meta:
+        ordering = ["id"]
 
     @property
     def plain_name(self) -> str:

@@ -181,11 +181,6 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "datatracker_person"]
 
 
-class CreateRfcAuthorSerializer(RfcAuthorSerializer):
-    class Meta(RfcAuthorSerializer.Meta):
-        read_only_fields = ["id"]
-
-
 class RfcToBeSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     rev = serializers.SerializerMethodField()
@@ -331,9 +326,25 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
 class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     """Serializer for related document for an RfcToBe"""
 
+    target_draft_name = serializers.SerializerMethodField()
+
     class Meta:
         model = RpcRelatedDocument
-        fields = ["relationship", "source", "target_document", "target_rfctobe"]
+        fields = ["id", "relationship", "target_draft_name"]
+
+    def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
+        if obj.target_document is not None:
+            return obj.target_document.name
+        return obj.target_rfctobe.draft.name
+
+
+class CreateRpcRelatedDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for creating a related document for an RfcToBe"""
+
+    # todo reconcile with refactored RpcRelatedDocumentSerializer
+    class Meta:
+        model = RpcRelatedDocument
+        fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
