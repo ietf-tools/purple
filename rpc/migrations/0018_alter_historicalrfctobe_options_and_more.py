@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("datatracker", "0004_historicaldatatrackerperson"),
-        ("rpc", "0016_populate_doc_relationship_names"),
+        ("rpc", "0017_blankable_rpcrelateddocument_targets"),
     ]
 
     operations = [
