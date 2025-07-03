@@ -2,7 +2,7 @@
 from django.db.models import Max
 
 from .models import DumpInfo, RfcToBe, UnusableRfcNumber
-from .serializers import RpcRelatedDocumentSerializer
+from .serializers import CreateRpcRelatedDocumentSerializer
 
 
 class VersionInfo:
@@ -46,6 +46,7 @@ def create_rpc_related_document(
     else:
         raise ValueError(f"Invalid target type: {target_type}")
 
-    serializer = RpcRelatedDocumentSerializer(data=data)
+    serializer = CreateRpcRelatedDocumentSerializer(data=data)
     if serializer.is_valid(raise_exception=True):
         return serializer.save()
+    return None
