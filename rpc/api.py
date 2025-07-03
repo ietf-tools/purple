@@ -15,7 +15,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
-from rest_framework import mixins, serializers, views, viewsets
+from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
@@ -32,6 +32,9 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
+from utils.api import requires_api_token
+from utils.authentication import ApiKeyAuthentication
+from utils.permissions import HasApiKey
 
 from .models import (
     Assignment,
@@ -58,6 +61,7 @@ from .serializers import (
     CreateRfcToBeSerializer,
     DocumentCommentSerializer,
     LabelSerializer,
+    MergePersonSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
@@ -747,3 +751,21 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class MergePersonView(views.APIView):
+    authentication_classes = [ApiKeyAuthentication]
+    permission_classes = [HasApiKey]
+    api_key_endpoint = "purple.api.merge_person"
+
+    @requires_api_token("purple.api.merge_person")
+    def post(self, request):
+        serializer = MergePersonSerializer(data=request.data)
+        if serializer.is_valid():
+            old_person_id = serializer.validated_data["old_person_id"]
+            new_person_id = serializer.validated_data["new_person_id"]
+            DatatrackerPerson.objects.filter(datatracker_id=old_person_id).update(
+                datatracker_id=new_person_id
+            )
+            return Response({"success": True}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
