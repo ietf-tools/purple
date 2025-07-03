@@ -456,6 +456,13 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             raise NotFound("RfcToBe with the given draft name does not exist")
         serializer.save(rfc_to_be=rfc_to_be)
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH)
+        ],
+        responses=AuthorOrderSerializer,
+        operation_id="documents_authors_order"
+    )
     @action(detail=False, methods=["post"], url_path="order")
     def set_order(self, request, draft_name=None):
         serializer = AuthorOrderSerializer(data=request.data)
