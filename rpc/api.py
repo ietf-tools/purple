@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import rpcapi_client
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
@@ -52,6 +52,7 @@ from .models import (
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
+    AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
@@ -453,7 +454,50 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         ).first()
         if rfc_to_be is None:
             raise NotFound("RfcToBe with the given draft name does not exist")
-        serializer.save(rfc_to_be=rfc_to_be)
+        # Find the current highest order for this document
+        max_order = (
+            RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
+            .aggregate(max_order=Max("order"))
+            .get("max_order")
+            or 0
+        )
+        serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
+
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH)
+        ],
+        responses=AuthorOrderSerializer,
+        operation_id="documents_authors_order",
+    )
+    @action(detail=False, methods=["post"], url_path="order")
+    def set_order(self, request, draft_name=None):
+        serializer = AuthorOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order_list = serializer.validated_data["order"]
+
+        authors = list(RfcAuthor.objects.filter(rfc_to_be__draft__name=draft_name))
+        # check that the authors passed in list are identical to the ones currently set
+        if len(order_list) != len(authors):
+            raise serializers.ValidationError(
+                "The number of authors in the order list does not match the number of "
+                "authors in the database."
+            )
+        if set(order_list) != set(author.id for author in authors):
+            raise serializers.ValidationError(
+                "The author IDs in the order list do not match the author IDs in the "
+                "database."
+            )
+        author_dict = {author.id: author for author in authors}
+
+        for idx, author_id in enumerate(order_list, start=1):
+            author = author_dict.get(author_id)
+            if author:
+                author.order = idx
+
+            RfcAuthor.objects.bulk_update(authors, ["order"])
+
+        return Response({"status": "RfcAuthor order updated"})
 
 
 @extend_schema_with_draft_name()
