@@ -187,6 +187,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             fields["datatracker_person"].read_only = True
         return fields
 
+
 class AuthorOrderSerializer(serializers.Serializer):
     order = serializers.ListField(
         child=serializers.IntegerField(),
