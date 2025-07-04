@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import rpcapi_client
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
@@ -454,7 +454,14 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         ).first()
         if rfc_to_be is None:
             raise NotFound("RfcToBe with the given draft name does not exist")
-        serializer.save(rfc_to_be=rfc_to_be)
+        # Find the current highest order for this document
+        max_order = (
+            RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
+            .aggregate(max_order=Max("order"))
+            .get("max_order")
+            or 0
+        )
+        serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
     @extend_schema(
         parameters=[
@@ -483,16 +490,12 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             )
         author_dict = {author.id: author for author in authors}
 
-        # first reset order for all authors (to avoid unique constraint violations)
-        for author in authors:
-            author.order = 0
-            author.save(update_fields=["order"])
-
         for idx, author_id in enumerate(order_list, start=1):
             author = author_dict.get(author_id)
             if author:
                 author.order = idx
-                author.save(update_fields=["order"])
+
+            RfcAuthor.objects.bulk_update(authors, ["order"])
 
         return Response({"status": "RfcAuthor order updated"})
 
