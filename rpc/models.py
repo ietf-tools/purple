@@ -327,7 +327,7 @@ class RfcAuthor(models.Model):
     )
     order = models.PositiveIntegerField(
         help_text="Order of the author on the document",
-        default=0,
+        null=True,
     )
 
     def __str__(self):
@@ -343,10 +343,9 @@ class RfcAuthor(models.Model):
             ),
             models.UniqueConstraint(
                 fields=["rfc_to_be", "order"],
-                name="unique_nonzero_author_order_per_document",
-                condition=~models.Q(order=0),
-                violation_error_message="each nonzero author order must be unique per "
-                "document",
+                name="unique_author_order_per_document",
+                violation_error_message="each author order must be unique per document",
+                deferrable=models.Deferrable.DEFERRED,
             ),
         ]
         ordering = ["rfc_to_be", "order"]
