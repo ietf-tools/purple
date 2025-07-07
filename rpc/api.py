@@ -489,10 +489,16 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             )
         author_dict = {author.id: author for author in authors}
 
-        for idx, author_id in enumerate(order_list, start=1):
-            author = author_dict.get(author_id)
-            if author:
-                author.order = idx
+        with transaction.atomic():
+            # temporary reset orders to avoid unique constraint violation
+            for author in authors:
+                author.order = 0
+            RfcAuthor.objects.bulk_update(authors, ["order"])
+
+            for idx, author_id in enumerate(order_list, start=1):
+                author = author_dict.get(author_id)
+                if author:
+                    author.order = idx
 
             RfcAuthor.objects.bulk_update(authors, ["order"])
 
