@@ -328,6 +328,7 @@ class RfcAuthor(models.Model):
     order = models.PositiveIntegerField(
         help_text="Order of the author on the document",
         null=True,
+        blank=True,
     )
 
     def __str__(self):

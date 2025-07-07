@@ -16,11 +16,10 @@ class Migration(migrations.Migration):
             options={"ordering": ["rfc_to_be", "order"]},
         ),
         migrations.AddField(
-            model_name="rfcauthor",
-            name="order",
-            field=models.PositiveIntegerField(
-                null=True, help_text="Order of the author on the document"
-            ),
+            model_name='rfcauthor',
+            name='order',
+            field=models.PositiveIntegerField(blank=True, help_text='Order of the author on the document', null=True),
+
         ),
         migrations.AddConstraint(
             model_name="rfcauthor",
