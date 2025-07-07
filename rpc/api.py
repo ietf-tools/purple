@@ -457,9 +457,8 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         # Find the current highest order for this document
         max_order = (
             RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
-            .aggregate(max_order=Max("order"))
+            .aggregate(max_order=Max("order", default=0))
             .get("max_order")
-            or 0
         )
         serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
