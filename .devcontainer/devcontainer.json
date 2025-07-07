@@ -48,7 +48,7 @@
         "dbaeumer.vscode-eslint",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
-        "vue.volar",
+        "vue.volar@2.2.10",
         "mrmlnc.vscode-duplicate",
         "ms-playwright.playwright",
         "ms-python.python",
