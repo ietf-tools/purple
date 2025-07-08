@@ -137,6 +137,8 @@ if _email_port is not None:
 else:
     raise RuntimeError("DATATRACKER_EMAIL_PORT must be set")
 
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _celery_password is None:
     raise RuntimeError("CELERY_PASSWORD must be set")
