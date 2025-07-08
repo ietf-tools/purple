@@ -463,7 +463,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
     def get_serializer_class(self):
-        if self.action in ("create"):
+        if self.action == "create":
             return CreateRfcAuthorSerializer
         return RfcAuthorSerializer
 
