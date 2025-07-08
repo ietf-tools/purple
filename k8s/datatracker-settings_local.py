@@ -124,8 +124,18 @@ else:
 USING_DEBUG_EMAIL_SERVER = (
     os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 )
-EMAIL_HOST = os.environ.get("DATATRACKER_EMAIL_HOST", "localhost")
-EMAIL_PORT = int(os.environ.get("DATATRACKER_EMAIL_PORT", "2025"))
+
+_email_host = os.environ.get("DATATRACKER_EMAIL_HOST", None)
+if _email_host is not None:
+    EMAIL_HOST = _email_host
+else:
+    raise RuntimeError("DATATRACKER_EMAIL_HOST must be set")
+
+_email_port = os.environ.get("DATATRACKER_EMAIL_PORT", None)
+if _email_port is not None:
+    EMAIL_PORT = int(_email_port)
+else:
+    raise RuntimeError("DATATRACKER_EMAIL_PORT must be set")
 
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _celery_password is None:
