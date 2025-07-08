@@ -1,6 +1,12 @@
 name: Build K8s Images
 on:
   workflow_dispatch:
+    inputs:
+      datatrackerRef:
+        description: 'Datatracker API Spec Repo Ref'
+        required: true
+        type: string
+        default: 'feat/rpc-api'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -13,6 +19,18 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          fetch-tags: false
+          path: purple
+
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          fetch-tags: false
+          repository: ietf-tools/datatracker
+          ref: ${{ inputs.datatrackerRef }}
+          path: datatracker
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -21,11 +39,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate Datatracker API client
+      - name: Generate Datatracker API spec
+        working-directory: ./datatracker
         run: |
-          wget -O rpcapi.yaml https://raw.githubusercontent.com/ietf-tools/datatracker/feat/rpc-api/rpcapi.yaml
+          cat > doit.bash <<EOF
+          echo "Creating and activating virtual environment..."
+          python -mvenv venv
+          source venv/bin/activate
+          echo "Installing requirements..."
+          pip install -r requirements.txt
+          echo "Generating OpenAPI spec..."
+          touch ietf/settings_local.py
+          ietf/manage.py spectacular --skip-checks --file rpcapi.yaml
+          EOF
+          docker run --rm --volume .:/workspace ghcr.io/ietf-tools/datatracker-app-base:latest /bin/bash -e doit.bash
+          mv rpcapi.yaml ..
+
+
+      - name: Generate Datatracker API client
+        working-directory: ./purple
+        run: |
+          cp ../rpcapi.yaml .
           npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
-          tar cfz rpcapi_client.tgz -C openapi rpcapi_client
+          tar cfz ../rpcapi_client.tgz -C openapi rpcapi_client
 
       - name: Build backend image
         uses: docker/build-push-action@v6
@@ -33,8 +69,8 @@ jobs:
           DOCKER_BUILD_SUMMARY: false
           DOCKER_BUILD_RECORD_UPLOAD: false
         with:
-          context: .
-          file: dev/build/backend.Dockerfile
+          context: ./purple
+          file: ./purple/dev/build/backend.Dockerfile
           platforms: linux/amd64
           push: true
           tags: ghcr.io/ietf-tools/purple-backend:latest
@@ -45,19 +81,21 @@ jobs:
           DOCKER_BUILD_SUMMARY: false
           DOCKER_BUILD_RECORD_UPLOAD: false
         with:
-          context: .
-          file: dev/build/statics.Dockerfile
+          context: ./purple
+          file: ./purple/dev/build/statics.Dockerfile
           platforms: linux/amd64
           push: true
           tags: ghcr.io/ietf-tools/purple-statics:latest
 
       - name: Generate Purple API client
+        working-directory: ./purple
         run: |
           container_id="$(docker create ghcr.io/ietf-tools/purple-backend:latest)"
           docker cp "${container_id}:/workspace/purple_api.yaml" ./
           docker rm "${container_id}"
           npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
-          tar cfz purple_client.tgz -C client purple_client
+          tar cfz ../purple_client.tgz -C client purple_client
+          cp purple_api.yaml ..
 
       - name: Upload API
         uses: actions/upload-artifact@v4
@@ -75,8 +113,8 @@ jobs:
           DOCKER_BUILD_SUMMARY: false
           DOCKER_BUILD_RECORD_UPLOAD: false
         with:
-          context: .
-          file: dev/build/frontend.Dockerfile
+          context: ./purple
+          file: ./purple/dev/build/frontend.Dockerfile
           platforms: linux/amd64
           push: true
           tags: ghcr.io/ietf-tools/purple-frontend:latest
