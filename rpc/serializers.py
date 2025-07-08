@@ -178,14 +178,12 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "is_editor",
             "datatracker_person",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["id", "datatracker_person"]
 
-    def get_fields(self):
-        fields = super().get_fields()
-        request = self.context.get("request")
-        if request and request.method in ("PATCH", "PUT"):
-            fields["datatracker_person"].read_only = True
-        return fields
+
+class CreateRfcAuthorSerializer(RfcAuthorSerializer):
+    class Meta(RfcAuthorSerializer.Meta):
+        read_only_fields = ["id"]
 
 
 class AuthorOrderSerializer(serializers.Serializer):

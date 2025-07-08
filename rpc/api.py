@@ -56,6 +56,7 @@ from .serializers import (
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
+    CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     DocumentCommentSerializer,
     LabelSerializer,
@@ -439,7 +440,6 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 @extend_schema_with_draft_name()
 class RpcAuthorViewSet(viewsets.ModelViewSet):
     queryset = RfcAuthor.objects.all()
-    serializer_class = RfcAuthorSerializer
 
     def get_queryset(self):
         return (
@@ -461,6 +461,11 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             .get("max_order")
         )
         serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
+
+    def get_serializer_class(self):
+        if self.action in ("create"):
+            return CreateRfcAuthorSerializer
+        return RfcAuthorSerializer
 
     @extend_schema(
         parameters=[
