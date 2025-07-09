@@ -487,7 +487,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         examples=[
             OpenApiExample(
                 "Success",
-                value={"status": "RfcAuthor order updated"},
+                value={"status": "OK"},
                 response_only=True,
             )
         ],
@@ -521,7 +521,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
 
             RfcAuthor.objects.bulk_update(authors, ["order"])
 
-        return Response({"status": "RfcAuthor order updated"})
+        return Response({"status": "OK"})
 
 
 @extend_schema_with_draft_name()
