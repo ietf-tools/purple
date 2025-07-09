@@ -39,7 +39,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0006_historicallabel_is_complexity_label_is_complexity"),
+        ("rpc", "0004_populate_capability"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]
