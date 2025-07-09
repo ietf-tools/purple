@@ -6,9 +6,6 @@
 #
 WORKSPACE=/workspace
 
-# Generate OpenAPI schema for the Purple api
-./manage.py spectacular --file purple_api.yaml
-
 # Try to fetch schema from datatracker
 RPCAPI_TMPDIR=$(mktemp -d)
 trap '/bin/rm -rf -- "$RPCAPI_TMPDIR"' EXIT
@@ -19,17 +16,23 @@ else
   echo "Unable to update rpc.yaml from local datatracker, using existing schema."
 fi
 
-# Generate clients
+# Generate datatracker API client
 # Configure the generator in openapitools.json
-npx --yes @openapitools/openapi-generator-cli generate
+npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
 
 # Install the datatracker rpcapi client
 pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
 
+# Generate OpenAPI schema for the Purple api
+./manage.py spectacular --file purple_api.yaml
+
+# Generate purple's own API
+# Configure the generator in openapitools.json
+npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+
 cd client
 npm run build
 cd ..
-
 
 echo
 echo "API updated"
