@@ -10,6 +10,7 @@ from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
+    OpenApiExample,
     OpenApiParameter,
     extend_schema,
     extend_schema_view,
@@ -478,7 +479,18 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         parameters=[
             OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH)
         ],
-        responses=AuthorOrderSerializer,
+        request=AuthorOrderSerializer,
+        responses=inline_serializer(
+            name="AuthorOrderStatus",
+            fields={"status": serializers.CharField(help_text="Status message")},
+        ),
+        examples=[
+            OpenApiExample(
+                "Success",
+                value={"status": "RfcAuthor order updated"},
+                response_only=True,
+            )
+        ],
         operation_id="documents_authors_order",
     )
     @action(detail=False, methods=["post"], url_path="order")
