@@ -125,17 +125,19 @@ USING_DEBUG_EMAIL_SERVER = (
     os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 )
 
-_email_host = os.environ.get("DATATRACKER_EMAIL_HOST", None)
-if _email_host is not None:
-    EMAIL_HOST = _email_host
-else:
-    raise RuntimeError("DATATRACKER_EMAIL_HOST must be set")
-
-_email_port = os.environ.get("DATATRACKER_EMAIL_PORT", None)
-if _email_port is not None:
-    EMAIL_PORT = int(_email_port)
-else:
-    raise RuntimeError("DATATRACKER_EMAIL_PORT must be set")
+# TODO: Uncomment these when we are ready send mails
+# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+# _email_host = os.environ.get("DATATRACKER_EMAIL_HOST", None)
+# if _email_host is not None:
+#    EMAIL_HOST = _email_host
+# else:
+#    raise RuntimeError("DATATRACKER_EMAIL_HOST must be set")
+#
+# _email_port = os.environ.get("DATATRACKER_EMAIL_PORT", None)
+# if _email_port is not None:
+#    EMAIL_PORT = int(_email_port)
+# else:
+#    raise RuntimeError("DATATRACKER_EMAIL_PORT must be set")
 
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
 

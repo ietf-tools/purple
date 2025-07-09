@@ -143,3 +143,6 @@ CACHES = {
         "BACKEND": "django.core.cache.backends.dummy.DummyCache",
     }
 }
+
+# email
+EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"

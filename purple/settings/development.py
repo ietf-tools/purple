@@ -53,6 +53,7 @@ DATABASES = {
 }
 
 # email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "mailhog")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 1025))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
