@@ -1,4 +1,4 @@
-#!/bin/sh -e
+#!/bin/bash -e
 # Updates APIs
 #
 # Tries to get a current schema from the local datatracker instance, falling back
@@ -12,28 +12,47 @@ trap '/bin/rm -rf -- "$RPCAPI_TMPDIR"' EXIT
 if curl -s http://host.docker.internal:8000/api/schema/ -o "$RPCAPI_TMPDIR/rpcapi.yaml"; then
   /bin/cp "$RPCAPI_TMPDIR/rpcapi.yaml" "$WORKSPACE/rpcapi.yaml"
   echo "Updated rpcapi.yaml from local datatracker, using new schema."
+elif [[ -f "$WORKSPACE/rpcapi.yaml" ]]; then
+  echo "Unable to update rpcapi.yaml from local datatracker, using existing schema."
 else
-  echo "Unable to update rpc.yaml from local datatracker, using existing schema."
+  echo "Unable to update rpcapi.yaml from local datatracker and does not already exist. Giving up."
+  exit 1
 fi
 
-# Generate datatracker API client
-# Configure the generator in openapitools.json
-npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
+if ! diff -q rpcapi.yaml "$WORKSPACE/openapi/rpcapi_client/.rpcapi.yaml" > /dev/null 2>&1; then
+  echo "Generating datatracker API client from rpcapi.yaml"
+  # Generate datatracker API client
+  # Configure the generator in openapitools.json
+  npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
 
-# Install the datatracker rpcapi client
-pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
+  # Install the datatracker rpcapi client
+  pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
+
+  # remember the schema we just installed from
+  /bin/cp rpcapi.yaml "$WORKSPACE/openapi/rpcapi_client/.rpcapi.yaml"
+else
+  echo "No change to rpcapi.yaml, skipping datatracker API client generation"
+fi
 
 # Generate OpenAPI schema for the Purple api
 ./manage.py spectacular --file purple_api.yaml
 
-# Generate purple's own API
-# Configure the generator in openapitools.json
-npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+if ! diff -q purple_api.yaml "$WORKSPACE/client/purple_client/.purple_api.yaml" > /dev/null 2>&1; then
+  echo "Generating purple API client from purple_api.yaml"
+  # Generate purple's own API
+  # Configure the generator in openapitools.json
+  npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
 
-cd client
-npm run build
-cd ..
+  cd client
+  npm run build
+  cd ..
+
+  # remember the schema we just installed from
+  /bin/cp purple_api.yaml "$WORKSPACE/client/purple_client/.purple_api.yaml"
+else
+  echo "No change to purple_api.yaml, skipping purple API client generation"
+fi
 
 echo
-echo "API updated"
+echo "API up to date"
 echo
