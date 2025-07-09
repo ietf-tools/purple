@@ -536,9 +536,7 @@ class Migration(migrations.Migration):
                 (
                     "order",
                     models.PositiveIntegerField(
-                        blank=True,
-                        help_text="Order of the author on the document",
-                        null=True,
+                        help_text="Order of the author on the document"
                     ),
                 ),
                 (
@@ -1157,7 +1155,9 @@ class Migration(migrations.Migration):
                 deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
                 fields=("rfc_to_be", "order"),
                 name="unique_author_order_per_document",
-                violation_error_message="each author order must be unique per document",
+                violation_error_message=(
+                    "each author order must be unique per document"
+                ),
             ),
         ),
         migrations.AddConstraint(
