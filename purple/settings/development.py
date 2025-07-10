@@ -15,7 +15,7 @@ ALLOWED_HOSTS = []
 
 # Datatracker
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
-DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000/api/rpc"
+DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000"
 DATATRACKER_API_V1_BASE = "http://host.docker.internal:8000/api/v1"
 DATATRACKER_BASE = "http://localhost:8000"
 
@@ -51,6 +51,12 @@ DATABASES = {
         "PORT": 5432,
     }
 }
+
+# email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "mailhog")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", 1025))
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
 
 # Uncomment to enable caching in development
 # CACHES = {

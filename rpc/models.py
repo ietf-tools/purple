@@ -325,6 +325,11 @@ class RfcAuthor(models.Model):
     rfc_to_be = models.ForeignKey(
         RfcToBe, on_delete=models.PROTECT, related_name="authors"
     )
+    order = models.PositiveIntegerField(
+        help_text="Order of the author on the document",
+        null=False,
+        blank=False,
+    )
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
@@ -336,8 +341,15 @@ class RfcAuthor(models.Model):
                 name="unique_author_per_document",
                 violation_error_message="the person is already an author of this "
                 "document",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "order"],
+                name="unique_author_order_per_document",
+                violation_error_message="each author order must be unique per document",
+                deferrable=models.Deferrable.DEFERRED,
+            ),
         ]
+        ordering = ["rfc_to_be", "order"]
 
 
 class AdditionalEmail(models.Model):
@@ -503,12 +515,14 @@ class RpcRelatedDocument(models.Model):
     source = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     target_document = models.ForeignKey(
         "datatracker.Document",
+        blank=True,
         null=True,
         on_delete=models.PROTECT,
         related_name="rpcrelateddocument_target_set",
     )
     target_rfctobe = models.ForeignKey(
         RfcToBe,
+        blank=True,
         null=True,
         on_delete=models.PROTECT,
         related_name="rpcrelateddocument_target_set",

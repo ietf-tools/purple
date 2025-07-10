@@ -182,8 +182,21 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
 
 
 class CreateRfcAuthorSerializer(RfcAuthorSerializer):
+    # person_id is not a field on the model - remove it from validated_data
+    # before saving!
+    person_id = serializers.IntegerField(
+        write_only=True, help_text="datatracker ID of a Person"
+    )
+
     class Meta(RfcAuthorSerializer.Meta):
-        read_only_fields = ["id"]
+        fields = RfcAuthorSerializer.Meta.fields + ["person_id"]
+
+
+class AuthorOrderSerializer(serializers.Serializer):
+    order = serializers.ListField(
+        child=serializers.IntegerField(),
+        help_text="List of RfcAuthor IDs in the desired order",
+    )
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
@@ -331,9 +344,25 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
 class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     """Serializer for related document for an RfcToBe"""
 
+    target_draft_name = serializers.SerializerMethodField()
+
     class Meta:
         model = RpcRelatedDocument
-        fields = ["relationship", "source", "target_document", "target_rfctobe"]
+        fields = ["id", "relationship", "target_draft_name"]
+
+    def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
+        if obj.target_document is not None:
+            return obj.target_document.name
+        return obj.target_rfctobe.draft.name
+
+
+class CreateRpcRelatedDocumentSerializer(serializers.ModelSerializer):
+    """Serializer for creating a related document for an RfcToBe"""
+
+    # todo reconcile with refactored RpcRelatedDocumentSerializer
+    class Meta:
+        model = RpcRelatedDocument
+        fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
@@ -365,14 +394,15 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         fields = ["id", "name", "hours_per_week", "capabilities", "roles", "is_active"]
 
     def __init__(self, *args, **kwargs):
-        self.name_map: dict[str, str] = kwargs.pop(
+        context = kwargs.get("context", {})
+        self.name_map: dict[int, str] = context.pop(
             "name_map", {}
         )  # datatracker_id -> name
         super().__init__(*args, **kwargs)
 
     def get_name(self, rpc_person) -> str:
         cached_name = self.name_map.get(
-            str(rpc_person.datatracker_person.datatracker_id), None
+            rpc_person.datatracker_person.datatracker_id, None
         )
         return cached_name or rpc_person.datatracker_person.plain_name
 
@@ -531,7 +561,7 @@ class SubmissionAuthor:
 
     @classmethod
     def from_rpcapi_draft_author(cls, author):
-        return cls(id=author.id, plain_name=author.plain_name)
+        return cls(id=author.person, plain_name=author.plain_name)
 
 
 @dataclass

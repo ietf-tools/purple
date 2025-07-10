@@ -5,15 +5,14 @@ mkdir holdme/rpc
 mkdir holdme/datatracker
 mkdir holdme/errata
 if ! [ -x /home/dev/.local/bin/ruff ]; then pip install ruff; fi
-# The next two lines require maintenance if more data migrations are added
-mv rpc/migrations/000[234]*py holdme/rpc
-rm rpc/migrations/000[156789]*.py
+grep -rl RunPython rpc/migrations | xargs mv -t holdme/rpc
+rm rpc/migrations/0*.py
 sed -i 's/("rpc", "0001_initial"),/#("rpc", "0001_initial"),/' datatracker/migrations/0002_initial.py
-sed -i 's/("rpc", "0004_populate_capability"),/#("rpc", "0004_populate_capability"),/' errata/migrations/0001_initial.py
+sed -i 's/("rpc", "0001_initial"),/#("rpc", "0001_initial"),/' errata/migrations/0001_initial.py
 ./manage.py makemigrations rpc
 ruff format rpc
 sed -i 's/#("rpc", "0001_initial"),/("rpc", "0001_initial"),/' datatracker/migrations/0002_initial.py
-mv datatracker/migrations/0002*py holdme/datatracker
+mv datatracker/migrations/000[23456789]*py holdme/datatracker
 mv errata/migrations/000[23456789]*py holdme/errata/
 sed -i 's/("datatracker", "0.*$/#("datatracker", "0002_initial"),/' errata/migrations/0001_initial.py
 sed -i 's/("datatracker", "0.*$/#("datatracker", "0001_initial"),/' rpc/migrations/0001_initial.py
@@ -38,3 +37,5 @@ mv holdme/rpc/*py rpc/migrations/
 mv holdme/errata/* errata/migrations/
 ruff format rpc datatracker errata
 rm -r holdme
+ruff check --fix .
+echo "Inspect, and if necessary rename data migrations and update their dependencies"

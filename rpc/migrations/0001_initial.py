@@ -5,6 +5,7 @@ import datetime
 import django.db.models.constraints
 import django.db.models.deletion
 import django.utils.timezone
+import rules.contrib.models
 import simple_history.models
 from django.conf import settings
 from django.db import migrations, models
@@ -29,6 +30,9 @@ class Migration(migrations.Migration):
                 ("name", models.CharField(max_length=255)),
                 ("desc", models.TextField(blank=True)),
             ],
+            options={
+                "verbose_name_plural": "capabilities",
+            },
         ),
         migrations.CreateModel(
             name="Cluster",
@@ -102,8 +106,9 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("slug", models.CharField(max_length=64)),
+                ("slug", models.CharField(max_length=64, unique=True)),
                 ("is_exception", models.BooleanField(default=False)),
+                ("is_complexity", models.BooleanField(default=False)),
                 (
                     "color",
                     models.CharField(
@@ -268,8 +273,9 @@ class Migration(migrations.Migration):
                         auto_created=True, blank=True, db_index=True, verbose_name="ID"
                     ),
                 ),
-                ("slug", models.CharField(max_length=64)),
+                ("slug", models.CharField(db_index=True, max_length=64)),
                 ("is_exception", models.BooleanField(default=False)),
+                ("is_complexity", models.BooleanField(default=False)),
                 (
                     "color",
                     models.CharField(
@@ -339,7 +345,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("is_april_first_rfc", models.BooleanField(default=False)),
-                ("rfc_number", models.PositiveIntegerField(null=True)),
+                ("rfc_number", models.PositiveIntegerField(db_index=True, null=True)),
                 ("external_deadline", models.DateTimeField(null=True)),
                 ("internal_goal", models.DateTimeField(null=True)),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),
@@ -443,8 +449,10 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option intended to apply upon "
-                        "publication as RFC",
+                        help_text=(
+                            "TLP IPR boilerplate option intended to apply "
+                            "upon publication as RFC"
+                        ),
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -456,8 +464,10 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option applicable when document "
-                        "entered the queue",
+                        help_text=(
+                            "TLP IPR boilerplate option applicable when document "
+                            "entered the queue"
+                        ),
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -467,7 +477,7 @@ class Migration(migrations.Migration):
             ],
             options={
                 "verbose_name": "historical rfc to be",
-                "verbose_name_plural": "historical rfc to bes",
+                "verbose_name_plural": "historical RfcToBes",
                 "ordering": ("-history_date", "-history_id"),
                 "get_latest_by": ("history_date", "history_id"),
             },
@@ -486,7 +496,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("is_april_first_rfc", models.BooleanField(default=False)),
-                ("rfc_number", models.PositiveIntegerField(null=True)),
+                ("rfc_number", models.PositiveIntegerField(null=True, unique=True)),
                 ("external_deadline", models.DateTimeField(null=True)),
                 ("internal_goal", models.DateTimeField(null=True)),
                 (
@@ -505,6 +515,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "verbose_name_plural": "RfcToBes",
+            },
         ),
         migrations.CreateModel(
             name="RfcAuthor",
@@ -520,6 +533,12 @@ class Migration(migrations.Migration):
                 ),
                 ("titlepage_name", models.CharField(max_length=128)),
                 ("is_editor", models.BooleanField(default=False)),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        help_text="Order of the author on the document"
+                    ),
+                ),
                 (
                     "datatracker_person",
                     models.ForeignKey(
@@ -537,36 +556,81 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "ordering": ["rfc_to_be", "order"],
+            },
         ),
         migrations.CreateModel(
-            name="IanaAction",
+            name="HistoricalRpcDocumentComment",
             fields=[
                 (
                     "id",
-                    models.BigAutoField(
-                        auto_created=True,
-                        primary_key=True,
-                        serialize=False,
-                        verbose_name="ID",
+                    models.BigIntegerField(
+                        auto_created=True, blank=True, db_index=True, verbose_name="ID"
                     ),
                 ),
-                ("requested", models.DateTimeField(default=django.utils.timezone.now)),
-                ("completed", models.DateTimeField(null=True)),
+                ("comment", models.TextField()),
+                ("time", models.DateTimeField(default=django.utils.timezone.now)),
+                ("history_id", models.AutoField(primary_key=True, serialize=False)),
+                ("history_date", models.DateTimeField(db_index=True)),
+                ("history_change_reason", models.CharField(max_length=100, null=True)),
                 (
-                    "iana_person",
+                    "history_type",
+                    models.CharField(
+                        choices=[("+", "Created"), ("~", "Changed"), ("-", "Deleted")],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "by",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "document",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="datatracker.document",
+                    ),
+                ),
+                (
+                    "history_user",
                     models.ForeignKey(
                         null=True,
-                        on_delete=django.db.models.deletion.PROTECT,
-                        to="datatracker.datatrackerperson",
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
                     ),
                 ),
                 (
                     "rfc_to_be",
                     models.ForeignKey(
-                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.rfctobe",
                     ),
                 ),
             ],
+            options={
+                "verbose_name": "historical rpc document comment",
+                "verbose_name_plural": "historical rpc document comments",
+                "ordering": ("-history_date", "-history_id"),
+                "get_latest_by": ("history_date", "history_id"),
+            },
+            bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
         migrations.CreateModel(
             name="HistoricalRfcToBeLabel",
@@ -656,6 +720,36 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name="ApprovalLogMessage",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("log_message", models.TextField()),
+                ("time", models.DateTimeField(default=django.utils.timezone.now)),
+                (
+                    "by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="approvallogmessage_by",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "rfc_to_be",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
             name="AdditionalEmail",
             fields=[
                 (
@@ -688,6 +782,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
+                ("body", models.CharField(blank=True, default="", max_length=64)),
                 ("since_when", models.DateTimeField(default=django.utils.timezone.now)),
                 ("completed", models.DateTimeField(null=True)),
                 ("deadline", models.DateTimeField(null=True)),
@@ -744,6 +839,9 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+            options={
+                "verbose_name_plural": "RfcToBe labels",
+            },
         ),
         migrations.AddField(
             model_name="rfctobe",
@@ -805,6 +903,7 @@ class Migration(migrations.Migration):
                 (
                     "document",
                     models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         to="datatracker.document",
@@ -813,12 +912,14 @@ class Migration(migrations.Migration):
                 (
                     "rfc_to_be",
                     models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         to="rpc.rfctobe",
                     ),
                 ),
             ],
+            bases=(rules.contrib.models.RulesModelMixin, models.Model),
         ),
         migrations.CreateModel(
             name="RpcPerson",
@@ -834,7 +935,7 @@ class Migration(migrations.Migration):
                 ),
                 ("hours_per_week", models.PositiveSmallIntegerField(default=40)),
                 ("is_active", models.BooleanField(default=True)),
-                ("capable_of", models.ManyToManyField(to="rpc.capability")),
+                ("capable_of", models.ManyToManyField(blank=True, to="rpc.capability")),
                 (
                     "datatracker_person",
                     models.OneToOneField(
@@ -845,6 +946,7 @@ class Migration(migrations.Migration):
                 (
                     "manager",
                     models.ForeignKey(
+                        blank=True,
                         limit_choices_to={"can_hold_role__slug": "manager"},
                         null=True,
                         on_delete=django.db.models.deletion.RESTRICT,
@@ -852,7 +954,7 @@ class Migration(migrations.Migration):
                         to="rpc.rpcperson",
                     ),
                 ),
-                ("can_hold_role", models.ManyToManyField(to="rpc.rpcrole")),
+                ("can_hold_role", models.ManyToManyField(blank=True, to="rpc.rpcrole")),
             ],
         ),
         migrations.CreateModel(
@@ -883,6 +985,7 @@ class Migration(migrations.Migration):
                 (
                     "target_document",
                     models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="rpcrelateddocument_target_set",
@@ -892,6 +995,7 @@ class Migration(migrations.Migration):
                 (
                     "target_rfctobe",
                     models.ForeignKey(
+                        blank=True,
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="rpcrelateddocument_target_set",
@@ -993,8 +1097,10 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="intended_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option intended to apply upon "
-                "publication as RFC",
+                help_text=(
+                    "TLP IPR boilerplate option intended to apply "
+                    "upon publication as RFC"
+                ),
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1004,8 +1110,10 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="submitted_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option applicable when document entered "
-                "the queue",
+                help_text=(
+                    "TLP IPR boilerplate option applicable when "
+                    "document entered the queue"
+                ),
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1026,8 +1134,30 @@ class Migration(migrations.Migration):
                 deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
                 fields=("doc",),
                 name="clustermember_unique_doc",
-                violation_error_message="A document may not appear in more than "
-                "one cluster",
+                violation_error_message=(
+                    "A document may not appear in more than one cluster"
+                ),
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="rfcauthor",
+            constraint=models.UniqueConstraint(
+                fields=("datatracker_person", "rfc_to_be"),
+                name="unique_author_per_document",
+                violation_error_message=(
+                    "the person is already an author of this document"
+                ),
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="rfcauthor",
+            constraint=models.UniqueConstraint(
+                deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
+                fields=("rfc_to_be", "order"),
+                name="unique_author_order_per_document",
+                violation_error_message=(
+                    "each author order must be unique per document"
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1077,6 +1207,18 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddConstraint(
+            model_name="actionholder",
+            constraint=models.CheckConstraint(
+                condition=models.Q(
+                    ("completed__isnull", True),
+                    ("datatracker_person__isnull", False),
+                    _connector="OR",
+                ),
+                name="actionholder_completion_requires_person",
+                violation_error_message="completion requires a person",
+            ),
+        ),
+        migrations.AddConstraint(
             model_name="rpcdocumentcomment",
             constraint=models.CheckConstraint(
                 condition=models.Q(
@@ -1085,8 +1227,7 @@ class Migration(migrations.Migration):
                     _connector="XOR",
                 ),
                 name="rpcdocumentcomment_exactly_one_target",
-                violation_error_message="exactly one of document or rfc_to_be must "
-                "be set",
+                violation_error_message="exactly one of doc or rfc_to_be must be set",
             ),
         ),
         migrations.AddConstraint(
@@ -1099,6 +1240,14 @@ class Migration(migrations.Migration):
                 ),
                 name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="rfctobe",
+            constraint=models.UniqueConstraint(
+                fields=("rfc_number",),
+                name="unique_non_null_rfc_number",
+                nulls_distinct=True,
             ),
         ),
     ]

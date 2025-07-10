@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2025, All Rights Reserved
 
 import django.db.models.deletion
 from django.db import migrations, models

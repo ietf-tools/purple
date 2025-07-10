@@ -5,11 +5,12 @@ from dataclasses import dataclass
 
 import rpcapi_client
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
+    OpenApiExample,
     OpenApiParameter,
     extend_schema,
     extend_schema_view,
@@ -52,6 +53,7 @@ from .models import (
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     AssignmentSerializer,
+    AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
@@ -79,12 +81,27 @@ from .serializers import (
 from .utils import VersionInfo, create_rpc_related_document
 
 
+@extend_schema(operation_id="version", responses=VersionInfoSerializer)
 @api_view(["GET"])
 def version(request):
     """Get application version information"""
     return JsonResponse(VersionInfoSerializer(VersionInfo()).data)
 
 
+@extend_schema(
+    operation_id="profile",
+    responses=inline_serializer(
+        name="Profile",
+        fields={
+            "authenticated": serializers.BooleanField(),
+            "id": serializers.IntegerField(),
+            "name": serializers.CharField(),
+            "avatar": serializers.CharField(),
+            "rpcPersonId": serializers.IntegerField(allow_null=True),
+            "isManager": serializers.BooleanField(),
+        },
+    ),
+)
 @api_view(["GET"])
 def profile(request):
     """Get profile of current user"""
@@ -133,6 +150,26 @@ def profile_as_person(request, rpc_person_id):
     )
 
 
+def extend_schema_with_draft_name(actions=None):
+    if actions is None:
+        actions = [
+            "list",
+            "retrieve",
+            "create",
+            "update",
+            "partial_update",
+            "destroy",
+        ]
+    return extend_schema_view(
+        **{
+            action: extend_schema(
+                parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
+            )
+            for action in actions
+        }
+    )
+
+
 class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.all()
@@ -140,16 +177,23 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filterset_fields = ["is_active"]
 
     @with_rpcapi
-    def get_serializer_context(self, rpcapi: rpcapi_client.DefaultApi):
+    def get_serializer_context(self, rpcapi: rpcapi_client.PurpleApi):
         """Add context to the serializer"""
-        # use bulk endpoint to get names
-        name_map = rpcapi.get_persons(
-            list(
-                RpcPerson.objects.values_list(
-                    "datatracker_person__datatracker_id", flat=True
-                )
+        # todo don't fetch _everybody_; use memcache
+        person_ids = list(
+            RpcPerson.objects.values_list(
+                "datatracker_person__datatracker_id", flat=True
             )
         )
+        # use bulk endpoint to get names
+        name_map = {
+            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
+        }
+        name_map |= {
+            missing_id: "Unknown"
+            for missing_id in person_ids
+            if missing_id not in name_map
+        }
         return super().get_serializer_context() | {"name_map": name_map}
 
 
@@ -198,9 +242,11 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 )
 @api_view(["GET"])
 @with_rpcapi
-def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
-    """Return documents in datatracker that have been submitted to the RPC but are
-        not yet in the queue
+def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
+    """Retrieve submitted docs not yet in the purple queue
+
+    Returns documents in datatracker that have been submitted to the RPC but are
+    not yet in the queue
 
     [
         {
@@ -235,8 +281,7 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
     This api will filter those out.
     """
     # Get submissions list from Datatracker
-    response = rpcapi.submitted_to_rpc()
-    submitted = response.submitted_to_rpc
+    submitted = rpcapi.submitted_to_rpc()
     # Filter out I-Ds that already have an RfcToBe
     already_in_queue = RfcToBe.objects.filter(
         draft__datatracker_id__in=[s.id for s in submitted]
@@ -248,7 +293,7 @@ def submissions(request, *, rpcapi: rpcapi_client.DefaultApi):
 @extend_schema(operation_id="submissions_retrieve", responses=SubmissionSerializer)
 @api_view(["GET"])
 @with_rpcapi
-def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     # Create a Document to which the RfcToBe can refer. If it already exists, update
     # its values with whatever the datatracker currently says.
     draft = rpcapi.get_draft_by_id(document_id)
@@ -263,7 +308,7 @@ def submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
 )
 @api_view(["POST"])
 @with_rpcapi
-def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
+def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
     try:
@@ -292,8 +337,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.DefaultApi):
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
-            response = rpcapi.get_draft_references(document_id)
-            references = response.references
+            references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
             already_in_queue = dict(
                 RfcToBe.objects.filter(
@@ -401,21 +445,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-@extend_schema_view(
-    **{
-        action: extend_schema(
-            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-        )
-        for action in [
-            "list",
-            "retrieve",
-            "create",
-            "update",
-            "partial_update",
-            "destroy",
-        ]
-    }
-)
+@extend_schema_with_draft_name()
 class RpcAuthorViewSet(viewsets.ModelViewSet):
     queryset = RfcAuthor.objects.all()
 
@@ -432,21 +462,87 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         ).first()
         if rfc_to_be is None:
             raise NotFound("RfcToBe with the given draft name does not exist")
-        serializer.save(rfc_to_be=rfc_to_be)
+        # Find the current highest order for this document
+        max_order = (
+            RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
+            .aggregate(max_order=Max("order", default=0))
+            .get("max_order")
+        )
+        # Get the person_id - pop it from validated_data since it's not a real
+        # field on the DatatrackerPerson model
+        person_id = serializer.validated_data.pop("person_id")
+        with transaction.atomic():
+            dt_person, _ = DatatrackerPerson.objects.first_or_create(
+                datatracker_id=person_id,
+            )
+            serializer.save(
+                rfc_to_be=rfc_to_be,
+                datatracker_person=dt_person,
+                order=max_order + 1,
+            )
 
     def get_serializer_class(self):
-        """Use different serializer for create vs other operations"""
         if self.action == "create":
             return CreateRfcAuthorSerializer
         return RfcAuthorSerializer
 
+    @extend_schema(
+        parameters=[
+            OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH)
+        ],
+        request=AuthorOrderSerializer,
+        responses=inline_serializer(
+            name="AuthorOrderStatus",
+            fields={"status": serializers.CharField(help_text="Status message")},
+        ),
+        examples=[
+            OpenApiExample(
+                "Success",
+                value={"status": "OK"},
+                response_only=True,
+            )
+        ],
+        operation_id="documents_authors_order",
+    )
+    @action(detail=False, methods=["post"], url_path="order")
+    def set_order(self, request, draft_name=None):
+        serializer = AuthorOrderSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        order_list = serializer.validated_data["order"]
 
-class RpcRelatedDocumentViewSet(viewsets.ReadOnlyModelViewSet):
+        authors = list(RfcAuthor.objects.filter(rfc_to_be__draft__name=draft_name))
+        # check that the authors passed in list are identical to the ones currently set
+        if len(order_list) != len(authors):
+            raise serializers.ValidationError(
+                "The number of authors in the order list does not match the number of "
+                "authors in the database."
+            )
+        if set(order_list) != set(author.id for author in authors):
+            raise serializers.ValidationError(
+                "The author IDs in the order list do not match the author IDs in the "
+                "database."
+            )
+        author_dict = {author.id: author for author in authors}
+
+        with transaction.atomic():
+            for idx, author_id in enumerate(order_list, start=1):
+                author = author_dict.get(author_id)
+                if author:
+                    author.order = idx
+
+            RfcAuthor.objects.bulk_update(authors, ["order"])
+
+        return Response({"status": "OK"})
+
+
+@extend_schema_with_draft_name()
+class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
+    queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
 
     def get_queryset(self):
-        return RpcRelatedDocument.objects.filter(
-            source__draft__name=self.kwargs["draft_name"]
+        return (
+            super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
         )
 
 
@@ -520,19 +616,7 @@ class TlpBoilerplateChoiceNameViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = TlpBoilerplateChoiceNameSerializer
 
 
-@extend_schema_view(
-    **{
-        action: extend_schema(
-            parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")]
-        )
-        for action in [
-            "list",
-            "create",
-            "update",
-            "partial_update",
-        ]
-    }
-)
+@extend_schema_with_draft_name(actions=["list", "create", "update", "partial_update"])
 class DocumentCommentViewSet(
     AutoPermissionViewSetMixin,
     mixins.ListModelMixin,
@@ -593,7 +677,7 @@ class DocumentCommentViewSet(
 
     @staticmethod
     @with_rpcapi
-    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.DefaultApi):
+    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.PurpleApi):
         """Get a datatracker Document for a draft given its name
 
         n.b., creates a Document object if needed
@@ -689,7 +773,19 @@ class DatatrackerPersonModelShim:
         )
 
 
-@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="search_datatrackerpersons",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Name/email fragment for the search",
+            ),
+        ],
+    ),
+)
 class SearchDatatrackerPersons(ListAPIView):
     """Datatracker person search API
 
@@ -698,22 +794,15 @@ class SearchDatatrackerPersons(ListAPIView):
 
     # Warning: this is a tricky view!
     #
-    # Rather than querying the database, the `get_queryset()` method makes a
-    # datatracker API call
-    # to perform the Person search. It uses the same pagination limit/offset on the
-    # API call as the
-    # downstream request being handled. The paginated results from the API call are
-    # packaged in
-    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination
-    # internals work
-    # with the already-paginated results as though they came from a local database
-    # lookup.
-    #
-    # Note that despite the naming, DRF APIViews and pagination explicitly support
-    # using a list
-    # rather than a Django queryset. We need the shim because the list we get from
-    # the API only
-    # contains a single page of results.
+    # Rather than querying the database, the `get_queryset()` method makes a datatracker
+    # API call to perform the Person search. It uses the same pagination limit/offset on
+    # the API call as the downstream request being handled. The paginated results from
+    # the API call are packaged in the PaginationPassthroughWrapper. This acts as a shim
+    # to let DRF's pagination internals work with the already-paginated results as
+    # though they came from a local database lookup.# Note that despite the naming, DRF
+    # APIViews and pagination explicitly support using a list rather than a Django
+    # queryset. We need the shim because the list we get from the API only contains a
+    # single page of results.
 
     serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination
@@ -739,6 +828,6 @@ class SearchDatatrackerPersons(ListAPIView):
 
     @with_rpcapi
     def upstream_search(
-        self, search, limit, offset, *, rpcapi: rpcapi_client.DefaultApi
+        self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
