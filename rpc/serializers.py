@@ -354,10 +354,30 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
-    target_draft_name = serializers.CharField(write_only=True)
+    target_draft_name = serializers.CharField(write_only=True, required=False)
+    target_draft_name_output = serializers.SerializerMethodField(read_only=True)
 
-    class Meta(RpcRelatedDocumentSerializer.Meta):
-        fields = ["id", "relationship", "source", "target_draft_name"]
+    class Meta:
+        model = RpcRelatedDocument
+        fields = [
+            "id",
+            "relationship",
+            "source",
+            "target_draft_name",
+            "target_draft_name_output",
+        ]
+
+    def get_target_draft_name_output(self, obj):
+        if obj.target_document is not None:
+            return obj.target_document.name
+        if obj.target_rfctobe is not None:
+            return obj.target_rfctobe.draft.name
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret["target_draft_name"] = ret.pop("target_draft_name_output", None)
+        return ret
 
     def create(self, validated_data):
         target_draft_name = validated_data.pop("target_draft_name")
@@ -376,12 +396,13 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                 )
 
         try:
-            related_doc = RpcRelatedDocument.objects.create(
-                relationship=validated_data["relationship"],
-                source=source,
-                target_document=target_document,
-                target_rfctobe=target_rfctobe,
-            )
+            data = {
+                "relationship": validated_data["relationship"],
+                "source": source,
+                "target_document": target_document,
+                "target_rfctobe": target_rfctobe,
+            }
+            related_doc = super().create(data)
         except IntegrityError as err:
             raise serializers.ValidationError(
                 f"Failed to create related document due to a database constraint: {err}"

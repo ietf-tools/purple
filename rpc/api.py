@@ -17,7 +17,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
-from rest_framework import mixins, serializers, views, viewsets
+from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
@@ -81,7 +81,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .utils import VersionInfo, create_draft_by_name, create_rpc_related_document
+from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
@@ -553,14 +553,19 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         target_document = Document.objects.filter(name=target_draft_name).first()
         if target_document is None:
             try:
-                target_document = create_draft_by_name(target_draft_name, rpcapi=rpcapi)
+                target_document = get_or_create_draft_by_name(
+                    target_draft_name, rpcapi=rpcapi
+                )
             except Exception as err:
                 raise NotFound(f"Error creating draft {target_draft_name}") from err
             if target_document is None:
                 raise NotFound(f"Draft with name {target_draft_name} does not exist")
 
-        ref = serializer.save()
-        return Response(self.get_serializer(ref).data, status=201)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
 
 class LabelViewSet(viewsets.ModelViewSet):
@@ -685,7 +690,7 @@ class DocumentCommentViewSet(
             save_kwargs["rfc_to_be"] = rfc_to_be
         else:
             # No RfcToBe exists - see if datatracker knows about the draft
-            draft = create_draft_by_name(draft_name, rpcapi=rpcapi)
+            draft = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
             if draft is not None:
                 save_kwargs["document"] = draft
             else:

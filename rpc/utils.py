@@ -47,7 +47,7 @@ def create_rpc_related_document(relationship_slug, source, target_draft_name):
     return None
 
 
-def create_draft_by_name(draft_name, *, rpcapi):
+def get_or_create_draft_by_name(draft_name, *, rpcapi):
     """Get a datatracker Document for a draft given its name
 
     n.b., creates a Document object if needed
