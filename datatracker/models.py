@@ -1,6 +1,4 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-from typing import cast
-
 import rpcapi_client
 from django.core.cache import cache
 from django.db import models
@@ -10,6 +8,15 @@ from datatracker.rpcapi import with_rpcapi
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):
+    @with_rpcapi
+    def first_or_create(
+        self, defaults=None, *, rpcapi: rpcapi_client.PurpleApi, **kwargs
+    ):
+        try:
+            return self.get_or_create(defaults, **kwargs)
+        except DatatrackerPerson.MultipleObjectsReturned:
+            return DatatrackerPerson.objects.filter(**kwargs).first(), False
+
     @with_rpcapi
     def first_or_create_by_subject_id(
         self, subject_id, *, rpcapi: rpcapi_client.PurpleApi
@@ -23,15 +30,7 @@ class DatatrackerPersonQuerySet(models.QuerySet):
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
         except rpcapi_client.exceptions.NotFoundException as err:
             raise DatatrackerPerson.DoesNotExist() from err
-        try:
-            return cast(
-                tuple[DatatrackerPerson, bool],
-                super().get_or_create(datatracker_id=dtpers.id),
-            )
-        except DatatrackerPerson.MultipleObjectsReturned:
-            return DatatrackerPerson.objects.filter(
-                datatracker_id=dtpers.id
-            ).first(), False
+        return self.first_or_create(datatracker_id=dtpers.id)
 
 
 class DatatrackerPerson(models.Model):
