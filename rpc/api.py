@@ -7,6 +7,7 @@ import rpcapi_client
 from django.db import transaction
 from django.db.models import Max, Q
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -38,6 +39,7 @@ from .models import (
     Assignment,
     Capability,
     Cluster,
+    DocRelationshipName,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -59,6 +61,7 @@ from .serializers import (
     ClusterSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
+    CreateRpcRelatedDocumentSerializer,
     DocumentCommentSerializer,
     LabelSerializer,
     NestedAssignmentSerializer,
@@ -78,7 +81,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .utils import VersionInfo, create_rpc_related_document
+from .utils import VersionInfo, create_draft_by_name, create_rpc_related_document
 
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
@@ -343,7 +346,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                 RfcToBe.objects.filter(
                     draft__datatracker_id__in=[s.id for s in references],
                     disposition__slug__in=("created", "in_progress"),
-                ).values_list("draft__datatracker_id", "pk")
+                ).values_list("draft__datatracker_id", "draft__name")
             )
             rfc_to_be_exists = RfcToBe.objects.filter(
                 draft__datatracker_id__in=[s.id for s in references],
@@ -371,14 +374,11 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "intended_std_level": draft_info.intended_std_level,
                             },
                         )
-                    create_rpc_related_document("missref", rfctobe.pk, draft.pk)
+                    create_rpc_related_document("missref", rfctobe.pk, draft.name)
 
                 if reference.id in already_in_queue:
                     create_rpc_related_document(
-                        "refqueue",
-                        rfctobe.pk,
-                        already_in_queue[reference.id],
-                        "rfctobe",
+                        "refqueue", rfctobe.pk, already_in_queue[reference.id]
                     )
 
         return Response(RfcToBeSerializer(rfctobe).data)
@@ -534,6 +534,34 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
         )
 
+    @with_rpcapi
+    def create(self, request, rpcapi, *args, **kwargs):
+        draft_name = self.kwargs["draft_name"]
+        source = get_object_or_404(RfcToBe, draft__name=draft_name)
+
+        data = request.data.copy()
+        data["source"] = source.pk
+
+        # Validate input
+        serializer = CreateRpcRelatedDocumentSerializer(data=data)
+        serializer.is_valid(raise_exception=True)
+        relationship = serializer.validated_data["relationship"]
+        relationship = get_object_or_404(DocRelationshipName, slug=relationship.slug)
+        target_draft_name = serializer.validated_data["target_draft_name"]
+
+        # Try to find target as Document first
+        target_document = Document.objects.filter(name=target_draft_name).first()
+        if target_document is None:
+            try:
+                target_document = create_draft_by_name(target_draft_name, rpcapi=rpcapi)
+            except Exception as err:
+                raise NotFound(f"Error creating draft {target_draft_name}") from err
+            if target_document is None:
+                raise NotFound(f"Draft with name {target_draft_name} does not exist")
+
+        ref = serializer.save()
+        return Response(self.get_serializer(ref).data, status=201)
+
 
 class LabelViewSet(viewsets.ModelViewSet):
     queryset = Label.objects.all()
@@ -632,7 +660,8 @@ class DocumentCommentViewSet(
             .order_by("-time")
         )
 
-    def perform_create(self, serializer):
+    @with_rpcapi
+    def perform_create(self, serializer, rpcapi):
         """Create a new instance
 
         The serializer instances has already been set up with validated input data in
@@ -656,38 +685,13 @@ class DocumentCommentViewSet(
             save_kwargs["rfc_to_be"] = rfc_to_be
         else:
             # No RfcToBe exists - see if datatracker knows about the draft
-            draft = self._draft_by_name(draft_name)
+            draft = create_draft_by_name(draft_name, rpcapi=rpcapi)
             if draft is not None:
                 save_kwargs["document"] = draft
             else:
                 raise NotFound  # neither RfcToBe nor draft existed
         # todo permissions check
         serializer.save(**save_kwargs)
-
-    @staticmethod
-    @with_rpcapi
-    def _draft_by_name(draft_name, *, rpcapi: rpcapi_client.PurpleApi):
-        """Get a datatracker Document for a draft given its name
-
-        n.b., creates a Document object if needed
-        """
-        drafts = rpcapi.get_drafts_by_names([draft_name])
-        draft_info = drafts.get(draft_name, None)
-        if draft_info is None:
-            return None
-        # todo manage updates if the details below change before draft reaches pubreq!
-        document, _ = Document.objects.get_or_create(
-            datatracker_id=draft_info.id,
-            defaults={
-                "name": draft_info.name,
-                "rev": draft_info.rev,
-                "title": draft_info.title,
-                "stream": draft_info.stream,
-                "pages": draft_info.pages,
-                "intended_std_level": draft_info.intended_std_level or "",
-            },
-        )
-        return document
 
 
 class PaginationPassthroughWrapper:

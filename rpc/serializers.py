@@ -7,12 +7,13 @@ from itertools import pairwise
 from urllib.parse import urljoin
 
 from django.conf import settings
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
-from datatracker.models import DatatrackerPerson
+from datatracker.models import DatatrackerPerson, Document
 
 from .models import (
     ActionHolder,
@@ -350,13 +351,43 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
         return obj.target_rfctobe.draft.name
 
 
-class CreateRpcRelatedDocumentSerializer(serializers.ModelSerializer):
+class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
-    # todo reconcile with refactored RpcRelatedDocumentSerializer
-    class Meta:
-        model = RpcRelatedDocument
-        fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
+    target_draft_name = serializers.CharField(write_only=True)
+
+    class Meta(RpcRelatedDocumentSerializer.Meta):
+        fields = ["id", "relationship", "source", "target_draft_name"]
+
+    def create(self, validated_data):
+        target_draft_name = validated_data.pop("target_draft_name")
+
+        source = validated_data["source"]
+
+        target_document = Document.objects.filter(name=target_draft_name).first()
+        target_rfctobe = None
+        if not target_document:
+            target_rfctobe = RfcToBe.objects.filter(
+                draft__name=target_draft_name
+            ).first()
+            if not target_rfctobe:
+                raise serializers.ValidationError(
+                    f"No Document or RfcToBe found for draft name '{target_draft_name}'"
+                )
+
+        try:
+            related_doc = RpcRelatedDocument.objects.create(
+                relationship=validated_data["relationship"],
+                source=source,
+                target_document=target_document,
+                target_rfctobe=target_rfctobe,
+            )
+        except IntegrityError as err:
+            raise serializers.ValidationError(
+                f"Failed to create related document due to a database constraint: {err}"
+            ) from err
+
+        return related_doc
 
 
 class CapabilitySerializer(serializers.ModelSerializer):

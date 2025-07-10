@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
 from django.db.models import Max
 
+from datatracker.models import Document
+
 from .models import DumpInfo, RfcToBe, UnusableRfcNumber
 from .serializers import CreateRpcRelatedDocumentSerializer
 
@@ -32,21 +34,41 @@ def next_rfc_number(count=1) -> list[int]:
     return list(range(last_unavailable_number + 1, last_unavailable_number + 1 + count))
 
 
-def create_rpc_related_document(
-    relationship_slug, rfctobe, target, target_type="draft"
-):
+def create_rpc_related_document(relationship_slug, source, target_draft_name):
     data = {
         "relationship": relationship_slug,
-        "source": rfctobe,
+        "source": source,
+        "target_draft_name": target_draft_name,
     }
-    if target_type == "rfctobe":
-        data["target_rfctobe"] = target
-    elif target_type == "draft":
-        data["target_document"] = target
-    else:
-        raise ValueError(f"Invalid target type: {target_type}")
 
     serializer = CreateRpcRelatedDocumentSerializer(data=data)
     if serializer.is_valid(raise_exception=True):
         return serializer.save()
     return None
+
+
+def create_draft_by_name(draft_name, *, rpcapi):
+    """Get a datatracker Document for a draft given its name
+
+    n.b., creates a Document object if needed
+    """
+    drafts = rpcapi.get_drafts_by_names([draft_name])
+
+    draft_info = next(
+        (d for d in drafts if getattr(d, "name", None) == draft_name), None
+    )
+    if draft_info is None:
+        return None
+    # todo manage updates if the details below change before draft reaches pubreq!
+    document, _ = Document.objects.get_or_create(
+        datatracker_id=draft_info.id,
+        defaults={
+            "name": draft_info.name,
+            "rev": draft_info.rev,
+            "title": draft_info.title,
+            "stream": "" if draft_info.stream_id is None else draft_info.stream_id,
+            "pages": draft_info.pages,
+            "intended_std_level": getattr(draft_info, "intended_std_level", "") or "",
+        },
+    )
+    return document
