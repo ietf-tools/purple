@@ -762,7 +762,19 @@ class DatatrackerPersonModelShim:
         )
 
 
-@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="search_datatrackerpersons",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Name/email fragment for the search",
+            ),
+        ],
+    ),
+)
 class SearchDatatrackerPersons(ListAPIView):
     """Datatracker person search API
 
