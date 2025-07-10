@@ -15,6 +15,12 @@
 import { useDragAndDrop } from "fluid-dnd/vue";
 import type { CookedDraft } from "~/utilities/rpc";
 
+type Props = {
+  draftName: string
+}
+
+const props = defineProps<Props>()
+
 const draft = defineModel<CookedDraft>({ required: true })
 
 const api = useApi()
@@ -24,6 +30,7 @@ const handleRemoveAuthor = async (index: number) => {
   if (draftName === undefined) {
     throw Error(`Expected draft to have name but was "${draftName}"`)
   }
+
   draft.value.authors.splice(index, 1)
   // FIXME: remove author API
   alert('Remove author API update not implemented yet')
@@ -36,11 +43,17 @@ const [ parent ] = useDragAndDrop(authorsRef);
 watch(() => draft.value?.authors, () => {
   const newAuthors = draft.value?.authors
   if(!newAuthors) return
-  console.log("Update sort order of authors with", newAuthors)
-  // FIXME: send authors to API
-  // api.documentsAuthorsUpdate(
-  //   draftName: draftId.value,
-  // )
+
+  const authorIds = newAuthors
+    .map(author => author.id)
+    .filter(maybeId => maybeId !== undefined)
+
+  api.documentsAuthorsOrder({
+    draftName: props.draftName,
+    authorOrder: {
+      order: authorIds
+    }
+  })
 },
   { deep: true }
 )

@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import { refDebounced } from "@vueuse/core";
+import { refDebounced } from "@vueuse/core"
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -48,9 +48,10 @@ import {
   ComboboxRoot,
   ComboboxTrigger,
   ComboboxViewport,
-} from "reka-ui";
-import type { BaseDatatrackerPerson } from "~/purple_client";
-import type { CookedDraft } from "~/utilities/rpc";
+} from "reka-ui"
+import type { BaseDatatrackerPerson } from "~/purple_client"
+import type { CookedDraft } from "~/utilities/rpc"
+import { snackbarForErrors } from "~/utilities/snackbar"
 
 const draft = defineModel<CookedDraft>({ required: true })
 
@@ -67,21 +68,25 @@ watch(selectedAuthor, async () => {
       throw Error(`Expected draft to have name but was ${draft.value.name}`)
     }
     const { value } = selectedAuthor
-    if(!draft.value.authors.find(author => author.datatrackerPerson === value.personId)) {
+    console.log("value", value)
+
+    const userAlreadyAdded = draft.value.authors
+      .find(author => author.datatrackerPerson === value.personId)
+    if(!userAlreadyAdded) {
       try {
         const rpcAuthor = await api.documentsAuthorsCreate({
           draftName,
           createRfcAuthor: {
-            titlepageName: value.name!,
-            datatrackerPerson: value.personId,
+            titlepageName: value.name ?? `(no name)`,
+            personId: value.personId,
           }
         })
         draft.value.authors.push(rpcAuthor)
       } catch (e: unknown) {
-        snackbar.add({
-          type: 'error',
-          title: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
-          text: `Possible reason: ${e}`
+        snackbarForErrors({
+          snackbar,
+          defaultTitle: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
+          error: e
         })
       }
     } else {
@@ -96,8 +101,6 @@ watch(selectedAuthor, async () => {
 })
 
 type SearchDatatrackerpersonsResponse = Awaited<ReturnType<typeof api.searchDatatrackerpersons>>
-
-  type X = SearchDatatrackerpersonsResponse['results'][number]
 
 const searchResults = ref<SearchDatatrackerpersonsResponse>()
 
@@ -117,10 +120,9 @@ watch(
 
     previousAbortController = new AbortController();
 
-    searchResults.value = await api.searchDatatrackerpersons(
-      {
-        // FIXME: add a search param from inputRef when the API supports it
-      },
+    searchResults.value = await api.searchDatatrackerpersons({
+      search: debouncedInputRef.value
+    },
       { signal: previousAbortController.signal }
     )
   });
