@@ -468,7 +468,18 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             .aggregate(max_order=Max("order", default=0))
             .get("max_order")
         )
-        serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
+        # Get the person_id - pop it from validated_data since it's not a real
+        # field on the DatatrackerPerson model
+        person_id = serializer.validated_data.pop("person_id")
+        with transaction.atomic():
+            dt_person, _ = DatatrackerPerson.objects.first_or_create(
+                datatracker_id=person_id,
+            )
+            serializer.save(
+                rfc_to_be=rfc_to_be,
+                datatracker_person=dt_person,
+                order=max_order + 1,
+            )
 
     def get_serializer_class(self):
         if self.action == "create":
