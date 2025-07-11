@@ -185,7 +185,10 @@ class CreateRfcAuthorSerializer(RfcAuthorSerializer):
     # person_id is not a field on the model - remove it from validated_data
     # before saving!
     person_id = serializers.IntegerField(
-        write_only=True, help_text="datatracker ID of a Person"
+        write_only=True,
+        help_text="datatracker ID of a Person",
+        required=False,
+        allow_null=True,
     )
 
     class Meta(RfcAuthorSerializer.Meta):
