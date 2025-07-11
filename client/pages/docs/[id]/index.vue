@@ -24,8 +24,6 @@
       </div>
     </header>
 
-
-
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
@@ -85,7 +83,7 @@
         <!-- Document Info -->
         <DocInfoCard :draft="draft"/>
 
-        <EditAuthors v-if="draft" v-model="draft"/>
+        <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
 
         <!-- Labels -->
         <BaseCard class="lg:col-start-3 lg:row-start-2 lg:row-span-1 grid place-items-stretch">
@@ -144,7 +142,6 @@
 <script setup lang="ts">
 
 import { DateTime } from 'luxon'
-import type { CookedDraft } from '~/utilities/rpc'
 
 const route = useRoute()
 const api = useApi()
@@ -155,7 +152,7 @@ const appliedLabels = computed(() => labels.value.filter((lbl) => rawDraft.value
 
 const draftAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === draft.value?.id))
 
-const draft = computed((): CookedDraft | null => {
+const draft = computed(() => {
   if (rawDraft?.value) {
     return {
       ...rawDraft.value,
@@ -172,11 +169,11 @@ const draft = computed((): CookedDraft | null => {
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
-const draftId = computed(() => route.params.id.toString())
+const draftName = computed(() => route.params.id.toString())
 
 const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
-  () => `draft-${draftId.value}`,
-  () => api.documentsRetrieve({ draftName: draftId.value }),
+  () => `draft-${draftName.value}`,
+  () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false }
 )
 

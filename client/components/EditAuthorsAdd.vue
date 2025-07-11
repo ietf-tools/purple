@@ -8,9 +8,6 @@
         class="outline-none border-none h-full placeholder-gray-400"
         placeholder="Search authors to add..."
       />
-      <ComboboxTrigger class="px-2">
-        <Icon name="fluent:chevron-down-12-filled" />
-      </ComboboxTrigger>
     </ComboboxAnchor>
 
     <ComboboxContent

@@ -16,7 +16,10 @@
                   :key="author.id"
                   class="py-1 grid grid-cols-2"
                 >
-                  <div>{{ author.titlepageName }}</div>
+                  <div>
+                    {{ author.titlepageName }}
+                    <span v-if="author.isEditor">(editor)</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -75,7 +78,8 @@ import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   draft: (Record<PropertyKey, unknown> & RfcToBe) | null
+
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
 </script>
