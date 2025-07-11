@@ -170,15 +170,9 @@ class HistoryLastEditSerializer(serializers.Serializer):
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(
-        source="datatracker_person.plain_name", read_only=True
-    )
-    email = serializers.EmailField(
-        source="datatracker_person.email", read_only=True
-    )
-    picture = serializers.URLField(
-        source="datatracker_person.picture", read_only=True
-    )
+    name = serializers.CharField(source="datatracker_person.plain_name", read_only=True)
+    email = serializers.EmailField(source="datatracker_person.email", read_only=True)
+    picture = serializers.URLField(source="datatracker_person.picture", read_only=True)
     datatracker_url = serializers.URLField(
         source="datatracker_person.url", read_only=True
     )
