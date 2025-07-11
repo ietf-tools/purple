@@ -355,6 +355,10 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
     target_draft_name = serializers.CharField(write_only=True, required=False)
+    # This field is read-only to return the name of the target document;
+    # in subsequent "to_representation" it will be renamed to target_draft_name;
+    # This hack is required to map the model's fields (doc, rfctobe) to the serializer's
+    # fields (target_draft_name)
     target_draft_name_output = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
