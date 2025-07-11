@@ -180,6 +180,10 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "datatracker_person"]
 
+    def update(self, instance, validated_data):
+        RfcAuthor.objects.filter(pk=instance.pk).update(**validated_data)
+        return RfcAuthor.objects.get(pk=instance.pk)
+
 
 class CreateRfcAuthorSerializer(RfcAuthorSerializer):
     # person_id is not a field on the model - remove it from validated_data
