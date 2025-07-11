@@ -170,15 +170,30 @@ class HistoryLastEditSerializer(serializers.Serializer):
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(
+        source="datatracker_person.plain_name", read_only=True
+    )
+    email = serializers.EmailField(
+        source="datatracker_person.email", read_only=True
+    )
+    picture = serializers.URLField(
+        source="datatracker_person.picture", read_only=True
+    )
+    datatracker_url = serializers.URLField(
+        source="datatracker_person.url", read_only=True
+    )
+
     class Meta:
         model = RfcAuthor
         fields = [
             "id",
+            "name",
+            "email",
             "titlepage_name",
             "is_editor",
-            "datatracker_person",
+            "picture",
+            "datatracker_url",
         ]
-        read_only_fields = ["id", "datatracker_person"]
 
 
 class CreateRfcAuthorSerializer(RfcAuthorSerializer):
