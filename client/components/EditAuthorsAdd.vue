@@ -65,7 +65,6 @@ watch(selectedAuthor, async () => {
       throw Error(`Expected draft to have name but was ${draft.value.name}`)
     }
     const { value } = selectedAuthor
-    console.log("value", value)
 
     const userAlreadyAdded = draft.value.authors
       .find(author => author.datatrackerPerson === value.personId)

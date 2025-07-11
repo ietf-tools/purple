@@ -14,14 +14,6 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   let title = defaultTitle ?? 'Error.'
   let text = `${error}`
 
-  console.log({
-     "typeof error === 'object'": typeof error === 'object',
-      "'response' in error": 'response' in error,
-      "error.response instanceof Response": error && typeof error === 'object' &&
-      'response' in error &&
-      error.response instanceof Response
-  })
-
   if(error) {
     if (
       typeof error === 'object' &&
@@ -35,7 +27,6 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
       text = JSON.stringify(error)
     }
   }
-
 
   // truncating text...
   // showing too much text to users in a toast isn't good UX,
@@ -58,7 +49,6 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
 
 const getErrorTextFromFetchResponse = async (response: Response, text: string): Promise<string> => {
   const contentType = response.headers.get('Content-Type')
-  console.log({text})
   switch (contentType) {
     case 'application/json':
       // format the JSON a bit
@@ -69,7 +59,6 @@ const getErrorTextFromFetchResponse = async (response: Response, text: string): 
         const containerKey = keys[0]
         const value = data[containerKey]
         text = Array.isArray(value) ? value.join(', ') : `${value}`
-        console.log("keys", keys)
       } else {
         text = JSON.stringify(data, null, 2)
       }
