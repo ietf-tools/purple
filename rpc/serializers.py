@@ -4,15 +4,14 @@ import datetime
 import warnings
 from dataclasses import dataclass
 from itertools import pairwise
-from urllib.parse import urljoin
 
-from django.conf import settings
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
 from datatracker.models import DatatrackerPerson
+from datatracker.utils import build_datatracker_url
 
 from .models import (
     ActionHolder,
@@ -606,9 +605,7 @@ class Submission:
                 if draft.intended_std_level
                 else None
             ),
-            datatracker_url=urljoin(
-                settings.DATATRACKER_BASE, f"/doc/{draft.name}-{draft.rev}"
-            ),
+            datatracker_url=build_datatracker_url(f"/doc/{draft.name}-{draft.rev}"),
         )
 
 

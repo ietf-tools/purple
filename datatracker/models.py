@@ -1,13 +1,11 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-from urllib.parse import urlsplit, urlunsplit
-
 import rpcapi_client
-from django.conf import settings
 from django.core.cache import cache
 from django.db import models
 from simple_history.models import HistoricalRecords
 
 from .rpcapi import with_rpcapi
+from .utils import build_datatracker_url
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):
@@ -70,17 +68,7 @@ class DatatrackerPerson(models.Model):
     def url(self) -> str:
         url = self._fetch("url")
         if url:
-            # Equivalent to urljoin but overwrites scheme and netloc with
-            # those from the base, even if url is an absolute URL. This ensures
-            # we always link to the same datatracker instance purple is using for
-            # other purposes, even in dev and staging environments. (As of now
-            # the url should be relative, so this is just precautionary.)
-            baseparts = urlsplit(settings.DATATRACKER_BASE)
-            urlparts = urlsplit(url)._replace(
-                scheme=baseparts.scheme,
-                netloc=baseparts.netloc,
-            )
-            url = urlunsplit(urlparts)
+            url = build_datatracker_url(url)
         return url
 
     @with_rpcapi
