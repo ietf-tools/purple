@@ -1,9 +1,10 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader title="Edit Authors drag to reorder"/>
+      <CardHeader title="Edit Authors"/>
     </template>
     <div v-if="draft.authors" class="border-5 border-gray-700 text-gray-500">
+      <p class="italic text-sm">(drag to reorder)</p>
       <ul ref="parent" class="block">
         <li class="flex items-center justify-between pl-4 pr-1 py-1 mt-1 border rounded-md border-gray-400" v-for="(author, index) in draft.authors" :index="index" :key="author.id">
           <span class="flex-1 cursor-ns-resize font-bold">{{ author.titlepageName }}</span>
