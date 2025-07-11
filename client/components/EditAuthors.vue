@@ -6,9 +6,10 @@
     <div v-if="draft.authors" class="border-5 border-gray-700 text-gray-500">
       <p class="italic text-sm">(drag to reorder)</p>
       <ul ref="parent" class="block">
-        <li class="flex items-center justify-between pl-4 pr-1 py-1 mt-1 border rounded-md border-gray-400" v-for="(author, index) in draft.authors" :index="index" :key="author.id">
-          <span class="flex-1 cursor-ns-resize font-bold">{{ author.titlepageName }}</span>
-          <label class="border flex gap-2 items-center  border-gray-300 inline-block px-2 py-1 rounded text-sm mr-4">
+        <li class="flex items-center justify-between pl-2 cursor-ns-resize pr-1 py-1 mt-1 border rounded-md border-gray-400" v-for="(author, index) in draft.authors" :index="index" :key="author.id">
+          <Icon name="fluent:re-order-dots-vertical-24-regular" class="mr-2" />
+          <input type="text" v-model="author.titlepageName" class="flex-1 min-w-0 cursor-text border border-gray-400 rounded py-1 mr-2"/>
+          <label class="border flex gap-2 items-center cursor-pointer border-gray-400 inline-block px-2 py-1 rounded text-sm mr-4">
             editor?
             <input type="checkbox" class="" v-model="author.isEditor"/>
           </label>
@@ -75,6 +76,7 @@ watch(() => draft.value?.authors, async () => {
       id: author.id!,
       patchedRfcAuthor: {
         isEditor: Boolean(author.isEditor),
+        titlepageName: author.titlepageName
       }
     })
   ))

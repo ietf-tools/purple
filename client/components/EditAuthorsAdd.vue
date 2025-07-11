@@ -5,7 +5,7 @@
     >
       <ComboboxInput
         v-model="inputRef"
-        class="outline-none border-none h-full placeholder-gray-400"
+        class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
         placeholder="Search authors to add..."
       />
     </ComboboxAnchor>
@@ -43,7 +43,6 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxRoot,
-  ComboboxTrigger,
   ComboboxViewport,
 } from "reka-ui"
 import type { BaseDatatrackerPerson } from "~/purple_client"
