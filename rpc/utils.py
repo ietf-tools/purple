@@ -66,7 +66,7 @@ def get_or_create_draft_by_name(draft_name, *, rpcapi):
             "name": draft_info.name,
             "rev": draft_info.rev,
             "title": draft_info.title,
-            "stream": "" if draft_info.stream_id is None else draft_info.stream_id,
+            "stream": "" if draft_info.stream is None else draft_info.stream,
             "pages": draft_info.pages,
             "intended_std_level": getattr(draft_info, "intended_std_level", "") or "",
         },

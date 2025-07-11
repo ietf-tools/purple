@@ -384,13 +384,11 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
 
         source = validated_data["source"]
 
-        target_document = Document.objects.filter(name=target_draft_name).first()
-        target_rfctobe = None
-        if not target_document:
-            target_rfctobe = RfcToBe.objects.filter(
-                draft__name=target_draft_name
-            ).first()
-            if not target_rfctobe:
+        target_rfctobe = RfcToBe.objects.filter(draft__name=target_draft_name).first()
+        target_document = None
+        if not target_rfctobe:
+            target_document = Document.objects.filter(name=target_draft_name).first()
+            if not target_document:
                 raise serializers.ValidationError(
                     f"No Document or RfcToBe found for draft name '{target_draft_name}'"
                 )
