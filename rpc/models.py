@@ -537,7 +537,23 @@ class RpcRelatedDocument(models.Model):
                 ),
                 name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
-            )
+            ),
+            # Unique for (source, target_document) when target_document is set
+            models.UniqueConstraint(
+                fields=["source", "target_document"],
+                condition=models.Q(target_document__isnull=False),
+                name="unique_source_targetdoc",
+                violation_error_message="A source/target_document relationship must "
+                "be unique.",
+            ),
+            # Unique for (source, target_rfctobe) when target_rfctobe is set
+            models.UniqueConstraint(
+                fields=["source", "target_rfctobe"],
+                condition=models.Q(target_rfctobe__isnull=False),
+                name="unique_source_targetrfctobe",
+                violation_error_message="A source/target_rfctobe relationship must "
+                "be unique.",
+            ),
         ]
 
     def __str__(self):
