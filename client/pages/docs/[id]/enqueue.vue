@@ -83,7 +83,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import type { Column } from '~/components/DocumentTableTypes'
-import type { RfcToBe } from '~/purple_client'
+import type { RfcToBe, RpcRelatedDocument } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -92,28 +92,20 @@ const columns: Column[] = [
   {
     key: 'name',
     label: 'Document',
-    field: 'name',
+    field: 'targetDocument' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
     key: 'relationship',
     label: 'Relationship',
-    field: 'relationship',
+    field: 'relationship' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
-    key: 'currentState',
-    label: 'Current State',
-    field: 'currentState',
+    key: 'targetRfctobe',
+    label: 'Target RFC (to be)',
+    field: 'targetRfctobe' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
-  }
-]
-
-const relatedDocuments = [
-  {
-    name: 'draft-some-other-draft',
-    relationship: 'Normative Reference',
-    currentState: 'Active WG document'
   }
 ]
 
@@ -125,13 +117,20 @@ const { data: rfcToBe } = await useAsyncData<RfcToBe>(
   { server: false }
 )
 
+const { data: relatedDocuments } = await useAsyncData(`references-${id.value}`, () => api.documentsReferencesList({
+  draftName: id.value
+}), {
+  default: () => [],
+  server: false,
+})
+
 // const { data: capabilities } = await useAsyncData<Capability[]>(
 //   'capabilities',
 //   () => api.capabilitiesList(),
 //   { default: () => ([]), server: false }
 // )
 
-const { data: labels } = await useAsyncData('labels', () => api.labelsList(), {
+const { data: labels } = await useAsyncData(`labels-${id.value}`, () => api.labelsList(), {
   default: () => [],
   server: false
 })
