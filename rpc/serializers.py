@@ -50,11 +50,13 @@ class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
 
     person_id = serializers.IntegerField(source="datatracker_id")
     name = serializers.CharField(source="plain_name", read_only=True)
+    email = serializers.EmailField(read_only=True)
+    picture = serializers.URLField(read_only=True)
+    datatracker_url = serializers.URLField(source="url", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["person_id", "name", "picture"]
-        read_only_fields = ["picture"]
+        fields = ["person_id", "name", "email", "picture", "datatracker_url"]
 
 
 class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
@@ -62,9 +64,7 @@ class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
 
     class Meta(BaseDatatrackerPersonSerializer.Meta):
         fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
-        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + [
-            "rpcperson"
-        ]
+        read_only_fields = ["rpcperson"]
 
 
 @dataclass
