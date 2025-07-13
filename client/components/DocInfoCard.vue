@@ -77,7 +77,7 @@
 import type { RfcToBe } from '~/purple_client'
 
 type Props = {
-  draft: (Record<PropertyKey, unknown> & RfcToBe) | null
+  draft: RfcToBe | null
 }
 
 defineProps<Props>()

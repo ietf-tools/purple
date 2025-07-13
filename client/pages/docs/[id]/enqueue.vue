@@ -39,9 +39,10 @@
           </CardHeader>
         </template>
         <DocumentTable
+          v-if="relatedDocuments"
           :columns="columns"
           :data="relatedDocuments"
-          row-key="name"
+          row-key="id"
         />
       </BaseCard>
       <BaseCard>
@@ -83,7 +84,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import type { Column } from '~/components/DocumentTableTypes'
-import type { RfcToBe } from '~/purple_client'
+import type { RfcToBe, RpcRelatedDocument } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -92,35 +93,27 @@ const columns: Column[] = [
   {
     key: 'name',
     label: 'Document',
-    field: 'name',
+    field: 'id' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
     key: 'relationship',
     label: 'Relationship',
-    field: 'relationship',
+    field: 'relationship' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
     key: 'currentState',
     label: 'Current State',
-    field: 'currentState',
+    field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
-  }
-]
-
-const relatedDocuments = [
-  {
-    name: 'draft-some-other-draft',
-    relationship: 'Normative Reference',
-    currentState: 'Active WG document'
   }
 ]
 
 const id = computed(() => route.params.id.toString())
 
 const { data: rfcToBe } = await useAsyncData<RfcToBe>(
-  computed(() => `rfcToBe-${id.value}`),
+  () => `rfcToBe-${id.value}`,
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
   { server: false }
 )
@@ -131,10 +124,14 @@ const { data: rfcToBe } = await useAsyncData<RfcToBe>(
 //   { default: () => ([]), server: false }
 // )
 
-const { data: labels } = await useAsyncData('labels', () => api.labelsList(), {
-  default: () => [],
-  server: false
-})
+const { data: labels } = await useAsyncData(
+  () => `labels-${id.value}`,
+  () => api.labelsList(),
+  {
+    default: () => [],
+    server: false
+  }
+)
 
 const labels1 = computed(() =>
   labels.value.filter((label) => label.isComplexity && !label.isException)
@@ -168,15 +165,24 @@ watch(
   { deep: true }
 )
 
-const key = computed(() => `comments-${id.value}`)
-
 const {
   data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useAsyncData(key, () =>
-  api.documentsCommentsList({ draftName: id.value })
+} = await useAsyncData(
+  () => `comments-${id.value}`,
+  () => api.documentsCommentsList({ draftName: id.value })
 )
+
+const { data: relatedDocuments } = await useAsyncData(
+  () => `references-${id.value}`,
+  () => api.documentsReferencesList({
+          draftName: id.value
+        }),
+  {
+    default: () => [],
+    server: false,
+  })
 
 </script>
