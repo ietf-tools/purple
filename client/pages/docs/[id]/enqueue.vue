@@ -112,8 +112,10 @@ const columns: Column[] = [
 
 const id = computed(() => route.params.id.toString())
 
+const rfcToBeKey = computed(() => `rfcToBe-${id.value}`)
+
 const { data: rfcToBe } = await useAsyncData<RfcToBe>(
-  () => `rfcToBe-${id.value}`,
+  rfcToBeKey,
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
   { server: false }
 )
@@ -125,7 +127,7 @@ const { data: rfcToBe } = await useAsyncData<RfcToBe>(
 // )
 
 const { data: labels } = await useAsyncData(
-  () => `labels-${id.value}`,
+  `labels`,
   () => api.labelsList(),
   {
     default: () => [],
@@ -145,14 +147,7 @@ const labels3 = computed(
   () => labels.value.filter((label) => !label.isComplexity)
 )
 
-const { data: defaultSelectedLabelIds } = await useAsyncData<number[]>(
-  () => `user-selection-${id.value}`,
-  async () => {
-    return [] // FIXME: get user values
-  }
-)
-
-const selectedLabelIds = ref(defaultSelectedLabelIds.value ?? [])
+const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
 
 watch(
   selectedLabelIds,
@@ -165,18 +160,22 @@ watch(
   { deep: true }
 )
 
+const draftCommentsKey = computed(() => `comments-${id.value}`)
+
 const {
   data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
 } = await useAsyncData(
-  () => `comments-${id.value}`,
+  draftCommentsKey,
   () => api.documentsCommentsList({ draftName: id.value })
 )
 
+const relatedDocumentsKey = computed(() => `references-${id.value}`)
+
 const { data: relatedDocuments } = await useAsyncData(
-  () => `references-${id.value}`,
+  relatedDocumentsKey,
   () => api.documentsReferencesList({
           draftName: id.value
         }),

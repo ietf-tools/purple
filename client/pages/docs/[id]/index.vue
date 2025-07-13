@@ -81,7 +81,7 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :draft="draft"/>
+        <DocInfoCard :draft="rawDraft"/>
 
         <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
 
