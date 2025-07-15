@@ -5,12 +5,13 @@ import warnings
 from dataclasses import dataclass
 from itertools import pairwise
 
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
-from datatracker.models import DatatrackerPerson
+from datatracker.models import DatatrackerPerson, Document
 from datatracker.utils import build_datatracker_url
 
 from .models import (
@@ -371,13 +372,66 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
         return obj.target_rfctobe.draft.name
 
 
-class CreateRpcRelatedDocumentSerializer(serializers.ModelSerializer):
+class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
-    # todo reconcile with refactored RpcRelatedDocumentSerializer
+    target_draft_name = serializers.CharField(write_only=True, required=False)
+    # This field is read-only to return the name of the target document;
+    # in subsequent "to_representation" it will be renamed to target_draft_name;
+    # This hack is required to map the model's fields (doc, rfctobe) to the serializer's
+    # fields (target_draft_name)
+    target_draft_name_output = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = RpcRelatedDocument
-        fields = ["id", "relationship", "source", "target_document", "target_rfctobe"]
+        fields = [
+            "id",
+            "relationship",
+            "source",
+            "target_draft_name",
+            "target_draft_name_output",
+        ]
+
+    def get_target_draft_name_output(self, obj):
+        if obj.target_document is not None:
+            return obj.target_document.name
+        if obj.target_rfctobe is not None:
+            return obj.target_rfctobe.draft.name
+        return None
+
+    def to_representation(self, instance):
+        ret = super().to_representation(instance)
+        ret["target_draft_name"] = ret.pop("target_draft_name_output", None)
+        return ret
+
+    def create(self, validated_data):
+        target_draft_name = validated_data.pop("target_draft_name")
+
+        source = validated_data["source"]
+
+        target_rfctobe = RfcToBe.objects.filter(draft__name=target_draft_name).first()
+        target_document = None
+        if not target_rfctobe:
+            target_document = Document.objects.filter(name=target_draft_name).first()
+            if not target_document:
+                raise serializers.ValidationError(
+                    f"No Document or RfcToBe found for draft name '{target_draft_name}'"
+                )
+
+        try:
+            data = {
+                "relationship": validated_data["relationship"],
+                "source": source,
+                "target_document": target_document,
+                "target_rfctobe": target_rfctobe,
+            }
+            related_doc = super().create(data)
+        except IntegrityError as err:
+            raise serializers.ValidationError(
+                f"Failed to create related document due to a database constraint: {err}"
+            ) from err
+
+        return related_doc
 
 
 class CapabilitySerializer(serializers.ModelSerializer):
