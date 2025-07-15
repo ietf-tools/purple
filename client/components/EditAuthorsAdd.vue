@@ -21,6 +21,7 @@
         </ComboboxEmpty>
         <ComboboxGroup>
           <ComboboxItem
+            v-if="searchResults"
             v-for="searchResult in searchResults.results"
             :key="searchResult.personId"
             :value="searchResult"
