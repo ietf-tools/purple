@@ -1,15 +1,23 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
-from typing import cast
-
 import rpcapi_client
 from django.core.cache import cache
 from django.db import models
 from simple_history.models import HistoricalRecords
 
-from datatracker.rpcapi import with_rpcapi
+from .rpcapi import with_rpcapi
+from .utils import build_datatracker_url
 
 
 class DatatrackerPersonQuerySet(models.QuerySet):
+    @with_rpcapi
+    def first_or_create(
+        self, defaults=None, *, rpcapi: rpcapi_client.PurpleApi, **kwargs
+    ):
+        try:
+            return self.get_or_create(defaults, **kwargs)
+        except DatatrackerPerson.MultipleObjectsReturned:
+            return DatatrackerPerson.objects.filter(**kwargs).first(), False
+
     @with_rpcapi
     def first_or_create_by_subject_id(
         self, subject_id, *, rpcapi: rpcapi_client.PurpleApi
@@ -23,15 +31,7 @@ class DatatrackerPersonQuerySet(models.QuerySet):
             dtpers = rpcapi.get_subject_person_by_id(subject_id=subject_id)
         except rpcapi_client.exceptions.NotFoundException as err:
             raise DatatrackerPerson.DoesNotExist() from err
-        try:
-            return cast(
-                tuple[DatatrackerPerson, bool],
-                super().get_or_create(datatracker_id=dtpers.id),
-            )
-        except DatatrackerPerson.MultipleObjectsReturned:
-            return DatatrackerPerson.objects.filter(
-                datatracker_id=dtpers.id
-            ).first(), False
+        return self.first_or_create(datatracker_id=dtpers.id)
 
 
 class DatatrackerPerson(models.Model):
@@ -57,8 +57,19 @@ class DatatrackerPerson(models.Model):
         return self._fetch("plain_name") or "<Unknown>"
 
     @property
+    def email(self) -> str:
+        return self._fetch("email") or "<Unknown>"
+
+    @property
     def picture(self) -> str:
         return self._fetch("picture")
+
+    @property
+    def url(self) -> str:
+        url = self._fetch("url")
+        if url:
+            url = build_datatracker_url(url)
+        return url
 
     @with_rpcapi
     def _fetch(self, field_name, *, rpcapi: rpcapi_client.PurpleApi):

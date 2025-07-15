@@ -31,7 +31,7 @@ ALLOWED_HOSTS = _multiline_to_list(os.environ["PURPLE_ALLOWED_HOSTS"])
 # except PURPLE_RPC_API_TOKEN.
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
 DATATRACKER_BASE = os.environ.get(
-    "PURPLE_DATATRACKER_BASE", "https://datatracker.ietf.org"
+    "NUXT_PUBLIC_DATATRACKER_BASE", "https://datatracker.ietf.org"
 )
 DATATRACKER_RPC_API_BASE = os.environ.get(
     "PURPLE_DATATRACKER_RPC_API_BASE", f"{DATATRACKER_BASE}"

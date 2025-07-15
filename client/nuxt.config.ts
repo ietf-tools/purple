@@ -36,7 +36,8 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      cspScriptSrcHashes: '' // comma-separated list
+      cspScriptSrcHashes: '', // comma-separated list
+      datatrackerBase: 'https://datatracker.ietf.org' // NUXT_PUBLIC_DATATRACKER_BASE
     }
   },
   security: {

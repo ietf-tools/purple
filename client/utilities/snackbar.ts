@@ -28,7 +28,6 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
     }
   }
 
-
   // truncating text...
   // showing too much text to users in a toast isn't good UX,
   // so we'll truncate but tell them to read dev console for more

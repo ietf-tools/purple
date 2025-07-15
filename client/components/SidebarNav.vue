@@ -88,7 +88,7 @@
             <span class="cursor-pointer select-none text-purple-50 dark:text-purple-950 hover:text-purple-500 dark:hover:text-purple-800 text-xs font-medium" @click="pi">π</span>
           </li>
           <li class="-mx-6">
-            <a href="https://datatracker.ietf.org" class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-500 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-200 hover:bg-violet-500/5">
+            <a :href="$config.public.datatrackerBase" class="flex items-center gap-x-4 px-6 py-3 text-sm font-semibold leading-6 text-gray-500 dark:text-violet-400 hover:text-violet-500 dark:hover:text-violet-200 hover:bg-violet-500/5">
               <Icon name="solar:database-bold-duotone" class="h-8 w-8 opacity-70" aria-hidden="true" />
               <span>Go to Datatracker</span>
             </a>

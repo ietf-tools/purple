@@ -83,6 +83,8 @@
         <!-- Document Info -->
         <DocInfoCard :draft="draft"/>
 
+        <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
+
         <!-- Labels -->
         <BaseCard class="lg:col-start-3 lg:row-start-2 lg:row-span-1 grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">Labels</h3>
@@ -167,11 +169,11 @@ const draft = computed(() => {
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
-const draftId = computed(() => route.params.id.toString())
+const draftName = computed(() => route.params.id.toString())
 
 const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
-  () => `draft-${draftId.value}`,
-  () => api.documentsRetrieve({ draftName: draftId.value }),
+  () => `draft-${draftName.value}`,
+  () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false }
 )
 

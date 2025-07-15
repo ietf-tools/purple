@@ -28,6 +28,7 @@ services:
       # OIDC RP client credential for dev instance of datatracker (not secret for dev, will be for production)
       - PURPLE_OIDC_RP_CLIENT_ID=502412
       - PURPLE_OIDC_RP_CLIENT_SECRET=4046925638956f0d733cd96a5a89646815f0e989c878e9e09475b2f8
+      - NUXT_PUBLIC_DATATRACKER_BASE=http://localhost:8000
     depends_on:
       - db
     extra_hosts:

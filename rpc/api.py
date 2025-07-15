@@ -468,7 +468,22 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             .aggregate(max_order=Max("order", default=0))
             .get("max_order")
         )
-        serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
+        # Get the person_id - pop it from validated_data since it's not a real
+        # field on the DatatrackerPerson model
+        person_id = serializer.validated_data.pop("person_id")
+        if person_id:
+            with transaction.atomic():
+                dt_person, _ = DatatrackerPerson.objects.first_or_create(
+                    datatracker_id=person_id,
+                )
+                serializer.save(
+                    rfc_to_be=rfc_to_be,
+                    datatracker_person=dt_person,
+                    order=max_order + 1,
+                )
+        else:
+            # If no person_id is provided, save the author without it
+            serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -771,7 +786,19 @@ class DatatrackerPersonModelShim:
         )
 
 
-@extend_schema_view(get=extend_schema(operation_id="search_datatrackerpersons"))
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="search_datatrackerpersons",
+        parameters=[
+            OpenApiParameter(
+                name="search",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                description="Name/email fragment for the search",
+            ),
+        ],
+    ),
+)
 class SearchDatatrackerPersons(ListAPIView):
     """Datatracker person search API
 
@@ -780,22 +807,15 @@ class SearchDatatrackerPersons(ListAPIView):
 
     # Warning: this is a tricky view!
     #
-    # Rather than querying the database, the `get_queryset()` method makes a
-    # datatracker API call
-    # to perform the Person search. It uses the same pagination limit/offset on the
-    # API call as the
-    # downstream request being handled. The paginated results from the API call are
-    # packaged in
-    # the PaginationPassthroughWrapper. This acts as a shim to let DRF's pagination
-    # internals work
-    # with the already-paginated results as though they came from a local database
-    # lookup.
-    #
-    # Note that despite the naming, DRF APIViews and pagination explicitly support
-    # using a list
-    # rather than a Django queryset. We need the shim because the list we get from
-    # the API only
-    # contains a single page of results.
+    # Rather than querying the database, the `get_queryset()` method makes a datatracker
+    # API call to perform the Person search. It uses the same pagination limit/offset on
+    # the API call as the downstream request being handled. The paginated results from
+    # the API call are packaged in the PaginationPassthroughWrapper. This acts as a shim
+    # to let DRF's pagination internals work with the already-paginated results as
+    # though they came from a local database lookup.# Note that despite the naming, DRF
+    # APIViews and pagination explicitly support using a list rather than a Django
+    # queryset. We need the shim because the list we get from the API only contains a
+    # single page of results.
 
     serializer_class = BaseDatatrackerPersonSerializer
     pagination_class = SearchDatatrackerPersonsPagination

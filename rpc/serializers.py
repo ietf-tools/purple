@@ -4,9 +4,7 @@ import datetime
 import warnings
 from dataclasses import dataclass
 from itertools import pairwise
-from urllib.parse import urljoin
 
-from django.conf import settings
 from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.fields import empty
@@ -14,6 +12,7 @@ from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
 from datatracker.models import DatatrackerPerson, Document
+from datatracker.utils import build_datatracker_url
 
 from .models import (
     ActionHolder,
@@ -51,11 +50,13 @@ class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
 
     person_id = serializers.IntegerField(source="datatracker_id")
     name = serializers.CharField(source="plain_name", read_only=True)
+    email = serializers.EmailField(read_only=True)
+    picture = serializers.URLField(read_only=True)
+    datatracker_url = serializers.URLField(source="url", read_only=True)
 
     class Meta:
         model = DatatrackerPerson
-        fields = ["person_id", "name", "picture"]
-        read_only_fields = ["picture"]
+        fields = ["person_id", "name", "email", "picture", "datatracker_url"]
 
 
 class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
@@ -63,9 +64,7 @@ class DatatrackerPersonSerializer(BaseDatatrackerPersonSerializer):
 
     class Meta(BaseDatatrackerPersonSerializer.Meta):
         fields = BaseDatatrackerPersonSerializer.Meta.fields + ["rpcperson"]
-        read_only_fields = BaseDatatrackerPersonSerializer.Meta.read_only_fields + [
-            "rpcperson"
-        ]
+        read_only_fields = ["rpcperson"]
 
 
 @dataclass
@@ -171,20 +170,42 @@ class HistoryLastEditSerializer(serializers.Serializer):
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="datatracker_person.plain_name", read_only=True)
+    email = serializers.EmailField(source="datatracker_person.email", read_only=True)
+    picture = serializers.URLField(source="datatracker_person.picture", read_only=True)
+    datatracker_url = serializers.URLField(
+        source="datatracker_person.url", read_only=True
+    )
+
     class Meta:
         model = RfcAuthor
         fields = [
             "id",
+            "name",
+            "email",
             "titlepage_name",
             "is_editor",
-            "datatracker_person",
+            "picture",
+            "datatracker_url",
         ]
-        read_only_fields = ["id", "datatracker_person"]
+
+    def update(self, instance, validated_data):
+        RfcAuthor.objects.filter(pk=instance.pk).update(**validated_data)
+        return RfcAuthor.objects.get(pk=instance.pk)
 
 
 class CreateRfcAuthorSerializer(RfcAuthorSerializer):
+    # person_id is not a field on the model - remove it from validated_data
+    # before saving!
+    person_id = serializers.IntegerField(
+        write_only=True,
+        help_text="datatracker ID of a Person",
+        required=False,
+        allow_null=True,
+    )
+
     class Meta(RfcAuthorSerializer.Meta):
-        read_only_fields = ["id"]
+        fields = RfcAuthorSerializer.Meta.fields + ["person_id"]
 
 
 class AuthorOrderSerializer(serializers.Serializer):
@@ -645,9 +666,7 @@ class Submission:
                 if draft.intended_std_level
                 else None
             ),
-            datatracker_url=urljoin(
-                settings.DATATRACKER_BASE, f"/doc/{draft.name}-{draft.rev}"
-            ),
+            datatracker_url=build_datatracker_url(f"/doc/{draft.name}-{draft.rev}"),
         )
 
 

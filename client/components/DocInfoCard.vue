@@ -16,7 +16,10 @@
                   :key="author.id"
                   class="py-1 grid grid-cols-2"
                 >
-                  <div>{{ author.titlepageName }}</div>
+                  <div>
+                    {{ author.titlepageName }}
+                    <span v-if="author.isEditor">(editor)</span>
+                  </div>
                 </div>
               </div>
             </div>

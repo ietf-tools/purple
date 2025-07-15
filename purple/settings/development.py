@@ -17,7 +17,10 @@ ALLOWED_HOSTS = []
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
 DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000"
 DATATRACKER_API_V1_BASE = "http://host.docker.internal:8000/api/v1"
-DATATRACKER_BASE = "http://localhost:8000"
+DATATRACKER_BASE = os.environ.get(
+    "NUXT_PUBLIC_DATATRACKER_BASE",  # matches name used by Nuxt runtimeConfig
+    "http://localhost:8000",
+)
 
 
 # OIDC configuration (see also base.py)
