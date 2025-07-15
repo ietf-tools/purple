@@ -15,7 +15,7 @@
         </div>
         <RpcLabelPicker item-label="slug" v-model="selectedLabelIds" :labels="labels3" />
       </div>
-      <DocumentDependencies v-model="relatedDocuments"></DocumentDependencies>
+      <DocumentDependencies v-model="relatedDocuments" :draft-name="id" ></DocumentDependencies>
       <BaseCard>
         <template #header>
           <CardHeader title="Comments" />
@@ -38,7 +38,6 @@
 </template>
 
 <script setup lang="ts">
-import { Icon } from '#components'
 import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
 

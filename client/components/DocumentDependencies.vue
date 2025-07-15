@@ -13,6 +13,7 @@
     <DocumentDependenciesAdd
       v-model:is-open-dependency-modal="isOpenDependencyModal"
       v-model:related-documents="relatedDocuments"
+      :draft-name="props.draftName"
     />
   </div>
 </template>
@@ -45,5 +46,11 @@ const columns: Column[] = [
 ]
 
 const isOpenDependencyModal = ref(false)
+
+type Props = {
+  draftName: string
+}
+
+const props = defineProps<Props>()
 
 </script>
