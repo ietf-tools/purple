@@ -549,6 +549,30 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
         )
 
+    @extend_schema(
+        request=CreateRpcRelatedDocumentSerializer,
+        responses=RpcRelatedDocumentSerializer,
+        examples=[
+            OpenApiExample(
+                "Create Related Document",
+                value={
+                    "relationship": "missref",
+                    "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
+                },
+                request_only=True,
+            ),
+            OpenApiExample(
+                "Created Related Document Response",
+                value={
+                    "id": 1,
+                    "relationship": "missref",
+                    "source": 1,
+                    "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
+                },
+                response_only=True,
+            )
+        ]
+    )
     @with_rpcapi
     def create(self, request, rpcapi, *args, **kwargs):
         draft_name = self.kwargs["draft_name"]

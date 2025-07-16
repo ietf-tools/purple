@@ -42,7 +42,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui"
-import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~/purple_client"
+import type { DocumentsReferencesCreateRequest, RpcRelatedDocument,  } from "~/purple_client"
 import { snackbarForErrors } from "~/utilities/snackbar"
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>('relatedDocuments', { required: true, default: [] })
@@ -65,7 +65,7 @@ const api = useApi()
 const addDependencyItem = async () => {
   const createArg: DocumentsReferencesCreateRequest = {
     draftName: props.draftName,
-    rpcRelatedDocument: {
+    createRpcRelatedDocument: {
       relationship: relationship.value,
       targetDraftName: targetDraftName.value
     }

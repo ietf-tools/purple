@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import IntegrityError
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
@@ -375,7 +376,7 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
-    target_draft_name = serializers.CharField(write_only=True, required=False)
+    target_draft_name = serializers.CharField(write_only=True, required=True)
     # This field is read-only to return the name of the target document;
     # in subsequent "to_representation" it will be renamed to target_draft_name;
     # This hack is required to map the model's fields (doc, rfctobe) to the serializer's
@@ -392,6 +393,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             "target_draft_name_output",
         ]
 
+    @extend_schema_field(serializers.CharField())
     def get_target_draft_name_output(self, obj):
         if obj.target_document is not None:
             return obj.target_document.name
