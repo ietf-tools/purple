@@ -573,6 +573,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
+
     @with_rpcapi
     def create(self, request, rpcapi, *args, **kwargs):
         draft_name = self.kwargs["draft_name"]

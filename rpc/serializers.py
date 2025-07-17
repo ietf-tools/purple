@@ -403,6 +403,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             "target_draft_name_output",
         ]
 
+
     @extend_schema_field(serializers.CharField())
     def get_target_draft_name_output(self, obj):
         if obj.target_document is not None:
@@ -416,6 +417,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
         ret["target_draft_name"] = ret.pop("target_draft_name_output", None)
         # Remove source from response for consistency, cient works with draft_name
         ret.pop("source", None)
+
         return ret
 
     def create(self, validated_data):
