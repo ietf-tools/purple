@@ -362,21 +362,30 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     """Serializer for related document for an RfcToBe"""
 
     target_draft_name = serializers.SerializerMethodField()
+    draft_name = serializers.SerializerMethodField()
 
     class Meta:
         model = RpcRelatedDocument
-        fields = ["id", "relationship", "target_draft_name"]
+        fields = ["id", "relationship", "draft_name", "target_draft_name"]
 
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
         if obj.target_document is not None:
             return obj.target_document.name
         return obj.target_rfctobe.draft.name
 
+    @extend_schema_field(serializers.CharField())
+    def get_draft_name(self, obj: RpcRelatedDocument) -> str:
+        """Get the draft name of the source document"""
+        return obj.source.draft.name
+
 
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
     target_draft_name = serializers.CharField(write_only=True, required=True)
+    source = serializers.PrimaryKeyRelatedField(
+        queryset=RfcToBe.objects.all(), write_only=True
+    )
     # This field is read-only to return the name of the target document;
     # in subsequent "to_representation" it will be renamed to target_draft_name;
     # This hack is required to map the model's fields (doc, rfctobe) to the serializer's
@@ -389,6 +398,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             "id",
             "relationship",
             "source",
+            "draft_name",
             "target_draft_name",
             "target_draft_name_output",
         ]
@@ -404,6 +414,8 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret["target_draft_name"] = ret.pop("target_draft_name_output", None)
+        # Remove source from response since it's write-only
+        ret.pop("source", None)
         return ret
 
     def create(self, validated_data):

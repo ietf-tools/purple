@@ -566,12 +566,12 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 value={
                     "id": 1,
                     "relationship": "missref",
-                    "source": 1,
+                    "draft_name": "draft-source-document",
                     "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
                 },
                 response_only=True,
-            )
-        ]
+            ),
+        ],
     )
     @with_rpcapi
     def create(self, request, rpcapi, *args, **kwargs):
