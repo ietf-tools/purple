@@ -414,7 +414,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     def to_representation(self, instance):
         ret = super().to_representation(instance)
         ret["target_draft_name"] = ret.pop("target_draft_name_output", None)
-        # Remove source from response since it's write-only
+        # Remove source from response for consistency, cient works with draft_name
         ret.pop("source", None)
         return ret
 
