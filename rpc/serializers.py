@@ -403,7 +403,6 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             "target_draft_name_output",
         ]
 
-
     @extend_schema_field(serializers.CharField())
     def get_target_draft_name_output(self, obj):
         if obj.target_document is not None:
