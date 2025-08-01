@@ -22,6 +22,7 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
+    DocRelationshipName,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -612,6 +613,12 @@ class ClusterSerializer(serializers.ModelSerializer):
             "number",
             "documents",
         ]
+
+
+class DocRelationshipNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocRelationshipName
+        fields = ["slug", "name", "desc"]
 
 
 class SourceFormatNameSerializer(serializers.ModelSerializer):

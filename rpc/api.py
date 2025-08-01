@@ -62,6 +62,7 @@ from .serializers import (
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     CreateRpcRelatedDocumentSerializer,
+    DocRelationshipNameSerializer,
     DocumentCommentSerializer,
     LabelSerializer,
     NestedAssignmentSerializer,
@@ -655,6 +656,11 @@ class StatsLabels(views.APIView):
                         }
                     )
         return Response({"label_stats": results})
+
+
+class DocRelationshipNameViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = DocRelationshipName.objects.all()
+    serializer_class = DocRelationshipNameSerializer
 
 
 class SourceFormatNameViewSet(viewsets.ReadOnlyModelViewSet):
