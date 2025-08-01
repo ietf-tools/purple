@@ -22,7 +22,6 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
-    DocRelationshipName,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -615,34 +614,13 @@ class ClusterSerializer(serializers.ModelSerializer):
         ]
 
 
-class DocRelationshipNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = DocRelationshipName
-        fields = ["slug", "name", "desc"]
+class NameSerializer(serializers.Serializer):
+    """Serialize any Name subclass"""
 
-
-class SourceFormatNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SourceFormatName
-        fields = ["slug", "name", "desc"]
-
-
-class StdLevelNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StdLevelName
-        fields = ["slug", "name", "desc"]
-
-
-class StreamNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = StreamName
-        fields = ["slug", "name", "desc"]
-
-
-class TlpBoilerplateChoiceNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = SourceFormatName
-        fields = ["slug", "name", "desc"]
+    slug = serializers.CharField(max_length=32)
+    name = serializers.CharField(max_length=255)
+    desc = serializers.CharField(allow_blank=True)
+    used = serializers.BooleanField(default=True)
 
 
 @dataclass
@@ -703,13 +681,13 @@ class SubmissionSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     rev = serializers.CharField()
-    stream = StreamNameSerializer()
+    stream = NameSerializer()
     title = serializers.CharField()
     pages = serializers.IntegerField()
-    source_format = SourceFormatNameSerializer()
+    source_format = NameSerializer()
     authors = SubmissionAuthorSerializer(many=True)
     shepherd = serializers.EmailField()
-    std_level = StdLevelNameSerializer(required=False)
+    std_level = NameSerializer(required=False)
     datatracker_url = serializers.URLField()
 
 
