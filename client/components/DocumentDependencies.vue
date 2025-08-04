@@ -14,6 +14,7 @@
       v-model:is-open-dependency-modal="isOpenDependencyModal"
       v-model:related-documents="relatedDocuments"
       :draft-name="props.draftName"
+      :id="props.id"
     />
   </div>
 </template>
@@ -49,6 +50,7 @@ const isOpenDependencyModal = ref(false)
 
 type Props = {
   draftName: string
+  id: number,
 }
 
 const props = defineProps<Props>()

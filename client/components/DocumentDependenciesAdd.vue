@@ -9,23 +9,19 @@
             New Document Reference
           </DialogTitle>
 
-          <DialogFieldText v-model="relationship" label="Relationship" id="relationship" />
+          <DialogDropdown v-model="relationship" placeholder="Select..." label="Relationship" id="relationship" :options="options" />
           <DialogFieldText v-model="targetDraftName" label="Target draftName" id="targetDraftName" />
 
           <div class="mt-[25px] flex justify-end">
-            <BaseButton
-              btn-type="default"
-              @click="addDependencyItem"
-              class="text-sm hover:bg-green5 inline-flex h-[35px] items-center justify-center rounded-lg px-[15px] font-semibold leading-none focus:shadow-[0_0_0_2px] focus:outline-none"
-            >
+            <BaseButton btn-type="default" @click="addDependencyItem"
+              class="text-sm hover:bg-green5 inline-flex h-[35px] items-center justify-center rounded-lg px-[15px] font-semibold leading-none focus:shadow-[0_0_0_2px] focus:outline-none">
               Add
             </BaseButton>
           </div>
           <DialogClose
             class="text-gray-700 absolute top-3 right-3 inline-flex p-2 appearance-none items-center justify-center rounded-full hover:bg-gray-200"
-            aria-label="Close"
-          >
-            <Icon name="uil:times" class="h-6 w-6" aria-hidden="true"/>
+            aria-label="Close">
+            <Icon name="uil:times" class="h-6 w-6" aria-hidden="true" />
           </DialogClose>
         </DialogContent>
       </DialogPortal>
@@ -43,6 +39,7 @@ import {
   DialogTitle,
 } from "reka-ui"
 import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~/purple_client"
+import type { DialogOption } from "~/utilities/dialog"
 import { snackbarForErrors } from "~/utilities/snackbar"
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>('relatedDocuments', { required: true, default: [] })
@@ -51,6 +48,7 @@ const isOpenDependencyModal = defineModel<boolean>('isOpenDependencyModal', { re
 
 type Props = {
   draftName: string
+  id: number,
 }
 
 const props = defineProps<Props>()
@@ -66,6 +64,7 @@ const addDependencyItem = async () => {
   const createArg: DocumentsReferencesCreateRequest = {
     draftName: props.draftName,
     createRpcRelatedDocument: {
+      source: props.id,
       relationship: relationship.value,
       targetDraftName: targetDraftName.value
     }
@@ -83,6 +82,30 @@ const addDependencyItem = async () => {
       error: e
     })
   }
+}
+
+const {
+  data: relationshipNamesList,
+  error: errorRelationshipNamesList
+} = await useAsyncData(
+  () => api.docRelationshipNamesList()
+)
+
+const options = computed((): DialogOption[] => {
+  if (!relationshipNamesList.value) return []
+  return relationshipNamesList.value.map(item => ({
+    label: item.name,
+    value: item.slug,
+    description: item.desc
+  }))
+})
+
+if(errorRelationshipNamesList.value) {
+  snackbarForErrors({
+    snackbar,
+    defaultTitle: `Unable to retrieve relationship names list`,
+    error: errorRelationshipNamesList.value
+  })
 }
 
 </script>

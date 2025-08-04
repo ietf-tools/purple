@@ -15,7 +15,7 @@
         </div>
         <RpcLabelPicker item-label="slug" v-model="selectedLabelIds" :labels="labels3" />
       </div>
-      <DocumentDependencies v-model="relatedDocuments" :draft-name="id" ></DocumentDependencies>
+      <DocumentDependencies v-if="rfcToBe?.id" v-model="relatedDocuments" :draft-name="id" :id="rfcToBe.id" ></DocumentDependencies>
       <BaseCard>
         <template #header>
           <CardHeader title="Comments" />
@@ -43,7 +43,6 @@ import type { RfcToBe } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
-
 
 const id = computed(() => route.params.id.toString())
 
