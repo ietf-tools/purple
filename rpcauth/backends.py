@@ -255,4 +255,11 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
 
         # Check datatracker roles
         claim_roles = claims["roles"]
-        return ["secr", "secretariat"] in claim_roles or ["auth", "rpc"] in claim_roles
+        authorized_roles = [
+            ["secr", "secretariat"],
+            ["auth", "rpc"],
+            self.ADMIN_ACCESS_ROLE,
+        ]
+        return any(
+            authorized_role in claim_roles for authorized_role in authorized_roles
+        )
