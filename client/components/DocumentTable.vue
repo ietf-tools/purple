@@ -8,7 +8,7 @@
             v-for="col of columns"
             :key="col.key"
             scope="col"
-            class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-neutral-400"
+            class="px-3 py-3.5 text-left text-sm flex-inline content-start font-semibold text-gray-900 dark:text-neutral-400"
             :aria-sort="state.sortField === col.field ? state.sortDirection === 'asc' ? 'ascending' : 'descending' : undefined"
           >
             <button
