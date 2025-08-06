@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { useDragAndDrop } from "fluid-dnd/vue";
-import type { CookedDraft } from "~/utilities/rpc";
+import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   draftName: string
@@ -31,7 +31,7 @@ type Props = {
 
 const props = defineProps<Props>()
 
-const draft = defineModel<CookedDraft>({ required: true })
+const draft = defineModel<RfcToBe>({ required: true })
 
 const api = useApi()
 

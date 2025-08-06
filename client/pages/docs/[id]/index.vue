@@ -98,6 +98,19 @@
             @update:model-value="saveLabels"/>
         </BaseCard>
 
+        <div class="flex w-full space-x-4">
+          <div class="flex flex-col">
+            <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
+            <div class="flex flex-row">
+              <DocLabelsCard title="Other complexities" v-model="selectedLabelIds" :labels="labels1" />
+              <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
+            </div>
+          </div>
+          <div class="flex flex-col">
+            <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
+          </div>
+        </div>
+
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">History</h3>
@@ -169,7 +182,32 @@ const draft = computed(() => {
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
+const labels1 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && !label.isException)
+)
+
+const labels2 = computed(() =>
+  labels.value.filter((label) => label.isComplexity && label.isException)
+)
+
+const labels3 = computed(
+  () => labels.value.filter((label) => !label.isComplexity)
+)
+
+const selectedLabelIds = ref(draft.value?.labels ?? [])
+
 const draftName = computed(() => route.params.id.toString())
+
+watch(
+  selectedLabelIds,
+  async () => api.documentsPartialUpdate({
+    draftName: draftName.value,
+    patchedRfcToBe: {
+      labels: selectedLabelIds.value,
+    }
+  }),
+  { deep: true }
+)
 
 const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,

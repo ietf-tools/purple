@@ -1,5 +1,5 @@
 <template>
-  <ComboboxRoot v-model="selectedAuthor" class="relative" :ignore-filter="true">
+  <ComboboxRoot v-model="selectedAuthor" class="relative">
     <ComboboxAnchor
       class="mt-3 inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 text-xs leading-none gap-[5px] bg-white text-grass11 hover:bg-stone-50 shadow-sm focus:shadow-[0_0_0_2px] focus:shadow-black data-[placeholder]:text-grass9 outline-none"
     >
@@ -17,20 +17,19 @@
         <ComboboxEmpty
           class="text-mauve8 text-xs font-medium text-center py-2"
         >
-          (no matches)
-        </ComboboxEmpty>
-        <ComboboxGroup>
-          <ComboboxItem
-            v-if="searchResults"
-            v-for="searchResult in searchResults.results"
-            :key="searchResult.personId"
-            :value="searchResult"
-            :textValue="searchResult.name"
-            class="text-xs leading-none rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
-          >
+        (no matches)
+      </ComboboxEmpty>
+        <ComboboxItem
+          v-if="searchResults"
+          v-for="searchResult in searchResults.results"
+          :key="searchResult.personId"
+          :value="searchResult"
+          class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
+        >
+          <span>
             {{ searchResult.name }}
-          </ComboboxItem>
-        </ComboboxGroup>
+          </span>
+        </ComboboxItem>
       </ComboboxViewport>
     </ComboboxContent>
   </ComboboxRoot>
@@ -46,11 +45,10 @@ import {
   ComboboxRoot,
   ComboboxViewport,
 } from "reka-ui"
-import type { BaseDatatrackerPerson } from "~/purple_client"
-import type { CookedDraft } from "~/utilities/rpc"
+import type { RfcToBe, BaseDatatrackerPerson } from "~/purple_client"
 import { snackbarForErrors } from "~/utilities/snackbar"
 
-const draft = defineModel<CookedDraft>({ required: true })
+const draft = defineModel<RfcToBe>({ required: true })
 
 const selectedAuthor = ref<BaseDatatrackerPerson | undefined>()
 
@@ -67,7 +65,7 @@ watch(selectedAuthor, async () => {
     const { value } = selectedAuthor
 
     const userAlreadyAdded = draft.value.authors
-      .find(author => author.datatrackerPerson === value.personId)
+      .find(author => author.id === value.personId)
     if(!userAlreadyAdded) {
       try {
         const rpcAuthor = await api.documentsAuthorsCreate({

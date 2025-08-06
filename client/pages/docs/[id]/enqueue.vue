@@ -4,7 +4,11 @@
       summary="Ready the incoming document for the editing queue." />
 
     <div class="space-y-4">
-      <DocInfoCard :draft="rfcToBe" />
+      <div class="flex flex-row">
+        <DocInfoCard :draft="rfcToBe" />
+        <EditAuthors v-if="rfcToBe" :draft-name="id" v-model="rfcToBe"/>
+      </div>
+
       <div class="flex w-full space-x-4">
         <div class="flex flex-col">
           <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
@@ -13,9 +17,11 @@
             <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
           </div>
         </div>
-        <RpcLabelPicker item-label="slug" v-model="selectedLabelIds" :labels="labels3" />
+        <div class="flex flex-col">
+          <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
+        </div>
       </div>
-      <DocumentDependencies v-if="rfcToBe?.id" v-model="relatedDocuments" :draft-name="id" :id="rfcToBe.id" ></DocumentDependencies>
+      <DocumentDependencies v-model="relatedDocuments" :draft-name="id" ></DocumentDependencies>
       <BaseCard>
         <template #header>
           <CardHeader title="Comments" />
@@ -38,11 +44,14 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
+import type { CookedDraft } from '~/utilities/rpc'
 
 const route = useRoute()
 const api = useApi()
+
 
 const id = computed(() => route.params.id.toString())
 
