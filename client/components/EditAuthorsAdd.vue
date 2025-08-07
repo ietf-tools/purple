@@ -64,30 +64,20 @@ watch(selectedAuthor, async () => {
     }
     const { value } = selectedAuthor
 
-    const userAlreadyAdded = draft.value.authors
-      .find(author => author.id === value.personId)
-    if(!userAlreadyAdded) {
-      try {
-        const rpcAuthor = await api.documentsAuthorsCreate({
-          draftName,
-          createRfcAuthor: {
-            titlepageName: value.name ?? `(no name)`,
-            personId: value.personId,
-          }
-        })
-        draft.value.authors.push(rpcAuthor)
-      } catch (e: unknown) {
-        snackbarForErrors({
-          snackbar,
-          defaultTitle: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
-          error: e
-        })
-      }
-    } else {
-      snackbar.add({
-        type: 'error',
-        title: `Author "${selectedAuthor.value.name}" already added`,
-        text: ''
+    try {
+      const rpcAuthor = await api.documentsAuthorsCreate({
+        draftName,
+        createRfcAuthor: {
+          titlepageName: value.name ?? `(no name)`,
+          personId: value.personId,
+        }
+      })
+      draft.value.authors.push(rpcAuthor)
+    } catch (e: unknown) {
+      snackbarForErrors({
+        snackbar,
+        defaultTitle: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
+        error: e
       })
     }
   }
