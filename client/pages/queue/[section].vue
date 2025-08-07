@@ -41,18 +41,20 @@
       <fieldset>
         <legend class="font-bold">Filters</legend>
         <RpcCheckbox
-          id="needsAssignment"
+          id="needsAssignmentTristate"
           label="Needs Assignment?"
           size="small"
-          :checked="needsAssignment"
-          @change="(e) => needsAssignment = extractChecked(e)"
+          :checked="needsAssignmentTristate"
+          :has-indeterminate="true"
+          @change="(tristate) => needsAssignmentTristate = tristate"
         />
         <RpcCheckbox
-          id="hasException"
+          id="hasExceptionTristate"
           label="Has Exception?"
           size="small"
-          :checked="hasException"
-          @change="(e) => hasException = extractChecked(e)"
+          :checked="hasExceptionTristate"
+          :has-indeterminate="true"
+          @change="(tristate) => hasExceptionTristate = tristate"
         />
       </fieldset>
     </div>
@@ -84,6 +86,8 @@ import Fuse from 'fuse.js/basic'
 import { groupBy } from 'lodash-es'
 import { useSiteStore } from '@/stores/site'
 import Badge from '../../components/BaseBadge.vue'
+import { CHECKBOX_INDETERMINATE } from '~/utilities/checkbox'
+import type { CheckboxTristate } from '~/utilities/checkbox'
 import type { Column, Row } from '~/components/DocumentTableTypes'
 import type { Assignment, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
@@ -135,8 +139,8 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"]
 
-const needsAssignment = ref<boolean>(false)
-const hasException = ref<boolean>(false)
+const needsAssignmentTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
+const hasExceptionTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
 
 // COMPUTED
 
@@ -365,12 +369,22 @@ const filteredDocuments = computed(() => {
         )
         .filter(
           (d: any) => {
-            if(needsAssignment.value) {
-              return d.assignmentSet?.length === 0
+            if(needsAssignmentTristate.value === true) {
+              return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
+            } else if(needsAssignmentTristate.value === false) {
+              return Boolean(d.assignmentSet?.length > 0)
+            } else if(needsAssignmentTristate.value === CHECKBOX_INDETERMINATE) {
+              // do nothing
             }
-            if(hasException.value) {
-              return !!d.exception
+
+            if(hasExceptionTristate.value === true) {
+              return Boolean(d.exception)
+            } else if(hasExceptionTristate.value === false) {
+              return Boolean(!d.exception)
+            } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
+              // do nothing
             }
+
             return true
         })
         .map((d: any) => ({
