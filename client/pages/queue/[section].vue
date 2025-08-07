@@ -365,7 +365,7 @@ const filteredDocuments = computed(() => {
       docs = documents.value
         .filter(
           (d: any) =>
-            d.disposition === 'in_progress' && d.assignmentSet?.length > 0
+            d.disposition === 'in_progress'
         )
         .filter(
           (d: any) => {
