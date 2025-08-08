@@ -380,10 +380,11 @@ const filteredDocuments = computed(() => {
             }
 
             const hasExceptionFilterFn = () => {
+              const hasException = Boolean(d.labels?.filter((lbl: any) => lbl.isException).length)
               if(hasExceptionTristate.value === true) {
-                return Boolean(d.exception)
+                return hasException
               } else if(hasExceptionTristate.value === false) {
-                return Boolean(!d.exception)
+                return !hasException
               } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
                 return true
               }
