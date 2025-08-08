@@ -63,9 +63,9 @@ class RfcToBe(models.Model):
     disposition = models.ForeignKey("DispositionName", on_delete=models.PROTECT)
     is_april_first_rfc = models.BooleanField(default=False)
     draft = models.ForeignKey(
-        "datatracker.Document", null=True, on_delete=models.PROTECT
+        "datatracker.Document", null=True, blank=True, on_delete=models.PROTECT
     )
-    rfc_number = models.PositiveIntegerField(null=True, unique=True)
+    rfc_number = models.PositiveIntegerField(null=True, blank=True, unique=True)
 
     submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(
@@ -96,8 +96,8 @@ class RfcToBe(models.Model):
         "StreamName", on_delete=models.PROTECT, related_name="+"
     )
 
-    external_deadline = models.DateTimeField(null=True)
-    internal_goal = models.DateTimeField(null=True)
+    external_deadline = models.DateTimeField(null=True, blank=True)
+    internal_goal = models.DateTimeField(null=True, blank=True)
 
     # Labels applied to this instance. To track history, see
     # https://django-simple-history.readthedocs.io/en/latest/historical_model.html#tracking-many-to-many-relationships
@@ -320,7 +320,7 @@ class RfcAuthor(models.Model):
     # For some older RFCs we don't have a datatracker person to link to, and
     # in some cases the listed author wasn't a _person_.
     datatracker_person = models.ForeignKey(
-        "datatracker.DatatrackerPerson", on_delete=models.PROTECT, null=True
+        "datatracker.DatatrackerPerson", on_delete=models.PROTECT, null=True, blank=True
     )
     rfc_to_be = models.ForeignKey(
         RfcToBe, on_delete=models.PROTECT, related_name="authors"
@@ -385,16 +385,18 @@ class FinalApproval(models.Model):
         "datatracker.DatatrackerPerson",
         on_delete=models.PROTECT,
         null=True,
+        blank=True,
         related_name="approver_set",
     )
     overriding_approver = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         on_delete=models.PROTECT,
         null=True,
+        blank=True,
         related_name="overriding_approver_set",
     )
     requested = models.DateTimeField(default=timezone.now)
-    approved = models.DateTimeField(null=True)
+    approved = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         if self.approved:
@@ -457,12 +459,14 @@ class ActionHolder(models.Model):
     target_document = models.ForeignKey(
         "datatracker.Document",
         null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="actionholder_set",
     )
     target_rfctobe = models.ForeignKey(
         RfcToBe,
         null=True,
+        blank=True,
         on_delete=models.PROTECT,
         related_name="actionholder_set",
     )
@@ -472,8 +476,8 @@ class ActionHolder(models.Model):
     )
     body = models.CharField(max_length=64, blank=True, default="")
     since_when = models.DateTimeField(default=timezone.now)
-    completed = models.DateTimeField(null=True)
-    deadline = models.DateTimeField(null=True)
+    completed = models.DateTimeField(null=True, blank=True)
+    deadline = models.DateTimeField(null=True, blank=True)
     comment = models.TextField(blank=True)
 
     class Meta:
