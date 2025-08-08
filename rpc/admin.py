@@ -44,7 +44,8 @@ admin.site.register(RfcToBeLabel)
 
 
 class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
-    list_display = ["draft", "draft__rev", "rfc_number"]
+    list_display = ["draft", "draft__rev", "rfc_number", "disposition"]
+    list_filter = ["disposition"]
     search_fields = ["draft__name", "rfc_number"]
 
 
