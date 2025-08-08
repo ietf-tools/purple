@@ -537,7 +537,10 @@ class LabelSerializer(serializers.ModelSerializer):
         ]
 
 
-class QueueItemSerializer(RfcToBeSerializer):
+class QueueItemSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(source="draft.name", read_only=True)
+    rev = serializers.CharField(source="draft.rev", read_only=True)
+    cluster = serializers.SerializerMethodField()
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
         source="assignment_set.active", many=True, read_only=True
@@ -547,13 +550,26 @@ class QueueItemSerializer(RfcToBeSerializer):
     )
     requested_approvals = serializers.SerializerMethodField()
 
-    class Meta(RfcToBeSerializer.Meta):
-        fields = RfcToBeSerializer.Meta.fields + [
+    class Meta:
+        model = RfcToBe
+        fields = [
+            "id",
+            "name",
+            "rev",
+            "disposition",
+            "external_deadline",
+            "cluster",
             "labels",
             "assignment_set",
             "actionholder_set",
             "requested_approvals",
         ]
+
+    def get_cluster(self, rfc_to_be) -> int | None:
+        if rfc_to_be.draft:
+            cluster = rfc_to_be.draft.cluster_set.first()
+            return None if cluster is None else cluster.number
+        return None  # RfcToBe without draft cannot be a cluster member
 
     def get_requested_approvals(self, rfc_to_be) -> list:
         return []  # todo return a value
