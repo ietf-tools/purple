@@ -37,6 +37,28 @@
       </button>
     </div>
 
+    <div v-if="currentTab=== 'queue'">
+      <fieldset>
+        <legend class="font-bold">Filters</legend>
+        <RpcCheckbox
+          id="needsAssignmentTristate"
+          label="Needs Assignment?"
+          size="small"
+          :checked="needsAssignmentTristate"
+          :has-indeterminate="true"
+          @change="(tristate) => needsAssignmentTristate = tristate"
+        />
+        <RpcCheckbox
+          id="hasExceptionTristate"
+          label="Has Exception?"
+          size="small"
+          :checked="hasExceptionTristate"
+          :has-indeterminate="true"
+          @change="(tristate) => hasExceptionTristate = tristate"
+        />
+      </fieldset>
+    </div>
+
     <!-- DATA TABLE -->
 
     <div class="mt-2 flow-root">
@@ -64,6 +86,8 @@ import Fuse from 'fuse.js/basic'
 import { groupBy } from 'lodash-es'
 import { useSiteStore } from '@/stores/site'
 import Badge from '../../components/BaseBadge.vue'
+import { CHECKBOX_INDETERMINATE } from '~/utilities/checkbox'
+import type { CheckboxTristate } from '~/utilities/checkbox'
 import type { Column, Row } from '~/components/DocumentTableTypes'
 import type { Assignment, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
@@ -86,7 +110,7 @@ const api = useApi()
 
 // DATA
 
-const tabs: Tab[] = [
+const tabs = [
   {
     id: 'submissions',
     name: 'Submissions',
@@ -100,22 +124,10 @@ const tabs: Tab[] = [
     icon: 'ic:outline-queue'
   },
   {
-    id: 'pending',
-    name: 'Pending Assignment',
-    to: '/queue/pending',
+    id: 'queue',
+    name: 'Queue',
+    to: '/queue/queue',
     icon: 'uil:clock'
-  },
-  {
-    id: 'exceptions',
-    name: 'Exceptions',
-    to: '/queue/exceptions',
-    icon: 'uil:exclamation-triangle'
-  },
-  {
-    id: 'inprocess',
-    name: 'In Process',
-    to: '/queue/inprocess',
-    icon: 'solar:refresh-circle-line-duotone'
   },
   {
     id: 'published',
@@ -123,7 +135,12 @@ const tabs: Tab[] = [
     to: '/queue/published',
     icon: 'uil:check-circle'
   }
-]
+] as const satisfies Tab[]
+
+type TabId = (typeof tabs)[number]["id"]
+
+const needsAssignmentTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
+const hasExceptionTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
 
 // COMPUTED
 
@@ -171,10 +188,10 @@ const columns = computed(() => {
       labels: (row) => (row.labels || []) as string[]
     }
   ]
+  const tabsWithSubmitted = ['submissions', 'enqueuing', 'queue'] satisfies TabId[]
+
   if (
-    ['submissions', 'enqueuing', 'exceptions'].includes(
-      currentTab.value.toString()
-    )
+    (tabsWithSubmitted as TabId[]).includes(currentTab.value)
   ) {
     cols.push({
       key: 'submitted',
@@ -189,7 +206,7 @@ const columns = computed(() => {
       classes: 'text-xs'
     })
   }
-  if (currentTab.value === 'pending') {
+  if (currentTab.value === 'queue') {
     cols.push(deadlineCol)
   }
   if (currentTab.value === 'published') {
@@ -200,7 +217,7 @@ const columns = computed(() => {
       format: (val: any) => `RFC ${val}`
     })
   }
-  if (currentTab.value === 'exception') {
+  if (currentTab.value === 'queue') {
     cols.push({
       key: 'exception',
       label: 'Exception',
@@ -208,7 +225,7 @@ const columns = computed(() => {
       classes: 'text-rose-600 dark:text-rose-500'
     })
   }
-  if (['exceptions', 'inprocess'].includes(currentTab.value.toString())) {
+  if ((currentTab.value === 'queue')) {
     cols.push({
       key: 'assignmentSet',
       label: 'Assignee (should allow multiple)',
@@ -256,7 +273,7 @@ const columns = computed(() => {
       ]
     )
   }
-  if (currentTab.value === 'inprocess') {
+  if (currentTab.value === 'queue') {
     cols.push(
       ...[
         {
@@ -288,7 +305,7 @@ const columns = computed(() => {
       ]
     )
   }
-  if (currentTab.value === 'pending') {
+  if (currentTab.value === 'queue') {
     cols.push({
       key: 'cluster',
       label: 'Cluster',
@@ -323,10 +340,10 @@ const columns = computed(() => {
   return cols
 })
 
-const currentTab = computed(() => {
+const currentTab = computed((): TabId  => {
   const tab = route.params.section.toString() || 'submissions'
   console.log(`setting currentTab = ${tab}`)
-  return tab
+  return tab as TabId
 })
 
 const filteredDocuments = computed(() => {
@@ -344,31 +361,44 @@ const filteredDocuments = computed(() => {
     case 'enqueuing':
       docs = documents.value.filter((d: any) => d.disposition === 'created')
       break
-    case 'pending':
-      docs = documents.value.filter(
-        (d: any) =>
-          d.disposition === 'in_progress' && d.assignmentSet?.length === 0
-      )
-      break
-    case 'exceptions':
-      docs = documents.value.filter(
-        (d: any) =>
-          d.disposition === 'in_progress' &&
-          d.labels?.filter((lbl: any) => lbl.isException).length
-      )
-      break
-    case 'inprocess':
+    case 'queue':
       docs = documents.value
         .filter(
           (d: any) =>
-            d.disposition === 'in_progress' && d.assignmentSet?.length > 0
+            d.disposition === 'in_progress'
         )
+        .filter(
+          (d: any) => {
+            const needsAssignmentFilterFn = () => {
+              if(needsAssignmentTristate.value === true) {
+                return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
+              } else if(needsAssignmentTristate.value === false) {
+                return Boolean(d.assignmentSet?.length > 0)
+              } else if(needsAssignmentTristate.value === CHECKBOX_INDETERMINATE) {
+                return true
+              }
+            }
+
+            const hasExceptionFilterFn = () => {
+              const hasException = Boolean(d.labels?.filter((lbl: any) => lbl.isException).length)
+              if(hasExceptionTristate.value === true) {
+                return hasException
+              } else if(hasExceptionTristate.value === false) {
+                return !hasException
+              } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
+                return true
+              }
+            }
+
+            return needsAssignmentFilterFn() && hasExceptionFilterFn()
+        })
         .map((d: any) => ({
           ...d,
-          currentState: `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})`,
+          currentState: d.assignmentSet.length > 0 ? `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})` : undefined,
           assignee: d.assignmentSet[0],
           holder: d.actionholderSet[0]
         }))
+
       break
     default:
       docs = []
@@ -416,6 +446,16 @@ const {
     default: () => []
   }
 )
+
+const extractChecked = (e: Event) => {
+  const { target } = e
+  if (!(target instanceof HTMLInputElement)) {
+    console.error(e)
+    throw Error(`Unsupported event wasn't from expected element`)
+  }
+  const { checked } = target
+  return Boolean(checked)
+}
 
 onMounted(() => {
   siteStore.search = ''
