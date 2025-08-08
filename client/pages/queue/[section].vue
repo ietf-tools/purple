@@ -369,27 +369,31 @@ const filteredDocuments = computed(() => {
         )
         .filter(
           (d: any) => {
-            if(needsAssignmentTristate.value === true) {
-              return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
-            } else if(needsAssignmentTristate.value === false) {
-              return Boolean(d.assignmentSet?.length > 0)
-            } else if(needsAssignmentTristate.value === CHECKBOX_INDETERMINATE) {
-              // do nothing
+            const needsAssignmentFilterFn = () => {
+              if(needsAssignmentTristate.value === true) {
+                return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
+              } else if(needsAssignmentTristate.value === false) {
+                return Boolean(d.assignmentSet?.length > 0)
+              } else if(needsAssignmentTristate.value === CHECKBOX_INDETERMINATE) {
+                return true
+              }
             }
 
-            if(hasExceptionTristate.value === true) {
-              return Boolean(d.exception)
-            } else if(hasExceptionTristate.value === false) {
-              return Boolean(!d.exception)
-            } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
-              // do nothing
+            const hasExceptionFilterFn = () => {
+              if(hasExceptionTristate.value === true) {
+                return Boolean(d.exception)
+              } else if(hasExceptionTristate.value === false) {
+                return Boolean(!d.exception)
+              } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
+                return true
+              }
             }
 
-            return true
+            return needsAssignmentFilterFn() && hasExceptionFilterFn()
         })
         .map((d: any) => ({
           ...d,
-          currentState: `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})`,
+          currentState: d.assignmentSet.length > 0 ? `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})` : undefined,
           assignee: d.assignmentSet[0],
           holder: d.actionholderSet[0]
         }))
