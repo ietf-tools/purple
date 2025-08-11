@@ -161,12 +161,20 @@ const api = useApi()
 
 // COMPUTED
 
+const draftName = computed(() => route.params.id.toString())
+
+const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
+  () => `draft-${draftName.value}`,
+  () => api.documentsRetrieve({ draftName: draftName.value }),
+  { server: false }
+)
+
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawDraft.value?.labels.includes(lbl.id)))
 
 const draftAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === draft.value?.id))
 
 const draft = computed(() => {
-  if (rawDraft?.value) {
+  if (rawDraft.value) {
     return {
       ...rawDraft.value,
       externalDeadline:
@@ -196,8 +204,6 @@ const labels3 = computed(
 
 const selectedLabelIds = ref(draft.value?.labels ?? [])
 
-const draftName = computed(() => route.params.id.toString())
-
 watch(
   selectedLabelIds,
   async () => api.documentsPartialUpdate({
@@ -209,11 +215,6 @@ watch(
   { deep: true }
 )
 
-const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
-  () => `draft-${draftName.value}`,
-  () => api.documentsRetrieve({ draftName: draftName.value }),
-  { server: false }
-)
 
 // todo retrieve assignments for a single draft more efficiently
 const { data: assignments } = await useAsyncData(

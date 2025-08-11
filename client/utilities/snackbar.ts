@@ -14,6 +14,8 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   let title = defaultTitle ?? 'Error.'
   let text = `${error}`
 
+  console.error("Snackbar error", defaultTitle, error)
+
   if(error) {
     if (
       typeof error === 'object' &&
