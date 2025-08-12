@@ -648,6 +648,7 @@ class Label(models.Model):
         default="purple",
         choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
+    used = models.BooleanField(default=True)
     history = HistoricalRecords()
 
     def __str__(self):
