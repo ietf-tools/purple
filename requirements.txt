@@ -1,7 +1,7 @@
-Django>=5.0
+./openapi/rpcapi_client
 django-filter>=25.1
-rules>=3.5
 django-simple-history>=3.4
+Django>=5.0
 djangorestframework>=3.14
 drf-spectacular>=0.27
 factory-boy>=3.3
@@ -10,4 +10,4 @@ mozilla-django-oidc>=4.0.0
 psycopg2>=2.9.7
 pymemcache>=4.0.0
 python-json-logger>=2.0.7
-./openapi/rpcapi_client
+rules>=3.5
