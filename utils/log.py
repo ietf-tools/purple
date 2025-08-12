@@ -1,8 +1,10 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """JSON Logger Utilities"""
 
+import logging
 import time
 
+from celery.app.log import TaskFormatter
 from pythonjsonlogger import jsonlogger
 
 
@@ -39,3 +41,13 @@ class GunicornRequestJsonFormatter(JsonFormatter):
             "cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"]
         )
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
+
+
+class SimpleFormatter(logging.Formatter):
+    converter = time.gmtime  # use UTC
+    default_msec_format = "%s.%03d"  # "." instead of ","
+
+
+class CeleryTaskFormatter(TaskFormatter):
+    converter = time.gmtime  # use UTC
+    default_msec_format = "%s.%03d"  # "." instead of ","

@@ -2,7 +2,6 @@
 """Development-mode Django settings for RPC project"""
 
 import os
-
 from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -60,6 +59,56 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("EMAIL_HOST", "mailhog")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", 1025))
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "celery_task_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "celery_task",
+        },
+    },
+    "formatters": {
+        "default": {
+            "()": "utils.log.SimpleFormatter",
+            "format": "[{asctime}] ({levelname}) {message} ({name})",
+            "style": "{",
+        },
+        "celery_task": {
+            "()": "utils.log.CeleryTaskFormatter",
+            "format": "[%(asctime)s] (%(levelname)s) Task %(task_name)s[%(task_id)s] log: %(message)s",
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery.task": {
+            "handlers": ["celery_task_console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+}
+
 
 # Uncomment to enable caching in development
 # CACHES = {
