@@ -1,4 +1,5 @@
 ./openapi/rpcapi_client
+celery>=5.5.3
 django-filter>=25.1
 django-simple-history>=3.4
 Django>=5.0
