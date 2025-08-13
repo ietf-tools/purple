@@ -84,8 +84,10 @@ LOGGING = {
         },
         "celery_task": {
             "()": "utils.log.CeleryTaskFormatter",
-            "format": "[%(asctime)s] (%(levelname)s) "
-                      "Task %(task_name)s[%(task_id)s] log: %(message)s",
+            "format": (
+                "[%(asctime)s] (%(levelname)s) "
+                "Task %(task_name)s[%(task_id)s] log: %(message)s"
+            ),
         },
     },
     "loggers": {
