@@ -2,6 +2,7 @@
 """Development-mode Django settings for RPC project"""
 
 import os
+
 from .base import *
 
 # SECURITY WARNING: keep the secret key used in production secret!
@@ -83,7 +84,8 @@ LOGGING = {
         },
         "celery_task": {
             "()": "utils.log.CeleryTaskFormatter",
-            "format": "[%(asctime)s] (%(levelname)s) Task %(task_name)s[%(task_id)s] log: %(message)s",
+            "format": "[%(asctime)s] (%(levelname)s) "
+                      "Task %(task_name)s[%(task_id)s] log: %(message)s",
         },
     },
     "loggers": {

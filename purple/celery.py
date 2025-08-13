@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import os
 
-from celery import Celery, signals as celery_signals
+from celery import Celery
+from celery import signals as celery_signals
 
 
 # Disable celery's internal logging configuration, we set it up via Django

@@ -35,7 +35,8 @@ class DatatrackerNotificationTask(Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         logger.error(
-            f"Email admins to report failure: {self.name} with args={args} and kwargs={kwargs}"
+            f"Email admins to report failure: {self.name} "
+            f"with args={args} and kwargs={kwargs}"
         )
 
 
@@ -46,4 +47,3 @@ def notify_task(self, message):
         raise RuntimeError("oops!")
     except RuntimeError:
         self.retry(max_retries=5)  # limit retries for proof of concept
-
