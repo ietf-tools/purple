@@ -339,15 +339,22 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # Get ref list from Datatracker
             references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
+            rfc_to_be_qs = RfcToBe.objects.filter(
+                draft__datatracker_id__in=[s.id for s in references]
+            )
             already_in_queue = dict(
-                RfcToBe.objects.filter(
-                    draft__datatracker_id__in=[s.id for s in references],
-                    disposition__slug__in=("created", "in_progress"),
+                rfc_to_be_qs.filter(
+                    disposition__slug__in=("created", "in_progress")
                 ).values_list("draft__datatracker_id", "draft__name")
             )
-            rfc_to_be_exists = RfcToBe.objects.filter(
-                draft__datatracker_id__in=[s.id for s in references],
-            ).values_list("draft__datatracker_id", flat=True)
+            withdrawn = dict(
+                rfc_to_be_qs.filter(disposition__slug="withdrawn").values_list(
+                    "draft__datatracker_id", "draft__name"
+                )
+            )
+            rfc_to_be_exists = rfc_to_be_qs.values_list(
+                "draft__datatracker_id", flat=True
+            )
             for reference in references:
                 # Create a RelatedDoc for each normative reference
                 if reference.id not in rfc_to_be_exists:
@@ -372,11 +379,19 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                             },
                         )
                     create_rpc_related_document("missref", rfctobe.pk, draft.name)
-
-                if reference.id in already_in_queue:
+                elif reference.id in already_in_queue:
                     create_rpc_related_document(
                         "refqueue", rfctobe.pk, already_in_queue[reference.id]
                     )
+                elif reference.id in withdrawn:
+                    create_rpc_related_document(
+                        "missref", rfctobe.pk, withdrawn[reference.id]
+                    )
+                    rfc_to_be_qs.get(draft__name=withdrawn[reference.id]).labels.add(
+                        Label.objects.get(slug="withdrawn reference")
+                    )
+                else:
+                    pass  # intentionally ignoring references to published RfcToBe
 
         return Response(RfcToBeSerializer(rfctobe).data)
     else:

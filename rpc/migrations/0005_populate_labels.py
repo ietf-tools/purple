@@ -3,6 +3,7 @@
 from django.db import migrations
 
 COMPLEXITY_COLOR = "green"
+EXCEPTION_COLOR = "red"
 
 
 def forward(apps, schema_editor):
@@ -30,11 +31,18 @@ def forward(apps, schema_editor):
     Label.objects.create(
         slug="expedited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
     )
+    Label.objects.create(
+        slug="withdrawn reference",
+        is_exception=True,
+        is_complexity=False,
+        color=EXCEPTION_COLOR,
+    )
 
 
 def reverse(apps, schema_editor):
     Label = apps.get_model("rpc", "Label")
     Label.objects.filter(is_complexity=True).delete()
+    Label.objects.filter(slug="withdrawn reference").delete()
 
 
 class Migration(migrations.Migration):
