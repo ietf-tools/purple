@@ -85,20 +85,7 @@
 
         <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
 
-        <!-- Labels -->
-        <BaseCard class="lg:col-start-3 lg:row-start-2 lg:row-span-1 grid place-items-stretch">
-          <h3 class="text-base font-semibold leading-7">Labels</h3>
-          <div class="flex">
-            <div v-for="lbl of appliedLabels" :key="lbl.id" class="flex-shrink-0 p-1">
-              <RpcLabel :label="lbl"/>
-            </div>
-          </div>
-          <RpcLabelPicker
-            :labels="labels" :model-value="draft?.labels" item-label="slug"
-            @update:model-value="saveLabels"/>
-        </BaseCard>
-
-        <div class="flex w-full space-x-4">
+        <div class="flex w-full lg:col-span-2 border-2 border-black space-x-4">
           <div class="flex flex-col">
             <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
             <div class="flex flex-row">
@@ -191,15 +178,15 @@ const draft = computed(() => {
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
 const labels1 = computed(() =>
-  labels.value.filter((label) => label.isComplexity && !label.isException)
+  labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
 )
 
 const labels2 = computed(() =>
-  labels.value.filter((label) => label.isComplexity && label.isException)
+  labels.value.filter((label) => label.used && label.isComplexity && label.isException)
 )
 
 const labels3 = computed(
-  () => labels.value.filter((label) => !label.isComplexity)
+  () => labels.value.filter((label) => label.used && !label.isComplexity)
 )
 
 const selectedLabelIds = ref(draft.value?.labels ?? [])
