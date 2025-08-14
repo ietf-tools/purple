@@ -38,25 +38,42 @@
     </div>
 
     <div v-if="currentTab=== 'queue'">
-      <fieldset>
-        <legend class="font-bold">Filters</legend>
-        <RpcCheckbox
-          id="needsAssignmentTristate"
-          label="Needs Assignment?"
-          size="small"
-          :checked="needsAssignmentTristate"
-          :has-indeterminate="true"
-          @change="(tristate) => needsAssignmentTristate = tristate"
-        />
-        <RpcCheckbox
-          id="hasExceptionTristate"
-          label="Has Exception?"
-          size="small"
-          :checked="hasExceptionTristate"
-          :has-indeterminate="true"
-          @change="(tristate) => hasExceptionTristate = tristate"
-        />
-      </fieldset>
+      <div class="flex flex-row gap-x-8 justify-between mb-4">
+        <fieldset>
+          <legend class="font-bold text-base">
+            Filters
+            <span class="text-md">&nbsp;</span>
+          </legend>
+          <RpcCheckbox
+            id="needsAssignmentTristate"
+            label="Needs Assignment?"
+            size="small"
+            :checked="needsAssignmentTristate"
+            :has-indeterminate="true"
+            @change="(tristate) => needsAssignmentTristate = tristate"
+          />
+          <RpcCheckbox
+            id="hasExceptionTristate"
+            label="Has Exception?"
+            size="small"
+            :checked="hasExceptionTristate"
+            :has-indeterminate="true"
+            @change="(tristate) => hasExceptionTristate = tristate"
+          />
+        </fieldset>
+        <fieldset class="flex-1">
+          <legend class="font-bold text-sm flex items-end">
+            Label filters
+            <span class="text-base">&nbsp;</span>
+          </legend>
+          <div class="grid grid-cols-[repeat(auto-fill,10em)] gap-x-3">
+            <LabelsFilter
+              v-model:all-label-filters="allLabelFilters"
+              v-model:selected-label-filters="selectedLabelFilters"
+            />
+          </div>
+        </fieldset>
+      </div>
     </div>
 
     <!-- DATA TABLE -->
@@ -83,13 +100,13 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import Fuse from 'fuse.js/basic'
-import { groupBy } from 'lodash-es'
+import { groupBy, uniqBy } from 'lodash-es'
 import { useSiteStore } from '@/stores/site'
 import Badge from '../../components/BaseBadge.vue'
 import { CHECKBOX_INDETERMINATE } from '~/utilities/checkbox'
 import type { CheckboxTristate } from '~/utilities/checkbox'
 import type { Column, Row } from '~/components/DocumentTableTypes'
-import type { Assignment, QueueItem, SubmissionListItem } from '~/purple_client'
+import type { Assignment, Label, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
 
 // ROUTING
@@ -364,9 +381,9 @@ const filteredDocuments = computed(() => {
     case 'queue':
       docs = documents.value
         .filter(
-          (d: any) =>
-            d.disposition === 'in_progress'
-        )
+          (d) => {
+            return Boolean(d && 'disposition' in d ? d.disposition === 'in_progress' : true)
+        })
         .filter(
           (d: any) => {
             const needsAssignmentFilterFn = () => {
@@ -391,6 +408,21 @@ const filteredDocuments = computed(() => {
             }
 
             return needsAssignmentFilterFn() && hasExceptionFilterFn()
+        })
+        .filter(d => {
+          if(!('labels' in d)) return true
+          const entries = Object.entries(selectedLabelFilters.value)
+          return entries.every(([labelIdStr, tristate]) => {
+            const labelId = parseFloat(labelIdStr)
+            switch(tristate) {
+              case CHECKBOX_INDETERMINATE:
+                return true
+              case true:
+                return d.labels ? d.labels.some(label => label.id === labelId) : false
+              case false:
+                return d.labels ? !d.labels.some(label => label.id === labelId) : true
+            }
+          })
         })
         .map((d: any) => ({
           ...d,
@@ -447,15 +479,21 @@ const {
   }
 )
 
-const extractChecked = (e: Event) => {
-  const { target } = e
-  if (!(target instanceof HTMLInputElement)) {
-    console.error(e)
-    throw Error(`Unsupported event wasn't from expected element`)
+const allLabelFilters = computed(() => {
+  if (documents.value === undefined) {
+    return []
   }
-  const { checked } = target
-  return Boolean(checked)
-}
+  const allLabels = documents.value.flatMap(
+    (doc) => (doc && "labels" in doc ? doc.labels : []) as Label[]
+  )
+  const uniqueLabels = uniqBy(allLabels, label => label.id)
+  const usedUniqueLabels = uniqueLabels.filter(label => {
+    return label.used !== undefined ? label.used : true
+  })
+  return usedUniqueLabels
+})
+
+const selectedLabelFilters = ref<Record<number, CheckboxTristate>>({})
 
 onMounted(() => {
   siteStore.search = ''
