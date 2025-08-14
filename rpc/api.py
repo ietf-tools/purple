@@ -339,18 +339,14 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # Get ref list from Datatracker
             references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
-            already_in_queue = dict(
+            existing_rfc_to_be = dict(
                 RfcToBe.objects.filter(
-                    draft__datatracker_id__in=[s.id for s in references],
-                    disposition__slug__in=("created", "in_progress"),
-                ).values_list("draft__datatracker_id", "draft__name")
+                    draft__datatracker_id__in=[s.id for s in references]
+                ).values_list("draft__datatracker_id", "disposition__slug")
             )
-            rfc_to_be_exists = RfcToBe.objects.filter(
-                draft__datatracker_id__in=[s.id for s in references],
-            ).values_list("draft__datatracker_id", flat=True)
             for reference in references:
                 # Create a RelatedDoc for each normative reference
-                if reference.id not in rfc_to_be_exists:
+                if reference.id not in existing_rfc_to_be:
                     # Get the draft for the reference, otherwise create it
                     try:
                         draft = Document.objects.get(datatracker_id=reference.id)
@@ -372,11 +368,18 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                             },
                         )
                     create_rpc_related_document("missref", rfctobe.pk, draft.name)
-
-                if reference.id in already_in_queue:
-                    create_rpc_related_document(
-                        "refqueue", rfctobe.pk, already_in_queue[reference.id]
-                    )
+                else:
+                    disposition = existing_rfc_to_be[reference.id]
+                    if disposition in ("created", "in_progress"):
+                        create_rpc_related_document(
+                            "refqueue", rfctobe.pk, reference.name
+                        )
+                    elif disposition == "withdrawn":
+                        create_rpc_related_document(
+                            "withdrawnref", rfctobe.pk, reference.name
+                        )
+                    else:
+                        pass  # ignoring references to already published RfcToBe
 
         return Response(RfcToBeSerializer(rfctobe).data)
     else:
