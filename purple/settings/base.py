@@ -145,3 +145,10 @@ CACHES = {
 
 # email
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
+
+
+# Celery
+CELERY_TIMEZONE = "UTC"
+CELERY_BROKER_URL = "amqp://mq/"
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
