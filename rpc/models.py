@@ -283,6 +283,7 @@ ASSIGNMENT_STATE_CHOICES = (
     ("assigned", "assigned"),
     ("in progress", "in progress"),
     ("done", "done"),
+    ("withdrawn", "withdrawn"),
 )
 
 
