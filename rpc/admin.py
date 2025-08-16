@@ -74,6 +74,7 @@ admin.site.register(Capability)
 class AssignmentAdmin(admin.ModelAdmin):
     search_fields = ["person__datatracker_person__datatracker_id"]
     list_display = ["id", "rfc_to_be", "person", "role", "state"]
+    raw_id_fields = ["rfc_to_be", "person"]
 
 
 admin.site.register(Assignment, AssignmentAdmin)
