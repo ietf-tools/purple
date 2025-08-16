@@ -16,6 +16,7 @@ from .dt_v1_api_utils import (
     datatracker_stdlevelname,
     datatracker_streamname,
 )
+from .lifecycle import incomplete_activities
 from .rules import is_comment_author, is_rpc_person
 
 
@@ -152,6 +153,14 @@ class RfcToBe(models.Model):
         if len(intervals) > 0 and intervals[-1].end is None:
             intervals[-1].end = datetime.datetime.now().astimezone(datetime.UTC)
         return intervals
+
+    def incomplete_activities(self):
+        return RpcRole.objects.filter(
+            slug__in=[
+                activity.role_slug
+                for activity in incomplete_activities(self)
+            ]
+        )
 
 
 class Name(models.Model):

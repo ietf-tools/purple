@@ -10,7 +10,9 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
         name="solar:document-text-line-duotone"
         class="text-gray-900 dark:text-gray-100 h-8 w-8 flex-none"/>
       <div class="text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">{{ cookedDocument.name }}</div>
-      <BaseBadge v-if="cookedDocument.needsAssignment" :label="`Needs ${cookedDocument.needsAssignment.name}`"/>
+      <div v-for="assignment in cookedDocument.needsAssignment">
+        <BaseBadge :label="`Needs ${assignment.name}`"/>
+      </div>
       <HeadlessMenu as="div" class="relative ml-auto">
         <HeadlessMenuButton class="-m-2.5 block p-2.5 text-gray-400 hover:text-gray-500">
           <span class="sr-only">Open options</span>

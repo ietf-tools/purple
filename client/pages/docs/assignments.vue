@@ -93,7 +93,7 @@ const documents = computed(
   () => rfcsToBe.value?.map((rtb) => {
     // Add some fake properties for demonstration purposes
     const assignments = cookedAssignments.value?.filter(a => a.rfcToBe === rtb.id)
-    const needsAssignment = assignments?.length ? null : roles.value?.toSorted(() => Math.random() - 0.5)[0]
+    const needsAssignment = rtb.incompleteActivities
     const resolvedDocument: ResolvedDocument = { ...rtb, assignments, needsAssignment }
     return resolvedDocument
   })
@@ -102,7 +102,7 @@ const documents = computed(
 
 const filteredDocuments = computed(
   () => documents.value?.filter(
-    (rtb: any) => !state.roleFilter || (rtb.needsAssignment?.slug === state.roleFilter)
+    (rtb: any) => !state.roleFilter || rtb.needsAssignment.some((a) => a.slug === state.roleFilter)
   ) ?? []
 )
 
