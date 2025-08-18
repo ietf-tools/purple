@@ -8,6 +8,7 @@ class Activity:
     prereqs: Iterable["Activity"] = ()
 
     def pending(self, completed_activities: Iterable["Activity"]):
+        """Have all prereqs been completed?"""
         return all(activity in completed_activities for activity in self.prereqs)
 
 
@@ -39,6 +40,7 @@ ACTIVITIES = {
 
 # todo: implement these for non-assignment activities (or simplify)
 def complete_activities(rfctobe):
+    """Get set of Activities that are completed for this doc"""
     role_map = {ca.role_slug: ca for ca in ACTIVITIES}
     completed_slugs = rfctobe.assignment_set.filter(
         state="done",
@@ -48,10 +50,21 @@ def complete_activities(rfctobe):
 
 
 def incomplete_activities(rfctobe):
+    """Get set of Activities that are not yet completed for this doc
+
+    Includes those in progress / assigned and waiting for work to begin
+    """
     return ACTIVITIES - complete_activities(rfctobe)
 
 
 def pending_activities(rfctobe):
+    """Get set of Activities waiting for assignment
+
+    An Activity is "pending" if all its prerequisites are completed. This returns
+    pending activities that don't yet have an Assignment. This logic will need
+    adjustment if Activities that depend on models other than Assignment are ever
+    created.
+    """
     role_map = {ca.role_slug: ca for ca in ACTIVITIES}
     # Get map from role slug to state
     state_map = dict(
