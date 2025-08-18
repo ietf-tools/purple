@@ -215,6 +215,7 @@ class AuthorOrderSerializer(serializers.Serializer):
         help_text="List of RfcAuthor IDs in the desired order",
     )
 
+
 class RpcRoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = RpcRole
@@ -232,7 +233,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     history = HistorySerializer(many=True, read_only=True)
     authors = RfcAuthorSerializer(many=True)
-    incomplete_activities = RpcRoleSerializer(many=True, read_only=True)
+    pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
     class Meta:
         model = RfcToBe
@@ -258,7 +259,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "intended_stream",
             "history",
             "authors",
-            "incomplete_activities",
+            "pending_activities",
         ]
         read_only_fields = ["id", "draft"]
 

@@ -93,7 +93,7 @@ const documents = computed(
   () => rfcsToBe.value?.map((rtb) => {
     // Add some fake properties for demonstration purposes
     const assignments = cookedAssignments.value?.filter(a => a.rfcToBe === rtb.id)
-    const needsAssignment = rtb.incompleteActivities
+    const needsAssignment = rtb.pendingActivities
     const resolvedDocument: ResolvedDocument = { ...rtb, assignments, needsAssignment }
     return resolvedDocument
   })

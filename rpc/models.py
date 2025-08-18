@@ -16,7 +16,7 @@ from .dt_v1_api_utils import (
     datatracker_stdlevelname,
     datatracker_streamname,
 )
-from .lifecycle import incomplete_activities
+from .lifecycle import incomplete_activities, pending_activities
 from .rules import is_comment_author, is_rpc_person
 
 
@@ -156,10 +156,12 @@ class RfcToBe(models.Model):
 
     def incomplete_activities(self):
         return RpcRole.objects.filter(
-            slug__in=[
-                activity.role_slug
-                for activity in incomplete_activities(self)
-            ]
+            slug__in=[activity.role_slug for activity in incomplete_activities(self)]
+        )
+
+    def pending_activities(self):
+        return RpcRole.objects.filter(
+            slug__in=[activity.role_slug for activity in pending_activities(self)]
         )
 
 
