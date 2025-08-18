@@ -1,14 +1,11 @@
 <template>
   <div v-for="labelFilter in allLabelFilters">
-    <RpcCheckbox
-      :id="domIdBuilder(labelFilter.id)"
-      :label="labelFilter.slug"
-      size="small"
-      :checked="labelFilter.id && selectedLabelsTristate?.[labelFilter.id] ?
-        selectedLabelsTristate[labelFilter.id]:
-        CHECKBOX_INDETERMINATE"
-      :has-indeterminate="true"
+    <RpcTristateButton
+      :checked="labelFilter.id && selectedLabelsTristate?.[labelFilter.id] !== undefined ?
+        selectedLabelsTristate[labelFilter.id] :
+        TRISTATE_MIXED"
       @change="(tristate) => {
+        console.log('change', tristate)
         if(!selectedLabelsTristate || !labelFilter.id) {
           console.warn('Can\'t update due to problem with selectedLabelsTristate or labelFilter.id', {
             selectedLabelsTristate,
@@ -18,21 +15,23 @@
         }
         selectedLabelsTristate[labelFilter.id] = tristate
       }"
-    />
+    >
+      <RpcLabel :label="labelFilter"/>
+    </RpcTristateButton>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { Label } from '~/purple_client'
-import { CHECKBOX_INDETERMINATE } from '~/utilities/checkbox'
-import type { CheckboxTristate } from '~/utilities/checkbox'
+import { TRISTATE_MIXED } from '~/utilities/tristate'
+import type { TristateValue } from '~/utilities/tristate'
 
 const allLabelFilters = defineModel<Label[]>(
   'all-label-filters',
   { required: true }
 )
 
-const selectedLabelsTristate = defineModel<Record<number, CheckboxTristate>>(
+const selectedLabelsTristate = defineModel<Record<number, TristateValue>>(
   'selected-label-filters',
   { required: true }
 )
