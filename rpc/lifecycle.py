@@ -52,7 +52,14 @@ def incomplete_activities(rfctobe):
 
 
 def pending_activities(rfctobe):
-    completed = complete_activities(rfctobe)
-    return {
-        activity for activity in ACTIVITIES - completed if activity.pending(completed)
-    }
+    role_map = {ca.role_slug: ca for ca in ACTIVITIES}
+    # Get map from role slug to state
+    state_map = dict(
+        rfctobe.assignment_set.filter(role__slug__in=role_map)
+        .exclude(state="withdrawn")
+        .values_list("role__slug", "state")
+    )
+    # need an assignment for any without a non-withdrawn Assignment
+    need_assignment = ACTIVITIES - {role_map[slug] for slug in state_map}
+    completed = {role_map[slug] for slug, state in state_map.items() if state == "done"}
+    return {activity for activity in need_assignment if activity.pending(completed)}
