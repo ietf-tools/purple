@@ -37,6 +37,7 @@ admin.site.register(DumpInfo)
 class RpcPersonAdmin(SimpleHistoryAdmin):
     search_fields = ["datatracker_person__datatracker_id"]
     list_display = ["id", "datatracker_person", "can_hold_role__name"]
+    list_display_links = ["id", "datatracker_person"]
 
 
 admin.site.register(RpcPerson, RpcPersonAdmin)
@@ -73,7 +74,8 @@ admin.site.register(Capability)
 
 class AssignmentAdmin(admin.ModelAdmin):
     search_fields = ["person__datatracker_person__datatracker_id"]
-    list_display = ["id", "rfc_to_be", "person", "role", "state"]
+    list_display = ["id", "__str__", "rfc_to_be", "person", "role", "state"]
+    list_display_links = ["id", "__str__"]
     raw_id_fields = ["rfc_to_be", "person"]
 
 
