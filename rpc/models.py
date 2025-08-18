@@ -317,6 +317,7 @@ class Assignment(models.Model):
     )
     comment = models.TextField(blank=True)
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.person} assigned as {self.role} for {self.rfc_to_be}"
