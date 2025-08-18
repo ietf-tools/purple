@@ -3,14 +3,9 @@
 
 from collections.abc import Iterable
 
-from django.db.models import Q
-
 
 class Activity:
     prereqs: Iterable["Activity"] = ()
-
-    def completed_as_q(self):
-        raise NotImplementedError("Subclasses must implement this")
 
     def pending(self, completed_activities: Iterable["Activity"]):
         return all(activity in completed_activities for activity in self.prereqs)
@@ -21,9 +16,6 @@ class CompletedAssignment(Activity):
         self.role_slug = role_slug
         if prereqs is not None:
             self.prereqs = prereqs
-
-    def completed_as_q(self):
-        return Q(assignment__role__slug=self.role_slug, assignment__state="done")
 
 
 FORMATTING = CompletedAssignment("formatting")
