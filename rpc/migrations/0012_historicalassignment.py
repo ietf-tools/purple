@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 import datetime
+
 import django.db.models.deletion
 import simple_history.models
 from django.conf import settings
