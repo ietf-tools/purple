@@ -3,6 +3,7 @@
 import datetime
 from dataclasses import dataclass
 from itertools import pairwise
+from typing import Literal, Iterable
 
 from django.db import models
 from django.utils import timezone
@@ -290,13 +291,14 @@ class Capability(models.Model):
         return self.name
 
 
-ASSIGNMENT_STATE_CHOICES = (
+type AssignmentStateT = Literal["assigned", "in progress", "done", "withdrawn"]
+
+ASSIGNMENT_STATE_CHOICES: Iterable[tuple[AssignmentStateT, str]] = (
     ("assigned", "assigned"),
     ("in progress", "in progress"),
     ("done", "done"),
     ("withdrawn", "withdrawn"),
 )
-
 
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
@@ -321,6 +323,24 @@ class Assignment(models.Model):
 
     def __str__(self):
         return f"{self.person} assigned as {self.role} for {self.rfc_to_be}"
+
+    def when_entered_state(self, state: AssignmentStateT) -> datetime.datetime | None:
+        last_held = self.history.filter(state=state).last()
+        return None if last_held is None else last_held.history_date
+
+    def when_left_state(self, state: AssignmentStateT) -> datetime.datetime | None:
+        last_held = self.history.filter(state=state).last()
+        following_state = None if last_held is None else last_held.next_record
+        return None if following_state is None else following_state.history_date
+
+    def when_assigned(self) -> datetime.datetime | None:
+        return self.when_entered_state("assigned")
+
+    def when_started(self) -> datetime.datetime | None:
+        return self.when_entered_state("in progress")
+
+    def when_completed(self) -> datetime.datetime | None:
+        return self.when_entered_state("done")
 
 
 class RfcAuthor(models.Model):
