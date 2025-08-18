@@ -111,6 +111,14 @@ def profile(request):
     dt_person = user.datatracker_person()
     # hasattr() test also handles None case
     rpcperson = dt_person.rpcperson if hasattr(dt_person, "rpcperson") else None
+    # grant manager permissions to managers and superusers
+    if user.is_superuser:
+        is_manager = True
+    elif rpcperson is None:
+        is_manager = False
+    else:
+        is_manager = rpcperson.can_hold_role.filter(slug="manager").exists()
+
     return JsonResponse(
         {
             "authenticated": True,
@@ -118,11 +126,7 @@ def profile(request):
             "name": user.name,
             "avatar": user.avatar,
             "rpcPersonId": rpcperson.id if rpcperson is not None else None,
-            "isManager": (
-                False
-                if rpcperson is None
-                else rpcperson.can_hold_role.filter(slug="manager").exists()
-            ),
+            "isManager": is_manager,
         }
     )
 
