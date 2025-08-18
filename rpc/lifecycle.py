@@ -61,4 +61,6 @@ def incomplete_activities(rfctobe):
 
 def pending_activities(rfctobe):
     completed = complete_activities(rfctobe)
-    return {activity for activity in ACTIVITIES - completed if activity.pending(completed)}
+    return {
+        activity for activity in ACTIVITIES - completed if activity.pending(completed)
+    }

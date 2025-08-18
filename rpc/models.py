@@ -1,9 +1,10 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+from collections.abc import Iterable
 from dataclasses import dataclass
 from itertools import pairwise
-from typing import Literal, Iterable
+from typing import Literal
 
 from django.db import models
 from django.utils import timezone
@@ -299,6 +300,7 @@ ASSIGNMENT_STATE_CHOICES: Iterable[tuple[AssignmentStateT, str]] = (
     ("done", "done"),
     ("withdrawn", "withdrawn"),
 )
+
 
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
