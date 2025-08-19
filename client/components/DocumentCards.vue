@@ -17,16 +17,16 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
 <script setup lang="ts">
 import { provide } from 'vue'
 import { assignEditorKey, deleteAssignmentKey } from '~/providers/providerKeys'
-import type { ResolvedDocument, ResolvedPerson } from './AssignmentsTypes'
+import type { ResolvedQueueItem, ResolvedPerson } from './AssignmentsTypes'
 
 type Props = {
-  documents: ResolvedDocument[]
+  documents: ResolvedQueueItem[]
   editors: ResolvedPerson[]
 }
 
 const props = defineProps<Props>()
 
-const state = reactive<{ selectedDoc: null | ResolvedDocument }>({
+const state = reactive<{ selectedDoc: null | ResolvedQueueItem }>({
   selectedDoc: null
 })
 
@@ -51,7 +51,7 @@ const editorAssignedDocuments = computed(() =>
       }
     })
     return editorAssignedDocuments
-  }, {} as Record<string, ResolvedDocument[] | undefined>)
+  }, {} as Record<string, ResolvedQueueItem[] | undefined>)
 )
 
 </script>

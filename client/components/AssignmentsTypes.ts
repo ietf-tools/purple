@@ -1,10 +1,10 @@
-import type { Assignment, RfcToBe, RpcPerson, RpcRole } from '~/purple_client'
+import type {Assignment, QueueItem, RpcPerson, RpcRole} from '~/purple_client'
 
 export type ResolvedAssignment = Omit<Assignment, 'person'> & {
   person?: RpcPerson
 }
 
-export type ResolvedDocument = RfcToBe & {
+export type ResolvedQueueItem = QueueItem & {
   assignments?: ResolvedAssignment[]
   needsAssignment: RpcRole | null | undefined
 }

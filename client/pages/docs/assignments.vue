@@ -67,8 +67,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ResolvedDocument, ResolvedPerson } from '~/components/AssignmentsTypes'
-import type { Assignment, RfcToBe, RpcPerson, RpcRole } from '~/purple_client'
+import type { ResolvedQueueItem, ResolvedPerson } from '~/components/AssignmentsTypes'
+import type {Assignment, QueueItem, RpcPerson, RpcRole} from '~/purple_client'
 import { DateTime } from 'luxon'
 
 const csrf = useCookie('csrftoken', { sameSite: 'strict' })
@@ -94,7 +94,7 @@ const documents = computed(
     // Add some fake properties for demonstration purposes
     const assignments = cookedAssignments.value?.filter(a => a.rfcToBe === rtb.id)
     const needsAssignment = rtb.pendingActivities
-    const resolvedDocument: ResolvedDocument = { ...rtb, assignments, needsAssignment }
+    const resolvedDocument: ResolvedQueueItem = { ...rtb, assignments, needsAssignment }
     return resolvedDocument
   })
     .sort(rtb => rtb.externalDeadline ? DateTime.fromJSDate(rtb.externalDeadline).toSeconds() : 0)
@@ -181,9 +181,9 @@ const { data: people, pending: pendingPeople, refresh: refreshPeople } = await u
   { server: false, default: () => ([]) }
 )
 
-const { data: rfcsToBe, pending: pendingDocs, refresh: refreshDocs } = await useAsyncData<RfcToBe[]>(
+const { data: rfcsToBe, pending: pendingDocs, refresh: refreshDocs } = await useAsyncData<QueueItem[]>(
   'rfcsToBe',
-  () => api.documentsInProgressList(),
+  () => api.queueList({disposition: "in_progress"}),
   { server: false, default: () => ([]) }
 )
 const {

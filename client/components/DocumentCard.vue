@@ -126,14 +126,14 @@ import { uniqBy } from 'lodash-es'
 import { SelectRoot, SelectTrigger, SelectPortal, SelectContent, SelectViewport, SelectGroup, SelectItem, SelectItemIndicator } from 'reka-ui'
 import type { AcceptableValue } from 'reka-ui'
 import { assignEditorKey, deleteAssignmentKey } from '~/providers/providerKeys'
-import type { ResolvedDocument, ResolvedPerson } from './AssignmentsTypes'
+import type { ResolvedQueueItem, ResolvedPerson } from './AssignmentsTypes'
 import { assert, assertIsArrayOfNumbers, assertIsNumber } from '../utilities/typescript'
 
 type Props = {
-  document: ResolvedDocument
+  document: ResolvedQueueItem
   selected?: boolean
   editors?: ResolvedPerson[]
-  editorAssignedDocuments?: Record<string, ResolvedDocument[] | undefined>
+  editorAssignedDocuments?: Record<string, ResolvedQueueItem[] | undefined>
 }
 
 const props = defineProps<Props>()
