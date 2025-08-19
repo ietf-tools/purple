@@ -399,6 +399,8 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # concept of a singular queue, so I'm using this because it works.
     queryset = RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
     serializer_class = QueueItemSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["disposition"]
 
 
 class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
@@ -442,13 +444,6 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
-
-    @extend_schema(responses=RfcToBeSerializer(many=True))
-    @action(detail=False)
-    def in_progress(self, request):
-        in_progress = RfcToBe.objects.filter(disposition_id="in_progress")
-        serializer = self.get_serializer(in_progress, many=True)
-        return Response(serializer.data)
 
 
 @extend_schema_with_draft_name()
