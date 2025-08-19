@@ -28,10 +28,10 @@ class Migration(migrations.Migration):
                     "state",
                     models.CharField(
                         choices=[
-                            ("assigned", "assigned"),
-                            ("in progress", "in progress"),
-                            ("done", "done"),
-                            ("withdrawn", "withdrawn"),
+                            ("assigned", "Assigned"),
+                            ("in_progress", "In Progress"),
+                            ("done", "Done"),
+                            ("withdrawn", "Withdrawn"),
                         ],
                         default="assigned",
                         max_length=32,
