@@ -16,7 +16,7 @@ from ...factories import (
     RfcToBeFactory,
     RpcPersonFactory,
 )
-from ...models import ClusterMember, Label, RfcToBe, RpcPerson, Assignment
+from ...models import Assignment, ClusterMember, Label, RfcToBe, RpcPerson
 
 
 class Command(BaseCommand):
