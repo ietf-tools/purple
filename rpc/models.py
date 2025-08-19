@@ -290,6 +290,7 @@ class Assignment(models.Model):
 
     class State(models.TextChoices):
         """Choices for the state field"""
+
         ASSIGNED = "assigned"
         IN_PROGRESS = "in_progress"
         DONE = "done"
