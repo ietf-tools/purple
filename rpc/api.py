@@ -209,7 +209,9 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     TODO: permissions
     """
 
-    queryset = Assignment.objects.exclude(state="done")
+    queryset = Assignment.objects.exclude(
+        state__in=[Assignment.State.DONE, Assignment.State.WITHDRAWN]
+    )
     serializer_class = NestedAssignmentSerializer
 
     def get_queryset(self):

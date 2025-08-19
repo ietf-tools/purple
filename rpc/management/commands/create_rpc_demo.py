@@ -295,7 +295,7 @@ class Command(BaseCommand):
             rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-tasty-cheese"),
             role__slug="first_editor",
             person=self.people["atravis"],
-            state="assigned",
+            state=Assignment.State.ASSIGNED,
         )
         AssignmentFactory(
             rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-tasty-cheese"),
@@ -333,7 +333,7 @@ class Command(BaseCommand):
             ),
             role__slug="final_review_editor",
             person=self.people["sbexar"],
-            state="assigned",
+            state=Assignment.State.ASSIGNED,
         )
         RfcToBeActionHolderFactory(
             target_rfctobe=RfcToBe.objects.get(

@@ -293,7 +293,9 @@ class Capability(models.Model):
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only active Assignments"""
-        return super().exclude(state="done")
+        return super().exclude(
+            state__in=[Assignment.State.DONE, Assignment.State.WITHDRAWN]
+        )
 
 
 class Assignment(models.Model):

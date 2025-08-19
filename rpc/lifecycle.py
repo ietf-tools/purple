@@ -3,6 +3,8 @@
 
 from collections.abc import Iterable
 
+from .models import Assignment
+
 
 class Activity:
     prereqs: Iterable["Activity"] = ()
@@ -43,7 +45,7 @@ def complete_activities(rfctobe):
     """Get set of Activities that are completed for this doc"""
     role_map = {ca.role_slug: ca for ca in ACTIVITIES}
     completed_slugs = rfctobe.assignment_set.filter(
-        state="done",
+        state=Assignment.State.DONE,
         role__slug__in=role_map,
     ).values_list("role__slug", flat=True)
     return {role_map[slug] for slug in completed_slugs}
@@ -69,10 +71,14 @@ def pending_activities(rfctobe):
     # Get map from role slug to state
     state_map = dict(
         rfctobe.assignment_set.filter(role__slug__in=role_map)
-        .exclude(state="withdrawn")
+        .exclude(state=Assignment.State.WITHDRAWN)
         .values_list("role__slug", "state")
     )
     # need an assignment for any without a non-withdrawn Assignment
     need_assignment = ACTIVITIES - {role_map[slug] for slug in state_map}
-    completed = {role_map[slug] for slug, state in state_map.items() if state == "done"}
+    completed = {
+        role_map[slug]
+        for slug, state in state_map.items()
+        if state == Assignment.State.DONE
+    }
     return {activity for activity in need_assignment if activity.pending(completed)}
