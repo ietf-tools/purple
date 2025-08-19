@@ -279,13 +279,6 @@ class Capability(models.Model):
         return self.name
 
 
-ASSIGNMENT_STATE_CHOICES = (
-    ("assigned", "assigned"),
-    ("in progress", "in progress"),
-    ("done", "done"),
-)
-
-
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only active Assignments"""
@@ -295,14 +288,20 @@ class AssignmentQuerySet(models.QuerySet):
 class Assignment(models.Model):
     """Assignment of an RpcPerson to an RfcToBe"""
 
+    class State(models.TextChoices):
+        """Choices for the state field"""
+        ASSIGNED = "assigned"
+        IN_PROGRESS = "in_progress"
+        DONE = "done"
+
+    # Custom manager
     objects = AssignmentQuerySet.as_manager()
 
+    # Fields
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
     role = models.ForeignKey(RpcRole, on_delete=models.PROTECT)
-    state = models.CharField(
-        max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
-    )
+    state = models.CharField(max_length=32, choices=State, default=State.ASSIGNED)
     comment = models.TextField(blank=True)
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
 
