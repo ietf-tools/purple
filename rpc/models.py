@@ -155,12 +155,14 @@ class RfcToBe(models.Model):
 
     def incomplete_activities(self):
         from .lifecycle import incomplete_activities
+
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in incomplete_activities(self)]
         )
 
     def pending_activities(self):
         from .lifecycle import pending_activities
+
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in pending_activities(self)]
         )
