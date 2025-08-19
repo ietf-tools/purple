@@ -544,6 +544,7 @@ class LabelSerializer(serializers.ModelSerializer):
 class QueueItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="draft.name", read_only=True)
     rev = serializers.CharField(source="draft.rev", read_only=True)
+    pages = serializers.IntegerField(source="draft.pages", read_only=True)
     cluster = serializers.SerializerMethodField()
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
@@ -553,6 +554,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     requested_approvals = serializers.SerializerMethodField()
+    pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
     class Meta:
         model = RfcToBe
@@ -560,6 +562,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "rev",
+            "pages",
             "disposition",
             "external_deadline",
             "cluster",
@@ -567,6 +570,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "assignment_set",
             "actionholder_set",
             "requested_approvals",
+            "pending_activities",
         ]
 
     def get_cluster(self, rfc_to_be) -> int | None:
