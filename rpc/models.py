@@ -293,6 +293,7 @@ class Assignment(models.Model):
         ASSIGNED = "assigned"
         IN_PROGRESS = "in_progress"
         DONE = "done"
+        WITHDRAWN = "withdrawn"
 
     # Custom manager
     objects = AssignmentQuerySet.as_manager()
