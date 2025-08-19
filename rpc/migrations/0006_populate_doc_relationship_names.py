@@ -20,10 +20,19 @@ def forward(apps, schema_editor):
         used=True,
     )
 
+    DocRelationshipName.objects.create(
+        slug="withdrawnref",
+        name="Withdrawn Reference",
+        desc="Normative reference to a document that has been withdrawn from the queue",
+        used=True,
+    )
+
 
 def reverse(apps, schema_editor):
     DocRelationshipName = apps.get_model("rpc", "DocRelationshipName")
-    DocRelationshipName.objects.filter(slug__in=["missref", "refqueue"]).delete()
+    DocRelationshipName.objects.filter(
+        slug__in=["missref", "refqueue", "withdrawnref"]
+    ).delete()
 
 
 class Migration(migrations.Migration):

@@ -503,6 +503,7 @@ class ActionHolderSerializer(serializers.ModelSerializer):
             "deadline",
             "since_when",
             "comment",
+            "body",
         ]
 
     def get_name(self, actionholder) -> str:

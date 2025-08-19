@@ -16,7 +16,7 @@ from ...factories import (
     RfcToBeFactory,
     RpcPersonFactory,
 )
-from ...models import ClusterMember, Label, RfcToBe, RpcPerson
+from ...models import Assignment, ClusterMember, Label, RfcToBe, RpcPerson
 
 
 class Command(BaseCommand):
@@ -301,7 +301,7 @@ class Command(BaseCommand):
             rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-tasty-cheese"),
             role__slug="formatting",
             person=self.people["kstrawberry"],
-            state="in progress",
+            state=Assignment.State.IN_PROGRESS,
         )
 
         rfctobe = self._demo_rfctobe_factory(
@@ -317,7 +317,7 @@ class Command(BaseCommand):
             rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-where-is-my-hat"),
             role__slug="second_editor",
             person=self.people["sbexar"],
-            state="in progress",
+            state=Assignment.State.IN_PROGRESS,
         )
 
         self._demo_rfctobe_factory(
