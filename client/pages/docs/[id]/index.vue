@@ -31,9 +31,9 @@
         <!-- Status summary -->
         <BaseCard class="lg:col-start-3 lg:row-start-1 lg:row-span-1 grid place-items-stretch">
           <h2 class="sr-only">Status Summary</h2>
-          <div class="px-4 pt-6 sm:px-6">
+          <div class="px-0 pt-6 sm:px-6">
             <h3 class="text-base font-semibold leading-7">Current Assignments</h3>
-            <div class="mx-4 text-sm font-medium ">
+            <div class="text-sm font-medium">
               <div v-if="draftAssignments.length === 0">
                 None
               </div>
@@ -44,7 +44,8 @@
                   class="py-1 grid grid-cols-2">
                   <dt>{{ people.find(p => p.id === assignment.person)?.name }}</dt>
                   <dd class="relative">
-                    <BaseBadge class="absolute right-0" :label="assignment.role"/>
+                    <BaseBadge :label="assignment.role"/>
+                    <AssignmentState :state="assignment.state" />
                   </dd>
                 </div>
               </dl>
@@ -52,7 +53,7 @@
           </div>
           <div class="px-4 py-6 sm:px-6 text-gray-900 dark:text-neutral-300">
             <h3 class="text-base font-semibold leading-7 ">Queue Information (mocked)</h3>
-            <div class="mx-4 text-sm font-medium">
+            <div class="text-sm font-medium">
               <dl>
                 <div class="py-1 grid grid-cols-2">
                   <dt>Current State</dt>
@@ -85,7 +86,7 @@
 
         <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
 
-        <div class="flex w-full lg:col-span-2 border-2 border-black space-x-4">
+        <div class="flex w-full lg:col-span-2 space-x-4">
           <div class="flex flex-col">
             <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
             <div class="flex flex-row">
@@ -125,8 +126,8 @@
                     {{ entry.by.name }}
                   </NuxtLink>
                   <span v-else>
-                        {{ entry.by?.name }}
-                      </span>
+                    {{ entry.by?.name }}
+                  </span>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm">{{ entry.desc }}</td>
               </tr>
