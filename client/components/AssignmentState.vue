@@ -19,7 +19,7 @@ const color = computed((): ColorEnum => {
       return 'rose'
     case 'assigned':
       return 'blue'
-    case 'in progress':
+    case 'in_progress':
       return 'indigo'
     case 'done':
       return 'green'
