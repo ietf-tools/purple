@@ -1,7 +1,8 @@
-Django>=5.0
+Django>=5.2
 django-filter>=25.1
 rules>=3.5
 django-simple-history>=3.4
+django-stubs>=5.2
 djangorestframework>=3.14
 drf-spectacular>=0.27
 factory-boy>=3.3
