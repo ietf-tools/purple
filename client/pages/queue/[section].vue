@@ -44,29 +44,27 @@
             Filters
             <span class="text-md">&nbsp;</span>
           </legend>
-          <RpcCheckbox
-            id="needsAssignmentTristate"
-            label="Needs Assignment?"
-            size="small"
-            :checked="needsAssignmentTristate"
-            :has-indeterminate="true"
-            @change="(tristate) => needsAssignmentTristate = tristate"
-          />
-          <RpcCheckbox
-            id="hasExceptionTristate"
-            label="Has Exception?"
-            size="small"
-            :checked="hasExceptionTristate"
-            :has-indeterminate="true"
-            @change="(tristate) => hasExceptionTristate = tristate"
-          />
+          <div class="flex flex-col gap-1">
+            <RpcTristateButton
+              :checked="needsAssignmentTristate"
+              @change="(tristate) => needsAssignmentTristate = tristate"
+            >
+              Needs Assignment?
+            </RpcTristateButton>
+            <RpcTristateButton
+              :checked="hasExceptionTristate"
+              @change="(tristate) => hasExceptionTristate = tristate"
+            >
+              Has Exception?
+            </RpcTristateButton>
+          </div>
         </fieldset>
         <fieldset class="flex-1">
           <legend class="font-bold text-sm flex items-end">
             Label filters
             <span class="text-base">&nbsp;</span>
           </legend>
-          <div class="grid grid-cols-[repeat(auto-fill,10em)] gap-x-3">
+          <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 gap-y-1">
             <LabelsFilter
               v-model:all-label-filters="allLabelFilters"
               v-model:selected-label-filters="selectedLabelFilters"
@@ -103,10 +101,10 @@ import Fuse from 'fuse.js/basic'
 import { groupBy, uniqBy } from 'lodash-es'
 import { useSiteStore } from '@/stores/site'
 import Badge from '../../components/BaseBadge.vue'
-import { CHECKBOX_INDETERMINATE } from '~/utilities/checkbox'
-import type { CheckboxTristate } from '~/utilities/checkbox'
+import { TRISTATE_MIXED } from '~/utilities/tristate'
+import type { TristateValue } from '~/utilities/tristate'
 import type { Column, Row } from '~/components/DocumentTableTypes'
-import type { Assignment, Label, ActionHolder } from '~/purple_client'
+import type { ActionHolder, Assignment, Label, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
 
 // ROUTING
@@ -156,8 +154,8 @@ const tabs = [
 
 type TabId = (typeof tabs)[number]["id"]
 
-const needsAssignmentTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
-const hasExceptionTristate = ref<CheckboxTristate>(CHECKBOX_INDETERMINATE)
+const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
+const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
 
 // COMPUTED
 
@@ -272,6 +270,7 @@ const columns = computed(() => {
             ])
           )
         }
+
         return formattedValue
       },
       link: (row: any) => (row.assignee ? `/team/${row.assignee.id}` : '')
@@ -392,7 +391,7 @@ const filteredDocuments = computed(() => {
                 return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
               } else if(needsAssignmentTristate.value === false) {
                 return Boolean(d.assignmentSet?.length > 0)
-              } else if(needsAssignmentTristate.value === CHECKBOX_INDETERMINATE) {
+              } else if(needsAssignmentTristate.value === TRISTATE_MIXED) {
                 return true
               }
             }
@@ -403,7 +402,7 @@ const filteredDocuments = computed(() => {
                 return hasException
               } else if(hasExceptionTristate.value === false) {
                 return !hasException
-              } else if(hasExceptionTristate.value === CHECKBOX_INDETERMINATE) {
+              } else if(hasExceptionTristate.value === TRISTATE_MIXED) {
                 return true
               }
             }
@@ -416,7 +415,7 @@ const filteredDocuments = computed(() => {
           return entries.every(([labelIdStr, tristate]) => {
             const labelId = parseFloat(labelIdStr)
             switch(tristate) {
-              case CHECKBOX_INDETERMINATE:
+              case TRISTATE_MIXED:
                 return true
               case true:
                 return d.labels ? d.labels.some(label => label.id === labelId) : false
@@ -425,14 +424,12 @@ const filteredDocuments = computed(() => {
             }
           })
         })
-        .map((d: any) => {
-          return {
-            ...d,
-            currentState: d.assignmentSet.length > 0 ? `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})` : undefined,
-            assignee: d.assignmentSet[0],
-            holder: d.actionholderSet
-          }
-        })
+        .map((d: any) => ({
+          ...d,
+          currentState: d.assignmentSet.length > 0 ? `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})` : undefined,
+          assignee: d.assignmentSet[0],
+          holder: d.actionholderSet
+        }))
 
       break
     default:
@@ -496,7 +493,7 @@ const allLabelFilters = computed(() => {
   return usedUniqueLabels
 })
 
-const selectedLabelFilters = ref<Record<number, CheckboxTristate>>({})
+const selectedLabelFilters = ref<Record<number, TristateValue>>({})
 
 onMounted(() => {
   siteStore.search = ''
