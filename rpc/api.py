@@ -76,7 +76,7 @@ from .serializers import (
     SubmissionListItemSerializer,
     SubmissionSerializer,
     VersionInfoSerializer,
-    check_user_has_role,
+    check_user_has_role, RfcToBeHistorySerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
@@ -444,6 +444,13 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
+
+    @extend_schema(responses=RfcToBeHistorySerializer)
+    @action(detail=True)
+    def history(self, request, draft__name=None):
+        rfc_to_be = self.get_object()
+        serializer = RfcToBeHistorySerializer(rfc_to_be)
+        return Response(serializer.data)
 
 
 @extend_schema_with_draft_name()
