@@ -90,11 +90,13 @@ class HistoryRecord:
 
 class HistoryListSerializer(serializers.ListSerializer):
     def describe_model_delta(self, delta: ModelDelta):
-        method = (
-            getattr(self.parent, "describe_model_delta", None) if self.parent else None
-        )
-        if method is None:
-            return (
+        method_name = "describe_model_delta"
+        if hasattr(self.parent, method_name):
+            method = getattr(self.parent, method_name)
+        elif hasattr(self.child, method_name):
+            method = getattr(self.child, method_name)
+        else:
+            method = lambda change: (
                 f"{change.field} changed from {change.old} to {change.new}"
                 for change in delta.changes
             )
@@ -278,13 +280,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         return inst
 
 
-class RfcToBeHistorySerializer(serializers.ModelSerializer):
-    history = HistorySerializer(many=True, read_only=True)
-
-    class Meta:
-        model = RfcToBe
-        fields = ["id", "history"]
-
+class RfcToBeHistorySerializer(HistorySerializer):
     def describe_model_delta(self, delta: ModelDelta):
         for change in delta.changes:
             if change.field == "labels":

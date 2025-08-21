@@ -169,11 +169,8 @@ const draftName = computed(() => route.params.id.toString())
 
 const { data: history, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
   () => `history-${draftName.value}`,
-  async () => {
-    const response = await api.documentsHistoryRetrieve({ draftName: draftName.value })
-    return response.history
-  },
-  { server: false, lazy: true }
+  () => api.documentsHistoryList({ draftName: draftName.value }),
+  { server: false, lazy: false }
 )
 
 const { data: rawRfcToBe, status: rfcToBeStatus } = await useAsyncData(

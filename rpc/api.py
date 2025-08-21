@@ -445,11 +445,11 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
 
-    @extend_schema(responses=RfcToBeHistorySerializer)
+    @extend_schema(responses=RfcToBeHistorySerializer(many=True))
     @action(detail=True)
     def history(self, request, draft__name=None):
         rfc_to_be = self.get_object()
-        serializer = RfcToBeHistorySerializer(rfc_to_be)
+        serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
         return Response(serializer.data)
 
 
