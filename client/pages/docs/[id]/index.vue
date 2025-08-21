@@ -117,7 +117,7 @@
                </div>
              </div>
           </div>
-          <div v-else-if="historyStatus === 'success'" class="flex">
+          <div v-else-if="history && history.length > 0" class="flex">
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
@@ -176,7 +176,7 @@ const { data: history, status: historyStatus, refresh: historyRefresh } = await 
   { server: false, lazy: true }
 )
 
-const { data: rawRfcToBe, pending: rfcToBePending, refresh: rfcToBeRefresh } = await useAsyncData(
+const { data: rawRfcToBe, status: rfcToBeStatus } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false }
@@ -221,10 +221,8 @@ watch(
   selectedLabelIds,
   async () => api.documentsPartialUpdate({
     draftName: draftName.value,
-    patchedRfcToBe: {
-      labels: selectedLabelIds.value,
-    }
-  }),
+    patchedRfcToBe: { labels: selectedLabelIds.value } }
+  ).finally(historyRefresh),
   { deep: true }
 )
 
@@ -239,14 +237,4 @@ const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
   { server: false, default: () => [] }
 )
-
-async function saveLabels (labels: number[]) {
-  if (!rfcToBePending.value) {
-    await api.documentsPartialUpdate({
-      draftName: rfcToBe.value?.name ?? '',
-      patchedRfcToBe: { labels }
-    })
-  }
-  rfcToBeRefresh()
-}
 </script>
