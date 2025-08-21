@@ -274,11 +274,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             return None if cluster is None else cluster.number
         return None  # RfcToBe without draft cannot be a cluster member
 
-    def create(self, validated_data):
-        inst = super().create(validated_data)
-        update_change_reason(inst, "Added to the queue")
-        return inst
-
 
 class RfcToBeHistorySerializer(HistorySerializer):
     def describe_model_delta(self, delta: ModelDelta):
