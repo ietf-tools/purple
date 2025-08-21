@@ -101,8 +101,23 @@
 
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
-          <h3 class="text-base font-semibold leading-7">History</h3>
-          <div class="flex">
+          <h3 class="text-base font-semibold leading-7">
+            History
+            <Icon v-show="historyStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+          </h3>
+          <div v-if="historyStatus === 'error'">
+            <div class="rounded-md bg-yellow-50 p-4 dark:bg-yellow-500/10 dark:outline dark:outline-yellow-500/15">
+               <div class="flex">
+                 <div class="ml-3">
+                   <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-100">Error loading history</h3>
+                   <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-100/80">
+                     <p>Please try reloading and report the error if it persists.</p>
+                   </div>
+                 </div>
+               </div>
+             </div>
+          </div>
+          <div v-else-if="historyStatus === 'success'" class="flex">
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
@@ -112,7 +127,7 @@
               </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
-              <tr v-for="entry of rfcToBe?.history ?? []" :key="entry.id">
+              <tr v-for="entry of history ?? []" :key="entry.id">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
                   <time :datetime="DateTime.fromJSDate(entry.time).toString()">
                     {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
@@ -143,6 +158,7 @@
 <script setup lang="ts">
 
 import { DateTime } from 'luxon'
+import { useAsyncData } from '#app'
 
 const route = useRoute()
 const api = useApi()
@@ -150,6 +166,15 @@ const api = useApi()
 // COMPUTED
 
 const draftName = computed(() => route.params.id.toString())
+
+const { data: history, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
+  () => `history-${draftName.value}`,
+  async () => {
+    const response = await api.documentsHistoryRetrieve({ draftName: draftName.value })
+    return response.history
+  },
+  { server: false, lazy: true }
+)
 
 const { data: rawRfcToBe, pending: rfcToBePending, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
