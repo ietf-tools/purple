@@ -298,7 +298,7 @@ const columns = computed(() => {
           label: 'Pending Activities',
           field: 'pendingActivities',
           format: (val: any) => {
-            return String(val.name)
+            return h(Badge, { label: val.name })
           }
         },
         {
