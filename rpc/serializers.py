@@ -236,9 +236,15 @@ class DraftSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class SimpleClusterSerializer(serializers.ModelSerializer):
+    """Serialize a cluster without its contents"""
+    class Meta:
+        model = Cluster
+        fields = ["number"]
+
 class RfcToBeSerializer(serializers.ModelSerializer):
     draft = DraftSerializer(read_only=True)
-    cluster = serializers.SerializerMethodField()
+    cluster = SimpleClusterSerializer(read_only=True)
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     authors = RfcAuthorSerializer(many=True)
@@ -267,12 +273,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "pending_activities",
         ]
         read_only_fields = ["id", "draft"]
-
-    def get_cluster(self, rfc_to_be) -> int | None:
-        if rfc_to_be.draft:
-            cluster = rfc_to_be.draft.cluster_set.first()
-            return None if cluster is None else cluster.number
-        return None  # RfcToBe without draft cannot be a cluster member
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
@@ -522,7 +522,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="draft.name", read_only=True)
     rev = serializers.CharField(source="draft.rev", read_only=True)
     pages = serializers.IntegerField(source="draft.pages", read_only=True)
-    cluster = serializers.SerializerMethodField()
+    cluster = SimpleClusterSerializer(read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
         source="assignment_set.active", many=True, read_only=True
@@ -549,12 +549,6 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "requested_approvals",
             "pending_activities",
         ]
-
-    def get_cluster(self, rfc_to_be) -> int | None:
-        if rfc_to_be.draft:
-            cluster = rfc_to_be.draft.cluster_set.first()
-            return None if cluster is None else cluster.number
-        return None  # RfcToBe without draft cannot be a cluster member
 
     def get_requested_approvals(self, rfc_to_be) -> list:
         return []  # todo return a value

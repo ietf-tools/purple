@@ -150,6 +150,11 @@ class RfcToBe(models.Model):
         self._warn_if_not_april1_rfc()
         return "<No title>"
 
+    # Easier interface to the cluster_set
+    @property
+    def cluster(self) -> "Cluster | None":
+        return self.draft.cluster_set.first() if self.draft else None
+
     @dataclass
     class Interval:
         start: datetime.datetime
