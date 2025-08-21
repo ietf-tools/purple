@@ -3,16 +3,16 @@
     <template #header>
       <CardHeader title="Document Info" />
     </template>
-    <div v-if="draft">
+    <div v-if="rfcToBe">
       <DescriptionList>
-        <DescriptionListItem term="Title" :details="draft.title" />
+        <DescriptionListItem term="Title" :details="rfcToBe.title" />
         <DescriptionListItem term="Authors">
           <DescriptionListDetails>
             <div class="mx-4 text-sm font-medium">
-              <div v-if="draft.authors.length === 0">None</div>
+              <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else>
                 <div
-                  v-for="author of draft.authors"
+                  v-for="author of rfcToBe.authors"
                   :key="author.id"
                   class="py-1 grid grid-cols-2"
                 >
@@ -27,7 +27,7 @@
         </DescriptionListItem>
         <DescriptionListItem
           term="Submitted Pages"
-          :details="draft.pages?.toString()"
+          :details="rfcToBe.draft.pages?.toString()"
         />
         <DescriptionListItem
           term="Document Shepherd"
@@ -35,9 +35,9 @@
         />
         <DescriptionListItem term="Stream">
           <DescriptionListDetails>
-            {{ draft.stream }}
-            <span v-if="draft.submittedStream !== draft.stream">
-              (submitted as {{ draft.submittedStream }})
+            {{ rfcToBe.intendedStream }}
+            <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
+              (submitted as {{ rfcToBe.submittedStream }})
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -47,27 +47,27 @@
         />
         <DescriptionListItem
           term="Submitted Format"
-          :details="draft.submittedFormat"
+          :details="rfcToBe.submittedFormat"
         />
         <DescriptionListItem term="Submitted Boilerplate">
           <DescriptionListDetails
-            >{{ draft.intendedBoilerplate }}
+            >{{ rfcToBe.intendedBoilerplate }}
             <span
-              v-if="draft.submittedBoilerplate !== draft.intendedBoilerplate"
+              v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate"
             >
-              (submitted as {{ draft.submittedBoilerplate }})
+              (submitted as {{ rfcToBe.submittedBoilerplate }})
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level">
           <DescriptionListDetails>
-            {{ draft.intendedStdLevel }}
-            <span v-if="draft.submittedStdLevel !== draft.intendedStdLevel">
-              (submitted as {{ draft.submittedStdLevel }})
+            {{ rfcToBe.intendedStdLevel }}
+            <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
+              (submitted as {{ rfcToBe.submittedStdLevel }})
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Disposition" :details="draft.disposition" />
+        <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" />
       </DescriptionList>
     </div>
   </BaseCard>
@@ -77,7 +77,7 @@
 import type { RfcToBe } from '~/purple_client'
 
 type Props = {
-  draft: RfcToBe | null
+  rfcToBe: RfcToBe | null
 }
 
 defineProps<Props>()

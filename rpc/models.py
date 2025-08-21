@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import logging
 from dataclasses import dataclass
 from itertools import pairwise
 
@@ -17,6 +18,8 @@ from .dt_v1_api_utils import (
     datatracker_streamname,
 )
 from .rules import is_comment_author, is_rpc_person
+
+logger = logging.getLogger(__name__)
 
 
 class DumpInfo(models.Model):
@@ -122,6 +125,30 @@ class RfcToBe(models.Model):
         return (
             f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
         )
+
+    def _warn_if_not_april1_rfc(self):
+        """Emit a warning if called with a non-April-first RFC"""
+        if not self.is_april_first_rfc:
+            logger.warning(
+                f"Warning! RfcToBe(pk={self.pk}) has no draft and is not an April 1st RFC"
+            )
+
+    # Properties that we currently only get from our draft
+    @property
+    def name(self) -> str:
+        if self.draft:
+            return self.draft.name
+        self._warn_if_not_april1_rfc()
+        if self.rfc_number is not None:
+            return f"RFC {self.rfc_number}"
+        return f"<RfcToBe {self.pk}>"
+
+    @property
+    def title(self) -> str:
+        if self.draft:
+            return self.draft.title
+        self._warn_if_not_april1_rfc()
+        return "<No title>"
 
     @dataclass
     class Interval:

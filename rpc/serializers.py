@@ -222,16 +222,23 @@ class RpcRoleSerializer(serializers.ModelSerializer):
         fields = ["slug", "name", "desc"]
 
 
+class DraftSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Document
+        fields = [
+            "name",
+            "rev",
+            "title",
+            "pages",
+        ]
+        read_only_fields = fields
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-    rev = serializers.SerializerMethodField()
-    title = serializers.SerializerMethodField()
-    stream = serializers.SerializerMethodField()
-    pages = serializers.SerializerMethodField()
+    draft = DraftSerializer(read_only=True)
     cluster = serializers.SerializerMethodField()
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
-    history = HistorySerializer(many=True, read_only=True)
     authors = RfcAuthorSerializer(many=True)
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
@@ -239,12 +246,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         model = RfcToBe
         fields = [
             "id",
-            "draft",
             "name",
-            "rev",
             "title",
-            "stream",
-            "pages",
+            "draft",
             "disposition",
             "external_deadline",
             "internal_goal",
@@ -257,36 +261,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "intended_boilerplate",
             "intended_std_level",
             "intended_stream",
-            "history",
             "authors",
             "pending_activities",
         ]
         read_only_fields = ["id", "draft"]
-
-    def get_name(self, rfc_to_be) -> str:
-        return (
-            rfc_to_be.draft.name if rfc_to_be.draft else "Some Apr 1 RFC"
-        )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
-
-    def get_rev(self, rfc_to_be) -> str:
-        return (
-            rfc_to_be.draft.rev if rfc_to_be.draft else "none"
-        )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
-
-    def get_title(self, rfc_to_be) -> str:
-        return (
-            rfc_to_be.draft.title if rfc_to_be.draft else "Some Apr 1 RFC"
-        )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
-
-    def get_stream(self, rfc_to_be) -> str:
-        return (
-            rfc_to_be.draft.stream if rfc_to_be.draft else "ISE"
-        )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
-
-    def get_pages(self, rfc_to_be) -> int:
-        return (
-            rfc_to_be.draft.pages if rfc_to_be.draft else 0
-        )  # TODO: reconcile when we teach the app to handle Apr 1 RFCs
 
     def get_cluster(self, rfc_to_be) -> int | None:
         if rfc_to_be.draft:
@@ -298,6 +276,14 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         inst = super().create(validated_data)
         update_change_reason(inst, "Added to the queue")
         return inst
+
+
+class RfcToBeHistorySerializer(serializers.ModelSerializer):
+    history = HistorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = RfcToBe
+        fields = ["id", "history"]
 
     def describe_model_delta(self, delta: ModelDelta):
         for change in delta.changes:

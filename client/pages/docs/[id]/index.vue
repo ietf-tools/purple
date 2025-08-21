@@ -15,9 +15,9 @@
           <div class="flex items-center gap-x-6 text-gray-900 dark:text-white">
             <Icon name="solar:document-text-line-duotone" class="w-10 h-10"/>
             <h1>
-              <div class="mt-1 text-xl font-semibold leading-6">
-                <span v-if="draft">{{ draft.name }}-{{ draft.rev }}</span>
-              </div>
+              <span class="mt-1 text-xl font-semibold leading-6">
+                <span v-if="rfcToBe">{{ rfcToBe.name }}</span>
+              </span>
             </h1>
           </div>
         </div>
@@ -34,12 +34,12 @@
           <div class="px-0 pt-6 sm:px-6">
             <h3 class="text-base font-semibold leading-7">Current Assignments</h3>
             <div class="text-sm font-medium">
-              <div v-if="draftAssignments.length === 0">
+              <div v-if="rfcToBeAssignments.length === 0">
                 None
               </div>
               <dl v-else>
                 <div
-                  v-for="assignment of draftAssignments"
+                  v-for="assignment of rfcToBeAssignments"
                   :key="assignment.id"
                   class="py-1 grid grid-cols-2">
                   <dt>{{ people.find(p => p.id === assignment.person)?.name }}</dt>
@@ -63,8 +63,8 @@
                   <!-- Showing externalDeadline here - what about internal_goal? -->
                   <dt>Deadline</dt>
                   <dd>
-                    <time v-if="draft?.externalDeadline" :datetime="draft.externalDeadline.toISODate()?.toString()">
-                      {{ draft.externalDeadline.toLocaleString(DateTime.DATE_MED) }}
+                    <time v-if="rfcToBe?.externalDeadline" :datetime="rfcToBe.externalDeadline.toISODate()?.toString()">
+                      {{ rfcToBe.externalDeadline.toLocaleString(DateTime.DATE_MED) }}
                     </time>
                     <span v-else>-</span>
                   </dd>
@@ -82,9 +82,9 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :draft="rawDraft"/>
+        <DocInfoCard :rfc-to-be="rawRfcToBe"/>
 
-        <EditAuthors v-if="draft" :draft-name="draftName" v-model="draft"/>
+        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe"/>
 
         <div class="flex w-full lg:col-span-2 space-x-4">
           <div class="flex flex-col">
@@ -112,7 +112,7 @@
               </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
-              <tr v-for="entry of draft?.history ?? []" :key="entry.id">
+              <tr v-for="entry of rfcToBe?.history ?? []" :key="entry.id">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
                   <time :datetime="DateTime.fromJSDate(entry.time).toString()">
                     {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
@@ -151,23 +151,23 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
-const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
+const { data: rawRfcToBe, pending: rfcToBePending, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false }
 )
 
-const appliedLabels = computed(() => labels.value.filter((lbl) => rawDraft.value?.labels.includes(lbl.id)))
+const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
 
-const draftAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === draft.value?.id))
+const rfcToBeAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id))
 
-const draft = computed(() => {
-  if (rawDraft.value) {
+const rfcToBe = computed(() => {
+  if (rawRfcToBe.value) {
     return {
-      ...rawDraft.value,
+      ...rawRfcToBe.value,
       externalDeadline:
-        rawDraft.value.externalDeadline
-          ? DateTime.fromJSDate(rawDraft.value.externalDeadline)
+        rawRfcToBe.value.externalDeadline
+          ? DateTime.fromJSDate(rawRfcToBe.value.externalDeadline)
           : null
     }
   }
@@ -190,7 +190,7 @@ const labels3 = computed(
   () => labels.value.filter((label) => label.used && !label.isComplexity)
 )
 
-const selectedLabelIds = ref(draft.value?.labels ?? [])
+const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
 
 watch(
   selectedLabelIds,
@@ -216,12 +216,12 @@ const { data: people } = await useAsyncData(
 )
 
 async function saveLabels (labels: number[]) {
-  if (!draftPending.value) {
+  if (!rfcToBePending.value) {
     await api.documentsPartialUpdate({
-      draftName: draft.value?.name ?? '',
+      draftName: rfcToBe.value?.name ?? '',
       patchedRfcToBe: { labels }
     })
   }
-  draftRefresh()
+  rfcToBeRefresh()
 }
 </script>

@@ -5,7 +5,7 @@
 
     <div class="space-y-4">
       <div class="flex flex-row">
-        <DocInfoCard :draft="rfcToBe" />
+        <DocInfoCard :rfc-to-be="rfcToBe" />
         <EditAuthors v-if="rfcToBe" :draft-name="id" v-model="rfcToBe"/>
       </div>
 

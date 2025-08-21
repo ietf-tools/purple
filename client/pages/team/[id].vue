@@ -17,8 +17,9 @@
               src="https://i.pravatar.cc/150?img=5" alt=""
               class="h-16 w-16 flex-none rounded-full ring-1 ring-gray-900/10">
             <h1>
-              <div class="mt-1 text-xl font-semibold leading-6 text-gray-900 dark:text-white">Ada Lovelace</div>
-              <div class="text-sm leading-6 text-gray-500 dark:text-neutral-400">ada.lovelace@ietf.org</div>
+              <span class="mt-1 text-xl font-semibold leading-6 text-gray-900 dark:text-white">Ada Lovelace</span>
+              <br>
+              <span class="text-sm leading-6 text-gray-500 dark:text-neutral-400">ada.lovelace@ietf.org</span>
             </h1>
           </div>
           <div class="flex items-center gap-x-4 sm:gap-x-6">
