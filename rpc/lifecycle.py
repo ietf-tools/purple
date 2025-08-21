@@ -21,7 +21,8 @@ class CompletedAssignment(Activity):
             self.prereqs = prereqs
 
 
-FORMATTING = CompletedAssignment("formatting")
+ENQUEUER = CompletedAssignment("enqueuer")
+FORMATTING = CompletedAssignment("formatting", (ENQUEUER,))
 FIRST_EDITOR = CompletedAssignment("first_editor", (FORMATTING,))
 SECOND_EDITOR = CompletedAssignment("second_editor", (FIRST_EDITOR,))
 REF_CHECKER = CompletedAssignment("ref_checker", (FORMATTING,))
@@ -31,6 +32,7 @@ FINAL_REVIEW_EDITOR = CompletedAssignment(
 PUBLISHER = CompletedAssignment("publisher", (FINAL_REVIEW_EDITOR,))
 
 ACTIVITIES = {
+    ENQUEUER,
     FORMATTING,
     FIRST_EDITOR,
     SECOND_EDITOR,
