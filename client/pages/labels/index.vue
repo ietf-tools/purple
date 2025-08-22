@@ -70,13 +70,8 @@ const { openOverlayModal } = val
 
 async function addLabel () {
   try {
-    await openOverlayModal({
-      component: RpcLabelEditDialog,
-      componentProps: {
-        // absent id => create a new label
-        label: { slug: '', isException: false, color: 'slate' }
-      }
-    })
+    // Empty componentProps => create a new label
+    await openOverlayModal({ component: RpcLabelEditDialog })
   } catch {
     snackbar.add({
       type: 'info',
