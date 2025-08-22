@@ -8,7 +8,10 @@
         <button type="button" class="block rounded-md bg-indigo-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600" @click="addLabel()">Add Label</button>
       </div>
     </div>
-    <div class="mt-8 flow-root">
+    <ErrorAlert v-if="labelsError" title="API Error">
+      API error while requesting labels: {{ labelsError }}
+    </ErrorAlert>
+    <div v-else class="mt-8 flow-root">
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
         <div class="inline-block min-w-fit py-2 align-middle sm:px-6 lg:px-8">
           <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
@@ -47,18 +50,8 @@ const snackbar = useSnackbar()
 
 const sortedLabels = computed(() => labels.value?.toSorted((a, b) => a.slug.localeCompare(b.slug, 'en')) ?? [])
 
-const { data: labels, refresh } = await useAsyncData(
-  async () => {
-    try {
-      return await api.labelsList()
-    } catch (error) {
-      snackbar.add({
-        type: 'error',
-        title: 'Fetch Failed',
-        text: error
-      })
-    }
-  },
+const { data: labels, error: labelsError, refresh } = await useAsyncData(
+  () => api.labelsList(),
   { server: false }
 )
 
