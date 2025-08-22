@@ -530,7 +530,6 @@ class QueueItemSerializer(serializers.ModelSerializer):
     actionholder_set = ActionHolderSerializer(
         source="actionholder_set.active", many=True, read_only=True
     )
-    requested_approvals = serializers.SerializerMethodField()
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -546,12 +545,8 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "labels",
             "assignment_set",
             "actionholder_set",
-            "requested_approvals",
             "pending_activities",
         ]
-
-    def get_requested_approvals(self, rfc_to_be) -> list:
-        return []  # todo return a value
 
 
 class ClusterMemberListSerializer(serializers.ListSerializer):
