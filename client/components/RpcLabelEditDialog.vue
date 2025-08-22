@@ -43,8 +43,9 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label for="is-exception" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Is
-            Exception</label>
+          <label for="is-exception" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            Is Exception
+          </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <input
               id="is-exception" v-model="label.isException" name="is-exception" type="checkbox"
@@ -54,8 +55,9 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label for="is-complexity" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Is
-            Complexity</label>
+          <label for="is-complexity" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            Is Complexity
+          </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <input
               id="is-complexity" v-model="label.isComplexity" name="is-complexity" type="checkbox"
@@ -75,8 +77,18 @@
           </div>
         </div>
 
+        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+          <label for="is-used" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            May be Used
+          </label>
+          <div class="mt-2 sm:col-span-2 sm:mt-0">
+            <input
+              id="is-used" v-model="label.used" name="is-used" type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
+            <p class="text-gray-500">This label is still in use.</p>
+          </div>
+        </div>
       </div>
-
     </div>
 
   </form>
@@ -96,27 +108,26 @@ if (!_overlayModalMethods) {
 const { ok, cancel } = _overlayModalMethods
 const snackbar = useSnackbar()
 
-type Props = {
-  label: Label
-  create: boolean
+type Props = { label: Label | undefined }
+const props = defineProps<Props>()
+
+const NEW_LABEL_DEFAULTS: Label = {
+  slug: '',
+  isException: false,
+  color: 'slate',
+  used: true
 }
 
-const props = defineProps<Props>()
-const label = reactive(props.label)
+const label = reactive<Label>(
+  props.label ? { ...props.label } : NEW_LABEL_DEFAULTS
+)
 
-async function save () {
-  const labelData: Label = {
-    id: 0, // FIXME: is this ok?
-    slug: label.slug,
-    isException: label.isException,
-    isComplexity: label.isComplexity,
-    color: label.color
-  }
+async function save() {
   try {
-    if (props.create) {
-      await api.labelsCreate({ label: labelData })
+    if (label.id === undefined) {
+      await api.labelsCreate({ label })
     } else {
-      await api.labelsUpdate({ id: label.id, label: labelData })
+      await api.labelsUpdate({ id: label.id, label })
     }
   } catch {
     snackbar.add({
