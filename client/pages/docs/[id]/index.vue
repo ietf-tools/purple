@@ -103,8 +103,8 @@
           </div>
         </div>
 
-        <div v-if="rawDraft?.id" class="lg:col-span-full grid place-items-stretch">
-          <DocumentDependencies v-model="relatedDocuments" :id="rawDraft.id" :draft-name="draftName"></DocumentDependencies>
+        <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
+          <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName"></DocumentDependencies>
         </div>
 
         <!-- History -->
