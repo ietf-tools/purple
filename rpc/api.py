@@ -68,6 +68,7 @@ from .serializers import (
     NestedAssignmentSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
+    RfcToBeHistorySerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
@@ -76,7 +77,7 @@ from .serializers import (
     SubmissionListItemSerializer,
     SubmissionSerializer,
     VersionInfoSerializer,
-    check_user_has_role, RfcToBeHistorySerializer,
+    check_user_has_role,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 

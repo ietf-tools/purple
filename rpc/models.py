@@ -130,7 +130,8 @@ class RfcToBe(models.Model):
         """Emit a warning if called with a non-April-first RFC"""
         if not self.is_april_first_rfc:
             logger.warning(
-                f"Warning! RfcToBe(pk={self.pk}) has no draft and is not an April 1st RFC"
+                f"Warning! RfcToBe(pk={self.pk}) has no draft "
+                "and is not an April 1st RFC"
             )
 
     # Properties that we currently only get from our draft
