@@ -105,23 +105,6 @@
               </div>
             </div>
           </div>
-
-          <!-- LABELS -->
-          <div class="col-span-full">
-            <div class="mt-2">
-              <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-                <h2 class="text-base font-semibold leading-6 text-gray-900">Labels</h2>
-                <div class="flex">
-                  <div v-for="lbl of state.labels" :key="lbl" class="flex-shrink-0 p-1">
-                    <RpcLabel v-if="labels" :label="labels.find(l => l.id === lbl)"/>
-                  </div>
-                </div>
-              </div>
-              <div class="max-w-xl">
-                <RpcLabelPicker v-model="state.labels" :labels="labels" item-label="slug"/>
-              </div>
-            </div>
-          </div>
         </form>
       </BaseCard>
     </div>

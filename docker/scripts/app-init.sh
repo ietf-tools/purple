@@ -40,6 +40,9 @@ cd ..
 echo "Running migrations..."
 ./manage.py migrate --no-input || true
 
+echo "Populating initial history..."
+./manage.py populate_history --auto || true
+
 # Collect statics
 ./manage.py collectstatic --no-input || true
 

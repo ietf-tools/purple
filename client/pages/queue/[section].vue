@@ -294,9 +294,12 @@ const columns = computed(() => {
     cols.push(
       ...[
         {
-          key: 'currentState',
-          label: 'Current State',
-          field: 'currentState'
+          key: 'pendingActivities',
+          label: 'Pending Activities',
+          field: 'pendingActivities',
+          format: (val: any) => {
+            return h(Badge, { label: val.name })
+          }
         },
         {
           key: 'estimatedCompletion',
@@ -427,7 +430,7 @@ const filteredDocuments = computed(() => {
         })
         .map((d: any) => ({
           ...d,
-          currentState: d.assignmentSet.length > 0 ? `${d.assignmentSet[0].role} (${d.assignmentSet[0].state})` : undefined,
+          pendingActivities: d.pendingActivities,
           assignee: d.assignmentSet[0],
           holder: d.actionholderSet
         }))
