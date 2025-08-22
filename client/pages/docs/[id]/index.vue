@@ -25,10 +25,11 @@
     </header>
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div v-if="rawRfcToBeError" class="bg-red-300 px-4 py-2 mb-4">
+      <ErrorAlert v-if="rawRfcToBeError" title="API Error">
         API error while requesting draft: {{ rawRfcToBeError }}
-      </div>
+      </ErrorAlert>
       <div
+        v-else
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
 
         <!-- Status summary -->
@@ -113,16 +114,10 @@
             <Icon v-show="historyStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
           </h3>
           <div v-if="historyStatus === 'error'">
-            <div class="rounded-md bg-yellow-50 p-4 dark:bg-yellow-500/10 dark:outline dark:outline-yellow-500/15">
-               <div class="flex">
-                 <div class="ml-3">
-                   <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-100">Error loading history</h3>
-                   <div class="mt-2 text-sm text-yellow-700 dark:text-yellow-100/80">
-                     <p>Please try reloading and report the error if it persists.</p>
-                   </div>
-                 </div>
-               </div>
-             </div>
+            <ErrorAlert title="Error loading history">
+              <p v-if="historyError">{{ historyError }}</p>
+              <p v-else>Please try reloading and report the error if it persists.</p>
+            </ErrorAlert>
           </div>
           <div v-else-if="history && history.length > 0" class="flex">
             <table class="min-w-full divide-y divide-gray-300">
@@ -174,7 +169,7 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
-const { data: history, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
+const { data: history, error: historyError, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
   () => `history-${draftName.value}`,
   () => api.documentsHistoryList({ draftName: draftName.value }),
   { server: false, lazy: false }
