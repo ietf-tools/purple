@@ -176,6 +176,52 @@ class HistoryLastEditSerializer(serializers.Serializer):
         super().__init__(instance, data, **kwargs)
 
 
+class ActionHolderSerializer(serializers.ModelSerializer):
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ActionHolder
+        fields = [
+            "name",
+            "deadline",
+            "since_when",
+            "comment",
+            "body",
+        ]
+
+    def get_name(self, actionholder) -> str:
+        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
+
+
+class AssignmentSerializer(serializers.ModelSerializer):
+    """Assignment serializer with PK reference to RfcToBe"""
+
+    class Meta:
+        model = Assignment
+        fields = [
+            "id",
+            "rfc_to_be",
+            "person",
+            "role",
+            "state",
+            "comment",
+            "time_spent",
+        ]
+
+
+class LabelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Label
+        fields = [
+            "id",
+            "slug",
+            "is_exception",
+            "is_complexity",
+            "color",
+            "used",
+        ]
+
+
 class RfcAuthorSerializer(serializers.ModelSerializer):
     name = serializers.CharField(source="datatracker_person.plain_name", read_only=True)
     email = serializers.EmailField(source="datatracker_person.email", read_only=True)
@@ -242,16 +288,57 @@ class DraftSerializer(serializers.ModelSerializer):
 
 class SimpleClusterSerializer(serializers.ModelSerializer):
     """Serialize a cluster without its contents"""
+
     class Meta:
         model = Cluster
         fields = ["number"]
 
+
+class QueueItemSerializer(serializers.ModelSerializer):
+    """RfcToBe serializer suitable for displaying a queue of many"""
+
+    pages = serializers.IntegerField(source="draft.pages", read_only=True)
+    cluster = SimpleClusterSerializer(read_only=True)
+    labels = LabelSerializer(many=True, read_only=True)
+    assignment_set = AssignmentSerializer(
+        source="assignment_set.active", many=True, read_only=True
+    )
+    actionholder_set = ActionHolderSerializer(
+        source="actionholder_set.active", many=True, read_only=True
+    )
+    pending_activities = RpcRoleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = RfcToBe
+        fields = [
+            "id",
+            "name",
+            "pages",
+            "disposition",
+            "external_deadline",
+            "internal_goal",
+            "labels",
+            "cluster",
+            "assignment_set",
+            "actionholder_set",
+            "pending_activities",
+        ]
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
+    """RfcToBeSerializer suitable for displaying full details of a single instance"""
+
     draft = DraftSerializer(read_only=True)
     cluster = SimpleClusterSerializer(read_only=True)
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     authors = RfcAuthorSerializer(many=True)
+    assignment_set = AssignmentSerializer(
+        source="assignment_set.active", many=True, read_only=True
+    )
+    actionholder_set = ActionHolderSerializer(
+        source="actionholder_set.active", many=True, read_only=True
+    )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
     class Meta:
@@ -274,6 +361,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "intended_std_level",
             "intended_stream",
             "authors",
+            "assignment_set",
+            "actionholder_set",
             "pending_activities",
         ]
         read_only_fields = ["id", "draft"]
@@ -345,6 +434,12 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
         inst = super().create(validated_data | extra_data)
         update_change_reason(inst, "Added to the queue")
         return inst
+
+
+class NestedAssignmentSerializer(AssignmentSerializer):
+    """Assignment serializer with nested RfcToBe details"""
+
+    rfc_to_be = RfcToBeSerializer(read_only=True)
 
 
 class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
@@ -472,85 +567,6 @@ class RpcPersonSerializer(serializers.ModelSerializer):
             rpc_person.datatracker_person.datatracker_id, None
         )
         return cached_name or rpc_person.datatracker_person.plain_name
-
-
-class ActionHolderSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
-
-    class Meta:
-        model = ActionHolder
-        fields = [
-            "name",
-            "deadline",
-            "since_when",
-            "comment",
-            "body",
-        ]
-
-    def get_name(self, actionholder) -> str:
-        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
-
-
-class AssignmentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Assignment
-        fields = [
-            "id",
-            "rfc_to_be",
-            "person",
-            "role",
-            "state",
-            "comment",
-            "time_spent",
-        ]
-
-
-class NestedAssignmentSerializer(AssignmentSerializer):
-    rfc_to_be = RfcToBeSerializer(read_only=True)
-
-
-class LabelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Label
-        fields = [
-            "id",
-            "slug",
-            "is_exception",
-            "is_complexity",
-            "color",
-            "used",
-        ]
-
-
-class QueueItemSerializer(serializers.ModelSerializer):
-    name = serializers.CharField(source="draft.name", read_only=True)
-    rev = serializers.CharField(source="draft.rev", read_only=True)
-    pages = serializers.IntegerField(source="draft.pages", read_only=True)
-    cluster = SimpleClusterSerializer(read_only=True)
-    labels = LabelSerializer(many=True, read_only=True)
-    assignment_set = AssignmentSerializer(
-        source="assignment_set.active", many=True, read_only=True
-    )
-    actionholder_set = ActionHolderSerializer(
-        source="actionholder_set.active", many=True, read_only=True
-    )
-    pending_activities = RpcRoleSerializer(many=True, read_only=True)
-
-    class Meta:
-        model = RfcToBe
-        fields = [
-            "id",
-            "name",
-            "rev",
-            "pages",
-            "disposition",
-            "external_deadline",
-            "cluster",
-            "labels",
-            "assignment_set",
-            "actionholder_set",
-            "pending_activities",
-        ]
 
 
 class ClusterMemberListSerializer(serializers.ListSerializer):
