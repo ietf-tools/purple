@@ -4,6 +4,10 @@
       summary="Ready the incoming document for the editing queue." />
 
     <div class="space-y-4">
+      <div v-if="rfcToBeError" class="bg-red-300 px-4 py-2 mb-4">
+        API error while requesting draft: {{ rfcToBeError }}
+      </div>
+
       <div class="flex flex-row">
         <DocInfoCard :draft="rfcToBe" />
         <EditAuthors v-if="rfcToBe" :draft-name="id" v-model="rfcToBe"/>
@@ -21,7 +25,9 @@
           <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
         </div>
       </div>
-      <DocumentDependencies v-model="relatedDocuments" :draft-name="id" ></DocumentDependencies>
+      <div v-if="rfcToBe?.id">
+        <DocumentDependencies v-model="relatedDocuments" :id="rfcToBe.id" :draft-name="id"></DocumentDependencies>
+      </div>
       <BaseCard>
         <template #header>
           <CardHeader title="Comments" />
@@ -52,12 +58,11 @@ import type { CookedDraft } from '~/utilities/rpc'
 const route = useRoute()
 const api = useApi()
 
-
 const id = computed(() => route.params.id.toString())
 
 const rfcToBeKey = computed(() => `rfcToBe-${id.value}`)
 
-const { data: rfcToBe } = await useAsyncData<RfcToBe>(
+const { data: rfcToBe, error: rfcToBeError } = await useAsyncData<RfcToBe>(
   rfcToBeKey,
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
   { server: false }

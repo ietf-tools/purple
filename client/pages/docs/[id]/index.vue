@@ -25,6 +25,9 @@
     </header>
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div v-if="rawDraftError" class="bg-red-300 px-4 py-2 mb-4">
+        API error while requesting draft: {{ rawDraftError }}
+      </div>
       <div
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
 
@@ -99,6 +102,10 @@
           </div>
         </div>
 
+        <div v-if="rawDraft?.id" class="lg:col-span-full grid place-items-stretch">
+          <DocumentDependencies v-model="relatedDocuments" :id="rawDraft.id" :draft-name="draftName"></DocumentDependencies>
+        </div>
+
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">History</h3>
@@ -151,7 +158,7 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
-const { data: rawDraft, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
+const { data: rawDraft, error: rawDraftError, pending: draftPending, refresh: draftRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false }
@@ -213,6 +220,19 @@ const { data: assignments } = await useAsyncData(
 const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
   { server: false, default: () => [] }
+)
+
+const relatedDocumentsKey = computed(() => `references-${draftName.value}`)
+
+const { data: relatedDocuments } = await useAsyncData(
+  relatedDocumentsKey,
+  () => api.documentsReferencesList({
+    draftName: draftName.value
+  }),
+  {
+    default: () => [],
+    server: false,
+  }
 )
 
 async function saveLabels (labels: number[]) {
