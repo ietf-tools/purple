@@ -332,7 +332,7 @@ const columns = computed(() => {
       field: 'cluster',
       format: (value: any) => value?.number,
       icon: 'pajamas:group',
-      link: (val: any) => (val.cluster ? `/clusters/${val.cluster.number}` : '')
+      link: (val: any) => (val?.cluster ? `/clusters/${val.cluster.number}` : '')
     })
   }
   if (currentTab.value === 'published') {
