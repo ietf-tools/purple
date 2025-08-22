@@ -79,15 +79,15 @@ const { data: labels } = await useAsyncData(
 )
 
 const labels1 = computed(() =>
-  labels.value.filter((label) => label.isComplexity && !label.isException)
+  labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
 )
 
 const labels2 = computed(() =>
-  labels.value.filter((label) => label.isComplexity && label.isException)
+  labels.value.filter((label) => label.used && label.isComplexity && label.isException)
 )
 
 const labels3 = computed(
-  () => labels.value.filter((label) => !label.isComplexity)
+  () => labels.value.filter((label) => label.used && !label.isComplexity)
 )
 
 const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
