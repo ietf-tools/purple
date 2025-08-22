@@ -32,6 +32,7 @@
               <tr v-for="label in sortedLabels" :key="label.slug">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">
                   <RpcLabel :label="label"/>
+                  <Icon v-if="!label.used" name="heroicons:x-mark-solid" class="text-red-500"/>
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                   <Icon
