@@ -96,26 +96,17 @@ if (!_overlayModalMethods) {
 const { ok, cancel } = _overlayModalMethods
 const snackbar = useSnackbar()
 
-type Props = {
-  label: Label
-  create: boolean
-}
+type Props = { label: Label }
 
 const props = defineProps<Props>()
 const label = reactive<Label>({ ...props.label })
 
 async function save() {
-  const labelData: Label = {
-    slug: label.slug,
-    isException: label.isException,
-    isComplexity: label.isComplexity,
-    color: label.color
-  }
   try {
-    if (props.create) {
-      await api.labelsCreate({ label: labelData })
+    if (label.id === undefined) {
+      await api.labelsCreate({ label })
     } else {
-      await api.labelsUpdate({ id: label.id, label: labelData })
+      await api.labelsUpdate({ id: label.id, label })
     }
   } catch {
     snackbar.add({

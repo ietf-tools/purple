@@ -73,8 +73,8 @@ async function addLabel () {
     await openOverlayModal({
       component: RpcLabelEditDialog,
       componentProps: {
-        label: { slug: '', isException: false, color: 'slate' },
-        create: true
+        // absent id => create a new label
+        label: { slug: '', isException: false, color: 'slate' }
       }
     })
   } catch {
