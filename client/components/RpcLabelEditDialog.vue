@@ -102,11 +102,10 @@ type Props = {
 }
 
 const props = defineProps<Props>()
-const label = reactive(props.label)
+const label = reactive<Label>({ ...props.label })
 
-async function save () {
+async function save() {
   const labelData: Label = {
-    id: 0, // FIXME: is this ok?
     slug: label.slug,
     isException: label.isException,
     isComplexity: label.isComplexity,
