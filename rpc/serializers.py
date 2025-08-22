@@ -89,6 +89,13 @@ class HistoryRecord:
 
 
 class HistoryListSerializer(serializers.ListSerializer):
+    @staticmethod
+    def _default_model_change_description(delta):
+        return (
+            f"{change.field} changed from {change.old} to {change.new}"
+            for change in delta.changes
+        )
+
     def describe_model_delta(self, delta: ModelDelta):
         method_name = "describe_model_delta"
         if hasattr(self.parent, method_name):
@@ -96,10 +103,7 @@ class HistoryListSerializer(serializers.ListSerializer):
         elif hasattr(self.child, method_name):
             method = getattr(self.child, method_name)
         else:
-            method = lambda change: (
-                f"{change.field} changed from {change.old} to {change.new}"
-                for change in delta.changes
-            )
+            return self._default_model_change_description
         return method(delta)
 
     def to_representation(self, data):
