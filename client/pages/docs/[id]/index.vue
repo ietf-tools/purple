@@ -104,7 +104,12 @@
         </div>
 
         <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
-          <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName"></DocumentDependencies>
+          <DocumentDependencies v-model="relatedDocuments"
+                                :id="rawRfcToBe.id"
+                                :draft-name="draftName"
+                                :related-docs-info="relatedDocsInfo"
+                                :people="people">
+          </DocumentDependencies>
         </div>
 
         <!-- History -->
@@ -249,4 +254,23 @@ const { data: relatedDocuments } = await useAsyncData(
     server: false,
   }
 )
+
+// Fetch additional info for each related document
+import { ref, watchEffect } from 'vue'
+const relatedDocsInfo = ref<Record<string, any>>({})
+
+watchEffect(async () => {
+  if (!relatedDocuments.value) return
+  const names = relatedDocuments.value.map(doc => doc.targetDraftName).filter(Boolean)
+  const uniqueNames = Array.from(new Set(names))
+  for (const name of uniqueNames) {
+    if (!name || relatedDocsInfo.value[name]) continue
+    try {
+      const info = await api.documentsRetrieve({ draftName: name })
+      relatedDocsInfo.value[name] = {assignment_set: info.assignmentSet, pending_activities: info.pendingActivities}
+    } catch (e) {
+      relatedDocsInfo.value[name] = undefined
+    }
+  }
+})
 </script>
