@@ -35,13 +35,13 @@ const columns: Column[] = [
     classes: 'text-sm font-medium'
   },
   {
-    key: 'currentState',
-    label: 'Current State',
+    key: 'targetDraftName',
+    label: 'Target Draft Name',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
-    key: 'currentAssignments',
+    key: 'pendingActivities',
     label: 'Current Assignments',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
@@ -49,7 +49,7 @@ const columns: Column[] = [
       const info = props.relatedDocsInfo?.[row] || {}
       const assignments = info.assignment_set
       if (!assignments || !Array.isArray(assignments) || assignments.length === 0) return '—'
-      const nodes = []
+      const nodes: (string | VNode)[] = []
       assignments.forEach((assignment: any, idx: number) => {
         const person = (props.people || []).find((p: any) => p.id === assignment.person)
         nodes.push(
@@ -73,12 +73,32 @@ const columns: Column[] = [
       const info = props.relatedDocsInfo?.[row] || {}
       const pending = info.pending_activities
       if (!pending || !Array.isArray(pending) || pending.length === 0) return '—'
-      const nodes = []
+      const nodes: (string | VNode)[] = []
       pending.forEach((a: any, idx: number) => {
         nodes.push(h(BaseBadge, { label: a.name }))
         if (idx < pending.length - 1) nodes.push(', ')
       })
       return nodes
+    }
+  },
+  {
+    key: 'notReceivedCount',
+    label: 'not received #',
+    field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
+    classes: 'text-sm font-medium',
+    format: (row: any) => {
+      const info = props.relatedDocsInfo?.[row] || {}
+      return info.not_received_count || 0
+    }
+  },
+    {
+    key: 'refqueueCount',
+    label: 'refqueue #',
+    field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
+    classes: 'text-sm font-medium',
+    format: (row: any) => {
+      const info = props.relatedDocsInfo?.[row] || {}
+      return info.refqueue_count || 0
     }
   }
 ]
@@ -88,7 +108,12 @@ const isOpenDependencyModal = ref(false)
 type Props = {
   draftName: string
   id: number,
-  relatedDocsInfo: Record<string, { assignment_set?: any; pending_activities?: any }>
+  relatedDocsInfo: Record<string, {
+    assignment_set?: any;
+    pending_activities?: any;
+    refqueue_count?: any;
+    not_received_count?: any;
+  }>
   people: any[]
 }
 

@@ -256,21 +256,34 @@ const { data: relatedDocuments } = await useAsyncData(
 )
 
 // Fetch additional info for each related document
-import { ref, watchEffect } from 'vue'
 const relatedDocsInfo = ref<Record<string, any>>({})
 
-watchEffect(async () => {
-  if (!relatedDocuments.value) return
-  const names = relatedDocuments.value.map(doc => doc.targetDraftName).filter(Boolean)
-  const uniqueNames = Array.from(new Set(names))
-  for (const name of uniqueNames) {
-    if (!name || relatedDocsInfo.value[name]) continue
-    try {
-      const info = await api.documentsRetrieve({ draftName: name })
-      relatedDocsInfo.value[name] = {assignment_set: info.assignmentSet, pending_activities: info.pendingActivities}
-    } catch (e) {
-      relatedDocsInfo.value[name] = undefined
+watch(
+  () => relatedDocuments.value,
+  async (docs) => {
+    if (!docs) return
+    const names = docs.map(doc => doc.targetDraftName).filter(Boolean)
+    const uniqueNames = Array.from(new Set(names))
+    for (const name of uniqueNames) {
+      if (!name || relatedDocsInfo.value[name]) continue
+      try {
+        const [info, relDocs] = await Promise.all([
+          api.documentsRetrieve({ draftName: name }),
+          api.documentsReferencesList({ draftName: name })
+        ])
+        const refqueueCount = relDocs.filter(doc => doc.relationship === 'refqueue').length
+        const notReceivedCount = relDocs.filter(doc => doc.relationship === 'not-received').length
+        relatedDocsInfo.value[name] = {
+          assignment_set: info.assignmentSet,
+          pending_activities: info.pendingActivities,
+          refqueue_count: refqueueCount,
+          not_received_count: notReceivedCount
+        }
+      } catch (e) {
+        relatedDocsInfo.value[name] = undefined
+      }
     }
-  }
-})
+  },
+  { immediate: true }
+)
 </script>
