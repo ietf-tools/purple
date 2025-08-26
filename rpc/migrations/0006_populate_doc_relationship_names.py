@@ -7,8 +7,8 @@ def forward(apps, schema_editor):
     DocRelationshipName = apps.get_model("rpc", "DocRelationshipName")
 
     DocRelationshipName.objects.create(
-        slug="missref",
-        name="Missing reference",
+        slug="not-received",
+        name="Not Received",
         desc="Normative reference to a document that is still in draft state",
         used=True,
     )
@@ -31,7 +31,7 @@ def forward(apps, schema_editor):
 def reverse(apps, schema_editor):
     DocRelationshipName = apps.get_model("rpc", "DocRelationshipName")
     DocRelationshipName.objects.filter(
-        slug__in=["missref", "refqueue", "withdrawnref"]
+        slug__in=["not-received", "refqueue", "withdrawnref"]
     ).delete()
 
 

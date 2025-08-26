@@ -374,7 +374,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "intended_std_level": draft_info.intended_std_level,
                             },
                         )
-                    create_rpc_related_document("missref", rfctobe.pk, draft.name)
+                    create_rpc_related_document("not-received", rfctobe.pk, draft.name)
                 else:
                     disposition = existing_rfc_to_be[reference.id]
                     if disposition in ("created", "in_progress"):
@@ -565,7 +565,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             OpenApiExample(
                 "Create Related Document",
                 value={
-                    "relationship": "missref",
+                    "relationship": "not-received",
                     "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
                 },
                 request_only=True,
@@ -574,7 +574,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 "Created Related Document Response",
                 value={
                     "id": 1,
-                    "relationship": "missref",
+                    "relationship": "not-received",
                     "draft_name": "draft-source-document",
                     "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
                 },
