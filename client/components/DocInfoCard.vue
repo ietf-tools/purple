@@ -68,6 +68,7 @@
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" />
+        <DescriptionListItem term="Cluster" :details="rfcToBe.cluster.number" />
       </DescriptionList>
     </div>
   </BaseCard>
