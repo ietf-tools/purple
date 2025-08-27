@@ -46,12 +46,12 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
-      const info = props.relatedDocsInfo?.[row] || {}
+      const info = relatedDocsInfo.value?.[row] || {}
       const assignments = info.assignment_set
       if (!assignments || !Array.isArray(assignments) || assignments.length === 0) return '—'
       const nodes: (string | VNode)[] = []
       assignments.forEach((assignment: any, idx: number) => {
-        const person = (props.people || []).find((p: any) => p.id === assignment.person)
+        const person = (people.value || []).find((p: any) => p.id === assignment.person)
         nodes.push(
           h('span', [
             h(BaseBadge, { label: assignment.role }),
@@ -70,7 +70,7 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
-      const info = props.relatedDocsInfo?.[row] || {}
+    const info = relatedDocsInfo.value?.[row] || {}
       const pending = info.pending_activities
       if (!pending || !Array.isArray(pending) || pending.length === 0) return '—'
       const nodes: (string | VNode)[] = []
@@ -87,7 +87,7 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
-      const info = props.relatedDocsInfo?.[row] || {}
+      const info = relatedDocsInfo.value?.[row] || {}
       return info.not_received_count || 0
     }
   },
@@ -97,7 +97,7 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
-      const info = props.relatedDocsInfo?.[row] || {}
+      const info = relatedDocsInfo.value?.[row] || {}
       return info.refqueue_count || 0
     }
   }
@@ -108,15 +108,54 @@ const isOpenDependencyModal = ref(false)
 type Props = {
   draftName: string
   id: number,
-  relatedDocsInfo: Record<string, {
-    assignment_set?: any;
-    pending_activities?: any;
-    refqueue_count?: any;
-    not_received_count?: any;
-  }>
-  people: any[]
+  people?: any[]
 }
 
+const api = useApi()
 const props = defineProps<Props>()
+
+const people = ref<any[]>(props.people ?? [])
+
+if (!props.people) {
+  const { data: fetchedPeople } = await useAsyncData(
+    () => api.rpcPersonList(),
+    { server: false, default: () => [] }
+  )
+  if (fetchedPeople.value) people.value = fetchedPeople.value
+}
+
+// Fetch additional info for each related document
+const relatedDocsInfo = ref<Record<string, any>>({})
+watch(
+  () => relatedDocuments.value,
+  async (docs) => {
+    if (!docs) return
+    const names = docs
+      .filter(doc => doc.relationship !== 'not-received')
+      .map(doc => doc.targetDraftName)
+      .filter(Boolean)
+    const uniqueNames = Array.from(new Set(names))
+    for (const name of uniqueNames) {
+      if (!name || relatedDocsInfo.value[name]) continue
+      try {
+        const [info, relDocs] = await Promise.all([
+          api.documentsRetrieve({ draftName: name }),
+          api.documentsReferencesList({ draftName: name })
+        ])
+        const refqueueCount = relDocs.filter(doc => doc.relationship === 'refqueue').length
+        const notReceivedCount = relDocs.filter(doc => doc.relationship === 'not-received').length
+        relatedDocsInfo.value[name] = {
+          assignment_set: info.assignmentSet,
+          pending_activities: info.pendingActivities,
+          refqueue_count: refqueueCount,
+          not_received_count: notReceivedCount
+        }
+      } catch (e) {
+        relatedDocsInfo.value[name] = undefined
+      }
+    }
+  },
+  { immediate: true }
+)
 
 </script>

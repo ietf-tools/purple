@@ -107,7 +107,6 @@
           <DocumentDependencies v-model="relatedDocuments"
                                 :id="rawRfcToBe.id"
                                 :draft-name="draftName"
-                                :related-docs-info="relatedDocsInfo"
                                 :people="people">
           </DocumentDependencies>
         </div>
@@ -253,37 +252,5 @@ const { data: relatedDocuments } = await useAsyncData(
     default: () => [],
     server: false,
   }
-)
-
-// Fetch additional info for each related document
-const relatedDocsInfo = ref<Record<string, any>>({})
-
-watch(
-  () => relatedDocuments.value,
-  async (docs) => {
-    if (!docs) return
-    const names = docs.map(doc => doc.targetDraftName).filter(Boolean)
-    const uniqueNames = Array.from(new Set(names))
-    for (const name of uniqueNames) {
-      if (!name || relatedDocsInfo.value[name]) continue
-      try {
-        const [info, relDocs] = await Promise.all([
-          api.documentsRetrieve({ draftName: name }),
-          api.documentsReferencesList({ draftName: name })
-        ])
-        const refqueueCount = relDocs.filter(doc => doc.relationship === 'refqueue').length
-        const notReceivedCount = relDocs.filter(doc => doc.relationship === 'not-received').length
-        relatedDocsInfo.value[name] = {
-          assignment_set: info.assignmentSet,
-          pending_activities: info.pendingActivities,
-          refqueue_count: refqueueCount,
-          not_received_count: notReceivedCount
-        }
-      } catch (e) {
-        relatedDocsInfo.value[name] = undefined
-      }
-    }
-  },
-  { immediate: true }
 )
 </script>

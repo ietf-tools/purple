@@ -71,7 +71,7 @@ const addDependencyItem = async () => {
   }
   try {
     const newRpcRelatedDocument = await api.documentsReferencesCreate(createArg)
-    relatedDocuments.value.push(newRpcRelatedDocument)
+    relatedDocuments.value = [...relatedDocuments.value, newRpcRelatedDocument]
     // reset form
     isOpenDependencyModal.value = false
     relationship.value = ''
