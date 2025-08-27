@@ -318,6 +318,7 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
+    draft_info = None
     try:
         draft = Document.objects.get(datatracker_id=document_id)
     except Document.DoesNotExist:
@@ -358,20 +359,20 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                     try:
                         draft = Document.objects.get(datatracker_id=reference.id)
                     except Document.DoesNotExist as err:
-                        draft_info = rpcapi.get_draft_by_id(reference.id)
-                        if draft_info is None:
+                        draft_info_ref = rpcapi.get_draft_by_id(reference.id)
+                        if draft_info_ref is None:
                             raise NotFound(
                                 "Unable to get draft info for reference"
                             ) from err
                         draft, _ = Document.objects.get_or_create(
                             datatracker_id=reference.id,
                             defaults={
-                                "name": draft_info.name,
-                                "rev": draft_info.rev,
-                                "title": draft_info.title,
-                                "stream": draft_info.stream,
-                                "pages": draft_info.pages,
-                                "intended_std_level": draft_info.intended_std_level,
+                                "name": draft_info_ref.name,
+                                "rev": draft_info_ref.rev,
+                                "title": draft_info_ref.title,
+                                "stream": draft_info_ref.stream,
+                                "pages": draft_info_ref.pages,
+                                "intended_std_level": draft_info_ref.intended_std_level,
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)
@@ -387,6 +388,29 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         )
                     else:
                         pass  # ignoring references to already published RfcToBe
+
+            # create the authors
+            if draft_info is None:
+                draft_info = rpcapi.get_draft_by_id(document_id)
+            author_order = 1
+            for author in draft_info.authors:
+                datatracker_person, _ = DatatrackerPerson.objects.get_or_create(
+                    datatracker_id=author.person
+                )
+                author_serializer = CreateRfcAuthorSerializer(
+                    data={
+                        "titlepage_name": author.plain_name,
+                    }
+                )
+                if author_serializer.is_valid():
+                    author_serializer.save(
+                        datatracker_person=datatracker_person,
+                        rfc_to_be=rfctobe,
+                        order=author_order,
+                    )
+                    author_order += 1
+                else:
+                    return Response(author_serializer.errors, status=400)
 
         return Response(RfcToBeSerializer(rfctobe).data)
     else:
