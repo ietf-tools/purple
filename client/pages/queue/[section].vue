@@ -286,13 +286,6 @@ const columns = computed(() => {
             return actionHolder && 'body' in actionHolder ? String(actionHolder.body) : actionHolder?.name ?? 'No name'
           },
         },
-        deadlineCol
-      ]
-    )
-  }
-  if (currentTab.value === 'queue') {
-    cols.push(
-      ...[
         {
           key: 'pendingActivities',
           label: 'Pending Activities',
@@ -321,19 +314,17 @@ const columns = computed(() => {
             val === 'overdue'
               ? 'font-medium text-rose-600 dark:text-rose-500'
               : 'text-emerald-600 dark:text-emerald-500'
+        },
+        {
+          key: 'cluster',
+          label: 'Cluster',
+          field: 'cluster',
+          format: (value: any) => value?.number,
+          icon: 'pajamas:group',
+          link: (val: any) => (val?.cluster ? `/clusters/${val.cluster.number}` : '')
         }
       ]
     )
-  }
-  if (currentTab.value === 'queue') {
-    cols.push({
-      key: 'cluster',
-      label: 'Cluster',
-      field: 'cluster',
-      format: (value: any) => value?.number,
-      icon: 'pajamas:group',
-      link: (val: any) => (val?.cluster ? `/clusters/${val.cluster.number}` : '')
-    })
   }
   if (currentTab.value === 'published') {
     cols.push(
