@@ -12,7 +12,7 @@
         :key="label.id"
         :label="`${label.isException ? '⚠️ ' : ''}${label.slug}`"
         :value="label.id"
-        :checked="selectedLabelIds?.includes(label.id ?? 0)"
+        :checked="Boolean(selectedLabelIds?.includes(label.id ?? 0))"
         :class="[
           'pl-1 mb-1 pr-2 rounded-md text-xs font-medium ring-1 ring-inset text-xs',
           badgeColors[label.color ?? 'violet']
@@ -22,7 +22,7 @@
         :title="label.slug"
       />
       <div v-else class="ml-0.5">
-        <DocLabelsListbox v-model="selectedLabelIds!" :value="labelGroupRefs[slugGroup]" :labels="groupOfLabels" :slug-group="slugGroup.toString()" />
+        <DocLabelsGroup v-model="selectedLabelIds!" :value="labelGroupRefs[slugGroup]" :labels="groupOfLabels" :slug-group="slugGroup.toString()" />
       </div>
     </fieldset>
   </BaseCard>
