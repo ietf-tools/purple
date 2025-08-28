@@ -42,7 +42,15 @@
 
       <div class="justify-end flex space-x-4">
         <BaseButton btn-type="default">Document has exceptions&mdash;escalate</BaseButton>
-        <BaseButton btn-type="default">Add to queue</BaseButton>
+        <BaseButton btn-type="default" @click="addToQueue">
+          <Icon
+            v-if="isAddingToQueue"
+            name="ei:spinner-3"
+            size="1em"
+            class="ml-1 animate-spin"
+          />
+          Add to queue
+        </BaseButton>
       </div>
     </div>
 
@@ -54,6 +62,8 @@ import { DateTime } from 'luxon'
 import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
 import type { CookedDraft } from '~/utilities/rpc'
+import { snackbarForErrors } from '~/utilities/snackbar'
+import { QUEUE_QUEUE_PATH } from '~/utilities/url'
 
 const route = useRoute()
 const api = useApi()
@@ -131,5 +141,30 @@ const { data: relatedDocuments } = await useAsyncData(
     default: () => [],
     server: false,
   })
+
+const isAddingToQueue = ref(false)
+
+const snackbar = useSnackbar()
+
+const IN_PROGRESS = 'in_progress'
+
+const addToQueue = async () => {
+  isAddingToQueue.value = true
+  try {
+    const rfcToBe = await api.documentsPartialUpdate({
+      draftName: id.value,
+      patchedRfcToBe: {
+        disposition: IN_PROGRESS
+      }
+    })
+    if(rfcToBe.disposition !== IN_PROGRESS) {
+      throw Error(`Unable to set RFC to ${IN_PROGRESS}`)
+    }
+    await navigateTo(QUEUE_QUEUE_PATH)
+  } catch(e) {
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Unable to add to queue'})
+  }
+  isAddingToQueue.value = false
+}
 
 </script>

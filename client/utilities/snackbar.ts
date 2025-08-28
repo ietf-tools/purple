@@ -50,7 +50,13 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
 }
 
 const getErrorTextFromFetchResponse = async (response: Response, text: string): Promise<string> => {
-  const contentType = response.headers.get('Content-Type')
+  const contentTypeHeader = response.headers.get('Content-Type')
+  if(!contentTypeHeader) {
+    return text
+  }
+  // contentTypeHeader looks like either 'text/html' or 'text/html; charset=utf-8' and we only want the front
+  const [ contentType ] = contentTypeHeader.split(';')
+
   switch (contentType) {
     case 'application/json':
       // format the JSON a bit
@@ -63,6 +69,16 @@ const getErrorTextFromFetchResponse = async (response: Response, text: string): 
         text = Array.isArray(value) ? value.join(', ') : `${value}`
       } else {
         text = JSON.stringify(data, null, 2)
+      }
+      break
+    case 'text/html':
+      const html = await response.text()
+      try {
+        const domParser = new DOMParser()
+        const dom = domParser.parseFromString(html, 'text/html')
+        text = `${dom.title}. See console for more.`
+      } catch (e) {
+        text = html
       }
       break
     default:
