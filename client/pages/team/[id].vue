@@ -216,12 +216,6 @@ const { data: assignments } = await useAsyncData(
   }
 )
 
-// Format date helper function
-const formatDate = (dateString?: string) => {
-  if (!dateString) return null
-  return new Date(dateString).toLocaleDateString()
-}
-
 // Handle error state
 if (error.value) {
   throw createError({
