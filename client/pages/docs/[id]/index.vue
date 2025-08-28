@@ -107,7 +107,8 @@
           <DocumentDependencies v-model="relatedDocuments"
                                 :id="rawRfcToBe.id"
                                 :draft-name="draftName"
-                                :people="people">
+                                :people="people"
+                                :cluster-number="rawRfcToBe.cluster?.number">
           </DocumentDependencies>
         </div>
 

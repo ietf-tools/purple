@@ -8,6 +8,17 @@
           </template>
         </CardHeader>
       </template>
+      <div class="flex items-center gap-2 mb-4">
+        <span class="font-medium">Cluster: </span>
+        <span class="mr-2">
+          <span v-if="props.clusterNumber">
+            <NuxtLink :to="`/clusters/${props.clusterNumber}`" class="inline-flex items-center gap-1 text-blue-600">
+              <Icon name="pajamas:group" class="h-5 w-5" />{{ props.clusterNumber }}
+            </NuxtLink>
+          </span>
+        <span v-else>-</span>
+        </span>
+      </div>
       <DocumentTable v-if="relatedDocuments" :columns="columns" :data="relatedDocuments" row-key="id" />
     </BaseCard>
     <DocumentDependenciesAdd
@@ -16,13 +27,14 @@
       :draft-name="props.draftName"
       :id="props.id"
     />
-  </div>
+</div>
 </template>
 
 <script setup lang="ts">
 import type { RpcRelatedDocument } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
 import { h } from 'vue'
+import { NuxtLink } from '#components'
 import BaseBadge from './BaseBadge.vue'
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>({ default: [] })
@@ -38,7 +50,13 @@ const columns: Column[] = [
     key: 'targetDraftName',
     label: 'Target Draft Name',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
-    classes: 'text-sm font-medium'
+    classes: 'text-sm font-medium',
+    format: (row: any) => {
+      return h(NuxtLink, {
+        to: `/docs/${row}`,
+        class: 'inline-flex items-center gap-1 text-blue-600'
+      }, row)
+    }
   },
   {
     key: 'pendingActivities',
@@ -108,7 +126,8 @@ const isOpenDependencyModal = ref(false)
 type Props = {
   draftName: string
   id: number,
-  people?: any[]
+  people?: any[],
+  clusterNumber?: number
 }
 
 const api = useApi()

@@ -26,7 +26,11 @@
         </div>
       </div>
       <div v-if="rfcToBe?.id">
-        <DocumentDependencies v-model="relatedDocuments" :id="rfcToBe.id" :draft-name="id"></DocumentDependencies>
+        <DocumentDependencies v-model="relatedDocuments"
+                              :id="rfcToBe.id"
+                              :draft-name="id"
+                              :cluster-number="rfcToBe.cluster?.number">
+        </DocumentDependencies>
       </div>
       <BaseCard>
         <template #header>
