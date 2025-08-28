@@ -550,10 +550,25 @@ class RpcPersonSerializer(serializers.ModelSerializer):
     name = serializers.SerializerMethodField()
     capabilities = CapabilitySerializer(source="capable_of", many=True)
     roles = RpcRoleSerializer(source="can_hold_role", many=True)
+    email = serializers.EmailField(source="datatracker_person.email", read_only=True)
+    picture = serializers.URLField(source="datatracker_person.picture", read_only=True)
+    datatracker_url = serializers.URLField(
+        source="datatracker_person.url", read_only=True
+    )
 
     class Meta:
         model = RpcPerson
-        fields = ["id", "name", "hours_per_week", "capabilities", "roles", "is_active"]
+        fields = [
+            "id",
+            "name",
+            "hours_per_week",
+            "capabilities",
+            "roles",
+            "is_active",
+            "email",
+            "picture",
+            "datatracker_url",
+        ]
 
     def __init__(self, *args, **kwargs):
         context = kwargs.get("context", {})

@@ -14,12 +14,17 @@
         <div class="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
           <div class="flex items-center gap-x-6">
             <img
-              src="https://i.pravatar.cc/150?img=5" alt=""
+             :src="person?.picture || `https://i.pravatar.cc/150?img=${route.params.id}`"
+             :alt="person?.name || 'Person'"
               class="h-16 w-16 flex-none rounded-full ring-1 ring-gray-900/10">
             <h1>
-              <span class="mt-1 text-xl font-semibold leading-6 text-gray-900 dark:text-white">Ada Lovelace</span>
+             <span class="mt-1 text-xl font-semibold leading-6 text-gray-900 dark:text-white">
+               {{ person?.name || 'Loading...' }}
+             </span>
               <br>
-              <span class="text-sm leading-6 text-gray-500 dark:text-neutral-400">ada.lovelace@ietf.org</span>
+             <span class="text-sm leading-6 text-gray-500 dark:text-neutral-400">
+               {{ person?.email || '' }}
+             </span>
             </h1>
           </div>
           <div class="flex items-center gap-x-4 sm:gap-x-6">
@@ -72,37 +77,25 @@
             <dl class="flex flex-wrap">
               <div class="flex-auto pl-6 pt-6">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Availability</dt>
-                <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">123</dd>
+               <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
+                 {{ person?.availability || 'Unknown' }}
+               </dd>
               </div>
               <div class="flex-none self-end px-6 pt-4">
                 <dt class="sr-only">Status</dt>
                 <dd
-                  class="rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-600 ring-1 ring-inset ring-green-600/20">
-                  Available
+                 :class="[
+                   person?.isActive === true ? 'bg-green-50 text-green-600 ring-green-600/20' : 'bg-red-50 text-red-600 ring-red-600/20',
+                   'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
+                 ]">
+                  is active
                 </dd>
               </div>
-              <div class="mt-6 flex w-full flex-none gap-x-4 border-t border-gray-900/5 px-6 pt-6">
-                <dt class="flex-none">
-                  <span class="sr-only">Client</span>
-                  <Icon name="uil:times" class="h-6 w-5 text-gray-400" aria-hidden="true"/>
-                </dt>
-                <dd class="text-sm font-medium leading-6 text-gray-900">123</dd>
-              </div>
-              <div class="mt-4 flex w-full flex-none gap-x-4 px-6">
-                <dt class="flex-none">
-                  <span class="sr-only">Due date</span>
-                  <Icon name="uil:times" class="h-6 w-5 text-gray-400" aria-hidden="true"/>
-                </dt>
-                <dd class="text-sm leading-6 text-gray-500">
-                  <time datetime="2023-01-31">123</time>
-                </dd>
-              </div>
-              <div class="mt-4 flex w-full flex-none gap-x-4 px-6">
-                <dt class="flex-none">
-                  <span class="sr-only">Status</span>
-                  <Icon name="uil:times" class="h-6 w-5 text-gray-400" aria-hidden="true"/>
-                </dt>
-                <dd class="text-sm leading-6 text-gray-500">123</dd>
+              <div class="flex-none self-end px-6 pt-4">
+                <dt class="sr-only">Roles</dt>
+                <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
+                 Roles: {{ person?.roles && person.roles.length > 0 ? person.roles.join(', ') : 'No roles assigned' }}
+               </dd>
               </div>
             </dl>
             <div class="mt-6 border-t border-gray-900/5 px-6 py-6">
@@ -111,54 +104,7 @@
             </div>
           </div>
         </div>
-
-        <!-- Invoice -->
-        <div
-          class="-mx-4 px-4 py-8 bg-white dark:bg-neutral-900 shadow-sm ring-1 ring-gray-900/5 sm:mx-0 sm:rounded-lg sm:px-8 sm:pb-14 lg:col-span-2 lg:row-span-2 lg:row-end-2 xl:px-16 xl:pb-20 xl:pt-16">
-          <h2 class="text-base font-semibold leading-6 text-gray-900">Currently working on</h2>
-          <dl class="mt-6 grid grid-cols-1 text-sm leading-6 sm:grid-cols-2">
-            <div class="sm:pr-4">
-              <dt class="inline text-gray-500">Issued on</dt>
-              {{ ' ' }}
-              <dd class="inline text-gray-700">
-                <time datetime="2023-23-01">January 23, 2023</time>
-              </dd>
-            </div>
-            <div class="mt-2 sm:mt-0 sm:pl-4">
-              <dt class="inline text-gray-500">Due on</dt>
-              {{ ' ' }}
-              <dd class="inline text-gray-700">
-                <time datetime="2023-31-01">January 31, 2023</time>
-              </dd>
-            </div>
-            <div class="mt-6 border-t border-gray-900/5 pt-6 sm:pr-4">
-              <dt class="font-semibold text-gray-900">From</dt>
-              <dd class="mt-2 text-gray-500">111</dd>
-            </div>
-            <div class="mt-8 sm:mt-6 sm:border-t sm:border-gray-900/5 sm:pl-4 sm:pt-6">
-              <dt class="font-semibold text-gray-900">To</dt>
-              <dd class="mt-2 text-gray-500">111</dd>
-            </div>
-          </dl>
-          <table class="mt-16 w-full whitespace-nowrap text-left text-sm leading-6">
-            <colgroup>
-              <col class="w-full">
-              <col>
-              <col>
-              <col>
-            </colgroup>
-            <thead class="border-b border-gray-200 text-gray-900">
-            <tr>
-              <th scope="col" class="px-0 py-3 font-semibold">Projects</th>
-              <th scope="col" class="hidden py-3 pl-8 pr-0 text-right font-semibold sm:table-cell">A</th>
-              <th scope="col" class="hidden py-3 pl-8 pr-0 text-right font-semibold sm:table-cell">B</th>
-              <th scope="col" class="py-3 pl-8 pr-0 text-right font-semibold">C</th>
-            </tr>
-            </thead>
-          </table>
-        </div>
-
-        <div class="lg:col-start-3">
+        <div class="lg:col-start-3 lg:row-end-2">
           <!-- Activity feed -->
           <h2 class="text-sm font-semibold leading-6 text-gray-900">Activity</h2>
           <ul role="list" class="mt-6 space-y-6">
@@ -176,7 +122,7 @@
                 <div v-else class="h-1.5 w-1.5 rounded-full bg-gray-100 ring-1 ring-gray-300"/>
               </div>
               <p class="flex-auto py-0.5 text-xs leading-5 text-gray-500">
-                <span class="font-medium text-gray-900">{{ activityItem.person.name }}</span> {{ activityItem.type }}
+                <span class="font-medium text-gray-900">{{ person?.name }}</span> {{ activityItem.type }}
                 the
                 document.
               </p>
@@ -186,12 +132,104 @@
             </li>
           </ul>
         </div>
+        <!-- Assignments List -->
+        <div class="lg:col-span-2 lg:row-span-2">
+          <div class="rounded-lg bg-white dark:bg-neutral-900 shadow-sm ring-1 ring-gray-900/5 p-6">
+            <h2 class="text-sm font-semibold leading-6 text-gray-900">Active Assignments</h2>
+            <div v-if="assignments && assignments.length > 0" class="mt-6">
+              <div class="space-y-4">
+                <div
+                  v-for="assignment in assignments"
+                :key="assignment.id"
+                  class="border border-gray-200 rounded-lg p-4 bg-gray-50"
+                >
+                  <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                      <h3 class="text-sm font-semibold text-gray-900">
+                        {{ assignment.rfcToBe?.draft.name }}
+                      </h3>
+                      <span>
+                        {{ assignment.comment || 'No Comment' }}
+                      </span>
+                      <div class="mt-2 flex items-center gap-4 text-xs text-gray-500">
+                        <span>
+                          Time spent: {{ assignment.timeSpent }}
+                        </span>
+                        <span v-if="assignment.state"
+                              :class="[
+                                assignment.state === 'done' ? 'text-green-600' :
+                                assignment.state === 'in_progress' ? 'text-blue-600' :
+                                'text-yellow-600'
+                              ]">
+                          {{ assignment.role }} ({{ assignment.state }})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          <!-- No assignments message -->
+          <div v-else class="mt-6 text-center py-8">
+            <p class="text-sm text-gray-500">No current assignments</p>
+          </div>
+        </div>
+        </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import type { RpcPerson } from '~/purple_client'
+
+const route = useRoute()
+const api = useApi()
+
+// Fetch person data
+const { data: person, pending, error } = await useAsyncData(
+  `person-${route.params.id}`,
+  async () => {
+    try {
+      const response = await api.rpcPersonRetrieve({ id: Number(route.params.id) })
+      return response
+    } catch (err) {
+      console.error('Failed to fetch person:', err)
+      return null
+    }
+  }
+)
+
+// Fetch person assignments
+const { data: assignments } = await useAsyncData(
+  `person-assignments-${route.params.id}`,
+  async () => {
+    try {
+      const response = await api.rpcPersonAssignmentsList({ personId: Number(route.params.id) })
+      return response
+    } catch (err) {
+      console.error('Failed to fetch assignments:', err)
+      return []
+    }
+  }
+)
+
+// Format date helper function
+const formatDate = (dateString?: string) => {
+  if (!dateString) return null
+  return new Date(dateString).toLocaleDateString()
+}
+
+// Handle error state
+if (error.value) {
+  throw createError({
+    statusCode: 404,
+    statusMessage: 'Person not found'
+  })
+}
+
 const activity = [
   { id: 1, type: 'created', person: { name: 'Chelsea Hagon' }, date: '7d ago', dateTime: '2023-01-23T10:32' },
   { id: 2, type: 'edited', person: { name: 'Chelsea Hagon' }, date: '6d ago', dateTime: '2023-01-23T11:03' },
