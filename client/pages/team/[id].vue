@@ -28,8 +28,6 @@
             </h1>
           </div>
           <div class="flex items-center gap-x-4 sm:gap-x-6">
-            <button type="button" class="hidden text-sm font-semibold leading-6 text-gray-900 sm:block">Link 1</button>
-            <a href="#" class="hidden text-sm font-semibold leading-6 text-gray-900 sm:block">Edit</a>
             <a href="#" class="btn-primary">Edit</a>
 
             <HeadlessMenu as="div" class="relative sm:hidden">
@@ -106,7 +104,7 @@
         </div>
         <div class="lg:col-start-3 lg:row-end-2">
           <!-- Activity feed -->
-          <h2 class="text-sm font-semibold leading-6 text-gray-900">Activity</h2>
+          <h2 class="text-sm font-semibold leading-6 text-gray-900">Activity (mocked)</h2>
           <ul role="list" class="mt-6 space-y-6">
             <li
               v-for="(activityItem, activityItemIdx) in activity" :key="activityItem.id"
