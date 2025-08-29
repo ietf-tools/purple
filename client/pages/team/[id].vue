@@ -146,8 +146,8 @@
                       <h3 class="text-sm font-semibold text-gray-900">
                         {{ assignment.rfcToBe?.draft.name }}
                       </h3>
-                      <span>
-                        {{ assignment.comment || 'No Comment' }}
+                      <span v-if="assignment.comment">
+                        {{ assignment.comment }}
                       </span>
                       <div class="mt-2 flex items-center gap-4 text-xs text-gray-500">
                         <span>
