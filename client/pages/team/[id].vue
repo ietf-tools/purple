@@ -75,25 +75,25 @@
             <dl class="flex flex-wrap">
               <div class="flex-auto pl-6 pt-6">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Availability</dt>
-               <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
-                 {{ person?.availability || 'Unknown' }}
-               </dd>
+                <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
+                  {{ person?.availability || 'Unknown' }}
+                </dd>
               </div>
               <div class="flex-none self-end px-6 pt-4">
                 <dt class="sr-only">Status</dt>
                 <dd
-                 :class="[
-                   person?.isActive === true ? 'bg-green-50 text-green-600 ring-green-600/20' : 'bg-red-50 text-red-600 ring-red-600/20',
-                   'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
-                 ]">
+                  :class="[
+                    person?.isActive === true ? 'bg-green-50 text-green-600 ring-green-600/20' : 'bg-red-50 text-red-600 ring-red-600/20',
+                    'rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset'
+                  ]">
                   is active
                 </dd>
               </div>
               <div class="flex-none self-end px-6 pt-4">
                 <dt class="sr-only">Roles</dt>
                 <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
-                 Roles: {{ person?.roles && person.roles.length > 0 ? person.roles.join(', ') : 'No roles assigned' }}
-               </dd>
+                  Roles: {{ person?.roles && person.roles.length > 0 ? person.roles.join(', ') : 'No roles assigned' }}
+                </dd>
               </div>
             </dl>
             <div class="mt-6 border-t border-gray-900/5 px-6 py-6">
@@ -187,16 +187,10 @@ const route = useRoute()
 const api = useApi()
 
 // Fetch person data
-const { data: person, pending, error } = await useAsyncData(
+const { data: person, error } = await useAsyncData(
   `person-${route.params.id}`,
   async () => {
-    try {
-      const response = await api.rpcPersonRetrieve({ id: Number(route.params.id) })
-      return response
-    } catch (err) {
-      console.error('Failed to fetch person:', err)
-      return null
-    }
+    return await api.rpcPersonRetrieve({ id: Number(route.params.id) })
   }
 )
 
@@ -204,13 +198,7 @@ const { data: person, pending, error } = await useAsyncData(
 const { data: assignments } = await useAsyncData(
   `person-assignments-${route.params.id}`,
   async () => {
-    try {
-      const response = await api.rpcPersonAssignmentsList({ personId: Number(route.params.id) })
-      return response
-    } catch (err) {
-      console.error('Failed to fetch assignments:', err)
-      return []
-    }
+    return await api.rpcPersonAssignmentsList({ personId: Number(route.params.id) })
   }
 )
 
@@ -218,7 +206,7 @@ const { data: assignments } = await useAsyncData(
 if (error.value) {
   throw createError({
     statusCode: 404,
-    statusMessage: 'Person not found'
+    statusMessage: "Error fetching person"
   })
 }
 
