@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RpcRelatedDocument } from '~/purple_client';
+import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
 import { h } from 'vue'
 import { NuxtLink } from '#components'
@@ -126,14 +126,14 @@ const isOpenDependencyModal = ref(false)
 type Props = {
   draftName: string
   id: number,
-  people?: any[],
+  people?: RpcPerson[],
   clusterNumber?: number
 }
 
 const api = useApi()
 const props = defineProps<Props>()
 
-const people = ref<any[]>(props.people ?? [])
+const people = ref<RpcPerson[]>(props.people ?? [])
 
 if (!props.people) {
   const { data: fetchedPeople } = await useAsyncData(

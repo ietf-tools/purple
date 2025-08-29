@@ -144,7 +144,7 @@ def profile_as_person(request, rpc_person_id):
             "authenticated": request.user.is_authenticated,
             "id": None,
             "name": rpcperson.datatracker_person.plain_name,
-            "avatar": f"https://i.pravatar.cc/150?u={rpcperson.datatracker_person.datatracker_id}",
+            "avatar": rpcperson.datatracker_person.picture,
             "rpcPersonId": rpcperson.id,
             "isManager": (
                 False
