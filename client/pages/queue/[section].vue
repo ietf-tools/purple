@@ -106,6 +106,7 @@ import type { TristateValue } from '~/utilities/tristate'
 import type { Column, Row } from '~/components/DocumentTableTypes'
 import type { ActionHolder, Assignment, Label, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
+import { Icon } from '#components'
 
 // ROUTING
 
@@ -232,18 +233,10 @@ const columns = computed(() => {
       format: (val: any) => `RFC ${val}`
     })
   }
-  if (currentTab.value === 'queue') {
-    cols.push({
-      key: 'exception',
-      label: 'Exception',
-      field: 'exception',
-      classes: 'text-rose-600 dark:text-rose-500'
-    })
-  }
   if ((currentTab.value === 'queue')) {
     cols.push({
       key: 'assignmentSet',
-      label: 'Assignee (should allow multiple)',
+      label: 'Assignees',
       field: 'assignmentSet',
       formatType: 'all',
       format: (val) => {
@@ -279,7 +272,7 @@ const columns = computed(() => {
       ...[
         {
           key: 'holder',
-          label: 'Action Holder (should allow multiple)',
+          label: 'Action Holders',
           field: 'holder',
           format: (val: any) => {
             const actionHolder = val as ActionHolder | undefined
@@ -319,8 +312,13 @@ const columns = computed(() => {
           key: 'cluster',
           label: 'Cluster',
           field: 'cluster',
-          format: (value: any) => value?.number,
-          icon: 'pajamas:group',
+          format: (val: any) => {
+            if (!val) return '-'
+            return h('span', [
+              h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
+              String(val.number)
+            ])
+          },
           link: (val: any) => (val?.cluster ? `/clusters/${val.cluster.number}` : '')
         }
       ]
