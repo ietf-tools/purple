@@ -58,8 +58,19 @@ admin.site.register(StdLevelName)
 admin.site.register(TlpBoilerplateChoiceName)
 admin.site.register(StreamName)
 admin.site.register(DocRelationshipName)
-admin.site.register(ClusterMember)
-admin.site.register(Cluster)
+
+
+class ClusterMemberInline(admin.TabularInline):
+    model = ClusterMember
+    autocomplete_fields = ["doc"]
+    extra = 0
+
+
+@admin.register(Cluster)
+class ClusterAdmin(admin.ModelAdmin):
+    inlines = [ClusterMemberInline]
+
+
 admin.site.register(UnusableRfcNumber)
 
 
