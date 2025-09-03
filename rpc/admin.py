@@ -68,6 +68,7 @@ class ClusterMemberInline(admin.TabularInline):
 
 @admin.register(Cluster)
 class ClusterAdmin(admin.ModelAdmin):
+    search_fields = ["number", "clustermember__doc__name"]
     inlines = [ClusterMemberInline]
 
 
