@@ -614,9 +614,11 @@ class ClusterMemberSerializer(serializers.Serializer):
         list_serializer_class = ClusterMemberListSerializer
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
-        try:
-            rfctobe = RfcToBe.objects.get(draft=clustermember.doc)
-        except RfcToBe.DoesNotExist:
+        qs = RfcToBe.objects.filter(draft=clustermember.doc).exclude(
+            disposition__slug="withdrawn"
+        )
+        rfctobe = qs.first()
+        if not rfctobe:
             return None
         return rfctobe.rfc_number
 
