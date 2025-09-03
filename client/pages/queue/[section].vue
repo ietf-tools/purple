@@ -313,7 +313,7 @@ const columns = computed(() => {
           label: 'Cluster',
           field: 'cluster',
           format: (val: any) => {
-            if (!val) return '-'
+            if (!val) return '---'
             return h('span', [
               h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
               String(val.number)
