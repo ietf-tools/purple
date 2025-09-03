@@ -177,7 +177,7 @@ async function refresh() {
 
 const { data: people, pending: pendingPeople, refresh: refreshPeople } = await useAsyncData<RpcPerson[]>(
   'rpcPersons',
-  () => api.rpcPersonList(),
+  () => api.rpcPersonList({ isActive: true }),
   { server: false, default: () => ([]) }
 )
 
