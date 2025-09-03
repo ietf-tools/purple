@@ -68,8 +68,12 @@ class ClusterMemberInline(admin.TabularInline):
 
 @admin.register(Cluster)
 class ClusterAdmin(admin.ModelAdmin):
+    list_display = ["__str__", "members"]
     search_fields = ["number", "clustermember__doc__name"]
     inlines = [ClusterMemberInline]
+
+    def members(self, cluster: Cluster) -> str:
+        return ", ".join(member.doc.name for member in cluster.clustermember_set.all())
 
 
 admin.site.register(UnusableRfcNumber)
