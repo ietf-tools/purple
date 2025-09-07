@@ -3,28 +3,8 @@
  */
 
 import * as d3 from "d3"
+import { black, blue, cyan, font, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type Line, type Node } from "./document_relations-utils"
 
-/**
- * These constants were calculated from DOM Bootstrap CSS variables
- * so they've been hardcoded to ensure same rendering
- * If you change them please test a lot.
- */
-const font_size = 16
-const line_height = font_size + 2
-const font_family =
-  '"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"'
-const font = `${font_size}px ${font_family}`
-
-const green = "#198754"
-const blue = "#0d6efd"
-const orange = "#fd7e14"
-const cyan = "#0dcaf0"
-const yellow = "#ffc107"
-const red = "#dc3545"
-const teal = "#20c997"
-const white = "#fff"
-const black = "#212529"
-const gray400 = "#ced4da"
 
 const link_color = {
   refinfo: green,
@@ -34,60 +14,6 @@ const link_color = {
   refold: yellow,
   downref: red,
 } as const
-
-const ref_type = {
-  refinfo: "has an Informative reference to",
-  refnorm: "has a Normative reference to",
-  replaces: "replaces",
-  refunk: "has an Unknown type of reference to",
-  refold: "has an Undefined type of reference to",
-  downref: "has a Downward reference (DOWNREF) to",
-} as const
-
-type Group = "" | "none" | "this group" | "other group"
-type Level =
-  | ""
-  | "Informational"
-  | "Experimental"
-  | "Proposed Standard"
-  | "Best Current Practice"
-  | "Draft Standard"
-
-type Line = {
-  text: string
-  width: number
-}
-
-export type Node = {
-  id: string
-  url?: string
-  level?: Level
-  group?: Group
-  rfc?: boolean
-  replaced?: boolean
-  dead?: boolean
-  expired?: boolean
-  "post-wg"?: boolean
-  x?: number
-  y?: number
-  r?: number
-  lines?: Line[]
-  stroke?: number
-}
-
-export type Link = {
-  source: string | Node
-  target: string | Node
-  rel: keyof typeof ref_type
-  replaced?: boolean
-  "post-wg"?: boolean
-  group?: Group
-}
-
-export type Data = {
-  links: Link[]
-  nodes: Node[]
-}
 
 function assert(val: unknown): asserts val {
   if (!val) {
@@ -185,7 +111,8 @@ function text_radius(lines: Line[]) {
   return radius
 }
 
-export function draw_graph(data: Data, group: Group) {
+
+export function draw_graph(data: Data, group: string) {
   // console.log(data);
   // let el = $.parseHTML('<svg class="w-100 h-100"></svg>');
 
@@ -197,18 +124,18 @@ export function draw_graph(data: Data, group: Group) {
   const width = 1000
   const height = 1000
 
-  const svgElement = document.createElement("svg")
-  svgElement.className = "block w-full h-full"
+  const svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svgElement.setAttribute('class', "block w-full h-full")
 
   const svg = d3
     .select(svgElement)
     .style("font", font)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "central")
-
     .attr('xmlns',  "http://www.w3.org/2000/svg")
-
-    .attr("viewBox", [-width / 2, -height / 2, width, height])
+    .attr('overflow', "visible")
+    .attr("version", "1.1")
+    .attr("viewBox", [-width / 2, -height / 2, width, height].join(" "))
     .call(zoom)
 
   svg
@@ -393,10 +320,7 @@ export function draw_graph(data: Data, group: Group) {
     })
     // TODO: figure out how to combine this with above
     link.attr("d", function (d) {
-      if (!(this instanceof SVGPathElement)) {
-        console.error({ notSvgPathElement: this })
-        throw Error("Expected SVGPathElement. See console")
-      }
+      console.log(this, this?.constructor.name)
       const pl = this.getTotalLength()
       const start = this.getPointAtLength(
         typeof d.source !== "string"
