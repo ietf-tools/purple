@@ -5,7 +5,7 @@
       <div class="mx-auto flex max-w-7xl flex-wrap items-center gap-6 px-4 sm:flex-nowrap sm:px-6 lg:px-8">
         <h1 class="text-base font-semibold leading-7 text-gray-900 dark:text-neutral-400">Queue</h1>
         <div class="order-last flex w-full gap-x-8 text-sm font-semibold leading-6 sm:order-none sm:w-auto sm:border-l sm:border-gray-200 dark:sm:border-neutral-600 sm:pl-6 sm:leading-7">
-          <a v-for="item in secondaryNavigation" :key="item.name" :href="item.href" :class="item.current ? 'text-violet-600 dark:text-violet-500' : 'text-gray-700 dark:text-neutral-500'">{{ item.name }}</a>
+          <Anchor v-for="item in secondaryNavigation" :key="item.name" :href="item.href" :class="item.current ? 'text-violet-600 dark:text-violet-500' : 'text-gray-700 dark:text-neutral-500'">{{ item.name }}</Anchor>
         </div>
         <button
           v-if="userStore.isManager"

@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { RpcLabel, Icon, NuxtLink } from '#components'
+import { Anchor, RpcLabel, Icon } from '#components'
 import { isArray, isFunction, orderBy } from 'lodash-es'
 import type { Column, Row } from './DocumentTableTypes'
 import type { ColorEnum, Label } from '~/purple_client'
@@ -149,12 +149,12 @@ function buildCell (col: Column, row: Row) {
     }
 
     if (isFunction(col.link)) {
-      children.push(h(NuxtLink, {
+      children.push(h(Anchor, {
+        href: col.link(row, val),
         class: [
           ...cssClasses,
           'text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100'
-        ],
-        to: col.link(row, val)
+        ]
       }, () => contents))
     } else {
       children.push(h('span', {

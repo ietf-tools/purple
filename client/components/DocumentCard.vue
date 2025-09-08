@@ -26,14 +26,14 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
           <HeadlessMenuItems
             class="absolute right-0 z-10 mt-0.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
             <HeadlessMenuItem v-slot="{ active }">
-              <a href="#" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']"
-              >View<span class="sr-only">, {{ cookedDocument.name }}</span></a
-              >
+              <Anchor href="#" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">
+                View<span class="sr-only">, {{ cookedDocument.name }}</span>
+              </Anchor>
             </HeadlessMenuItem>
             <HeadlessMenuItem v-slot="{ active }">
-              <a href="#" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">
+              <Anchor href="#" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">
                 Edit<span class="sr-only">, {{ cookedDocument.name }}</span>
-              </a>
+              </Anchor>
             </HeadlessMenuItem>
           </HeadlessMenuItems>
         </transition>

@@ -3,10 +3,10 @@
     class="isolate grow flex divide-x divide-gray-200 dark:divide-neutral-950 rounded-lg shadow max-w-7xl my-4"
     aria-label="Tabs"
     >
-    <NuxtLink
+    <Anchor
       v-for="(tab, tabIdx) in props.tabs"
       :key="tab.id"
-      :to="tab.to"
+      :href="tab.to"
       :class="[
         tab.id === props.selected ? 'bg-white dark:bg-neutral-800 text-violet-700 dark:text-violet-300' : 'bg-white dark:bg-neutral-700 text-gray-500 dark:text-neutral-300 hover:text-gray-700 hover:dark:text-neutral-200',
         tabIdx === 0 ? 'rounded-l-lg' : '',
@@ -31,7 +31,7 @@
           'absolute inset-x-0 bottom-0 h-0.5'
         ]"
       />
-    </NuxtLink>
+    </Anchor>
   </nav>
 </template>
 

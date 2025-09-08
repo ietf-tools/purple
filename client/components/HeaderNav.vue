@@ -29,22 +29,22 @@
             <HeadlessMenuItems class="absolute right-0 z-10 mt-2 w-40 origin-top-right rounded-md bg-white dark:bg-neutral-800/90 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
               <div class="py-1">
                 <HeadlessMenuItem v-slot="{ active }">
-                  <a :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'dark'">
+                  <button type="button" :class="['block w-full', active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'dark'">
                     <Icon name="solar:moon-bold-duotone" class="mr-3" />
                     Dark
-                  </a>
+                  </button>
                 </HeadlessMenuItem>
                 <HeadlessMenuItem v-slot="{ active }">
-                  <a :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'light'">
+                  <button type="button" :class="['block w-full', active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'light'">
                     <Icon name="solar:sun-2-line-duotone" class="mr-3" />
                     Light
-                  </a>
+                  </button>
                 </HeadlessMenuItem>
                 <HeadlessMenuItem v-slot="{ active }">
-                  <a :class="[active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'system'">
+                  <button type="button" :class="['block w-full', active ? 'text-violet-500 dark:text-violet-300 bg-violet-50 dark:bg-violet-500/5' : 'text-gray-700 dark:text-gray-100', 'flex items-center px-4 py-2 text-sm cursor-pointer']" @click="$colorMode.preference = 'system'">
                     <Icon name="solar:laptop-line-duotone" class="mr-3" />
                     System
-                  </a>
+                  </button>
                 </HeadlessMenuItem>
               </div>
             </HeadlessMenuItems>
@@ -102,7 +102,7 @@
           <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
             <HeadlessMenuItems class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
               <HeadlessMenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
-                <NuxtLink :to="item.href" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">{{ item.name }}</NuxtLink>
+                <Anchor :href="item.href" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">{{ item.name }}</Anchor>
               </HeadlessMenuItem>
               <HeadlessMenuItem v-slot="{ active }">
                 <button
