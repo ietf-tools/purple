@@ -486,7 +486,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         drf_filters.OrderingFilter,
     )
     filterset_fields = ["disposition"]
-    ordering_fields = ["id", "published_date", "draft__name"]
+    ordering_fields = ["id", "published_at", "submitted_at", "draft__name"]
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
 
@@ -497,7 +497,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             days_ago_limit = datetime.datetime.now() - datetime.timedelta(
                 days=int(published_within)
             )
-            queryset = queryset.filter(published_date__gte=days_ago_limit)
+            queryset = queryset.filter(published_at__gte=days_ago_limit)
         return queryset
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))

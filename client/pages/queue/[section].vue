@@ -210,9 +210,9 @@ const columns = computed(() => {
     (tabsWithSubmitted as TabId[]).includes(currentTab.value)
   ) {
     cols.push({
-      key: 'submittedDate',
+      key: 'submittedAt',
       label: 'Submitted',
-      field: 'submittedDate',
+      field: 'submittedAt',
       format: (val) =>
         val
           ? DateTime.fromJSDate(val as Date).toLocaleString(
@@ -335,9 +335,9 @@ const columns = computed(() => {
           link: (row: any) => `/team/${row.holder?.id}`
         },
         {
-          key: 'publishedDate',
+          key: 'publishedAt',
           label: 'Published',
-          field: 'publishedDate',
+          field: 'publishedAt',
           format: (val: any) =>
             val
               ? DateTime.fromJSDate(val as Date).toLocaleString(
@@ -461,7 +461,7 @@ const {
       } else if (currentTab.value === 'published') {
         const docs = await api.documentsList({
           disposition: 'published',
-          ordering: '-published_date',
+          ordering: '-published_at',
           publishedWithinDays: 30,
         })
         return docs.results

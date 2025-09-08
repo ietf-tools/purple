@@ -70,7 +70,7 @@ class RfcToBe(models.Model):
     )
     rfc_number = models.PositiveIntegerField(null=True, blank=True, unique=True)
 
-    submitted_date = models.DateTimeField(null=True, blank=True, default=timezone.now)
+    submitted_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
     submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(
         "StdLevelName", on_delete=models.PROTECT, related_name="+"
@@ -102,7 +102,7 @@ class RfcToBe(models.Model):
 
     external_deadline = models.DateTimeField(null=True, blank=True)
     internal_goal = models.DateTimeField(null=True, blank=True)
-    published_date = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
 
     # Labels applied to this instance. To track history, see
     # https://django-simple-history.readthedocs.io/en/latest/historical_model.html#tracking-many-to-many-relationships

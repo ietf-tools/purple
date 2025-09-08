@@ -12,24 +12,24 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="historicalrfctobe",
-            name="published_date",
+            name="published_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name="historicalrfctobe",
-            name="submitted_date",
+            name="submitted_at",
             field=models.DateTimeField(
                 blank=True, default=django.utils.timezone.now, null=True
             ),
         ),
         migrations.AddField(
             model_name="rfctobe",
-            name="published_date",
+            name="published_at",
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
             model_name="rfctobe",
-            name="submitted_date",
+            name="submitted_at",
             field=models.DateTimeField(
                 blank=True, default=django.utils.timezone.now, null=True
             ),
