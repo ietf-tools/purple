@@ -103,9 +103,6 @@ function text_radius(lines: Line[]) {
 export type DrawGraphParameters = Parameters<typeof draw_graph>
 
 export function draw_graph(data: DataParam, group: string) {
-  // console.log(data);
-  // let el = $.parseHTML('<svg class="w-100 h-100"></svg>');
-
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
