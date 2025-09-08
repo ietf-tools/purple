@@ -17,8 +17,8 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
-from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework import filters as drf_filters
+from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework.decorators import (
     action,
     api_view,
