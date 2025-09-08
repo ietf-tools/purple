@@ -18,6 +18,7 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 from rest_framework import mixins, serializers, status, views, viewsets
+from rest_framework import filters as drf_filters
 from rest_framework.decorators import (
     action,
     api_view,
@@ -469,6 +470,14 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
+    filter_backends = (
+        filters.DjangoFilterBackend,
+        drf_filters.OrderingFilter,
+    )
+    filterset_fields = ["disposition"]
+    ordering_fields = ["id", "published_date", "draft__name"]
+    ordering = ["-id"]
+    pagination_class = DefaultLimitOffsetPagination
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
     @action(detail=True)

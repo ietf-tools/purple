@@ -210,9 +210,9 @@ const columns = computed(() => {
     (tabsWithSubmitted as TabId[]).includes(currentTab.value)
   ) {
     cols.push({
-      key: 'submitted',
+      key: 'submittedDate',
       label: 'Submitted',
-      field: 'submitted',
+      field: 'submittedDate',
       format: (val) =>
         val
           ? DateTime.fromJSDate(val as Date).toLocaleString(
@@ -335,15 +335,17 @@ const columns = computed(() => {
           link: (row: any) => `/team/${row.holder?.id}`
         },
         {
-          key: 'published',
+          key: 'publishedDate',
           label: 'Published',
-          field: 'published',
+          field: 'publishedDate',
           format: (val: any) =>
-            DateTime.fromISO(val).toLocaleString(
-              DateTime.DATE_MED_WITH_WEEKDAY
-            ),
-          classes: 'text-xs'
-        }
+            val
+              ? DateTime.fromJSDate(val as Date).toLocaleString(
+                  DateTime.DATE_MED_WITH_WEEKDAY
+                )
+              : '',
+              classes: 'text-xs'
+            }
       ]
     )
   }
@@ -454,6 +456,13 @@ const {
     try {
       if (currentTab.value === 'submissions') {
         return await api.submissionsList()
+      } else if (currentTab.value === 'published') {
+        const docs = await api.documentsList({
+          disposition: 'published',
+          limit: 25,
+          ordering: '-id'
+        })
+        return docs.results
       } else {
         return await api.queueList()
       }

@@ -322,6 +322,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "assignment_set",
             "actionholder_set",
             "pending_activities",
+            "submitted_date",
         ]
 
 
@@ -353,6 +354,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "internal_goal",
             "labels",
             "cluster",
+            "submitted_date",
             "submitted_format",
             "submitted_boilerplate",
             "submitted_std_level",
@@ -364,8 +366,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "assignment_set",
             "actionholder_set",
             "pending_activities",
+            "rfc_number",
+            "published_date",
         ]
-        read_only_fields = ["id", "draft"]
+        read_only_fields = ["id", "draft", "published_date", "submitted_date"]
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
