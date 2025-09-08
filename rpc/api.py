@@ -466,6 +466,17 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         return base_queryset.filter(person=dt_person.rpcperson)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="published_within_days",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Show only RFCs published within the last N days.",
+        ),
+    ]
+)
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
@@ -478,6 +489,16 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id", "published_date", "draft__name"]
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        published_within = self.request.query_params.get("published_within_days")
+        if published_within:
+            days_ago_limit = datetime.datetime.now() - datetime.timedelta(
+                days=int(published_within)
+            )
+            queryset = queryset.filter(published_date__gte=days_ago_limit)
+        return queryset
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
     @action(detail=True)

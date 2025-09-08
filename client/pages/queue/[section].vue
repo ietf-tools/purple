@@ -461,8 +461,8 @@ const {
       } else if (currentTab.value === 'published') {
         const docs = await api.documentsList({
           disposition: 'published',
-          limit: 25,
-          ordering: '-published_date'
+          ordering: '-published_date',
+          publishedWithinDays: 30,
         })
         return docs.results
       } else {
