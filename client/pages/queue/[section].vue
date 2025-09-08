@@ -425,7 +425,9 @@ const filteredDocuments = computed(() => {
           assignee: d.assignmentSet[0],
           holder: d.actionholderSet
         }))
-
+      break
+    case 'published':
+      docs = documents.value
       break
     default:
       docs = []
