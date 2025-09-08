@@ -227,9 +227,9 @@ const columns = computed(() => {
   }
   if (currentTab.value === 'published') {
     cols.unshift({
-      key: 'rfc',
+      key: 'rfcNumber',
       label: 'RFC',
-      field: 'rfc',
+      field: 'rfcNumber',
       format: (val: any) => `RFC ${val}`
     })
   }
