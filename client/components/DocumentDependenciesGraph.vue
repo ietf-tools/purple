@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { overlayModalKey } from '~/providers/providerKeys';
 import type { Cluster } from '~/purple_client'
-import { draw_graph } from '~/utilities/document_relations';
+import { draw_graph, type DrawGraphParameters } from '~/utilities/document_relations';
 import { legendData, test_data2 } from '~/utilities/document_relations-utils'
 import type { DataParam, NodeParam, LinkParam } from '~/utilities/document_relations-utils';
 import { assert } from '~/utilities/typescript';
@@ -50,7 +50,13 @@ type Props = {
 
 const props = defineProps<Props>()
 
-const { closeOverlayModal } = inject(overlayModalKey)
+const overlayModalKeyInjection = inject(overlayModalKey)
+
+if(!overlayModalKeyInjection) {
+  throw Error('Expected injection of overlayModalKey')
+}
+
+const { closeOverlayModal } = overlayModalKeyInjection
 
 const api = useApi()
 
@@ -163,9 +169,7 @@ watchEffect(() => {
     return
   }
 
-  console.log(data.value)
-
-  const args: Parameters<typeof draw_graph> = showLegend.value ? [legendData, "this group"] : [test_data2, "stir"]
+  const args: DrawGraphParameters = showLegend.value ? [legendData, "this group"] : [test_data2, "stir"]
 
   let [leg_el, leg_sim] = draw_graph(...args);
 
@@ -176,15 +180,18 @@ watchEffect(() => {
 
   console.log({ leg_el })
 
-  while(container.firstChild) {
+  while (container.firstChild) {
     container.removeChild(container.firstChild)
   }
 
   container.appendChild(leg_el)
 
-  leg_sim.restart();
-}, {
-  immediate: true
+  if(leg_sim instanceof SVGSVGElement) {
+    console.log({ leg_sim })
+    throw Error('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See console.')
+  } else {
+    leg_sim.restart();
+  }
 })
 
 const handleDownload = () => {

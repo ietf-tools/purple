@@ -29,6 +29,10 @@ export const ref_type = {
   downref: "has a Downward reference (DOWNREF) to",
 } as const;
 
+export const get_ref_type = (key: string) => {
+  return key in ref_type ? ref_type[key as keyof typeof ref_type] : null
+}
+
 export type Group = "" | "none" | "this group" | "other group";
 export type Level =
   | ""
@@ -43,26 +47,17 @@ export type Line = {
   width: number;
 };
 
-export type Node = {
-  id: string;
-  url?: string;
-  level?: Level;
-  group?: Group;
-  rfc?: boolean;
-  replaced?: boolean;
-  dead?: boolean;
-  expired?: boolean;
-  "post-wg"?: boolean;
-  x?: number;
-  y?: number;
-  r?: number;
+export type Node = NodeParam & {
+  x: number;
+  y: number;
+  r: number;
   lines?: Line[];
   stroke?: number;
 };
 
-export type Link = {
-  source: string | Node;
-  target: string | Node;
+export type Link = Omit<LinkParam, 'source' | 'target'> & {
+  source: Node;
+  target: Node;
   rel: keyof typeof ref_type;
   replaced?: boolean;
   "post-wg"?: boolean;
@@ -191,7 +186,7 @@ const whatIveGot2 = [
   [],
 ];
 
-export const test_data2: Data = {
+export const test_data2: DataParam = {
   links: [
     {
       source: "rfc7340",

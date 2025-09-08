@@ -3,8 +3,7 @@
  */
 
 import * as d3 from "d3"
-import { black, blue, cyan, font, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type Line, type Node } from "./document_relations-utils"
-
+import { black, blue, cyan, font, get_ref_type, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type Node, type NodeParam } from "./document_relations-utils"
 
 const link_color = {
   refinfo: green,
@@ -14,6 +13,10 @@ const link_color = {
   refold: yellow,
   downref: red,
 } as const
+
+const get_link_color = (key: string) => {
+  return key in link_color ? link_color[key as keyof typeof link_color] : null
+}
 
 function assert(val: unknown): asserts val {
   if (!val) {
@@ -31,7 +34,7 @@ function assertData(val: unknown): asserts val is Data {
 
 const DEFAULT_STROKE = 10
 
-function stroke(d: Node) {
+function stroke(d: NodeParam) {
   if (
     d.level == "Informational" ||
     d.level == "Experimental" ||
@@ -111,13 +114,14 @@ function text_radius(lines: Line[]) {
   return radius
 }
 
+export type DrawGraphParameters = Parameters<typeof draw_graph>
 
-export function draw_graph(data: Data, group: string) {
+export function draw_graph(data: DataParam, group: string) {
   // console.log(data);
   // let el = $.parseHTML('<svg class="w-100 h-100"></svg>');
 
   const zoom = d3
-    .zoom<HTMLElement, unknown>()
+    .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
     .on("zoom", zoomed)
 
@@ -151,7 +155,7 @@ export function draw_graph(data: Data, group: string) {
     .attr("stroke-width", 0.2)
     .attr("stroke", black)
     .attr("orient", "auto")
-    .attr("fill", (d) => link_color[d])
+    .attr("fill", (d) => get_link_color(d))
     .append("path")
     .attr("d", "M0,-5L10,0L0,5")
 
@@ -162,9 +166,9 @@ export function draw_graph(data: Data, group: string) {
     .selectAll("path")
     .data(data.links)
     .join("path")
-    .attr("title", (d) => `${d.source} ${ref_type[d.rel]} ${d.target}`)
+    .attr("title", (d) => `${d.source} ${get_ref_type(d.rel)} ${d.target}`)
     .attr("marker-end", (d) => `url(#marker-${d.rel})`)
-    .attr("stroke", (d) => link_color[d.rel])
+    .attr("stroke", (d) => get_link_color(d.rel))
     .attr("class", (d) => d.rel)
 
   const node = svg.append("g").selectAll("g").data(data.nodes).join("g")
@@ -174,7 +178,7 @@ export function draw_graph(data: Data, group: string) {
     .append("a")
     .attr("href", (d) => d.url ?? null)
     .attr("title", (d) => {
-      const nodePropsWeCareAbout: (keyof Node)[] = [
+      const nodePropsWeCareAbout: (keyof NodeParam)[] = [
         "replaced",
         "dead",
         "expired",
@@ -199,12 +203,12 @@ export function draw_graph(data: Data, group: string) {
   a.append("text")
     .attr("fill", (d) => (d.rfc || d.replaced ? white : black))
     .each((d) => {
-      d.lines = lines(d.id)
-      d.r = text_radius(d.lines)
-      max_r = Math.max(d.r, max_r)
+      (d as Node).lines = lines(d.id);
+      (d as Node).r = text_radius((d as Node).lines!)
+      max_r = Math.max((d as Node).r, max_r)
     })
     .selectAll("tspan")
-    .data((d) => d.lines ?? [])
+    .data((d) => (d as Node).lines ?? [])
     .join("tspan")
     .attr("x", 0)
     .attr("y", (d, i, x) => (i - x.length / 2 + 0.5) * line_height)
@@ -237,20 +241,22 @@ export function draw_graph(data: Data, group: string) {
       }
       return cyan
     })
-    .each((d) => (d.stroke = stroke(d)))
+    .each((d) => ((d as Node).stroke = stroke(d)))
     .attr("r", (d) => {
-      if (d.stroke === undefined) {
+      const dNode = d as Node
+      if (dNode.stroke === undefined) {
         console.error(d)
         throw Error("Expected stroke to be defined. See console.")
       }
-      return (d.r ?? 0) + d.stroke / 2
+      return (dNode.r ?? 0) + dNode.stroke / 2
     })
     .attr("stroke-width", (d) => {
-      if (d.stroke === undefined) {
+      const dNode = d as Node
+      if (dNode.stroke === undefined) {
         console.error(d)
         throw Error("Expected stroke to be defined. See console.")
       }
-      return d.stroke
+      return dNode.stroke
     })
     .attr("stroke-dasharray", (d) => {
       if (d.group != "" || d.rfc) {
@@ -291,12 +297,8 @@ export function draw_graph(data: Data, group: string) {
 
     // code for arced links:
     link.attr("d", (d) => {
-
-      const { source, target } = d
-
-      if (typeof source === "string" || typeof target === "string") {
-        return ""
-      }
+      const dLink = d as unknown as Link
+      const { source, target } = dLink
 
       if (
         source.r === undefined ||
@@ -320,19 +322,20 @@ export function draw_graph(data: Data, group: string) {
     })
     // TODO: figure out how to combine this with above
     link.attr("d", function (d) {
-      console.log(this, this?.constructor.name)
+      const dLink = d as unknown as Link
+      if(!(this instanceof SVGPathElement)) {
+        console.error('SVGPathElement expected but was ', this)
+        throw Error('Expected SVGPathElement. See console')
+      }
+
       const pl = this.getTotalLength()
       const start = this.getPointAtLength(
         typeof d.source !== "string"
-          ? (d.source.r ?? 0) + (d.source.stroke ?? 0)
+          ? (dLink.source.r ?? 0) + (dLink.source.stroke ?? 0)
           : 0,
       )
 
-      const { source, target } = d
-
-      if (typeof source === "string" || typeof target === "string") {
-        return ""
-      }
+      const { source, target } = dLink
 
       if (
         source.r === undefined ||
@@ -359,9 +362,8 @@ export function draw_graph(data: Data, group: string) {
     })
 
     node.selectAll("circle, text").attr("transform", (d) => {
-      console.log("UNKNOWN VAL (d?.x/y)", d)
-      // assertData(d)
-      return `translate(${d.x}, ${d.y})`
+      const dNode = d as Node
+      return `translate(${dNode.x}, ${dNode.y})`
     })
 
     // auto pan and zoom during simulation
@@ -389,15 +391,14 @@ export function draw_graph(data: Data, group: string) {
     svg.node(),
     d3
       .forceSimulation()
-      .nodes(data.nodes)
+      .nodes(data.nodes as Node[])
       .force(
         "link",
         d3
           .forceLink(data.links)
           .id((d) => {
-
-            console.log("UNKNOWN VAL (d?.id)", d)
-            return d.id
+            const dNode = d as Node
+            return dNode.id
           })
           .distance(0),
         // .strength(1)
@@ -408,18 +409,5 @@ export function draw_graph(data: Data, group: string) {
       .force("y", d3.forceY())
       .stop()
       .on("tick", ticked),
-    // .on("end", function () {
-    //     $("#download-svg")
-    //         .removeClass("disabled")
-    //         .html('<i class="bi bi-download"></i> Download');
-    // })
   ]
-
-  // // See https://github.com/d3/d3-force/blob/main/README.md#simulation_tick
-  // for (let i = 0, n = Math.ceil(Math.log(simulation.alphaMin()) /
-  //         Math.log(1 - simulation.alphaDecay())); i <
-  //     n; ++i) {
-  //     simulation.tick();
-  // }
-  // ticked();
 }
