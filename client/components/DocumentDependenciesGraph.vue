@@ -23,7 +23,7 @@
             <Icon name="el:download-alt" size="1.1em" class="mr-2" />
             Download
           </span>
-          <span v-else="canDownload">
+          <span v-else>
             <Icon name="ei:spinner-3" size="1.5em" class="animate-spin mr-2" />
             Loading...
           </span>
