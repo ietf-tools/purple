@@ -462,7 +462,7 @@ const {
         const docs = await api.documentsList({
           disposition: 'published',
           limit: 25,
-          ordering: '-id'
+          ordering: '-published_date'
         })
         return docs.results
       } else {
