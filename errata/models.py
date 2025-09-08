@@ -42,7 +42,12 @@ class Errata(models.Model):
         db_column="status_slug",
     )
     type = models.ForeignKey(
-        "Type", on_delete=models.PROTECT, related_name="errata", db_column="type_slug"
+        "Type",
+        on_delete=models.PROTECT,
+        related_name="errata",
+        db_column="type_slug",
+        null=True,
+        blank=True,
     )
     section = models.TextField(blank=True)
     orig_text = models.TextField(blank=True)
