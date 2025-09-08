@@ -18,20 +18,6 @@ const get_link_color = (key: string) => {
   return key in link_color ? link_color[key as keyof typeof link_color] : null
 }
 
-function assert(val: unknown): asserts val {
-  if (!val) {
-    console.error(val)
-    throw Error(`Assertion failed. See console.`)
-  }
-}
-
-function assertData(val: unknown): asserts val is Data {
-  assert(val)
-  assert(typeof val === "object")
-  assert("links" in val)
-  assert("nodes" in val)
-}
-
 const DEFAULT_STROKE = 10
 
 function stroke(d: NodeParam) {
@@ -136,7 +122,6 @@ export function draw_graph(data: DataParam, group: string) {
     .style("font", font)
     .attr("text-anchor", "middle")
     .attr("dominant-baseline", "central")
-    .attr('xmlns',  "http://www.w3.org/2000/svg")
     .attr('overflow', "visible")
     .attr("version", "1.1")
     .attr("viewBox", [-width / 2, -height / 2, width, height].join(" "))

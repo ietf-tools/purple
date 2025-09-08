@@ -179,8 +179,6 @@ watchEffect(() => {
     return
   }
 
-  console.log({ leg_el })
-
   while (container.firstChild) {
     container.removeChild(container.firstChild)
   }
