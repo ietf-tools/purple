@@ -97,7 +97,7 @@ export type DataParam = {
   nodes: NodeParam[]
 }
 
-export const test_data1: Data = {
+export const legendData: DataParam = {
   links: [
     {
       source: "Individual submission",
