@@ -42,6 +42,7 @@ import type { Cluster } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utilities/document_relations';
 import { legendData, test_data2 } from '~/utilities/document_relations-utils'
 import type { DataParam, NodeParam, LinkParam } from '~/utilities/document_relations-utils';
+import { downloadTextFile } from '~/utilities/download';
 import { assert } from '~/utilities/typescript';
 
 type Props = {
@@ -52,7 +53,7 @@ const props = defineProps<Props>()
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
-if(!overlayModalKeyInjection) {
+if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
 }
 
@@ -186,7 +187,7 @@ watchEffect(() => {
 
   container.appendChild(leg_el)
 
-  if(leg_sim instanceof SVGSVGElement) {
+  if (leg_sim instanceof SVGSVGElement) {
     console.log({ leg_sim })
     throw Error('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See console.')
   } else {
@@ -204,23 +205,7 @@ const handleDownload = () => {
     console.error('container ref not found')
     return
   }
-
   const svgString = container.outerHTML
-  const blob = new Blob([svgString], { type: 'text/svg' });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-
-  // Clean up after download
-  link.addEventListener('click', () => {
-    setTimeout(() => {
-      URL.revokeObjectURL(url);
-    }, 150);
-  });
-
-  link.href = url;
-  link.download = `${props.cluster.number}.svg`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+  downloadTextFile(`cluster-${props.cluster.number}.svg`, 'text/svg', svgString)
 }
 </script>
