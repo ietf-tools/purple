@@ -1,6 +1,6 @@
 <template>
   <NuxtLink
-    v-if="isInternal && !isHash && !isMailTo"
+    v-if="isInternal && !isHash && !isMailTo & !isOidc"
     v-bind="sanitisedAnchorProps"
     data-link-type="nuxt-link"
   >
