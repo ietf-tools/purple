@@ -3,6 +3,7 @@
 import datetime
 from dataclasses import dataclass
 
+from django import forms
 import rpcapi_client
 from django.db import transaction
 from django.db.models import Max, Q
@@ -466,6 +467,10 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         return base_queryset.filter(person=dt_person.rpcperson)
 
 
+class PublishedWithinDaysForm(forms.Form):
+    published_within_days = forms.IntegerField(required=False, min_value=0)
+
+
 @extend_schema(
     parameters=[
         OpenApiParameter(
@@ -492,12 +497,16 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        published_within = self.request.query_params.get("published_within_days")
-        if published_within:
-            days_ago_limit = datetime.datetime.now() - datetime.timedelta(
-                days=int(published_within)
-            )
-            queryset = queryset.filter(published_at__gte=days_ago_limit)
+        form = PublishedWithinDaysForm(self.request.query_params)
+        if form.is_valid():
+            days = form.cleaned_data.get("published_within_days")
+            if days is not None:
+                days_ago_limit = datetime.datetime.now() - datetime.timedelta(
+                    days=int(days)
+                )
+                queryset = queryset.filter(published_at__gte=days_ago_limit)
+        else:
+            raise serializers.ValidationError(form.errors)
         return queryset
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
