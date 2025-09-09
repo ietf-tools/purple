@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-import django.utils.timezone
 from django.db import migrations, models
 
 
