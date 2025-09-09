@@ -210,9 +210,9 @@ const columns = computed(() => {
     (tabsWithSubmitted as TabId[]).includes(currentTab.value)
   ) {
     cols.push({
-      key: 'submittedAt',
+      key: 'submitted',
       label: 'Submitted',
-      field: 'submittedAt',
+      field: 'submitted',
       format: (val) =>
         val
           ? DateTime.fromJSDate(val as Date).toLocaleString(
