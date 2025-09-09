@@ -70,7 +70,6 @@ class RfcToBe(models.Model):
     )
     rfc_number = models.PositiveIntegerField(null=True, blank=True, unique=True)
 
-    submitted_at = models.DateTimeField(null=True, blank=True, default=timezone.now)
     submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(
         "StdLevelName", on_delete=models.PROTECT, related_name="+"

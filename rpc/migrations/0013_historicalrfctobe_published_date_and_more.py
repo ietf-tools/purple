@@ -16,22 +16,8 @@ class Migration(migrations.Migration):
             field=models.DateTimeField(blank=True, null=True),
         ),
         migrations.AddField(
-            model_name="historicalrfctobe",
-            name="submitted_at",
-            field=models.DateTimeField(
-                blank=True, default=django.utils.timezone.now, null=True
-            ),
-        ),
-        migrations.AddField(
             model_name="rfctobe",
             name="published_at",
             field=models.DateTimeField(blank=True, null=True),
-        ),
-        migrations.AddField(
-            model_name="rfctobe",
-            name="submitted_at",
-            field=models.DateTimeField(
-                blank=True, default=django.utils.timezone.now, null=True
-            ),
         ),
     ]

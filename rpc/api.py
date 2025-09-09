@@ -491,7 +491,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         drf_filters.OrderingFilter,
     )
     filterset_fields = ["disposition"]
-    ordering_fields = ["id", "published_at", "submitted_at", "draft__name"]
+    ordering_fields = ["id", "published_at", "draft__name"]
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
 
