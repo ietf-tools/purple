@@ -467,7 +467,7 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         return base_queryset.filter(person=dt_person.rpcperson)
 
 
-class PublishedWithinDaysForm(forms.Form):
+class RfcToBeQueryParamsForm(forms.Form):
     published_within_days = forms.IntegerField(required=False, min_value=0)
 
 
@@ -497,7 +497,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-        form = PublishedWithinDaysForm(self.request.query_params)
+        form = RfcToBeQueryParamsForm(self.request.query_params)
         if form.is_valid():
             days = form.cleaned_data.get("published_within_days")
             if days is not None:
