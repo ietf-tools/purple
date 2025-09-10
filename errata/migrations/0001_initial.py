@@ -124,7 +124,9 @@ class Migration(migrations.Migration):
                 (
                     "type",
                     models.ForeignKey(
+                        blank=True,
                         db_column="type_slug",
+                        null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="errata",
                         to="errata.type",
