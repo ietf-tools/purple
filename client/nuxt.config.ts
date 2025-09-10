@@ -19,12 +19,12 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/devtools',
     '@nuxt/eslint',
+    '@nuxt/icon',
     '@nuxtjs/color-mode',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/robots',
     '@pinia/nuxt',
     'nuxt-headlessui',
-    'nuxt-icon',
     'nuxt-snackbar',
     'nuxt-svgo',
     'nuxt-security',
