@@ -30,7 +30,7 @@
     "eslint": "9.35.0",
     "eslint-plugin-nuxt": "4.0.0",
     "eslint-plugin-vue": "10.4.0",
-    "globals": "16.3.0",
+    "globals": "16.4.0",
     "neostandard": "0.12.2",
     "nuxt": "3.17.7",
     "nuxt-headlessui": "1.2.1",
