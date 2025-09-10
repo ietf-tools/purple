@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDefaultHead } from '../utilities/head'
+import { useDefaultHead } from '~/utils/head'
 import { overlayModalKey } from '../providers/providerKeys'
 import type { OverlayModal } from '../providers/providerKeys'
 

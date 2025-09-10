@@ -23,8 +23,8 @@
  *
  */
 import { computed } from 'vue'
-import { EXTERNAL_LINK_REL, TARGET_NEW_WINDOW } from '~/utilities/html'
-import { isHashLink, isInternalLink, isMailToLink, isOidcLink } from '~/utilities/url'
+import { EXTERNAL_LINK_REL, TARGET_NEW_WINDOW } from '~/utils/html'
+import { isHashLink, isInternalLink, isMailToLink, isOidcLink } from '~/utils/url'
 
 type Props = { href?: string; id?: string }
 

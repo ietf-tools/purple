@@ -22,8 +22,8 @@
 
 <script setup lang="ts">
 import type { Label } from '~/purple_client'
-import { TRISTATE_MIXED } from '~/utilities/tristate'
-import type { TristateValue } from '~/utilities/tristate'
+import { TRISTATE_MIXED } from '~/utils/tristate'
+import type { TristateValue } from '~/utils/tristate'
 
 const allLabelFilters = defineModel<Label[]>(
   'all-label-filters',

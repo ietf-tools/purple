@@ -46,7 +46,7 @@ import {
   ComboboxViewport,
 } from "reka-ui"
 import type { RfcToBe, BaseDatatrackerPerson } from "~/purple_client"
-import { snackbarForErrors } from "~/utilities/snackbar"
+import { snackbarForErrors } from "~/utils/snackbar"
 
 const draft = defineModel<RfcToBe>({ required: true })
 

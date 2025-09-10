@@ -20,8 +20,8 @@
 </template>
 
 <script setup lang="ts">
-import { TRISTATE_MIXED, type TristateValue } from '~/utilities/tristate'
-import type { VueStyleClass } from '~/utilities/vue'
+import { TRISTATE_MIXED, type TristateValue } from '~/utils/tristate'
+import type { VueStyleClass } from '~/utils/vue'
 
 /**
  * Implements a tristate button using `aria-pressed`.

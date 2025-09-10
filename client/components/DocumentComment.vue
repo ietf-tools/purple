@@ -80,7 +80,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
 
 <script setup lang="ts">
 import type {PaginatedDocumentCommentList} from '~/purple_client'
-import {snackbarForErrors} from '~/utilities/snackbar'
+import {snackbarForErrors} from '~/utils/snackbar'
 
 type Props = {
   draftName: string

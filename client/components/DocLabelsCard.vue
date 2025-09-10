@@ -31,10 +31,10 @@
 <script setup lang="ts">
 import { groupBy } from 'lodash-es'
 import type { Label } from '~/purple_client'
-import { SLUG_SEPARATOR, UNGROUPED } from '../utilities/labels'
-import { badgeColors } from '~/utilities/badge'
-import { assert } from '~/utilities/typescript'
-import { sortObject } from '~/utilities/sort'
+import { SLUG_SEPARATOR, UNGROUPED } from '~/utils/labels'
+import { badgeColors } from '~/utils/badge'
+import { assert } from '~/utils/typescript'
+import { sortObject } from '~/utils/sort'
 
 type Props = {
   title: string

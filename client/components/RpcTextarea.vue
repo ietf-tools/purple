@@ -55,8 +55,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { localStorageWrapper } from '~/utilities/localstorage'
-import { snackbarForErrors } from '~/utilities/snackbar'
+import { localStorageWrapper } from '~/utils/localstorage'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 type Props = {
   draftName: string

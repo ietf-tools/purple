@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import type { ColorEnum } from '~/purple_client'
-import { badgeColors } from '~/utilities/badge'
+import { badgeColors } from '~/utils/badge'
 
 type Props = {
   /**

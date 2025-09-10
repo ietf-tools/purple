@@ -39,8 +39,8 @@ import {
   DialogTitle,
 } from "reka-ui"
 import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~/purple_client"
-import type { DialogOption } from "~/utilities/dialog"
-import { snackbarForErrors } from "~/utilities/snackbar"
+import type { DialogOption } from "~/utils/dialog"
+import { snackbarForErrors } from "~/utils/snackbar"
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>('relatedDocuments', { required: true, default: [] })
 

@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import type { DialogOption } from '~/utilities/dialog';
+import type { DialogOption } from '~/utils/dialog';
 
 const model = defineModel<string>({ required: true })
 

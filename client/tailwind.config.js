@@ -5,7 +5,7 @@ export default {
   content: [
     "./layouts/*.{html,ts,vue}",
     "./pages/*.{html,ts,vue}",
-    "./utilities/*.{html,ts,vue}",
+    "./utils/*.{html,ts,vue}",
     "./components/*.{html,ts,vue}",
   ],
   darkMode: 'class',

@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import type { VueStyleClass } from '~/utilities/vue'
+import type { VueStyleClass } from '~/utils/vue'
 
 // Fallthrough attributes are applied to an internal element via v-bind="$attrs"
 defineOptions({ inheritAttrs: false })

@@ -127,7 +127,7 @@ import { SelectRoot, SelectTrigger, SelectPortal, SelectContent, SelectViewport,
 import type { AcceptableValue } from 'reka-ui'
 import { assignEditorKey, deleteAssignmentKey } from '~/providers/providerKeys'
 import type { ResolvedQueueItem, ResolvedPerson } from './AssignmentsTypes'
-import { assert, assertIsArrayOfNumbers, assertIsNumber } from '../utilities/typescript'
+import { assert, assertIsArrayOfNumbers, assertIsNumber } from '~/utils/typescript'
 
 type Props = {
   document: ResolvedQueueItem

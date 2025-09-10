@@ -65,9 +65,9 @@
 import { DateTime } from 'luxon'
 import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
-import type { CookedDraft } from '~/utilities/rpc'
-import { snackbarForErrors } from '~/utilities/snackbar'
-import { QUEUE_QUEUE_PATH } from '~/utilities/url'
+import type { CookedDraft } from '~/utils/rpc'
+import { snackbarForErrors } from '~/utils/snackbar'
+import { QUEUE_QUEUE_PATH } from '~/utils/url'
 
 const route = useRoute()
 const api = useApi()

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { AUTH_PATH, testIsAuthRoute } from '~/utilities/url'
+import { AUTH_PATH, testIsAuthRoute } from '~/utils/url'
 
 export type ProfileData = {
   /**

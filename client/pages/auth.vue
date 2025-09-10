@@ -13,7 +13,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDefaultHead } from '../utilities/head'
+import { useDefaultHead } from '~/utils/head'
 
 const route = useRoute()
 
