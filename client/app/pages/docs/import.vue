@@ -105,6 +105,24 @@
               </div>
             </div>
           </div>
+          <!-- Comments -->
+          <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+            <div class="sm:col-span-4 space-y-4">
+            <label for="comments" class="block text-sm font-medium leading-6 text-gray-900">Comments</label>
+            <RpcTextarea v-if="submission?.name"
+              :draft-name="submission?.name"
+              :reload-comments="comments.reload"
+              class="w-4/5 min-w-100"
+            />
+            <DocumentComments v-if="submission?.name"
+              :draft-name="submission?.name"
+              :is-loading="comments.pending"
+              :error="comments.error"
+              :comment-list="comments.data"
+              :reload-comments="comments.reload"
+              class="w-3/5 min-w-100"
+            />
+          </div></div>
         </form>
       </BaseCard>
     </div>
@@ -275,4 +293,25 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
   },
   { server: false }
 )
+
+const draftName = computed(() => submission.value?.name)
+
+const {
+  data: commentList,
+  pending: commentsPending,
+  error: commentsError,
+  refresh: commentsReload
+} = await useAsyncData(
+  () => `comments-${draftName.value}`,
+  () => draftName.value ? api.documentsCommentsList({ draftName: draftName.value }) : [],
+  { watch: [draftName] }
+)
+
+const comments = computed(() => ({
+  data: commentList.value || [],
+  pending: commentsPending.value,
+  error: commentsError.value,
+  reload: commentsReload
+}))
+
 </script>

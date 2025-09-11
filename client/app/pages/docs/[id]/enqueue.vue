@@ -132,7 +132,8 @@ const {
   refresh: commentsReload
 } = await useAsyncData(
   draftCommentsKey,
-  () => api.documentsCommentsList({ draftName: id.value })
+  () => api.documentsCommentsList({ draftName: id.value }),
+  { watch: [id] }
 )
 
 const relatedDocumentsKey = computed(() => `references-${id.value}`)
