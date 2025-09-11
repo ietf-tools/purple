@@ -66,6 +66,7 @@ import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { QUEUE_QUEUE_PATH } from '~/utils/url'
+import { useCommentsForDraft } from '~/composables/useCommentsForDraft'
 
 const route = useRoute()
 const api = useApi()
@@ -130,10 +131,7 @@ const {
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useAsyncData(
-  draftCommentsKey,
-  () => api.documentsCommentsList({ draftName: id.value })
-)
+} = await useCommentsForDraft(id.value)
 
 const relatedDocumentsKey = computed(() => `references-${id.value}`)
 
