@@ -7,7 +7,7 @@
     />
   </div>
   <NuxtLayout v-else>
-    <NuxtPage />
+    <NuxtPage :key="$route.params.id" />
   </NuxtLayout>
 </template>
 

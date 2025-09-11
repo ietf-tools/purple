@@ -157,6 +157,19 @@
             </table>
           </div>
         </BaseCard>
+
+        <!-- Comments -->
+        <BaseCard class="lg:col-span-full grid place-items-stretch">
+          <template #header>
+            <CardHeader title="Comments" />
+          </template>
+          <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
+            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
+            <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
+              :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
+              class="w-3/5 min-w-100" />
+          </div>
+        </BaseCard>
       </div>
     </div>
   </div>
@@ -174,12 +187,23 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
+const draftCommentsKey = computed(() => `comments-${draftName.value}`)
+
 const {
-  data: history,
-  error: historyError,
-  status: historyStatus,
-  refresh: historyRefresh
-} = await useHistoryForDraft(draftName.value)
+  data: commentList,
+  pending: commentsPending,
+  error: commentsError,
+  refresh: commentsReload
+} = await useAsyncData(
+  draftCommentsKey,
+  () => api.documentsCommentsList({ draftName: draftName.value })
+)
+
+const { data: history, error: historyError, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
+  () => `history-${draftName.value}`,
+  () => api.documentsHistoryList({ draftName: draftName.value }),
+  { server: false, lazy: false }
+)
 
 const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = await useAsyncData(
   () => `draft-${draftName.value}`,
