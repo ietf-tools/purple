@@ -5,7 +5,7 @@ export function useCommentsForDraft(draftName: string | undefined) {
     `comments-${draftName || 'empty'}`,
     async () => {
       if (draftName) {
-        return api.documentsCommentsList({ draftName: draftName })
+        return await api.documentsCommentsList({ draftName: draftName })
       }
       return undefined
     }
