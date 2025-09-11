@@ -77,7 +77,7 @@
 import type { RfcToBe } from '~/purple_client'
 
 type Props = {
-  rfcToBe: RfcToBe | null
+  rfcToBe: RfcToBe | null | undefined
 }
 
 defineProps<Props>()

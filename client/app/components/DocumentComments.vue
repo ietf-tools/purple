@@ -64,7 +64,7 @@ type Props = {
   rfcToBeId: number
   isLoading: boolean
   error?: NuxtError | null
-  commentList?: PaginatedDocumentCommentList | null
+  commentList?: PaginatedDocumentCommentList | null | undefined
   reloadComments: () => Promise<void>
 }
 
