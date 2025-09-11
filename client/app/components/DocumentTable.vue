@@ -70,7 +70,7 @@
 import { Anchor, RpcLabel, Icon } from '#components'
 import { isArray, isFunction, orderBy } from 'lodash-es'
 import type { Column, Row } from './DocumentTableTypes'
-import type { ColorEnum, Label } from '~~/purple_client'
+import type { ColorEnum, Label } from '~/purple_client'
 
 const props = defineProps<{
   /**

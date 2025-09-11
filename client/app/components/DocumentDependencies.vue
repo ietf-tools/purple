@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RpcRelatedDocument, RpcPerson } from '~~/purple_client';
+import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
 import { h } from 'vue'
 import { Anchor } from '#components'

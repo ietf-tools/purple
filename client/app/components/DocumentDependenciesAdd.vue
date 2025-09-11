@@ -38,7 +38,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui"
-import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~~/purple_client"
+import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~/purple_client"
 import type { DialogOption } from "~/utils/dialog"
 import { snackbarForErrors } from "~/utils/snackbar"
 

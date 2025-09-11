@@ -119,7 +119,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import humanizeDuration from 'humanize-duration'
-import type { SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~~/purple_client'
+import type { SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()

@@ -104,7 +104,7 @@ import Badge from '../../components/BaseBadge.vue'
 import { TRISTATE_MIXED } from '~/utils/tristate'
 import type { TristateValue } from '~/utils/tristate'
 import type { Column, Row } from '~/components/DocumentTableTypes'
-import type { ActionHolder, Assignment, Label, QueueItem, SubmissionListItem } from '~~/purple_client'
+import type { ActionHolder, Assignment, Label, QueueItem, SubmissionListItem } from '~/purple_client'
 import type { Tab } from '~/components/TabNavTypes'
 import { Icon } from '#components'
 

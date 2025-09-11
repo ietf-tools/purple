@@ -64,7 +64,7 @@
 <script setup lang="ts">
 import { UserCreateDialog } from '#components'
 import { overlayModalKey } from '~/providers/providerKeys'
-import type { RpcPerson } from '~~/purple_client'
+import type { RpcPerson } from '~/purple_client'
 
 const snackbar = useSnackbar()
 const _overlayModal = inject(overlayModalKey)

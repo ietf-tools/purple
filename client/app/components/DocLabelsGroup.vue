@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Label } from '~~/purple_client';
+import type { Label } from '~/purple_client';
 import { SLUG_SEPARATOR } from '~/utils/labels'
 import { badgeColors } from '~/utils/badge'
 import { assert } from '~/utils/typescript';

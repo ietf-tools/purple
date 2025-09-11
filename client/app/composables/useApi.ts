@@ -1,4 +1,4 @@
-import { Configuration, PurpleApi } from '~~/purple_client'
+import { Configuration, PurpleApi } from '~/purple_client'
 
 const safeMethods = ['GET', 'HEAD', 'OPTIONS', 'TRACE']
 

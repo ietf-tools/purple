@@ -181,7 +181,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RpcPerson } from '~~/purple_client'
+import type { RpcPerson } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()

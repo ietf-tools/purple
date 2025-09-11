@@ -1,5 +1,5 @@
 import type { VNode } from 'vue'
-import type { ColorEnum } from '~~/purple_client'
+import type { ColorEnum } from '~/purple_client'
 
 export type Value = unknown
 

@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Assignment, ColorEnum } from '~~/purple_client'
+import type { Assignment, ColorEnum } from '~/purple_client'
 
 type Props = {
   state: Assignment["state"]

@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Label } from '~~/purple_client'
+import type { Label } from '~/purple_client'
 import { TRISTATE_MIXED } from '~/utils/tristate'
 import type { TristateValue } from '~/utils/tristate'
 

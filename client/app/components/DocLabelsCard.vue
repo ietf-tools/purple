@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { groupBy } from 'lodash-es'
-import type { Label } from '~~/purple_client'
+import type { Label } from '~/purple_client'
 import { SLUG_SEPARATOR, UNGROUPED } from '~/utils/labels'
 import { badgeColors } from '~/utils/badge'
 import { assert } from '~/utils/typescript'

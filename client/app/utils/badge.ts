@@ -1,4 +1,4 @@
-import type { ColorEnum } from "~~/purple_client";
+import type { ColorEnum } from "~/purple_client";
 
 export const badgeColors: Record<ColorEnum, string> = {
   slate: 'bg-slate-50 text-slate-700 ring-slate-700/10',

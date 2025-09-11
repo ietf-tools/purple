@@ -57,7 +57,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import type { NuxtError } from '#app'
-import type { PaginatedDocumentCommentList } from '~~/purple_client'
+import type { PaginatedDocumentCommentList } from '~/purple_client'
 
 type Props = {
   draftName: string

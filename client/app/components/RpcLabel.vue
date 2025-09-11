@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Label } from '~~/purple_client'
+import type { Label } from '~/purple_client'
 
 type Props = {
   label?: Label

@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { useDragAndDrop } from "fluid-dnd/vue";
-import type { RfcToBe } from '~~/purple_client'
+import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   draftName: string

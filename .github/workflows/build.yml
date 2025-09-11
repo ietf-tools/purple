@@ -94,7 +94,7 @@ jobs:
           docker cp "${container_id}:/workspace/purple_api.yaml" ./
           docker rm "${container_id}"
           npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
-          tar cfz ../purple_client.tgz -C client purple_client
+          tar cfz ../purple_client.tgz -C client/app purple_client
           cp purple_api.yaml ..
 
       - name: Upload API

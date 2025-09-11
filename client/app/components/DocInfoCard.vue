@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RfcToBe } from '~~/purple_client'
+import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   rfcToBe: RfcToBe | null

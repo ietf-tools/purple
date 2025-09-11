@@ -79,7 +79,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
 </template>
 
 <script setup lang="ts">
-import type {PaginatedDocumentCommentList} from '~~/purple_client'
+import type {PaginatedDocumentCommentList} from '~/purple_client'
 import {snackbarForErrors} from '~/utils/snackbar'
 
 type Props = {

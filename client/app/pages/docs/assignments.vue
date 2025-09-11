@@ -68,7 +68,7 @@
 
 <script setup lang="ts">
 import type { ResolvedQueueItem, ResolvedPerson } from '~/components/AssignmentsTypes'
-import type { Assignment, QueueItem, RpcPerson, RpcRole } from '~~/purple_client'
+import type { Assignment, QueueItem, RpcPerson, RpcRole } from '~/purple_client'
 import { DateTime } from 'luxon'
 
 const csrf = useCookie('csrftoken', { sameSite: 'strict' })

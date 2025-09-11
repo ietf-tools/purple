@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Label } from '~~/purple_client'
+import type { Label } from '~/purple_client'
 
 // work around hydration mismatch bug in Headless by explicitly generating stable IDs
 const comboboxLabelId = useId()
