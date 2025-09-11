@@ -62,10 +62,8 @@
 </template>
 
 <script setup lang="ts">
-import { DateTime } from 'luxon'
 import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
-import type { CookedDraft } from '~/utils/rpc'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { QUEUE_QUEUE_PATH } from '~/utils/url'
 
@@ -79,7 +77,10 @@ const rfcToBeKey = computed(() => `rfcToBe-${id.value}`)
 const { data: rfcToBe, error: rfcToBeError } = await useAsyncData<RfcToBe>(
   rfcToBeKey,
   () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
-  { server: false }
+  {
+    server: false,
+    deep: true // author editing relies on deep reactivity
+  }
 )
 
 // const { data: capabilities } = await useAsyncData<Capability[]>(

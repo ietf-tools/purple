@@ -183,7 +183,10 @@ const { data: history, error: historyError, status: historyStatus, refresh: hist
 const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
-  { server: false }
+  {
+    server: false,
+    deep: true // author editing relies on deep reactivity
+  }
 )
 
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
