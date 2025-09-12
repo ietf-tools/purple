@@ -1,13 +1,8 @@
 const api = useApi()
 
-export function useCommentsForDraft(draftName: string | undefined) {
+export function useCommentsForDraft(draftName: string) {
   return useAsyncData(
-    `comments-${draftName || 'empty'}`,
-    async () => {
-      if (draftName) {
-        return await api.documentsCommentsList({ draftName: draftName })
-      }
-      return undefined
-    }
+    `comments-${draftName}`,
+    () => api.documentsCommentsList({ draftName: draftName })
   )
 }
