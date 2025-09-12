@@ -125,21 +125,19 @@ USING_DEBUG_EMAIL_SERVER = (
     os.environ.get("DATATRACKER_EMAIL_DEBUG", "false").lower() == "true"
 )
 
-# TODO: Uncomment these when we are ready send mails
-# EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-# _email_host = os.environ.get("DATATRACKER_EMAIL_HOST", None)
-# if _email_host is not None:
-#    EMAIL_HOST = _email_host
-# else:
-#    raise RuntimeError("DATATRACKER_EMAIL_HOST must be set")
+# Email
 #
-# _email_port = os.environ.get("DATATRACKER_EMAIL_PORT", None)
-# if _email_port is not None:
-#    EMAIL_PORT = int(_email_port)
-# else:
-#    raise RuntimeError("DATATRACKER_EMAIL_PORT must be set")
+# This datatracker instance is never intended for production, so only ever user
+# the mailpit service settings.
+_email_host = os.environ.get("MAILPIT_SERVICE_HOST", None)
+_email_port = os.environ.get("MAILPIT_SERVICE_PORT", None)
+if _email_host is not None:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = _email_host
+    if _email_port is not None:
+        EMAIL_PORT = int(_email_port)
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "datatracker-rpc@staging.ietf.org")
 
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _celery_password is None:
