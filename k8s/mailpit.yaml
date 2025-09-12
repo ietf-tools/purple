@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mailpit
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: mailpit
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: mailpit
+    spec:
+      containers:
+        - name: mailpit
+          image: "axllent/mailpit:v1.27"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 1025
+              name: smtp
+              protocol: TCP
+            - containerPort: 8025
+              name: http
+              protocol: TCP
+          livenessProbe:
+            periodSeconds: 60
+            httpGet:
+              port: 8025
+              path: /readyz
+          securityContext:
+            readOnlyRootFilesystem: true
+          volumeMounts:
+            - mountPath: /data
+              name: mailpit-data
+          env:
+            - name: MP_DATABASE
+              value: /data/mailpit.db
+            - name: MP_DISABLE_VERSION_CHECK
+              value: "true"
+            - name: MP_LABEL
+              value: "RpcStagingMailPit"
+            - name: MP_MAX_AGE
+              value: "7d"
+      volumes:
+        - name: mailpit-data
+          emptyDir:
+            sizeLimit: 1G
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mailpit
+spec:
+  type: ClusterIP
+  ports:
+    - port: 25
+      targetPort: smtp
+      protocol: TCP
+      name: smtp
+    - port: 80
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: mailpit

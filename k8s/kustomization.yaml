@@ -11,5 +11,6 @@ configMapGenerator:
       - nginx-logging.conf
 resources:
   - datatracker.yaml
+  - mailpit.yaml
   - memcached.yaml
   - purple.yaml

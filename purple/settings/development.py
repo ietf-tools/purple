@@ -57,9 +57,8 @@ DATABASES = {
 
 # email
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("EMAIL_HOST", "mailpit")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", 1025))
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+EMAIL_HOST = os.getenv("PURPLE_EMAIL_HOST", "mailpit")
+EMAIL_PORT = int(os.getenv("PURPLE_EMAIL_PORT", 1025))
 
 # Uncomment to enable caching in development
 # CACHES = {
