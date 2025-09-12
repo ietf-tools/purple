@@ -137,7 +137,7 @@ if _email_host is not None:
     if _email_port is not None:
         EMAIL_PORT = int(_email_port)
 
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "datatracker-rpc@staging.ietf.org")
+DEFAULT_FROM_EMAIL = os.getenv("DATATRACKER_DEFAULT_FROM_EMAIL", "datatracker-rpc@staging.ietf.org")
 
 _celery_password = os.environ.get("CELERY_PASSWORD", None)
 if _celery_password is None:
