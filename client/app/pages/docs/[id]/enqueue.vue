@@ -123,17 +123,12 @@ watch(
   { deep: true }
 )
 
-const draftCommentsKey = computed(() => `comments-${id.value}`)
-
 const {
   data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useAsyncData(
-  draftCommentsKey,
-  () => api.documentsCommentsList({ draftName: id.value })
-)
+} = await useCommentsForDraft(id.value)
 
 const relatedDocumentsKey = computed(() => `references-${id.value}`)
 
