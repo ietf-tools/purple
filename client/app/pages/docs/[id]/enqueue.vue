@@ -66,7 +66,6 @@ import { watch } from 'vue'
 import type { RfcToBe } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { QUEUE_QUEUE_PATH } from '~/utils/url'
-import { useCommentsForDraft } from '~/composables/useCommentsForDraft'
 
 const route = useRoute()
 const api = useApi()
@@ -123,8 +122,6 @@ watch(
   }),
   { deep: true }
 )
-
-const draftCommentsKey = computed(() => `comments-${id.value}`)
 
 const {
   data: commentList,
