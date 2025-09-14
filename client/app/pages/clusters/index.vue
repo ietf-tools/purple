@@ -61,7 +61,7 @@
 <script setup lang="ts">
 import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 import RefreshButton from '~/components/RefreshButton.vue'
-import { overlayModalKey } from '../providers/providerKeys'
+import { overlayModalKey } from '../../providers/providerKeys'
 import { DocumentDependenciesGraph } from '#components'
 
 useHead({
