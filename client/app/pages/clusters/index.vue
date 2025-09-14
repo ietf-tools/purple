@@ -21,10 +21,20 @@
     </div>
     <div class="mt-8 flow-root">
       <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <!-- todo actually implement this -->
+        <div v-if="selectedCluster" class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
+          <h2 class="font-bold mb-4">
+            Cluster
+            #{{ state.selectedClusterNumber }}
+            &nbsp;
+            ({{ selectedCluster.documents.length }}
+            <span v-if="selectedCluster.documents.length === 1">doc)</span><span v-else>docs)</span>
+            <BaseButton btn-type="default" class="ml-4" @click="showDocumentDependencies">
+              <Icon name="mynaui:bounding-box" size="1.4em"></Icon>
+              Show document dependencies
+            </BaseButton>
+          </h2>
           <DocumentCards
-            :documents="selectedCluster?.documents || []"
+            :documents="selectedCluster.documents || []"
             :editors="[]" />
         </div>
       </div>
@@ -51,6 +61,8 @@
 <script setup lang="ts">
 import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 import RefreshButton from '~/components/RefreshButton.vue'
+import { overlayModalKey } from '../providers/providerKeys'
+import { DocumentDependenciesGraph } from '#components'
 
 useHead({
   title: 'Manage Clusters'
@@ -100,4 +112,14 @@ const { data: clusters, pending, refresh } = await useFetch<Cluster[]>('/api/rpc
   }
 })
 
+const { openOverlayModal, closeOverlayModal } = inject(overlayModalKey)
+
+const showDocumentDependencies = () => {
+  openOverlayModal({
+    component: DocumentDependenciesGraph,
+    componentProps: {
+      cluster: selectedCluster.value
+    }
+  })
+}
 </script>
