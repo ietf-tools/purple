@@ -266,7 +266,6 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       state.sourceFormat = submission.sourceFormat
       state.stream = submission.stream
       state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] : null)
-
       return {
         submission, boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices
       }

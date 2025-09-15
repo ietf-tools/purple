@@ -196,13 +196,7 @@ const {
 
 const { data: history, error: historyError, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
   () => `history-${draftName.value}`,
-  () => {
-    console.log('Refreshing history for', draftName.value)
-    if (!draftName.value) return []
-    const test =  api.documentsHistoryList({ draftName: draftName.value })
-    console.log('History data:', test)
-    return test
-  },
+  () => api.documentsHistoryList({ draftName: draftName.value }),
   { server: false, lazy: false }
 )
 
