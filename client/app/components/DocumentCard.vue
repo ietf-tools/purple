@@ -6,10 +6,14 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
     :key="cookedDocument.id"
     :class="[props.selected ? 'border-violet-700' : 'border-gray-200', 'rounded-xl border']">
     <div class="flex items-center gap-x-4 border-b border-gray-900/5 bg-gray-50 dark:bg-gray-700 p-6 rounded-t-xl">
-      <Icon
-        name="solar:document-text-line-duotone"
-        class="text-gray-900 dark:text-gray-100 h-8 w-8 flex-none"/>
-      <div class="text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">{{ cookedDocument.name }}</div>
+      <Anchor :href="documentPathBuilder(cookedDocument)" class="flex items-center -ml-6 pl-6 gap-x-4 hover:underline focus:underline">
+        <Icon
+          name="solar:document-text-line-duotone"
+          class="text-gray-900 dark:text-gray-100 h-8 w-8 flex-none"/>
+        <div class="text-sm font-medium leading-6 text-gray-900 dark:text-gray-100">
+          {{ cookedDocument.name }}
+        </div>
+      </Anchor>
       <div v-for="assignment in cookedDocument.needsAssignment">
         <BaseBadge :label="`Needs ${assignment.name}`"/>
       </div>
@@ -127,7 +131,8 @@ import { SelectRoot, SelectTrigger, SelectPortal, SelectContent, SelectViewport,
 import type { AcceptableValue } from 'reka-ui'
 import { assignEditorKey, deleteAssignmentKey } from '~/providers/providerKeys'
 import type { ResolvedQueueItem, ResolvedPerson } from './AssignmentsTypes'
-import { assert, assertIsArrayOfNumbers, assertIsNumber } from '~/utils/typescript'
+import { assert, assertIsArrayOfNumbers, assertIsNumber } from '../utilities/typescript'
+import { documentPathBuilder } from '../utils/url'
 
 type Props = {
   document: ResolvedQueueItem
