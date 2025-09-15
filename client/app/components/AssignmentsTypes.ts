@@ -6,7 +6,7 @@ export type ResolvedAssignment = Omit<Assignment, 'person'> & {
 
 export type ResolvedQueueItem = QueueItem & {
   assignments?: ResolvedAssignment[]
-  needsAssignment: RpcRole | null | undefined
+  needsAssignment: RpcRole[] | null | undefined
 }
 
 export type ResolvedPerson = RpcPerson & {
