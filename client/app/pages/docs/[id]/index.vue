@@ -187,21 +187,22 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
-const draftCommentsKey = computed(() => `comments-${draftName.value}`)
-
 const {
   data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useAsyncData(
-  draftCommentsKey,
-  () => api.documentsCommentsList({ draftName: draftName.value })
-)
+} = await useCommentsForDraft(draftName.value)
 
 const { data: history, error: historyError, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
   () => `history-${draftName.value}`,
-  () => api.documentsHistoryList({ draftName: draftName.value }),
+  () => {
+    console.log('Refreshing history for', draftName.value)
+    if (!draftName.value) return []
+    const test =  api.documentsHistoryList({ draftName: draftName.value })
+    console.log('History data:', test)
+    return test
+  },
   { server: false, lazy: false }
 )
 
@@ -233,7 +234,7 @@ const rfcToBe = computed(() => {
 
 // DATA
 
-const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
+const { data: labels } = await useLabels()
 
 const labels1 = computed(() =>
   labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
@@ -270,16 +271,5 @@ const { data: people } = await useAsyncData(
   { server: false, default: () => [] }
 )
 
-const relatedDocumentsKey = computed(() => `references-${draftName.value}`)
-
-const { data: relatedDocuments } = await useAsyncData(
-  relatedDocumentsKey,
-  () => api.documentsReferencesList({
-    draftName: draftName.value
-  }),
-  {
-    default: () => [],
-    server: false,
-  }
-)
+const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
 </script>

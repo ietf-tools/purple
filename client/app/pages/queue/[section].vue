@@ -82,12 +82,14 @@
           <div
             class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg"
           >
-            <DocumentTable
-              :columns="columns"
-              :data="filteredDocuments"
-              row-key="id"
-              :loading="pending"
-            />
+            <ClientOnly>
+              <DocumentTable
+                :columns="columns"
+                :data="filteredDocuments"
+                row-key="id"
+                :loading="pending"
+              />
+            </ClientOnly>
           </div>
         </div>
       </div>

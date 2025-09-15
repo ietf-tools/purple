@@ -89,14 +89,7 @@ const { data: rfcToBe, error: rfcToBeError } = await useAsyncData<RfcToBe>(
 //   { default: () => ([]), server: false }
 // )
 
-const { data: labels } = await useAsyncData(
-  `labels`,
-  () => api.labelsList(),
-  {
-    default: () => [],
-    server: false
-  }
-)
+const { data: labels } = await useLabels()
 
 const labels1 = computed(() =>
   labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
@@ -123,30 +116,14 @@ watch(
   { deep: true }
 )
 
-const draftCommentsKey = computed(() => `comments-${id.value}`)
-
 const {
   data: commentList,
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useAsyncData(
-  draftCommentsKey,
-  () => api.documentsCommentsList({ draftName: id.value }),
-  { watch: [id] }
-)
+} = await useCommentsForDraft(id.value)
 
-const relatedDocumentsKey = computed(() => `references-${id.value}`)
-
-const { data: relatedDocuments } = await useAsyncData(
-  relatedDocumentsKey,
-  () => api.documentsReferencesList({
-    draftName: id.value
-  }),
-  {
-    default: () => [],
-    server: false,
-  })
+const { data: relatedDocuments } = await useReferencesForDraft(id.value)
 
 const isAddingToQueue = ref(false)
 

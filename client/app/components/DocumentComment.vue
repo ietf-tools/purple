@@ -84,7 +84,6 @@ import {snackbarForErrors} from '~/utils/snackbar'
 
 type Props = {
   draftName: string
-  rfcToBeId: number
   comment: PaginatedDocumentCommentList["results"][number] & {
     // added by parent component
     ago?: string | null
@@ -101,7 +100,7 @@ const isUpdating = ref(false)
 
 const editComment = ref(props.comment.comment)
 
-watch(props.comment, (newValue, oldValue) => {
+watch(() => props.comment, (newValue, oldValue) => {
   if(newValue.comment !== oldValue.comment) {
     // then a new comment has been saved and we're receiving the props,
     // so clobber the editComment ref with the current value

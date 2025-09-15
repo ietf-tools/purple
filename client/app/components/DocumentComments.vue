@@ -44,7 +44,6 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
       >
         <DocumentComment
           :draft-name="props.draftName"
-          :rfc-to-be-id="props.rfcToBeId"
           :comment="comment"
           :is-last-comment="commentIndex === cookedComments.length"
           :reload-comments="reloadComments"
@@ -61,7 +60,6 @@ import type { PaginatedDocumentCommentList } from '~/purple_client'
 
 type Props = {
   draftName: string
-  rfcToBeId: number
   isLoading: boolean
   error?: NuxtError | null
   commentList?: PaginatedDocumentCommentList | null | undefined

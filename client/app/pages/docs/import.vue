@@ -106,7 +106,7 @@
             </div>
           </div>
           <!-- Comments -->
-          <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+          <div v-if="!backendPending" class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-4 space-y-4">
             <label for="comments" class="block text-sm font-medium leading-6 text-gray-900">Comments</label>
             <RpcTextarea v-if="submission?.name"
@@ -122,7 +122,8 @@
               :reload-comments="comments.reload"
               class="w-3/5 min-w-100"
             />
-          </div></div>
+            </div>
+          </div>
         </form>
       </BaseCard>
     </div>
@@ -138,6 +139,7 @@
 import { DateTime } from 'luxon'
 import humanizeDuration from 'humanize-duration'
 import type { SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~/purple_client'
+import { ref, watch, computed } from 'vue'
 
 const route = useRoute()
 const api = useApi()
@@ -236,23 +238,7 @@ async function importSubmission () {
 
 // DATA
 
-const { data: labels } = await useAsyncData(
-  'labels',
-  async () => {
-    try {
-      return await api.labelsList()
-    } catch (e) {
-      snackbar.add({
-        type: 'error',
-        title: 'Data fetch not successful',
-        text: e
-      })
-    }
-  }, {
-    server: false,
-    default: () => ([])
-  }
-)
+const { data: labels } = await useLabels()
 
 const documentId = computed(() => Number(route.query.documentId))
 
@@ -280,6 +266,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       state.sourceFormat = submission.sourceFormat
       state.stream = submission.stream
       state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] : null)
+
       return {
         submission, boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices
       }
@@ -294,7 +281,15 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
   { server: false }
 )
 
-const draftName = computed(() => submission.value?.name)
+const submissionName = computed(() => fetchedData.value?.submission?.name)
+const commentsKey = computed(() => `comments-import-${submissionName.value}`)
+
+const comments = computed(() => ({
+  data: commentList.value || [],
+  pending: commentsPending.value,
+  error: commentsError.value,
+  reload: commentsReload ?? (() => {})
+}))
 
 const {
   data: commentList,
@@ -302,16 +297,12 @@ const {
   error: commentsError,
   refresh: commentsReload
 } = await useAsyncData(
-  () => `comments-${draftName.value}`,
-  () => draftName.value ? api.documentsCommentsList({ draftName: draftName.value }) : [],
-  { watch: [draftName] }
+  commentsKey,
+  () =>
+    submissionName.value
+      ? api.documentsCommentsList({ draftName: submissionName.value })
+      : Promise.resolve({ results: [], count: 0 }),
+  { server: false, watch: [submissionName] }
 )
-
-const comments = computed(() => ({
-  data: commentList.value || [],
-  pending: commentsPending.value,
-  error: commentsError.value,
-  reload: commentsReload
-}))
 
 </script>
