@@ -510,7 +510,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return queryset
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
-    @action(detail=True)
+    @action(detail=True, pagination_class=None)
     def history(self, request, draft__name=None):
         rfc_to_be = self.get_object()
         serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)

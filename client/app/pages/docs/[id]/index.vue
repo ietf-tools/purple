@@ -174,11 +174,12 @@ const api = useApi()
 
 const draftName = computed(() => route.params.id.toString())
 
-const { data: history, error: historyError, status: historyStatus, refresh: historyRefresh } = await useAsyncData(
-  () => `history-${draftName.value}`,
-  () => api.documentsHistoryList({ draftName: draftName.value }),
-  { server: false, lazy: false }
-)
+const {
+  data: history,
+  error: historyError,
+  status: historyStatus,
+  refresh: historyRefresh
+} = await useHistoryForDraft(draftName.value)
 
 const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = await useAsyncData(
   () => `draft-${draftName.value}`,
