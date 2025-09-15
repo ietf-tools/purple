@@ -24,7 +24,7 @@ export const isMailToLink = (href?: string): boolean => {
   return mailtoRegex.test(href ?? '')
 }
 
-const oidcRegex = /^oidc/
+const oidcRegex = /^\/oidc/
 export const isOidcLink = (href?: string): boolean => {
   return oidcRegex.test(href ?? '')
 }

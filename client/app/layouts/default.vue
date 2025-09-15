@@ -80,4 +80,7 @@ body {
 .dark body {
   background-color: #0a0a0a;
 }
+#__nuxt {
+  min-height: 100vh
+}
 </style>
