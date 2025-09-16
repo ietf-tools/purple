@@ -730,6 +730,7 @@ class SubmissionListItemSerializer(serializers.Serializer):
     name = serializers.CharField()
     stream = serializers.CharField()
     submitted = serializers.DateTimeField()
+    consensus = serializers.BooleanField()
 
 
 def check_user_has_role(user, role) -> bool:

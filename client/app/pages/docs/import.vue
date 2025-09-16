@@ -34,6 +34,7 @@
             <li>Stream: {{ submission?.stream.name }}</li>
             <li>Submitted standard level: {{ submission?.stdLevel?.name }}</li>
             <li>Submitted format: {{ submission?.sourceFormat.name }}</li>
+            <li>Consensus: {{ submission?.consensus }}</li>
           </ul>
         </div>
       </BaseCard>
