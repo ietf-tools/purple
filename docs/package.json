@@ -6,6 +6,6 @@
     "vue-docgen-cli": "4.79.0"
   },
   "scripts": {
-    "build": "vue-docgen ../../client/app/components ./output"
+    "build": "vue-docgen"
   }
 }
