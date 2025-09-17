@@ -3,19 +3,23 @@
  */
 
 import * as d3 from "d3"
-import { black, blue, cyan, font, get_ref_type, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type Node, type NodeParam } from "./document_relations-utils"
+import { black, blue, cyan, font, get_ref_type, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Rel } from "./document_relations-utils"
 
-const link_color = {
-  refinfo: green,
-  refnorm: blue,
-  replaces: orange,
-  refunk: cyan,
-  refold: yellow,
-  downref: red,
+const link_color: Record<Rel, string> = {
+  "refqueue": green,
+  "not-received": blue,
+  "withdrawnref": orange,
 } as const
 
-const get_link_color = (key: string) => {
-  return key in link_color ? link_color[key as keyof typeof link_color] : null
+const get_link_color = (key: Rel) => {
+  return key in link_color ? link_color[key as keyof typeof link_color] : black
+}
+
+const get_name = (sourceOrTarget: Link["source"] | LinkParam["source"]): string => {
+  if(typeof sourceOrTarget === 'string') {
+    return sourceOrTarget
+  }
+  return sourceOrTarget.id
 }
 
 const DEFAULT_STROKE = 10
@@ -71,15 +75,15 @@ function lines(text: string): Line[] {
       line.width = line_width_0 = line_width
       line.text = line_text
     } else {
-      line_width_0 = measure_width(words[i])
-      line = { width: line_width_0, text: words[i] }
+      line_width_0 = measure_width(words[i] ?? '')
+      line = { width: line_width_0, text: words[i] ?? '' }
       lines.push(line)
     }
   }
   return lines
 }
 
-function measure_width(text: string) {
+function measure_width(text: string): number {
   const context = document.createElement("canvas").getContext("2d")
 
   if (!context) {
@@ -93,8 +97,9 @@ function measure_width(text: string) {
 function text_radius(lines: Line[]) {
   let radius = 0
   for (let i = 0, n = lines.length; i < n; ++i) {
+    const line = lines[i]
     const dy = (Math.abs(i - n / 2) + 0.5) * line_height
-    const dx = lines[i].width / 2
+    const dx = line ? line.width / 2 : 0
     radius = Math.max(radius, Math.sqrt(dx ** 2 + dy ** 2))
   }
   return radius
@@ -148,7 +153,9 @@ export function draw_graph(data: DataParam, group: string) {
     .selectAll("path")
     .data(data.links)
     .join("path")
-    .attr("title", (d) => `${d.source} ${get_ref_type(d.rel)} ${d.target}`)
+    .attr("title", (d) => {
+      return `${get_name(d.source)} ${get_ref_type(d.rel)} ${get_name(d.target)}`
+    })
     .attr("marker-end", (d) => `url(#marker-${d.rel})`)
     .attr("stroke", (d) => get_link_color(d.rel))
     .attr("class", (d) => d.rel)
@@ -172,6 +179,7 @@ export function draw_graph(data: DataParam, group: string) {
       if (d.level) {
         type += `${d.level} `
       }
+      const typeZero = type[0] ?? ''
       if (d.group != undefined && d.group != "none" && d.group != "") {
         const word = d.rfc ? "from" : "in"
         type += `group document ${word} ${d.group.toUpperCase()}`
@@ -179,7 +187,7 @@ export function draw_graph(data: DataParam, group: string) {
         type += "individual document"
       }
       const name = d.rfc ? d.id.toUpperCase() : d.id
-      return `${name} is a${"aeiou".includes(type[0].toLowerCase()) ? "n" : ""} ${type}`
+      return `${name} is a${"aeiou".includes(typeZero.toLowerCase()) ? "n" : ""} ${type}`
     })
 
   a.append("text")

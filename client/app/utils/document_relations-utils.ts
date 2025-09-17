@@ -20,17 +20,16 @@ export const white = "#fff";
 export const black = "#212529";
 export const gray400 = "#ced4da";
 
-export const ref_type = {
-  refinfo: "has an Informative reference to",
-  refnorm: "has a Normative reference to",
-  replaces: "replaces",
-  refunk: "has an Unknown type of reference to",
-  refold: "has an Undefined type of reference to",
-  downref: "has a Downward reference (DOWNREF) to",
+export type Rel = 'refqueue' | 'not-received' | 'withdrawnref'
+
+export const ref_type: Record<Rel, string> = {
+  refqueue: "has an ref queue to",
+  'not-received': "has not received to",
+  withdrawnref: "has withdrawn ref to",
 } as const;
 
 export const get_ref_type = (key: string) => {
-  return key in ref_type ? ref_type[key as keyof typeof ref_type] : null
+  return key in ref_type ? ref_type[key as keyof typeof ref_type] : key
 }
 
 export type Group = "" | "none" | "this group" | "other group";
@@ -58,7 +57,7 @@ export type Node = NodeParam & {
 export type Link = Omit<LinkParam, 'source' | 'target'> & {
   source: Node;
   target: Node;
-  rel: keyof typeof ref_type;
+  rel: Rel;
   replaced?: boolean;
   "post-wg"?: boolean;
   group?: Group;
@@ -82,9 +81,9 @@ export type NodeParam = {
 };
 
 export type LinkParam = {
-  source: string ;
-  target: string ;
-  rel: string;
+  source: string;
+  target: string;
+  rel: Rel;
 };
 
 export type DataParam = {
@@ -97,32 +96,32 @@ export const legendData: DataParam = {
     {
       source: "Individual submission",
       target: "Replaced",
-      rel: "replaces",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "Individual submission",
       target: "IESG or RFC queue",
-      rel: "refnorm",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "Expired",
       target: "RFC published",
-      rel: "refunk",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "Product of other group",
       target: "IESG or RFC queue",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "Product of this group",
       target: "Product of other group",
-      rel: "refold",
+      rel: "withdrawnref" satisfies Rel,
     },
     {
       source: "Product of this group",
       target: "Expired",
-      rel: "downref-approval",
+      rel: "withdrawnref" satisfies Rel,
     },
   ],
   nodes: [
@@ -171,127 +170,127 @@ export const test_data2: DataParam = {
     {
       source: "rfc7340",
       target: "draft-cooper-iab-secure-origin",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc7340",
       target: "draft-rosenberg-sip-rfc4474-concerns",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc7340",
       target: "draft-jennings-vipr-overview",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc7340",
       target: "draft-peterson-sipping-retarget",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc7375",
       target: "draft-peterson-sipping-retarget",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc9027",
       target: "draft-rosen-stir-emergency-calls",
-      rel: "refinfo",
+      rel: "withdrawnref" satisfies Rel,
     },
     {
       source: "rfc8224",
       target: "draft-peterson-sipping-retarget",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc8816",
       target: "draft-ietf-modern-teri",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-wendt-stir-vesper",
       target: "draft-wendt-acme-authority-token-jwtclaimcon",
-      rel: "refnorm",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "rfc8816",
       target: "draft-jennings-vipr-overview",
-      rel: "refinfo",
+      rel: "withdrawnref" satisfies Rel,
     },
     {
       source: "rfc8816",
       target: "draft-privacy-pass",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-wendt-stir-vesper-use-cases",
       target: "draft-wendt-stir-vesper",
-      rel: "refnorm",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-wendt-stir-vesper-use-cases",
       target: "draft-wendt-acme-authority-token-jwtclaimcon",
-      rel: "refnorm",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-wendt-stir-vesper-use-cases",
       target: "draft-wendt-stir-certificate-transparency",
-      rel: "refnorm",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-wendt-stir-vesper-use-cases",
       target: "draft-ietf-stir-certificates-shortlived",
-      rel: "refnorm",
+      rel: "withdrawnref" satisfies Rel,
     },
     {
       source: "rfc8224",
       target: "draft-rosenberg-sip-rfc4474-concerns",
-      rel: "refinfo",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "rfc8224",
       target: "draft-ietf-iri-comparison",
-      rel: "refinfo",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "rfc8224",
       target: "draft-kaplan-stir-cider",
-      rel: "refinfo",
+      rel: "withdrawnref" satisfies Rel,
     },
     {
       source: "rfc9475",
       target: "draft-peterson-stir-rfc4916-update",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-rfc4916-update",
       target: "rfc3325",
-      rel: "downref-approval",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-certificates-ocsp",
       target: "rfc5912",
-      rel: "downref-approval",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-rfc4916-update",
       target: "draft-peterson-stir-rfc4916-update",
-      rel: "replaces",
+      rel: "refqueue" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-servprovider-oob",
       target: "rfc8816",
-      rel: "downref-approval",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-certificates-ocsp",
       target: "draft-ietf-stir-certificates-shortlived",
-      rel: "refinfo",
+      rel: "not-received" satisfies Rel,
     },
     {
       source: "draft-ietf-stir-certificates-ocsp",
       target: "draft-ietf-tls-rfc8446bis",
-      rel: "refinfo",
+      rel: "refqueue" satisfies Rel,
     },
   ],
   nodes: [
