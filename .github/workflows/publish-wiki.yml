@@ -4,6 +4,9 @@ on:
     branches: [main]
     paths:
       - client/app/components/**
+      - docs/docgen.config.js
+      - docs/package.json
+      - docs/package-lock.json
       - .github/workflows/publish-wiki.yml
   workflow_dispatch:
 concurrency:
