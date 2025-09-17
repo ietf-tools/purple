@@ -22,7 +22,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v5.0.0
         with:
-          node-version: 20.x
+          node-version: 22.x
       - name: Generate Markdown
         working-directory: docs
         run: |
