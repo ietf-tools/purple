@@ -56,7 +56,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         </button>
       </div>
     </div>
-    <p v-if="!isEditing" class="text-sm leading-6 text-gray-500">
+    <p v-if="!isEditing" class="text-sm leading-6 text-gray-500 whitespace-pre-wrap">
       {{ comment.comment }}
     </p>
     <div v-else>
