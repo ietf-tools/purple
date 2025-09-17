@@ -23,7 +23,7 @@ export const gray400 = "#ced4da";
 export type Rel = 'refqueue' | 'not-received' | 'withdrawnref'
 
 export const ref_type: Record<Rel, string> = {
-  refqueue: "has an ref queue to",
+  refqueue: "has ref queue to",
   'not-received': "has not received to",
   withdrawnref: "has withdrawn ref to",
 } as const;
