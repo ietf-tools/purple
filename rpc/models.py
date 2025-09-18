@@ -351,7 +351,9 @@ class Assignment(models.Model):
 
     # Fields
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
+    person = models.ForeignKey(
+        RpcPerson, on_delete=models.PROTECT, null=True, blank=True
+    )
     role = models.ForeignKey(RpcRole, on_delete=models.PROTECT)
     state = models.CharField(max_length=32, choices=State, default=State.ASSIGNED)
     comment = models.TextField(blank=True)
