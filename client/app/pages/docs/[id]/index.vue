@@ -148,7 +148,7 @@
                     {{ entry.by.name }}
                   </NuxtLink>
                   <span v-else>
-                    {{ entry.by?.name }}
+                    {{ entry.by?.name ?? '(System)' }}
                   </span>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm">{{ entry.desc }}</td>
