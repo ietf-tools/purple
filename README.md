@@ -68,8 +68,8 @@
 
 ## Using MailHog
 
-Emails sentout from dev enviroment is caught by [MailHog](https://github.com/mailhog/MailHog).
-Access MailHog from http://localhost:8025/
+Emails sentout from dev enviroment is caught by [Mailpit](https://github.com/axllent/mailpit).
+Access Mailpit from http://localhost:8025/
 
 ## Using pgAdmin
 
