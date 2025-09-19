@@ -42,6 +42,7 @@
     "vue-tsc": "3.0.7"
   },
   "dependencies": {
+    "@tanstack/vue-table": "8.21.3",
     "@vueuse/core": "13.9.0",
     "canvas-confetti": "1.9.3",
     "d3": "7.9.0",
