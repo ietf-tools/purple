@@ -59,6 +59,16 @@
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
           </tr>
+          <tr v-if="status === 'idle' || status === 'pending' || peopleStatus === 'idle' || peopleStatus=== 'pending' ">
+            <RpcTdMessage :colspan="table.getAllColumns().length">
+              Loading...
+            </RpcTdMessage>
+          </tr>
+          <tr v-else-if="!error && !peopleError && table.getRowModel().rows.length === 0">
+            <RpcTdMessage :colspan="table.getAllColumns().length">
+              No rows found
+            </RpcTdMessage>
+          </tr>
         </RpcTbody>
         <RpcTfoot>
           <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
@@ -87,7 +97,7 @@ import {
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
-import type { Label, QueueItem } from '~/purple_client'
+import type { Label, QueueItem, RpcPerson } from '~/purple_client'
 import type { TabId } from '~/utils/queue'
 
 const api = useApi()
@@ -96,6 +106,7 @@ const currentTab: TabId = 'queue'
 
 const {
   data,
+  status,
   pending,
   refresh,
   error,
@@ -109,10 +120,10 @@ const {
   }
 )
 
-const { data: people, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
+const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
   lazy: false,
-  default: () => []
+  default: () => [] as RpcPerson[]
 })
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
@@ -151,24 +162,23 @@ const columns = [
       return serializeRow(rowA).localeCompare(serializeRow(rowB))
     },
   }),
-  columnHelper.accessor(
-    'externalDeadline',
-    {
+  columnHelper.display({
+      id: 'submitted',
       header: 'Submitted',
       cell: _data => '',
       sortingFn: 'alphanumeric',
-    }
-  ),
+  }),
   columnHelper.accessor(
     'externalDeadline',
     {
-      header: 'Deadline', cell: data => {
+      header: 'Deadline',
+      cell: data => {
         const value = data.getValue()
         return h('span', { class: 'text-xs' }, value ? DateTime.fromJSDate(value).toLocaleString(
           DateTime.DATE_MED_WITH_WEEKDAY
         ) : undefined)
       },
-      sortingFn: 'alphanumeric',
+      sortingFn: (rowA, rowB) => sortDate(rowA.original.externalDeadline, rowB.original.externalDeadline),
     }
   ),
   columnHelper.accessor(

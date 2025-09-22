@@ -30,6 +30,16 @@
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
           </tr>
+          <tr v-if="status === 'idle' || status === 'pending'">
+            <RpcTdMessage :colspan="table.getAllColumns().length">
+              Loading...
+            </RpcTdMessage>
+          </tr>
+          <tr v-else-if="!error && table.getRowModel().rows.length === 0">
+            <RpcTdMessage :colspan="table.getAllColumns().length">
+              No rows found
+            </RpcTdMessage>
+          </tr>
         </RpcTbody>
         <RpcTfoot>
           <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
@@ -67,6 +77,7 @@ const {
   data,
   pending,
   refresh,
+  status,
   error,
 } = await useAsyncData(
   `queue2-submissions`,
