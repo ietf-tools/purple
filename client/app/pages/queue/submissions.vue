@@ -63,7 +63,8 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
 import type { SubmissionListItem } from '~/purple_client'
-import type { TabId } from '~/utils/queue'
+import { ANCHOR_STYLE } from '~/utils/html'
+import { sortDate, type TabId } from '~/utils/queue'
 
 const api = useApi()
 
@@ -76,7 +77,7 @@ const {
   status,
   error,
 } = await useAsyncData(
-  `queue2-submissions`,
+  'queue2-submissions',
   () => api.submissionsList(),
   {
     server: false,

@@ -94,7 +94,8 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Label, QueueItem, RpcPerson } from '~/purple_client'
-import type { TabId } from '~/utils/queue'
+import { sortDate, type TabId } from '~/utils/queue'
+import { ANCHOR_STYLE } from '~/utils/html'
 
 const api = useApi()
 
@@ -107,7 +108,7 @@ const {
   refresh,
   error,
 } = await useAsyncData(
-  `queue2-queue`,
+  'queue2-queue',
   () => api.queueList(),
   {
     server: false,
@@ -305,7 +306,6 @@ const table = useVueTable({
     },
   },
   globalFilterFn: (row) => {
-    console.log("'FILTER'")
     const d = row.original
     if (d.disposition !== 'in_progress') {
       return false

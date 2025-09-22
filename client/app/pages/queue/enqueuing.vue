@@ -63,6 +63,7 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
+import { ANCHOR_STYLE } from '~/utils/html'
 import type { TabId } from '~/utils/queue'
 
 const api = useApi()
@@ -76,7 +77,7 @@ const {
   refresh,
   error,
 } = await useAsyncData(
-  `queue2-enqueuing`,
+  'queue2-enqueuing',
   () => api.queueList(),
   {
     server: false,

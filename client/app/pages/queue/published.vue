@@ -64,7 +64,8 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import type { PaginatedRfcToBeList } from '~/purple_client'
-import type { TabId } from '~/utils/queue'
+import { sortDate, type TabId } from '~/utils/queue'
+import { ANCHOR_STYLE } from '~/utils/html'
 
 const api = useApi()
 
@@ -79,7 +80,7 @@ const {
   status,
   error,
 } = await useAsyncData(
-  `queue2-published`,
+  'queue2-published',
   () => api.documentsList({
     disposition: 'published',
     ordering: '-published_at',
