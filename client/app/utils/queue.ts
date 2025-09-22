@@ -13,25 +13,25 @@ export const tabs: Tab[] = [
   {
     id: 'submissions',
     name: 'Submissions',
-    to: '/queue2/submissions',
+    to: '/queue/submissions',
     icon: 'uil:bolt-alt'
   },
   {
     id: 'enqueuing',
     name: 'Enqueuing',
-    to: '/queue2/enqueuing',
+    to: '/queue/enqueuing',
     icon: 'ic:outline-queue'
   },
   {
     id: 'queue',
     name: 'Queue',
-    to: '/queue2/queue',
+    to: '/queue/queue',
     icon: 'uil:clock'
   },
   {
     id: 'published',
     name: 'Recently Published',
-    to: '/queue2/published',
+    to: '/queue/published',
     icon: 'uil:check-circle'
   }
 ] as const
