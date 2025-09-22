@@ -45,9 +45,14 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()" @click="header.column.getToggleSortingHandler()?.($event)"
-              :sort-direction="header.column.getIsSorted()">
+            <RpcTh
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()"
+              :sort-direction="header.column.getIsSorted()"
+              @click="header.column.getToggleSortingHandler()?.($event)"
+            >
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </RpcTh>
