@@ -24,20 +24,11 @@
           </tr>
         </RpcThead>
         <RpcTbody>
+          <RpcRowMessage :status="status" :column-count="table.getAllColumns().length" :row-count="table.getRowModel().rows.length" />
           <tr v-for="row in table.getRowModel().rows" :key="row.id">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
-          </tr>
-          <tr v-if="status === 'idle' || status === 'pending'">
-            <RpcTdMessage :colspan="table.getAllColumns().length">
-              Loading...
-            </RpcTdMessage>
-          </tr>
-          <tr v-else-if="!error && table.getRowModel().rows.length === 0">
-            <RpcTdMessage :colspan="table.getAllColumns().length">
-              No rows found
-            </RpcTdMessage>
           </tr>
         </RpcTbody>
         <RpcTfoot>
@@ -120,9 +111,7 @@ const columns = [
   })
 ]
 
-
 const sorting = ref<SortingState>([])
-
 
 const table = useVueTable({
   get data() {
