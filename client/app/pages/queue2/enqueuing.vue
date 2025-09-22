@@ -16,7 +16,8 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan" :is-sortable="header.column.getCanSort()"
+              @click="header.column.getToggleSortingHandler()?.($event)" :sort-direction="header.column.getIsSorted()">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </RpcTh>
@@ -51,6 +52,8 @@ import {
   useVueTable,
   createColumnHelper,
   getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
 import type { TabId } from '~/utils/queue'
@@ -77,28 +80,38 @@ const {
 const columnHelper = createColumnHelper<QueueItem>()
 
 const columns = [
+  columnHelper.display({
+    id: 'icon',
+    header: '',
+    cell: () => h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
+  }),
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
       return h(Anchor, { href: `/docs/${data.row.original.name}/enqueue`, 'class': ANCHOR_STYLE }, () => [
-        h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }),
         data.getValue(),
       ])
-    }
+    },
+    sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
     'labels', {
     header: 'Labels',
-    cell: _data => ''
+    cell: _data => '',
+    sortingFn: 'alphanumeric',
+
   }),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
     'pages', {
     header: 'Submitted',
-    cell: _data => ''
+    cell: _data => '',
+    sortingFn: 'alphanumeric',
   })
 ]
+
+
+const sorting = ref<SortingState>([])
+
 
 const table = useVueTable({
   get data() {
@@ -113,7 +126,18 @@ const table = useVueTable({
     return row.original.disposition === 'created'
   },
   getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel()
+  getFilteredRowModel: getFilteredRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  state: {
+    get sorting() {
+      return sorting.value
+    },
+  },
+  onSortingChange: updaterOrValue => {
+    sorting.value =
+      typeof updaterOrValue === 'function'
+        ? updaterOrValue(sorting.value) : updaterOrValue
+  }
 })
 
 </script>

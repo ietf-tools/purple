@@ -45,7 +45,9 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()" @click="header.column.getToggleSortingHandler()?.($event)"
+              :sort-direction="header.column.getIsSorted()">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </RpcTh>
@@ -73,7 +75,7 @@
 </template>
 
 <script setup lang="ts">
-import { Anchor, Icon, BaseBadge } from '#components'
+import { Anchor, Icon, BaseBadge, RpcLabel } from '#components'
 import { DateTime } from 'luxon'
 import {
   FlexRender,
@@ -81,7 +83,9 @@ import {
   useVueTable,
   createColumnHelper,
   getFilteredRowModel,
+  getSortedRowModel,
 } from '@tanstack/vue-table'
+import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Label, QueueItem } from '~/purple_client'
 import type { TabId } from '~/utils/queue'
@@ -96,7 +100,7 @@ const {
   refresh,
   error,
 } = await useAsyncData(
-  `queue2-enqueuing`,
+  `queue2-queue`,
   () => api.queueList(),
   {
     server: false,
@@ -117,34 +121,44 @@ const selectedLabelFilters = ref<Record<number, TristateValue>>({})
 
 const columnHelper = createColumnHelper<QueueItem>()
 
-const globalFilter = ref('')
-
-watch([needsAssignmentTristate, hasExceptionTristate, selectedLabelFilters], () => {
-  globalFilter.value = Math.random().toString()
-}, { deep: true })
+const sorting = ref<SortingState>([])
 
 const columns = [
+  columnHelper.display({
+    id: 'icon',
+    header: '',
+    cell: () => h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
+  }),
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
       return h(Anchor, { href: `/docs/${data.row.original.name}`, 'class': ANCHOR_STYLE }, () => [
-        h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }),
         data.getValue(),
       ])
-    }
+    },
+    sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
     'labels', {
     header: 'Labels',
-    cell: _data => ''
+    cell: data => {
+      const labels = data.getValue()
+      if (!labels) return undefined
+      return h('span', labels.map(label => h(RpcLabel, { label, class: 'ml-2' })))
+    },
+    sortingFn: (rowA, rowB) => {
+      const serializeRow = (row: typeof rowA) => row.original.labels?.map(label => label.slug).join('') ?? ''
+      return serializeRow(rowA).localeCompare(serializeRow(rowB))
+    },
   }),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
-    'pages', {
-    header: 'Submitted',
-    cell: _data => ''
-  }),
+    'externalDeadline',
+    {
+      header: 'Submitted',
+      cell: _data => '',
+      sortingFn: 'alphanumeric',
+    }
+  ),
   columnHelper.accessor(
     'externalDeadline',
     {
@@ -153,7 +167,8 @@ const columns = [
         return h('span', { class: 'text-xs' }, value ? DateTime.fromJSDate(value).toLocaleString(
           DateTime.DATE_MED_WITH_WEEKDAY
         ) : undefined)
-      }
+      },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -191,7 +206,8 @@ const columns = [
         }
 
         return h('div', formattedValue)
-      }
+      },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -205,7 +221,8 @@ const columns = [
         return h('span', {}, value ?
           value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name')
           : undefined)
-      }
+      },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -217,21 +234,22 @@ const columns = [
           return undefined
         }
         return h('div', value.map(rpcRole => h(BaseBadge, { label: rpcRole.name })))
-      }
+      },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
     'id',
     {
-      header: 'Estimated Completion', cell: _data => '---'
+      header: 'Estimated Completion', cell: _data => '---',
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
-    // this placeholder column is intentionally empty
-    'name',
+    'pages',
     {
-      header: 'Status', cell: _data => ''
+      header: 'Status', cell: _data => '',
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -246,7 +264,8 @@ const columns = [
           h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
           String(value.number)
         ])
-      }
+      },
+      sortingFn: 'alphanumeric',
     }
   ),
 ]
@@ -273,8 +292,11 @@ const table = useVueTable({
   columns,
   state: {
     get globalFilter() {
-      return globalFilter.value
-    }
+      return JSON.stringify([needsAssignmentTristate.value, hasExceptionTristate.value, selectedLabelFilters.value])
+    },
+    get sorting() {
+      return sorting.value
+    },
   },
   globalFilterFn: (row) => {
     console.log("'FILTER'")
@@ -327,7 +349,14 @@ const table = useVueTable({
     return true
   },
   getCoreRowModel: getCoreRowModel(),
-  getFilteredRowModel: getFilteredRowModel()
+  getFilteredRowModel: getFilteredRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  onSortingChange: updaterOrValue => {
+    sorting.value =
+      typeof updaterOrValue === 'function'
+        ? updaterOrValue(sorting.value)
+        : updaterOrValue
+  },
 })
 
 </script>

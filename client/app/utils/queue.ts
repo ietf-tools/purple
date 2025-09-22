@@ -1,3 +1,6 @@
+import { DateTime } from 'luxon'
+import type { Row } from '@tanstack/vue-table'
+
 export type Tab = {
   id: string
   name: string
@@ -6,7 +9,7 @@ export type Tab = {
   iconAnimate?: boolean
 }
 
-export const tabs = [
+export const tabs: Tab[] = [
   {
     id: 'submissions',
     name: 'Submissions',
@@ -31,7 +34,22 @@ export const tabs = [
     to: '/queue2/published',
     icon: 'uil:check-circle'
   }
-] as const satisfies Tab[]
+] as const
 
 export type TabId = (typeof tabs)[number]["id"]
 
+export const sortDate = (dateA: Date | undefined | null, dateB: Date | undefined | null): number => {
+  if(!dateA && !dateB) {
+    return 0
+  } else if(dateA && !dateB) {
+    return 1
+  }  else if(!dateA && dateB) {
+    return -1
+  }
+  if(!dateA || !dateB) {
+    // This is to help TS narrow types. This code path shouldn't happen
+    // because the preceding code should already remove these as a possibility
+    throw Error("Internal error. This shouldn't happen")
+  }
+  return dateA.getTime() - dateB.getTime()
+}

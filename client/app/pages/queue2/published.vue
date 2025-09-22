@@ -46,22 +46,25 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 import { Anchor, Icon } from '#components'
 import {
   FlexRender,
   getCoreRowModel,
   useVueTable,
   createColumnHelper,
+  getFilteredRowModel,
   getSortedRowModel,
+  type SortingState,
 } from '@tanstack/vue-table'
-import type { SortingState } from '@tanstack/vue-table'
-import { DateTime } from 'luxon'
-import type { SubmissionListItem } from '~/purple_client'
+import type { PaginatedRfcToBeList } from '~/purple_client'
 import type { TabId } from '~/utils/queue'
 
 const api = useApi()
 
-const currentTab: TabId = 'submissions'
+const currentTab: TabId = 'published'
+
+type Row = PaginatedRfcToBeList["results"][number]
 
 const {
   data,
@@ -69,58 +72,84 @@ const {
   refresh,
   error,
 } = await useAsyncData(
-  `queue2-submissions`,
-  () => api.submissionsList(),
+  `queue2-published`,
+  () => api.documentsList({
+    disposition: 'published',
+    ordering: '-published_at',
+    publishedWithinDays: 30,
+  }),
   {
     server: false,
     lazy: true,
-    default: () => [] as SubmissionListItem[],
+    default: () => {
+      const defaultValue: PaginatedRfcToBeList = {
+        count: 0,
+        next: '',
+        previous: '',
+        results: []
+      }
+      return defaultValue
+    }
   }
 )
 
-const columnHelper = createColumnHelper<SubmissionListItem>()
+const columnHelper = createColumnHelper<Row>()
 
 const columns = [
-  columnHelper.display(
-    {
-      id: 'icon',
-      header: '',
-      cell: _data => {
-        return h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
-      }
-    }),
+  columnHelper.display({
+    id: 'icon',
+    header: '',
+    cell: () => h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
+  }),
+  columnHelper.accessor('name', {
+    header: 'RFC',
+    cell: data => {
+      return h('span', { class: 'px-3 py-4 text-gray-500 dark:text-neutral-400' }, `RFC ${data.row.original.rfcNumber}`)
+    },
+    sortingFn: 'alphanumeric',
+  }),
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
-      return h(Anchor, { href: `/docs/import/?documentId=${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
-        data.getValue()
+      return h(Anchor, { href: `/docs/${data.row.original.name}`, 'class': ANCHOR_STYLE }, () => [
+        data.getValue(),
       ])
     },
     sortingFn: 'alphanumeric',
   }),
-  columnHelper.accessor('stream', {
+  columnHelper.display({
+    id: 'labels',
     header: 'Labels',
     cell: _data => '',
-    sortingFn: 'alphanumeric',
   }),
-  columnHelper.accessor('submitted', {
-    header: 'Submitted',
-    cell: data =>
-      h('span', { class: 'text-xs' }, DateTime.fromJSDate(data.getValue()).toLocaleString(
+  columnHelper.display({
+    id: 'owner', // FIXME: this doesn't exist yet
+    header: 'PUB Owner',
+    cell: () => 'Unknown'
+  }),
+  columnHelper.accessor(
+    'publishedAt', {
+    header: 'Published',
+    cell: data => {
+      const publishedAt = data.getValue()
+      if (!publishedAt) return ''
+      return DateTime.fromJSDate(publishedAt).toLocaleString(
         DateTime.DATE_MED_WITH_WEEKDAY
-      )),
-    sortingFn: (rowA, rowB) => sortDate(rowA.original.submitted, rowB.original.submitted)
-  })
+      )
+    },
+    sortingFn: (rowA, rowB) => sortDate(rowA.original.publishedAt, rowB.original.publishedAt)
+  }),
 ]
 
 const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return data.value
+    return data.value.results
   },
   columns,
   getCoreRowModel: getCoreRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
   getSortedRowModel: getSortedRowModel(),
   state: {
     get sorting() {
@@ -130,9 +159,8 @@ const table = useVueTable({
   onSortingChange: updaterOrValue => {
     sorting.value =
       typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value)
-        : updaterOrValue
-  },
+        ? updaterOrValue(sorting.value) : updaterOrValue
+  }
 })
 
 </script>
