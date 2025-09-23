@@ -36,7 +36,7 @@
         <BaseCard class="lg:col-start-3 lg:row-start-1 lg:row-span-1 grid place-items-stretch">
           <h2 class="sr-only">Status Summary</h2>
           <div class="px-0 pt-6 sm:px-6">
-            <h3 class="text-base font-semibold leading-7">Current Assignments</h3>
+            <h3 class="text-base font-semibold leading-7">Assignments</h3>
             <div class="text-sm font-medium">
               <div v-if="rfcToBeAssignments.length === 0">
                 None
@@ -46,7 +46,7 @@
                   v-for="assignment of rfcToBeAssignments"
                   :key="assignment.id"
                   class="py-1 grid grid-cols-2">
-                  <dt>{{ people.find(p => p.id === assignment.person)?.name }}</dt>
+                  <dt>{{ people.find(p => p.id === assignment.person)?.name ?? '(System)' }}</dt>
                   <dd class="relative">
                     <BaseBadge :label="assignment.role"/>
                     <AssignmentState :state="assignment.state" />

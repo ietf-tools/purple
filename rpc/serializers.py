@@ -34,6 +34,8 @@ from .models import (
     StreamName,
 )
 
+from .blocked_assignments import is_blocked
+
 
 class VersionInfoSerializer(serializers.Serializer):
     """Serialize version information"""
@@ -307,6 +309,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -324,7 +327,30 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "pages",
+            "status",
         ]
+
+    def get_status(self, obj: RfcToBe) -> str:
+        # if obj.pending_activities().count() == 0:
+        #     return "in-progress"
+        # elif _is_blocked(obj):
+        #     return "blocked"
+        # else:
+        #     return "unassigned"
+        if is_blocked(obj):
+            return "blocked"
+        return None
+
+    def get_status(self, obj: RfcToBe) -> str:
+        # if obj.pending_activities().count() == 0:
+        #     return "in-progress"
+        # elif _is_blocked(obj):
+        #     return "blocked"
+        # else:
+        #     return "unassigned"
+        if is_blocked(obj):
+            return "blocked"
+        return None
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
