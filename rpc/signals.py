@@ -19,6 +19,8 @@ def defer_apply(rfc: RfcToBe):
 
 @receiver([post_save, post_delete], sender=Assignment)
 def assignment_changed(sender, instance, **kwargs):
+    if instance.role_id == "blocked":
+        return
     defer_apply(getattr(instance, "rfc_to_be", None))
 
 
