@@ -1,5 +1,7 @@
 import logging
 from .models import Assignment, RfcToBe, RpcRole
+from rest_framework.exceptions import NotFound
+from django.db import transaction
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +57,7 @@ def is_blocked(rfc: RfcToBe) -> bool:
 
 def _has_active_blocked_assignment(rfc: RfcToBe) -> bool:
     """Return True if there is an active 'blocked' assignment for this rfc."""
+
     blocked_qs = rfc.assignment_set.filter(role__slug="blocked").active()
 
     return blocked_qs.exists()
@@ -69,15 +72,16 @@ def _create_blocked_assignment(rfc: RfcToBe) -> bool:
         # create assignment without person
         Assignment.objects.create(rfc_to_be=rfc, role=role)
         return True
-    except Exception:
+    except Exception as err:
         logger.exception(
-            "failed to create blocked assignment for rfc %s", getattr(rfc, "pk", None)
+            "Failed to create blocked assignment for rfc %s", getattr(rfc, "pk", None)
         )
-        return None
+        raise NotFound("Failed to create blocked assignment for rfc") from err
 
 
 def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
     """Mark the latest active 'blocked' assignment as done."""
+
     blocked_qs = (
         rfc.assignment_set.filter(role__slug="blocked").active().order_by("-pk")
     )
@@ -92,19 +96,34 @@ def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
 
 
 def apply_blocked_assignment_for_rfc(rfc: RfcToBe):
-    """Main entry: compute blocked state and apply assignment transitions.
+    """Compute blocked state and apply assignment transitions.
 
-    - If moves not-blocked -> blocked: create new 'blocked' assignment.
-    - If moves blocked -> not-blocked: mark latest 'blocked' assignment done.
+    - If move not-blocked -> blocked: create new 'blocked' assignment.
+    - If move blocked -> not-blocked: mark latest 'blocked' assignment done.
     """
+
     # don't block if current active assignment exists
     if rfc.assignment_set.exclude(role__slug="blocked").active().exists():
         return
 
-    blocked_now = is_blocked(rfc)
-    blocked_before = _has_active_blocked_assignment(rfc)
+    try:
+        with transaction.atomic():
+            # lock the rfc row to avoid races
+            locked = RfcToBe.objects.select_for_update().get(pk=rfc.pk)
 
-    if blocked_now and not blocked_before:
-        _create_blocked_assignment(rfc)
-    elif not blocked_now and blocked_before:
-        _close_latest_blocked_assignment(rfc)
+            blocked_now = is_blocked(locked)
+            blocked_before = _has_active_blocked_assignment(locked)
+
+            if blocked_now and not blocked_before:
+                _create_blocked_assignment(locked)
+                return True
+            elif not blocked_now and blocked_before:
+                _close_latest_blocked_assignment(locked)
+                return True
+
+            return False
+    except Exception as err:
+        logger.exception(
+            "Failed to apply blocked assignment for rfc %s", getattr(rfc, "pk", None)
+        )
+        raise RuntimeError("Failed to apply blocked assignment") from err

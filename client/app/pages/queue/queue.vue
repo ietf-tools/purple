@@ -211,7 +211,7 @@ const columns = [
                     assignment.role === 'blocked'
                       ? h('span', { class: 'inline-flex items-center mr-1' }, [
                           h(Icon, { name: 'streamline-ultimate-color:road-sign-stop', class: 'h-4 w-4 text-red-600 mr-1' }),
-                          h(BaseBadge, { label: assignment.role }),
+                          h(BaseBadge, { label: assignment.role, color: 'red' }),
                         ])
                       : h(BaseBadge, { label: assignment.role })
                 )
