@@ -22,6 +22,7 @@ def forward(apps, schema_editor):
     )
     RpcRole.objects.create(slug="publisher", name="Publisher", desc="RFC publisher")
     RpcRole.objects.create(slug="manager", name="Manager", desc="RPC Manager")
+    RpcRole.objects.create(slug="blocked", name="Blocked", desc="Blocked assignment")
 
 
 def reverse(apps, schema_editor):
