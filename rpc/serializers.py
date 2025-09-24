@@ -340,6 +340,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
+    consensus = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -366,8 +367,12 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "published_at",
+            "consensus",
         ]
         read_only_fields = ["id", "draft", "published_at"]
+
+    def get_consensus(self, obj) -> bool:
+        return obj.draft.consensus
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
@@ -730,7 +735,6 @@ class SubmissionListItemSerializer(serializers.Serializer):
     name = serializers.CharField()
     stream = serializers.CharField()
     submitted = serializers.DateTimeField()
-    consensus = serializers.BooleanField()
 
 
 def check_user_has_role(user, role) -> bool:

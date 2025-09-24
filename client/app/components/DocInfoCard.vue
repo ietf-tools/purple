@@ -68,6 +68,28 @@
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" />
+        <DescriptionListItem term="Consensus">
+          <DescriptionListDetails>
+            <span
+              v-if="rfcToBe.consensus === true"
+              class="text-green-600 font-medium"
+            >
+              YES
+            </span>
+            <span
+              v-else-if="rfcToBe.consensus === false"
+              class="text-red-600 font-medium"
+            >
+              NO
+            </span>
+            <span
+              v-else
+              class="text-gray-500 font-medium"
+            >
+              Unknown
+            </span>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>

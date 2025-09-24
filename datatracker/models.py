@@ -113,6 +113,32 @@ class Document(models.Model):
     def __str__(self):
         return f"{self.name}-{self.rev}"
 
+    @property
+    def consensus(self) -> bool:
+        return self._fetch("consensus")
+
+    @with_rpcapi
+    def _fetch(self, field_name, *, rpcapi: rpcapi_client.PurpleApi):
+        """Get field_name value for draft (uses cache)"""
+        cache_key = f"datatracker_document-{self.datatracker_id}"
+        no_value = object()
+        cached_value = cache.get(cache_key, no_value)
+        if cached_value is no_value:
+            try:
+                document = rpcapi.get_draft_by_id(int(self.datatracker_id))
+            except rpcapi_client.exceptions.NotFoundException:
+                cached_value = None
+            else:
+                cached_value = document.json()
+            cache.set(cache_key, cached_value)
+        if cached_value is None:
+            return None
+        return getattr(
+            rpcapi_client.models.full_draft.FullDraft.from_json(cached_value),
+            field_name,
+            None,
+        )
+
 
 class DocumentLabel(models.Model):
     """Through model for linking Label to Document
