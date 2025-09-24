@@ -680,6 +680,7 @@ class Submission:
     shepherd: str
     std_level: StdLevelName | None
     datatracker_url: str
+    consensus: bool
 
     @classmethod
     def from_rpcapi_draft(cls, draft):
@@ -701,6 +702,7 @@ class Submission:
                 else None
             ),
             datatracker_url=build_datatracker_url(f"/doc/{draft.name}-{draft.rev}"),
+            consensus=draft.consensus,
         )
 
 
@@ -723,6 +725,7 @@ class SubmissionSerializer(serializers.Serializer):
     shepherd = serializers.EmailField()
     std_level = NameSerializer(required=False)
     datatracker_url = serializers.URLField()
+    consensus = serializers.BooleanField()
 
 
 class SubmissionListItemSerializer(serializers.Serializer):

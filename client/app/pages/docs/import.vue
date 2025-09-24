@@ -34,7 +34,11 @@
             <li>Stream: {{ submission?.stream.name }}</li>
             <li>Submitted standard level: {{ submission?.stdLevel?.name }}</li>
             <li>Submitted format: {{ submission?.sourceFormat.name }}</li>
-            <li>Consensus: {{ submission?.consensus }}</li>
+            <li>Consensus:
+              <span v-if="submission?.consensus === true" class="text-green-600 font-medium">YES</span>
+              <span v-else-if="submission?.consensus === false" class="text-red-600 font-medium">NO</span>
+              <span v-else class="text-gray-500 font-medium">Unknown</span>
+            </li>
           </ul>
         </div>
       </BaseCard>
