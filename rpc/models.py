@@ -402,6 +402,7 @@ class RfcAuthor(models.Model):
         null=False,
         blank=False,
     )
+    affiliation = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
