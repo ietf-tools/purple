@@ -203,11 +203,18 @@ const columns = [
             h(Anchor, {
               href: firstAssignment ? `/team/${firstAssignment.id}` : undefined
             }, () => [
-              person ? person.name : pending ? `...` : '(unknown person)',
+              person ? person.name : pending ? `(System)` : '(unknown person)',
               ' ',
               ...assignments
                 .sort((a, b) => a.role.localeCompare(b.role, 'en'))
-                .map((assignment) => h(BaseBadge, { label: assignment.role }))
+                .map((assignment) =>
+                    assignment.role === 'blocked'
+                      ? h('span', { class: 'inline-flex items-center mr-1' }, [
+                          h(Icon, { name: 'streamline-ultimate-color:road-sign-stop', class: 'h-4 w-4 text-red-600 mr-1' }),
+                          h(BaseBadge, { label: assignment.role, color: 'red' }),
+                        ])
+                      : h(BaseBadge, { label: assignment.role })
+                )
             ])
           )
         }

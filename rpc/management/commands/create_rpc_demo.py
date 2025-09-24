@@ -275,10 +275,10 @@ class Command(BaseCommand):
         # ABNF - the document contains ABNF sourcecode
         # Needs Formatting - the document requires an XML expert to format complex
         # tables, nested lists, etc.
-        LabelFactory(slug="Stream hold", is_exception=True, color="yellow")
+        LabelFactory(slug="Stream Hold", is_exception=True, color="yellow")
         LabelFactory(slug="Missing norm ref", is_exception=True, color="pink")
-        LabelFactory(slug="IANA action", is_exception=True, color="rose")
-        LabelFactory(slug="IANA Consideration", color="neutral")
+        LabelFactory(slug="IANA Hold", is_exception=True, color="rose")
+        LabelFactory(slug="Tools Issue", color="neutral")
         LabelFactory(slug="ABNF", color="emerald")
         LabelFactory(slug="Needs Formatting", color="indigo")
 
