@@ -72,19 +72,19 @@
           <DescriptionListDetails>
             <span
               v-if="rfcToBe.consensus === true"
-              class="text-green-600 font-medium"
+              class="text-green-600"
             >
               YES
             </span>
             <span
               v-else-if="rfcToBe.consensus === false"
-              class="text-red-600 font-medium"
+              class="text-red-600"
             >
               NO
             </span>
             <span
               v-else
-              class="text-gray-500 font-medium"
+              class="text-gray-500"
             >
               Unknown
             </span>
