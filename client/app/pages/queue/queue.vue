@@ -154,6 +154,7 @@ const columns = [
     header: 'RFC Number',
     cell: data => data.getValue(),
     sortingFn: sortingFns.alphanumeric,
+    sortUndefined: 'last',
   }),
   columnHelper.accessor(
     'labels', {
@@ -265,6 +266,7 @@ const columns = [
       header: 'Pages',
       cell: data => data.getValue(),
       sortingFn: sortingFns.alphanumeric,
+      sortUndefined: 'last',
     }
   ),
   columnHelper.accessor(
@@ -288,6 +290,7 @@ const columns = [
         if (b == null) return -1
         return Number(a) - Number(b)
       },
+      sortUndefined: 'last',
     }
   ),
 ]
