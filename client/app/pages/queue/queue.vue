@@ -96,10 +96,13 @@ import { groupBy, uniqBy } from 'lodash-es'
 import type { Label, QueueItem, RpcPerson } from '~/purple_client'
 import { sortDate, type TabId } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
+import { useSiteStore } from '@/stores/site'
 
 const api = useApi()
-
+const route = useRoute()
+const router = useRouter()
 const currentTab: TabId = 'queue'
+const siteStore = useSiteStore()
 
 const {
   data,
@@ -144,6 +147,11 @@ const columns = [
         data.getValue(),
       ])
     },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor('rfcNumber', {
+    header: 'RFC Number',
+    cell: data => data.getValue(),
     sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor(
@@ -214,7 +222,6 @@ const columns = [
 
         return h('div', formattedValue)
       },
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -242,7 +249,6 @@ const columns = [
         }
         return h('div', value.map(rpcRole => h(BaseBadge, { label: rpcRole.name })))
       },
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -255,7 +261,8 @@ const columns = [
   columnHelper.accessor(
     'pages',
     {
-      header: 'Status', cell: _data => '',
+      header: 'Pages',
+      cell: data => data.getValue(),
       sortingFn: 'alphanumeric',
     }
   ),
@@ -299,7 +306,12 @@ const table = useVueTable({
   columns,
   state: {
     get globalFilter() {
-      return JSON.stringify([needsAssignmentTristate.value, hasExceptionTristate.value, selectedLabelFilters.value])
+      return JSON.stringify([
+        needsAssignmentTristate.value,
+        hasExceptionTristate.value,
+        selectedLabelFilters.value,
+        searchQuery.value
+      ])
     },
     get sorting() {
       return sorting.value
@@ -310,6 +322,16 @@ const table = useVueTable({
     if (d.disposition !== 'in_progress') {
       return false
     }
+
+   // Search filter
+   if (searchQuery.value && searchQuery.value.trim()) {
+     const searchTerm = searchQuery.value.trim().toLowerCase()
+     const nameMatch = d.name?.toLowerCase().includes(searchTerm)
+     const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
+     if (!nameMatch && !rfcMatch) {
+       return false
+     }
+   }
 
     const needsAssignmentFilterFn = () => {
       if (needsAssignmentTristate.value === true) {
@@ -363,6 +385,32 @@ const table = useVueTable({
         ? updaterOrValue(sorting.value)
         : updaterOrValue
   },
+})
+
+const searchQuery = computed({
+  get: () => siteStore.search,
+  set: (value: string) => { siteStore.search = value }
+})
+
+onMounted(() => {
+  if (route.query.search && route.query.search !== siteStore.search) {
+    siteStore.search = route.query.search as string
+  }
+})
+
+watch(() => route.query.search, (newSearch) => {
+  siteStore.search = newSearch as string || ''
+})
+
+
+watch(() => siteStore.search, (newSearch) => {
+  const query = { ...route.query }
+  if (newSearch) {
+    query.search = newSearch
+  } else {
+    delete query.search
+  }
+  router.replace({ query })
 })
 
 </script>

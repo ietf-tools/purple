@@ -322,6 +322,8 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "assignment_set",
             "actionholder_set",
             "pending_activities",
+            "rfc_number",
+            "pages",
         ]
 
 
