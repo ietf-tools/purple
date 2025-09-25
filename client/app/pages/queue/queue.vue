@@ -90,7 +90,6 @@ import {
   createColumnHelper,
   getFilteredRowModel,
   getSortedRowModel,
-  sortingFns,
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
@@ -148,12 +147,12 @@ const columns = [
         data.getValue(),
       ])
     },
-    sortingFn: sortingFns.alphanumeric,
+    sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor('rfcNumber', {
     header: 'RFC Number',
     cell: data => data.getValue(),
-    sortingFn: sortingFns.alphanumeric,
+    sortingFn: 'alphanumeric',
     sortUndefined: 'last',
   }),
   columnHelper.accessor(
@@ -173,7 +172,7 @@ const columns = [
       id: 'submitted',
       header: 'Submitted',
       cell: _data => '',
-      sortingFn: sortingFns.alphanumeric,
+      sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor(
     'externalDeadline',
@@ -238,7 +237,7 @@ const columns = [
           value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name')
           : undefined)
       },
-      sortingFn: sortingFns.alphanumeric,
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -257,7 +256,7 @@ const columns = [
     'id',
     {
       header: 'Estimated Completion', cell: _data => '---',
-      sortingFn: sortingFns.alphanumeric,
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
@@ -265,7 +264,7 @@ const columns = [
     {
       header: 'Pages',
       cell: data => data.getValue(),
-      sortingFn: sortingFns.alphanumeric,
+      sortingFn: 'alphanumeric',
       sortUndefined: 'last',
     }
   ),
