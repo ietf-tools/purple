@@ -74,13 +74,13 @@
               v-if="rfcToBe.consensus === true"
               class="text-green-600"
             >
-              YES
+              Yes
             </span>
             <span
               v-else-if="rfcToBe.consensus === false"
               class="text-red-600"
             >
-              NO
+              No
             </span>
             <span
               v-else
