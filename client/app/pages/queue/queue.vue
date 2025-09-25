@@ -90,6 +90,7 @@ import {
   createColumnHelper,
   getFilteredRowModel,
   getSortedRowModel,
+  sortingFns,
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
@@ -147,12 +148,12 @@ const columns = [
         data.getValue(),
       ])
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: sortingFns.alphanumeric,
   }),
   columnHelper.accessor('rfcNumber', {
     header: 'RFC Number',
     cell: data => data.getValue(),
-    sortingFn: 'alphanumeric',
+    sortingFn: sortingFns.alphanumeric,
   }),
   columnHelper.accessor(
     'labels', {
@@ -171,7 +172,7 @@ const columns = [
       id: 'submitted',
       header: 'Submitted',
       cell: _data => '',
-      sortingFn: 'alphanumeric',
+      sortingFn: sortingFns.alphanumeric,
   }),
   columnHelper.accessor(
     'externalDeadline',
@@ -236,7 +237,7 @@ const columns = [
           value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name')
           : undefined)
       },
-      sortingFn: 'alphanumeric',
+      sortingFn: sortingFns.alphanumeric,
     }
   ),
   columnHelper.accessor(
@@ -255,7 +256,7 @@ const columns = [
     'id',
     {
       header: 'Estimated Completion', cell: _data => '---',
-      sortingFn: 'alphanumeric',
+      sortingFn: sortingFns.alphanumeric,
     }
   ),
   columnHelper.accessor(
@@ -263,7 +264,7 @@ const columns = [
     {
       header: 'Pages',
       cell: data => data.getValue(),
-      sortingFn: 'alphanumeric',
+      sortingFn: sortingFns.alphanumeric,
     }
   ),
   columnHelper.accessor(
@@ -276,10 +277,17 @@ const columns = [
         }
         return h(Anchor, { href: `/clusters/${value.number}` }, () => [
           h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
-          String(value.number)
+          value.number
         ])
       },
-      sortingFn: 'alphanumeric',
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = rowA.getValue(columnId)?.number
+        const b = rowB.getValue(columnId)?.number
+        if (a == null && b == null) return 0
+        if (a == null) return 1
+        if (b == null) return -1
+        return Number(a) - Number(b)
+      },
     }
   ),
 ]
