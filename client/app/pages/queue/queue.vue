@@ -412,7 +412,6 @@ watch(() => route.query.search, (newSearch) => {
   siteStore.search = newSearch as string || ''
 })
 
-
 watch(() => siteStore.search, (newSearch) => {
   const query = { ...route.query }
   if (newSearch) {
