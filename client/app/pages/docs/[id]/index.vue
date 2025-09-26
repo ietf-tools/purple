@@ -213,9 +213,13 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
 
 const rfcToBeAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id))
+const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
 
 const rfcToBe = computed(() => {
   if (rawRfcToBe.value) {
+    if (rawRfcToBe.value.labels) {
+      selectedLabelIds.value = [...rawRfcToBe.value.labels]
+    }
     return {
       ...rawRfcToBe.value,
       externalDeadline:
@@ -242,8 +246,6 @@ const labels2 = computed(() =>
 const labels3 = computed(
   () => labels.value.filter((label) => label.used && !label.isComplexity)
 )
-
-const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
 
 watch(
   selectedLabelIds,

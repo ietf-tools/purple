@@ -7,6 +7,7 @@
         :id="inputId"
         :aria-describedby="desc ? descriptionId : undefined"
         type="checkbox"
+        :checked="props.checked"
         :class="[caution ? 'border-rose-300 dark:border-rose-500 text-rose-700 dark:text-rose-700 hover:border-rose-400 focus:ring-rose-600' : 'border-gray-300 dark:border-neutral-500 text-violet-600 dark:text-violet-500 hover:border-violet-400 dark:hover:border-violet-500 focus:ring-violet-600 dark:focus:ring-violet-500', 'h-4 w-4 bg-white dark:bg-neutral-900 rounded border-2']"
       >
     </div>
