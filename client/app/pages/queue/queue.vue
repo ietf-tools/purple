@@ -284,10 +284,7 @@ const columns = [
       sortingFn: (rowA, rowB, columnId) => {
         const a = rowA.getValue(columnId)?.number
         const b = rowB.getValue(columnId)?.number
-        if (a == null && b == null) return 0
-        if (a == null) return 1
-        if (b == null) return -1
-        return Number(a) - Number(b)
+        return (a > b) ? 1 : (a < b) ? -1 : 0
       },
       sortUndefined: 'last',
     }
