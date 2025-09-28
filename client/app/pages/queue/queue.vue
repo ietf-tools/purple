@@ -93,10 +93,12 @@ import {
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
-import type { Label, QueueItem, RpcPerson } from '~/purple_client'
-import { sortDate, type TabId } from '~/utils/queue'
+import type { Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
+import { sortDate, type AssignmentMessageProps, type TabId } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
+import { overlayModalKey } from '~/providers/providerKeys'
+import AssignmentModal from '~/components/AssignmentModal.vue'
 
 const api = useApi()
 const route = useRoute()
@@ -122,7 +124,7 @@ const {
 
 const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
-  lazy: false,
+  lazy: true,
   default: () => [] as RpcPerson[]
 })
 
@@ -197,31 +199,33 @@ const columns = [
           return 'No assignments'
         }
 
-        const formattedValue: VNode[] = []
-        const assignmentsByPerson = groupBy(
-          assignments,
-          (assignment) => assignment.person
-        )
+        const listItems: VNode[] = []
 
-        const firstAssignment = assignments[0]
-        for (const [personId, assignments] of Object.entries(assignmentsByPerson)) {
-          const person = people.value.find(
-            (p) => p.id === parseFloat(personId)
-          )
-          formattedValue.push(
+        assignments.sort((a, b) => a.role.localeCompare(b.role, 'en'))
+
+        for (const assignment of assignments) {
+          const { person: rpcPersonId } = assignment
+          const rpcPerson = rpcPersonId ? people.value.find(
+            (p) => p.id === rpcPersonId
+          ) : undefined
+
+          listItems.push(h('li', {}, [
+            h(BaseBadge, { label: assignment.role }),
             h(Anchor, {
-              href: firstAssignment ? `/team/${firstAssignment.id}` : undefined
+              href: assignment ? `/team/${assignment.id}` : undefined,
+              class: 'mx-1 text-xs whitespace-nowrap'
             }, () => [
-              person ? person.name : pending ? `...` : '(unknown person)',
-              ' ',
-              ...assignments
-                .sort((a, b) => a.role.localeCompare(b.role, 'en'))
-                .map((assignment) => h(BaseBadge, { label: assignment.role }))
+              rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
+            ]),
+            h('span', { class: 'text-xs whitespace-nowrap' }, [
+              '(',
+              h('button', { class: ANCHOR_STYLE, type: 'button', 'onClick': () => openAssignmentModal({ type: 'change', assignment }) }, 'Change'),
+              ')'
             ])
-          )
+          ]))
         }
 
-        return h('div', formattedValue)
+        return h('ul', {}, listItems)
       },
     }
   ),
@@ -248,7 +252,16 @@ const columns = [
         if (!value) {
           return undefined
         }
-        return h('div', value.map(rpcRole => h(BaseBadge, { label: rpcRole.name })))
+        return h('ul', {}, value.map(rpcRole =>
+          h('li', {}, [
+            h(BaseBadge, { label: rpcRole.name }),
+            h('span', { class: 'text-xs whitespace-nowrap' }, [
+              '(',
+              h('button', { class: ANCHOR_STYLE, type: 'button', 'onClick': () => openAssignmentModal({ type: "assign", rpcRole }) }, 'Assign'),
+              ')'
+            ])
+          ])
+        ))
       },
     }
   ),
@@ -330,15 +343,15 @@ const table = useVueTable({
       return false
     }
 
-   // Search filter
-   if (searchQuery.value && searchQuery.value.trim()) {
-     const searchTerm = searchQuery.value.trim().toLowerCase()
-     const nameMatch = d.name?.toLowerCase().includes(searchTerm)
-     const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
-     if (!nameMatch && !rfcMatch) {
-       return false
-     }
-   }
+    // Search filter
+    if (searchQuery.value && searchQuery.value.trim()) {
+      const searchTerm = searchQuery.value.trim().toLowerCase()
+      const nameMatch = d.name?.toLowerCase().includes(searchTerm)
+      const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
+      if (!nameMatch && !rfcMatch) {
+        return false
+      }
+    }
 
     const needsAssignmentFilterFn = () => {
       if (needsAssignmentTristate.value === true) {
@@ -418,5 +431,66 @@ watch(() => siteStore.search, (newSearch) => {
   }
   router.replace({ query })
 })
+
+const { data: clusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
+  server: false,
+  lazy: false,
+  default: () => [] as Cluster[]
+})
+
+const snackbar = useSnackbar()
+const overlayModal = inject(overlayModalKey)
+
+const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+  const { openOverlayModal, closeOverlayModal } = overlayModal
+
+  if (peopleStatus.value === 'error') {
+    snackbar.add({
+      type: 'error',
+      title: 'Error loading people. Reload page.',
+      text: `Error: ${peopleError}`
+    })
+    return
+  }
+
+  if (clustersStatus.value === 'error') {
+    snackbar.add({
+      type: 'error',
+      title: 'Error loading clusters. Reload page.',
+      text: `Error: ${clustersError}`
+    })
+    return
+  }
+
+  if (clustersStatus.value !== 'success') {
+    snackbar.add({
+      type: 'warning',
+      title: 'Loading clusters',
+      text: 'Please wait...'
+    })
+    return
+  }
+
+  if (peopleStatus.value !== 'success') {
+    snackbar.add({
+      type: 'warning',
+      title: 'Loading people',
+      text: 'Please wait...'
+    })
+    return
+  }
+
+  openOverlayModal({
+    component: AssignmentModal,
+    componentProps: {
+      message: assignmentMessage,
+      people: people.value,
+      clusters: clusters.value
+    },
+  })
+}
 
 </script>

@@ -65,7 +65,7 @@ const getErrorTextFromFetchResponse = async (response: Response, text: string): 
       if (keys.length === 1) {
         // DRF response, so extract comment
         const containerKey = keys[0]
-        const value = data[containerKey]
+        const value = data[containerKey ?? '']
         text = Array.isArray(value) ? value.join(', ') : `${value}`
       } else {
         text = JSON.stringify(data, null, 2)

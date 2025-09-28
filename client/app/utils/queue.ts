@@ -1,5 +1,4 @@
-import { DateTime } from 'luxon'
-import type { Row } from '@tanstack/vue-table'
+import type { Assignment, Label, RpcRole, SimpleCluster } from '~/purple_client'
 
 export type Tab = {
   id: string
@@ -36,20 +35,61 @@ export const tabs: Tab[] = [
   }
 ] as const
 
-export type TabId = (typeof tabs)[number]["id"]
+export type TabId = (typeof tabs)[number]['id']
 
-export const sortDate = (dateA: Date | undefined | null, dateB: Date | undefined | null): number => {
-  if(!dateA && !dateB) {
+export const sortDate = (
+  dateA: Date | undefined | null,
+  dateB: Date | undefined | null
+): number => {
+  if (!dateA && !dateB) {
     return 0
-  } else if(dateA && !dateB) {
+  } else if (!dateB) {
     return 1
-  }  else if(!dateA && dateB) {
+  } else if (!dateA) {
     return -1
-  }
-  if(!dateA || !dateB) {
-    // This is to help TS narrow types. This code path shouldn't happen
-    // because the preceding code should already remove these as a possibility
-    throw Error("Internal error. This shouldn't happen")
   }
   return dateA.getTime() - dateB.getTime()
 }
+
+export const sortLabels = (
+  labelsA: Label[] | undefined | null,
+  labelsB: Label[] | undefined | null
+): number => {
+  if (!labelsA && !labelsB) {
+    return 0
+  } else if (!labelsB) {
+    return 1
+  } else if (!labelsA) {
+    return -1
+  }
+
+  const slugsA = labelsA.map((label) => label.slug).join(',')
+  const slugsB = labelsB.map((label) => label.slug).join(',')
+
+  return slugsA.localeCompare(slugsB)
+}
+
+export const sortCluster = (
+  clusterA: SimpleCluster | undefined | null,
+  clusterB: SimpleCluster | undefined | null
+): number => {
+  if (!clusterA && !clusterB) {
+    return 0
+  } else if (!clusterB) {
+    return 1
+  } else if (!clusterA) {
+    return -1
+  }
+
+  return clusterA.number - clusterB.number
+}
+
+export type AssignmentMessageProps =
+  | {
+      type: 'assign'
+      rpcRole: RpcRole
+    }
+  | {
+      type: 'change'
+      assignment: Assignment
+    }

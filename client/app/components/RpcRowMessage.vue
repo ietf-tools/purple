@@ -1,10 +1,10 @@
 <template>
-  <tr v-if="statusArr.some(status => status === 'idle' || status === 'pending')">
+  <tr v-if="statusArr.every(status => status === 'idle' || status === 'pending')">
     <RpcTdMessage :colspan="props.columnCount">
       Loading...
     </RpcTdMessage>
   </tr>
-  <tr v-else-if="props.rowCount === 0 && !statusArr.some(status => status === 'error')">
+  <tr v-else-if="props.rowCount === 0 && statusArr.every(status => status === 'success')">
     <RpcTdMessage :colspan="props.columnCount">
       No rows found
     </RpcTdMessage>
