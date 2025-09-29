@@ -326,28 +326,6 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pages",
         ]
 
-    def get_status(self, obj: RfcToBe) -> str:
-        # if obj.pending_activities().count() == 0:
-        #     return "in-progress"
-        # elif _is_blocked(obj):
-        #     return "blocked"
-        # else:
-        #     return "unassigned"
-        if is_blocked(obj):
-            return "blocked"
-        return None
-
-    def get_status(self, obj: RfcToBe) -> str:
-        # if obj.pending_activities().count() == 0:
-        #     return "in-progress"
-        # elif _is_blocked(obj):
-        #     return "blocked"
-        # else:
-        #     return "unassigned"
-        if is_blocked(obj):
-            return "blocked"
-        return None
-
 
 class RfcToBeSerializer(serializers.ModelSerializer):
     """RfcToBeSerializer suitable for displaying full details of a single instance"""
