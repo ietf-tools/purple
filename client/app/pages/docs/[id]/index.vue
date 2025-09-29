@@ -249,16 +249,23 @@ const labels3 = computed(
 
 watch(
   selectedLabelIds,
-  async () => api.documentsPartialUpdate({
-    draftName: draftName.value,
-    patchedRfcToBe: { labels: selectedLabelIds.value } }
-  ).finally(historyRefresh),
+  async () => {
+    await api.documentsPartialUpdate({
+      draftName: draftName.value,
+      patchedRfcToBe: { labels: selectedLabelIds.value }
+    })
+
+    // Refresh both history and assignments
+    await Promise.all([
+      historyRefresh(),
+      refreshAssignments()
+    ])
+  },
   { deep: true }
 )
 
-
 // todo retrieve assignments for a single draft more efficiently
-const { data: assignments } = await useAsyncData(
+const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   () => api.assignmentsList(),
   { server: false, default: () => [] }
 )
