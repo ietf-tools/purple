@@ -183,6 +183,11 @@ const columns = [
           return 'No assignments'
         }
 
+        const rfcToBeId = data.row.original.id
+        if (rfcToBeId === undefined) {
+          throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
+        }
+
         const listItems: VNode[] = []
 
         const assignmentsByRole = groupBy(
@@ -208,14 +213,14 @@ const columns = [
               ])
             }).reduce((acc, item, index, arr) => {
               acc.push(item)
-              if(index < arr.length - 1) {
+              if (index < arr.length - 1) {
                 acc.push(', ')
               } else {
                 acc.push(' ')
               }
               return acc
-            }, [] as (VNode | string )[]),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments }) }, () => 'Change'),
+            }, [] as (VNode | string)[]),
+            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments, role, rfcToBeId }) }, () => 'Change'),
           ]))
         }
 
@@ -248,14 +253,15 @@ const columns = [
           return undefined
         }
 
+        const rfcToBeId = data.row.original.id
+        if (rfcToBeId === undefined) {
+          throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
+        }
+
         return h('ul', {}, value.map(rpcRole =>
           h('li', {}, [
             h(BaseBadge, { label: rpcRole.name }),
-            h('span', { class: 'text-xs whitespace-nowrap' }, [
-              '(',
-              h('button', { class: ANCHOR_STYLE, type: 'button', 'onClick': () => openAssignmentModal({ type: "assign", rpcRole }) }, 'Assign'),
-              ')'
-            ])
+            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign'),
           ])
         ))
       },
@@ -440,7 +446,8 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     componentProps: {
       message: assignmentMessage,
       people: people.value,
-      clusters: clusters.value
+      clusters: clusters.value,
+      onSuccess: () => refresh()
     },
   })
 }

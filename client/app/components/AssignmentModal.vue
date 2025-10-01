@@ -4,11 +4,11 @@
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
         <span v-if="props.message.type === 'assign'">
           Assign
-          <BaseBadge :label="props.message.rpcRole.slug" size="xl"></BaseBadge>
+          <BaseBadge :label="props.message.role" size="xl"></BaseBadge>
         </span>
         <span v-else-if="props.message.type === 'change'">
           Change
-          <BaseBadge :label="props.message.assignments[0]?.role ?? undefined" size="xl"></BaseBadge>
+          <BaseBadge :label="props.message.role" size="xl"></BaseBadge>
           assignment
         </span>
       </h1>
@@ -55,8 +55,10 @@
         <div v-for="action in actions">
           <div v-if="action.type === 'withdraw'">
             <p>
-            &bull; <b>Withdraw assignment</b> for <b>{{ getPersonNameById(action.personId) }}</b> #{{ action.personId }}
-            <span class="ml-4">Reason <i>(optional)</i>: <input type="text" value="" class="text-xs px-2 py-1 "></span>
+              &bull; <b>Withdraw assignment</b> for <b>{{ getPersonNameById(action.personId) }}</b> #{{ action.personId
+              }}
+              <span class="ml-4">Reason <i>(optional)</i>: <input type="text" value=""
+                  class="text-xs px-2 py-1 "></span>
             </p>
           </div>
           <p v-else-if="action.type === 'assign'">
@@ -67,14 +69,19 @@
     </div>
     <div class="flex justify-between p-4 border-t border-gray-300">
       <BaseButton btnType="cancel" @click="closeOverlayModal">Cancel</BaseButton>
-      <BaseButton btnType="default">Save changes</BaseButton>
+      <div class="flex flex-row items-center">
+        <div role="alert" aria-atomic="true" class="mr-1">
+          {{ saveStatus }}
+        </div>
+        <BaseButton btnType="default" @click="saveChanges" :disabled="!canSave">Save changes</BaseButton>
+      </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { watch } from 'vue'
 import { BaseButton } from '#components'
-import type { RpcPerson } from '~/purple_client';
+import type { Assignment, RpcPerson } from '~/purple_client';
 import type { AssignmentMessageProps } from '~/utils/queue'
 import type { ResolvedQueueItem } from './AssignmentsTypes';
 import { overlayModalKey } from '~/providers/providerKeys';
@@ -88,6 +95,7 @@ type Props = {
   message: AssignmentMessageProps
   people: RpcPerson[]
   clusters: ResolvedCluster[]
+  onSuccess: () => void
 }
 const props = defineProps<Props>()
 
@@ -98,7 +106,6 @@ const currentTime = useCurrentTime()
 const clustersByPerson = computed(() => {
   return props.clusters.reduce((acc, cluster) => {
     cluster.documents.forEach(document => {
-      console.log(Object.keys(document))
       document.assignments?.forEach(assignment => {
         const personId = assignment.person?.id
         if (personId) {
@@ -133,7 +140,6 @@ const getInitialState = (message: AssignmentMessageProps): SelectedPeople => {
   }, {} as SelectedPeople)
 }
 
-
 const isPersonSelected = ref(getInitialState(props.message))
 
 const { closeOverlayModal } = overlayModalKeyInjection
@@ -142,27 +148,27 @@ const toggleSelection = (personId?: number) => {
   if (personId === undefined) {
     throw Error('Internal error: An assignment should have a person but it did not')
   }
-  console.log('toggle', personId)
   const toggledValue = !isPersonSelected.value[personId]
   isPersonSelected.value = {
     ...isPersonSelected.value,
     [personId]: toggledValue
   }
-  console.log(toggledValue)
 }
 
-type ActionWithdrawn = { type: 'withdraw', personId: number, reason: string }
-type ActionAssign = { type: 'assign', personId: number }
+type ActionWithdrawn = { type: 'withdraw', personId: number, reason: string, assignmentId: number }
+type ActionAssign = { type: 'assign', personId: number, rfcToBeId: number, role: Assignment["role"] }
 type Action = ActionWithdrawn | ActionAssign
 
+const isSaving = ref(false)
 const actions = ref<Action[]>([])
+const saveStatus = ref('')
 
 watch(isPersonSelected, () => {
   const newActions: Action[] = []
 
   if (props.message.type === 'change') {
     const message = props.message
-    // withdrawns
+    // withdrawals
     newActions.push(
       ...message.assignments.filter(assignment => {
         const { person } = assignment
@@ -170,10 +176,13 @@ watch(isPersonSelected, () => {
           throw Error('Internal error: An assignment should have a person but it did not')
         }
         return !isPersonSelected.value[person]
-      }).map((withdrawAssignments): ActionWithdrawn => {
-        const { person } = withdrawAssignments
+      }).map((assignmentToWithdraw): ActionWithdrawn => {
+        const { person } = assignmentToWithdraw
         if (person === undefined || person === null) {
           throw Error('Internal error: An assignment should have a person but it did not')
+        }
+        if (!assignmentToWithdraw.id) {
+          throw Error(`Assignment to withdraw was missing an id. Was ${JSON.stringify(assignmentToWithdraw)}`)
         }
 
         const existingAction = actions.value.find(action => action.type === 'withdraw' && action.personId === person)
@@ -181,7 +190,8 @@ watch(isPersonSelected, () => {
         return {
           type: 'withdraw',
           personId: person,
-          reason: existingAction?.type === 'withdraw' ? existingAction.reason : ''
+          reason: existingAction?.type === 'withdraw' ? existingAction.reason : '',
+          assignmentId: assignmentToWithdraw.id
         }
       })
     )
@@ -197,30 +207,86 @@ watch(isPersonSelected, () => {
         return {
           type: 'assign',
           personId,
+          rfcToBeId: message.rfcToBeId,
+          role: message.role
         }
       })
 
     )
   } else if (props.message.type === 'assign') {
+    const message = props.message
+    // withdrawals
+    // there are no withdrawals when initially assigning
+
+    // new assignments
     newActions.push(
       ...Object.entries(isPersonSelected.value).map(([personIdString]): ActionAssign => {
         const personId = parseInt(personIdString, 10)
         return {
           type: 'assign',
           personId,
+          rfcToBeId: message.rfcToBeId,
+          role: message.role
         }
       })
     )
   }
 
   actions.value = newActions
-
 }, { deep: true })
+
+const canSave = computed(() => {
+  return actions.value.length === 0 || !isSaving.value
+})
 
 const getPersonNameById = (personId?: number): string => {
   if (personId === undefined) return 'Unknown'
   const person = props.people.find(person => person.id === personId)
   return person?.name ?? 'Unknown'
+}
+
+const api = useApi()
+
+const saveChanges = async () => {
+  isSaving.value = true
+
+  await promiseAllProgress(actions.value.map(async (action) => {
+    switch (action.type) {
+      case 'withdraw':
+        return api.assignmentsPartialUpdate({
+          id: action.assignmentId,
+          patchedAssignment: {
+            state: 'withdrawn',
+            comment: action.reason,
+          }
+        })
+      case 'assign':
+        return api.assignmentsCreate({
+          assignment: {
+            rfcToBe: action.rfcToBeId,
+            person: action.personId,
+            role: action.role
+          }
+        })
+        break;
+    }
+  },), (progressPercent) => {
+    saveStatus.value = `${progressPercent}% saved`
+  }).catch(e => {
+    console.error(e)
+    saveStatus.value = e.toString()
+    throw e
+  }).finally(() => {
+    isSaving.value = false
+  })
+
+  // if it got this far it was successful
+  props.onSuccess() // trigger reload of table before modal closes
+
+  saveStatus.value = 'Successful update'
+  await sleep(1000) // allow the user time to read the status
+
+  closeOverlayModal()
 }
 
 </script>
