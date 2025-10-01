@@ -108,6 +108,7 @@ class Command(BaseCommand):
                 rpcapi_client.DemoPersonCreateRequest(name="C. Simmons"),
             ).person_pk,
             can_hold_role=[
+                "enqueuer",
                 "formatting",
                 "first_editor",
                 "second_editor",
@@ -127,6 +128,8 @@ class Command(BaseCommand):
                 rpcapi_client.DemoPersonCreateRequest(name="F. Fermat"),
             ).person_pk,
             can_hold_role=[
+                "enqueuer",
+                "ref_checker",
                 "formatting",
                 "first_editor",
                 "second_editor",
@@ -246,11 +249,23 @@ class Command(BaseCommand):
             rev="03",
             states=[("draft-iesg", "rfcqueue")],
         )
+        AssignmentFactory(
+            rfc_to_be=draft_foo_bar,
+            role__slug="enqueuer",
+            person=self.people["csimmons"],
+            state=Assignment.State.DONE,
+        )
         draft_foo_basbis = self._demo_rfctobe_factory(
             rpcapi=rpcapi,
             name="draft-ietf-foo-basbis",
             rev="19",
             states=[("draft-iesg", "rfcqueue")],
+        )
+        AssignmentFactory(
+            rfc_to_be=draft_foo_basbis,
+            role__slug="enqueuer",
+            person=self.people["csimmons"],
+            state=Assignment.State.DONE,
         )
         ClusterMember.objects.create(
             cluster=cluster783,
@@ -288,20 +303,32 @@ class Command(BaseCommand):
             name="draft-ietf-tasty-cheese",
             rev="00",
             states=[("draft-iesg", "rfcqueue")],
+            rfc_number=9876,
         )
-        rfctobe.labels.add(LabelFactory(slug="delicious"))
         rfctobe.labels.add(Label.objects.get(slug="Missing norm ref"))
         AssignmentFactory(
-            rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-tasty-cheese"),
+            rfc_to_be=rfctobe,
+            role__slug="enqueuer",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="ref_checker",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
             role__slug="first_editor",
-            person=self.people["atravis"],
+            person=self.people["pparker"],
             state=Assignment.State.ASSIGNED,
         )
         AssignmentFactory(
-            rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-tasty-cheese"),
+            rfc_to_be=rfctobe,
             role__slug="formatting",
             person=self.people["kstrawberry"],
-            state=Assignment.State.IN_PROGRESS,
+            state=Assignment.State.DONE,
         )
 
         rfctobe = self._demo_rfctobe_factory(
@@ -313,19 +340,75 @@ class Command(BaseCommand):
         rfctobe.labels.add(
             LabelFactory(slug="is_a_trap", is_exception=True, color="red")
         )
+        rfctobe.labels.add(Label.objects.get(slug="IANA Hold"))
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="enqueuer",
+            person=self.people["csimmons"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="formatting",
+            person=self.people["csimmons"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="ref_checker",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="first_editor",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
         AssignmentFactory(
             rfc_to_be=RfcToBe.objects.get(draft__name="draft-ietf-where-is-my-hat"),
             role__slug="second_editor",
             person=self.people["sbexar"],
-            state=Assignment.State.IN_PROGRESS,
+            state=Assignment.State.DONE,
         )
 
-        self._demo_rfctobe_factory(
+        rfctobe = self._demo_rfctobe_factory(
             rpcapi=rpcapi,
             name="draft-irtf-improving-lizard-qol",
             rev="07",
             stream="irtf",
             states=[("draft-iesg", "idexists")],
+            rfc_number=5555,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="enqueuer",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="ref_checker",
+            person=self.people["ffermat"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="first_editor",
+            person=self.people["pparker"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="formatting",
+            person=self.people["kstrawberry"],
+            state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="second_editor",
+            person=self.people["kstrawberry"],
+            state=Assignment.State.DONE,
         )
         AssignmentFactory(
             rfc_to_be=RfcToBe.objects.get(

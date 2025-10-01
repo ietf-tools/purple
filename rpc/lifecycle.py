@@ -73,7 +73,9 @@ def pending_activities(rfctobe):
     # Get map from role slug to state
     state_map = dict(
         rfctobe.assignment_set.filter(role__slug__in=role_map)
-        .exclude(state=Assignment.State.WITHDRAWN)
+        .exclude(
+            state__in=[Assignment.State.WITHDRAWN, Assignment.State.CLOSED_FOR_HOLD]
+        )
         .values_list("role__slug", "state")
     )
     # need an assignment for any without a non-withdrawn Assignment

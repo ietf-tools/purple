@@ -14,34 +14,36 @@ from .blocked_assignments import apply_blocked_assignment_for_rfc
 
 
 def defer_apply(rfc: RfcToBe):
+    if not rfc:
+        return
     transaction.on_commit(lambda rfc=rfc: apply_blocked_assignment_for_rfc(rfc))
 
 
 @receiver([post_save, post_delete], sender=Assignment)
-def assignment_changed(sender, instance, **kwargs):
+def assignment_changed(sender, instance: Assignment, **kwargs):
     if instance.role_id == "blocked":
         return
     defer_apply(getattr(instance, "rfc_to_be", None))
 
 
 @receiver([post_save, post_delete], sender=ActionHolder)
-def actionholder_changed(sender, instance, **kwargs):
-    defer_apply(getattr(instance, "rfc_to_be", None))
-
-
-@receiver([post_save, post_delete], sender=RpcRelatedDocument)
-def related_doc_changed(sender, instance, **kwargs):
-    defer_apply(getattr(instance, "source", None))
+def actionholder_changed(sender, instance: ActionHolder, **kwargs):
     defer_apply(getattr(instance, "target_rfctobe", None))
 
 
+@receiver([post_save, post_delete], sender=RpcRelatedDocument)
+def related_doc_changed(sender, instance: RpcRelatedDocument, **kwargs):
+    defer_apply(getattr(instance, "source", None))
+
+
 @receiver([post_save, post_delete], sender=ClusterMember)
-def cluster_member_changed(sender, instance, **kwargs):
-    defer_apply(getattr(instance, "rfc_to_be", None))
+def cluster_member_changed(sender, instance: ClusterMember, **kwargs):
+    rfc_to_be = RfcToBe.objects.filter(draft=instance.doc).first()
+    defer_apply(rfc_to_be)
 
 
 @receiver(m2m_changed, sender=RfcToBe.labels.through)
-def rfc_labels_m2m_changed(sender, instance, action, **kwargs):
+def rfc_labels_m2m_changed(sender, instance: RfcToBeLabel, action, **kwargs):
     # ignore pre_* actions
     if action.startswith("pre_"):
         return

@@ -55,6 +55,24 @@
               </dl>
             </div>
           </div>
+          <div class="px-0 pt-6 sm:px-6">
+            <h3 class="text-base font-semibold leading-7">Pending Activities</h3>
+            <div class="text-sm font-medium">
+              <div v-if="rfcToBe?.pendingActivities.length === 0">
+                None
+              </div>
+              <dl v-else>
+                <div
+                  v-for="pendingAct of rfcToBe?.pendingActivities"
+                  :key="pendingAct.slug"
+                  class="py-1 grid grid-cols-2">
+                  <dd class="relative">
+                    <BaseBadge :label="pendingAct.slug"/>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
           <div class="px-4 py-6 sm:px-6 text-gray-900 dark:text-neutral-300">
             <h3 class="text-base font-semibold leading-7 ">Queue Information (mocked)</h3>
             <div class="text-sm font-medium">
@@ -212,7 +230,11 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
 
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
 
-const rfcToBeAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id))
+const rfcToBeAssignments = computed(() =>
+  assignments.value
+    .filter((a) => a.rfcToBe === rfcToBe.value?.id)
+    .sort((a, b) => b.id - a.id)
+
 const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
 
 const rfcToBe = computed(() => {

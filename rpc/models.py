@@ -331,7 +331,11 @@ class AssignmentQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only active Assignments"""
         return super().exclude(
-            state__in=[Assignment.State.DONE, Assignment.State.WITHDRAWN]
+            state__in=[
+                Assignment.State.DONE,
+                Assignment.State.WITHDRAWN,
+                Assignment.State.CLOSED_FOR_HOLD,
+            ]
         )
 
 
@@ -345,6 +349,7 @@ class Assignment(models.Model):
         IN_PROGRESS = "in_progress"
         DONE = "done"
         WITHDRAWN = "withdrawn"
+        CLOSED_FOR_HOLD = "closed_for_hold"
 
     # Custom manager
     objects = AssignmentQuerySet.as_manager()
@@ -433,6 +438,12 @@ class AdditionalEmail(models.Model):
         return f"{self.email} associated with {self.rfc_to_be}"
 
 
+class FinalApprovalQuerySet(models.QuerySet):
+    def active(self):
+        """QuerySet including only not-completed FinalApprovals"""
+        return self.filter(approved__isnull=True)
+
+
 class FinalApproval(models.Model):
     """Captures approvals for publication
 
@@ -451,6 +462,8 @@ class FinalApproval(models.Model):
     becomes non-responsive). Overriding approver should never be not None if
     approver is None.
     """
+
+    objects = FinalApprovalQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     body = models.CharField(max_length=64, blank=True, default="")

@@ -1,4 +1,6 @@
 import logging
+
+from openapi.rpcapi_client.build.lib.rpcapi_client.models import rfc
 from .models import Assignment, RfcToBe, RpcRole
 from rest_framework.exceptions import NotFound
 from django.db import transaction
@@ -6,51 +8,115 @@ from django.db import transaction
 logger = logging.getLogger(__name__)
 
 
+def _is_active_or_pending_assignment(rfc: RfcToBe, slugs) -> bool:
+    # check for active assignments
+    active_assignments_qs = rfc.assignment_set.filter(role__slug__in=slugs).active()
+
+    # check for pending assignments
+    pending_assignments_qs = rfc.pending_activities().filter(slug__in=slugs)
+
+    if active_assignments_qs.exists() or pending_assignments_qs.exists():
+        return True
+
+    return False
+
+
 def is_blocked(rfc: RfcToBe) -> bool:
     """Return True if instance is blocked and can't move forward."""
 
-    # check for blocking labels
-    blocking_label = rfc.labels.filter(
-        slug__in=["Stream Hold", "IANA Hold", "Tools Issue"]
-    ).exists()
+    # Gate 1: Blocks formatting / reference checks
+    slugs = ["ref_checker", "formatting"]
+    if _is_active_or_pending_assignment(rfc, slugs):
+        action_holder_active_qs = rfc.actionholder_set.active()
+        if action_holder_active_qs.exists():
+            return True
+        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold", "ExtRef Hold"])
+        if blocking_label_qs.exists():
+            return True
+        # any related documents not received
+        not_received_qs = rfc.rpcrelateddocument_set.filter(relationship="not-received")
+        if not_received_qs.exists():
+            return True
 
-    if blocking_label == True:
-        return True
+        return False
 
-    # blocked if draft
-    # 1) is in cluster
-    # 2) has first_editor finished
-    # 3) but others in cluster not yet finished first_editor
-    if rfc.cluster is not None:
-        first_editor_incomplete = (
-            rfc.incomplete_activities().filter(slug="first_editor").exists()
-        )
-        if first_editor_incomplete == False:  # first_editor is done on this doc
-            cluster_members = list(
-                rfc.cluster.clustermember_set.select_related("doc").all()
-            )
-            docs = [m.doc for m in cluster_members if m.doc is not None]
-            rfctobes = RfcToBe.objects.filter(draft__in=docs).exclude(
-                disposition__slug="withdrawn"
-            )
-            for r in rfctobes:
-                first_editor_incomplete_cluster = (
-                    r.incomplete_activities().filter(slug="first_editor").exists()
+    # Gate 2: Blocks first edit
+    slugs = ["first_editor"]
+    if _is_active_or_pending_assignment(rfc, slugs):
+        action_holder_active_qs = rfc.actionholder_set.active()
+        if action_holder_active_qs.exists():
+            return True
+        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold"])
+        if blocking_label_qs.exists():
+            return True
+
+        return False
+
+    # Gate 3: Blocks second edit
+    slugs = ["second_editor"]
+    if _is_active_or_pending_assignment(rfc, slugs):
+        action_holder_active_qs = rfc.actionholder_set.active()
+        if action_holder_active_qs.exists():
+            return True
+        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold", "IANA Hold"])
+        if blocking_label_qs.exists():
+            return True
+        # any document this draft normatively references has not completed first edit
+        refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
+        if refqueue_qs.exists():
+            for ref in refqueue_qs:
+                incomplete_first_edit_qs = (
+                    ref.target_rfctobe.incomplete_activities().filter(
+                        slug="first_editor"
+                    )
                 )
-                if first_editor_incomplete_cluster == False:
+                if incomplete_first_edit_qs.exists():
                     return True
 
-    # blocked if any related documents not received
-    not_received = rfc.rpcrelateddocument_target_set.filter(
-        relationship="not-received"
-    ).exists()
-    if not_received == True:
-        return True
+        return False
 
-    # blocked if active (=incomplete) action holder
-    action_holder_active = rfc.actionholder_set.active().exists()
-    if action_holder_active == True:
-        return True
+    # Gate 4: Blocks final review
+    slugs = ["final_review_editor"]
+    if _is_active_or_pending_assignment(rfc, slugs):
+        logger.info("test gate 4")
+        # any document this draft normatively references has not completed 2nd edit
+        refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
+        if refqueue_qs.exists():
+            for ref in refqueue_qs:
+                incomplete_second_edit_qs = (
+                    ref.target_rfctobe.incomplete_activities().filter(
+                        slug="second_editor"
+                    )
+                )
+                if incomplete_second_edit_qs.exists():
+                    return True
+        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold"])
+        if blocking_label_qs.exists():
+            return True
+        action_holder_active_qs = rfc.actionholder_set.active()
+        if action_holder_active_qs.exists():
+            return True
+
+    # Gate 5: Blocks publishing
+    slugs = ["publisher"]
+    if _is_active_or_pending_assignment(rfc, slugs):
+        blocking_label_qs = rfc.labels.filter(
+            slug__in=["Stream Hold", "IANA Hold", "Tools Issue"]
+        )
+        if blocking_label_qs.exists():
+            return True
+        # any document this draft normatively references has not been published
+        refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
+        if refqueue_qs.exists():
+            for ref in refqueue_qs:
+                incomplete_publish_qs = (
+                    ref.target_rfctobe.incomplete_activities().filter(slug="publisher")
+                )
+                if incomplete_publish_qs.exists():
+                    return True
+        final_approval_qs = rfc.finalapproval_set.active()
+        if final_approval_qs.exists():
+            return True
 
     return False
 
@@ -65,6 +131,12 @@ def _has_active_blocked_assignment(rfc: RfcToBe) -> bool:
 
 def _create_blocked_assignment(rfc: RfcToBe) -> bool:
     """Create a new 'blocked' assignment."""
+
+    # if any active non-blocked assignment exists, set status to "closed_for_hold"
+    active_assignment_qs = rfc.assignment_set.exclude(role__slug="blocked").active()
+    if active_assignment_qs.exists():
+        logger.info("Setting active assignments to closed_for_hold for rfc %s", rfc.pk)
+        active_assignment_qs.update(state=Assignment.State.CLOSED_FOR_HOLD)
 
     try:
         role = RpcRole.objects.get(slug="blocked")
@@ -90,21 +162,17 @@ def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
         return False
 
     a = blocked_qs.first()
-    a.state = "done"
+    a.state = Assignment.State.DONE
     a.save(update_fields=["state"])
     return True
 
 
-def apply_blocked_assignment_for_rfc(rfc: RfcToBe):
+def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
     """Compute blocked state and apply assignment transitions.
 
     - If move not-blocked -> blocked: create new 'blocked' assignment.
     - If move blocked -> not-blocked: mark latest 'blocked' assignment done.
     """
-
-    # don't block if current active assignment exists
-    if rfc.assignment_set.exclude(role__slug="blocked").active().exists():
-        return
 
     try:
         with transaction.atomic():
@@ -114,10 +182,19 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe):
             blocked_now = is_blocked(locked)
             blocked_before = _has_active_blocked_assignment(locked)
 
+            logger.info(
+                "Applying blocked assignment for rfc %s: blocked_now=%s, blocked_before=%s",
+                locked.pk,
+                blocked_now,
+                blocked_before,
+            )
+
             if blocked_now and not blocked_before:
                 _create_blocked_assignment(locked)
+                logger.info("Created blocked assignment for rfc %s", locked.pk)
                 return True
             elif not blocked_now and blocked_before:
+                logger.info("Closing blocked assignment for rfc %s", locked.pk)
                 _close_latest_blocked_assignment(locked)
                 return True
 
