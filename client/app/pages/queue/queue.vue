@@ -45,21 +45,17 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()"
-              :sort-direction="header.column.getIsSorted()"
-              @click="header.column.getToggleSortingHandler()?.($event)"
-            >
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+              @click="header.column.getToggleSortingHandler()?.($event)">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </RpcTh>
           </tr>
         </RpcThead>
         <RpcTbody>
-          <RpcRowMessage :status="[status, peopleStatus]" :column-count="table.getAllColumns().length" :row-count="table.getRowModel().rows.length" />
+          <RpcRowMessage :status="[status, peopleStatus]" :column-count="table.getAllColumns().length"
+            :row-count="table.getRowModel().rows.length" />
           <tr v-for="row in table.getRowModel().rows" :key="row.id">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
@@ -81,7 +77,7 @@
 </template>
 
 <script setup lang="ts">
-import { Anchor, Icon, BaseBadge, RpcLabel } from '#components'
+import { Anchor, Icon, BaseBadge, BaseButton, RpcLabel, AssignmentModal } from '#components'
 import { DateTime } from 'luxon'
 import {
   FlexRender,
@@ -94,17 +90,15 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { sortDate, type AssignmentMessageProps, type TabId } from '~/utils/queue'
+import { sortDate, sortLabels } from '~/utils/queue'
+import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
-import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
-import AssignmentModal from '~/components/AssignmentModal.vue'
+import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 
 const api = useApi()
-const route = useRoute()
-const router = useRouter()
+
 const currentTab: TabId = 'queue'
-const siteStore = useSiteStore()
 
 const {
   data,
@@ -124,7 +118,7 @@ const {
 
 const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
-  lazy: true,
+  lazy: false,
   default: () => [] as RpcPerson[]
 })
 
@@ -151,12 +145,6 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
-  columnHelper.accessor('rfcNumber', {
-    header: 'RFC Number',
-    cell: data => data.getValue(),
-    sortingFn: 'alphanumeric',
-    sortUndefined: 'last',
-  }),
   columnHelper.accessor(
     'labels', {
     header: 'Labels',
@@ -165,16 +153,12 @@ const columns = [
       if (!labels) return undefined
       return h('span', labels.map(label => h(RpcLabel, { label, class: 'ml-2' })))
     },
-    sortingFn: (rowA, rowB) => {
-      const serializeRow = (row: typeof rowA) => row.original.labels?.map(label => label.slug).join('') ?? ''
-      return serializeRow(rowA).localeCompare(serializeRow(rowB))
-    },
+    sortingFn: (rowA, rowB) => sortLabels(rowA.original.labels, rowB.original.labels),
   }),
   columnHelper.display({
-      id: 'submitted',
-      header: 'Submitted',
-      cell: _data => '',
-      sortingFn: 'alphanumeric',
+    id: 'submitted',
+    header: 'Submitted',
+    cell: _data => '',
   }),
   columnHelper.accessor(
     'externalDeadline',
@@ -201,45 +185,55 @@ const columns = [
 
         const listItems: VNode[] = []
 
-        assignments.sort((a, b) => a.role.localeCompare(b.role, 'en'))
+        const assignmentsByRole = groupBy(
+          assignments,
+          (assignment) => assignment.role
+        )
 
-        for (const assignment of assignments) {
-          const { person: rpcPersonId } = assignment
-          const rpcPerson = rpcPersonId ? people.value.find(
-            (p) => p.id === rpcPersonId
-          ) : undefined
+        const orderedRole = Object.keys(assignmentsByRole)
+          .sort((a, b) => a.localeCompare(b, 'en'))
+
+        for (const role of orderedRole) {
+          const assignments = assignmentsByRole[role] ?? []
 
           listItems.push(h('li', {}, [
-            h(BaseBadge, { label: assignment.role }),
-            h(Anchor, {
-              href: assignment ? `/team/${assignment.id}` : undefined,
-              class: 'mx-1 text-xs whitespace-nowrap'
-            }, () => [
-              rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
-            ]),
-            h('span', { class: 'text-xs whitespace-nowrap' }, [
-              '(',
-              h('button', { class: ANCHOR_STYLE, type: 'button', 'onClick': () => openAssignmentModal({ type: 'change', assignment }) }, 'Change'),
-              ')'
-            ])
+            h(BaseBadge, { label: role, class: 'mr-1' }),
+            ...assignments.map(assignment => {
+              const rpcPerson = people.value.find((p) => p.id === assignment.person)
+              return h(Anchor, {
+                href: assignment ? `/team/${assignment.id}` : undefined,
+                class: [ANCHOR_STYLE, 'text-sm nowrap']
+              }, () => [
+                rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
+              ])
+            }).reduce((acc, item, index, arr) => {
+              acc.push(item)
+              if(index < arr.length - 1) {
+                acc.push(', ')
+              } else {
+                acc.push(' ')
+              }
+              return acc
+            }, [] as (VNode | string )[]),
+            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments }) }, () => 'Change'),
           ]))
         }
 
         return h('ul', {}, listItems)
       },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
     'actionholderSet',
     {
-      header: 'Action Holders', cell: data => {
+      header: 'Action Holders',
+      cell: data => {
         const value = data.getValue()
         if (!value) {
           return undefined
         }
-        return h('span', {}, value ?
-          value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name')
-          : undefined)
+        return h('span', {}, value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name'))
       },
       sortingFn: 'alphanumeric',
     }
@@ -247,11 +241,13 @@ const columns = [
   columnHelper.accessor(
     'pendingActivities',
     {
-      header: 'Pending Activities', cell: data => {
+      header: 'Pending Activities',
+      cell: data => {
         const value = data.getValue()
         if (!value) {
           return undefined
         }
+
         return h('ul', {}, value.map(rpcRole =>
           h('li', {}, [
             h(BaseBadge, { label: rpcRole.name }),
@@ -263,43 +259,40 @@ const columns = [
           ])
         ))
       },
+      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
     'id',
     {
-      header: 'Estimated Completion', cell: _data => '---',
+      header: 'Estimated Completion',
+      cell: _data => '---',
       sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
     'pages',
     {
-      header: 'Pages',
-      cell: data => data.getValue(),
+      header: 'Status',
+      cell: _data => '',
       sortingFn: 'alphanumeric',
-      sortUndefined: 'last',
     }
   ),
   columnHelper.accessor(
     'cluster',
     {
-      header: 'Cluster', cell: data => {
+      header: 'Cluster',
+      cell: data => {
         const value = data.getValue()
         if (!value) {
           return undefined
         }
         return h(Anchor, { href: `/clusters/${value.number}` }, () => [
           h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
-          value.number
+          String(value.number)
         ])
       },
-      sortingFn: (rowA, rowB, columnId) => {
-        const a = rowA.getValue(columnId)?.number
-        const b = rowB.getValue(columnId)?.number
-        return (a > b) ? 1 : (a < b) ? -1 : 0
-      },
-      sortUndefined: 'last',
+      sortingFn: (rowA, rowB) => sortCluster(rowA.original.cluster, rowB.original.cluster),
     }
   ),
 ]
@@ -318,7 +311,6 @@ const allLabelFilters = computed(() => {
   return usedUniqueLabels
 })
 
-
 const table = useVueTable({
   get data() {
     return data.value
@@ -326,12 +318,7 @@ const table = useVueTable({
   columns,
   state: {
     get globalFilter() {
-      return JSON.stringify([
-        needsAssignmentTristate.value,
-        hasExceptionTristate.value,
-        selectedLabelFilters.value,
-        searchQuery.value
-      ])
+      return JSON.stringify([needsAssignmentTristate.value, hasExceptionTristate.value, selectedLabelFilters.value])
     },
     get sorting() {
       return sorting.value
@@ -341,16 +328,6 @@ const table = useVueTable({
     const d = row.original
     if (d.disposition !== 'in_progress') {
       return false
-    }
-
-    // Search filter
-    if (searchQuery.value && searchQuery.value.trim()) {
-      const searchTerm = searchQuery.value.trim().toLowerCase()
-      const nameMatch = d.name?.toLowerCase().includes(searchTerm)
-      const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
-      if (!nameMatch && !rfcMatch) {
-        return false
-      }
     }
 
     const needsAssignmentFilterFn = () => {
@@ -405,31 +382,6 @@ const table = useVueTable({
         ? updaterOrValue(sorting.value)
         : updaterOrValue
   },
-})
-
-const searchQuery = computed({
-  get: () => siteStore.search,
-  set: (value: string) => { siteStore.search = value }
-})
-
-onMounted(() => {
-  if (route.query.search && route.query.search !== siteStore.search) {
-    siteStore.search = route.query.search as string
-  }
-})
-
-watch(() => route.query.search, (newSearch) => {
-  siteStore.search = newSearch as string || ''
-})
-
-watch(() => siteStore.search, (newSearch) => {
-  const query = { ...route.query }
-  if (newSearch) {
-    query.search = newSearch
-  } else {
-    delete query.search
-  }
-  router.replace({ query })
 })
 
 const { data: clusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
