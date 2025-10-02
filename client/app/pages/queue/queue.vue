@@ -45,11 +45,29 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-              @click="header.column.getToggleSortingHandler()?.($event)">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                :props="header.getContext()" />
+            <RpcTh
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()"
+              :sort-direction="header.column.getIsSorted()"
+              @click="header.column.getToggleSortingHandler()?.($event)"
+              :title="header.column.getCanSort() ? 'Click to sort' : ''"
+            >
+              <div class="flex items-center gap-2">
+                <FlexRender
+                  v-if="!header.isPlaceholder"
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()"
+                />
+                <Transition name="sort-indicator">
+                  <Icon
+                    v-if="header.column.getCanSort()"
+                    name="heroicons:arrows-up-down"
+                    class="text-gray-400 opacity-60 hover:opacity-100"
+                  />
+                </Transition>
+              </div>
             </RpcTh>
           </tr>
         </RpcThead>
@@ -158,7 +176,7 @@ const columns = [
       if (!labels) return undefined
       return h('span', labels.map(label => h(RpcLabel, { label, class: 'ml-2' })))
     },
-    sortingFn: (rowA, rowB) => sortLabels(rowA.original.labels, rowB.original.labels),
+    enableSorting: false,
   }),
   columnHelper.display({
     id: 'submitted',
@@ -231,7 +249,7 @@ const columns = [
 
         return h('ul', {}, listItems)
       },
-      sortingFn: 'alphanumeric',
+      enableSorting: false,
     }
   ),
   columnHelper.accessor(
@@ -270,7 +288,7 @@ const columns = [
           ])
         ))
       },
-      sortingFn: 'alphanumeric',
+      enableSorting: false,
     }
   ),
   columnHelper.accessor(
