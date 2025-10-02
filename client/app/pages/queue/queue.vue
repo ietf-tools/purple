@@ -160,20 +160,32 @@ const columns = [
     },
     sortingFn: (rowA, rowB) => sortLabels(rowA.original.labels, rowB.original.labels),
   }),
-  columnHelper.display({
-    id: 'submitted',
-    header: 'Submitted',
-    cell: _data => '',
-  }),
+  columnHelper.accessor(
+    'submittedAt',
+    {
+      header: 'Submitted',
+      cell: data => {
+        const value = data.getValue()
+        return h(
+          'span',
+          { class: 'text-xs' },
+          [value ? DateTime.fromJSDate(value).toISODate() : '']
+        )
+      },
+      sortingFn: 'alphanumeric',
+    }
+  ),
   columnHelper.accessor(
     'externalDeadline',
     {
       header: 'Deadline',
       cell: data => {
         const value = data.getValue()
-        return h('span', { class: 'text-xs' }, value ? DateTime.fromJSDate(value).toLocaleString(
-          DateTime.DATE_MED_WITH_WEEKDAY
-        ) : undefined)
+        return h(
+          'span',
+          { class: 'text-xs' },
+          [value ? DateTime.fromJSDate(value).toISODate() : '']
+        )
       },
       sortingFn: (rowA, rowB) => sortDate(rowA.original.externalDeadline, rowB.original.externalDeadline),
     }
