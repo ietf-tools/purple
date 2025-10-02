@@ -53,6 +53,18 @@ def rfc_labels_m2m_changed(sender, instance: RfcToBeLabel, action, **kwargs):
 
 
 class SignalsManager:
+    _SIGNAL_REGISTRY = [
+        (post_save, assignment_changed, Assignment),
+        (post_delete, assignment_changed, Assignment),
+        (post_save, actionholder_changed, ActionHolder),
+        (post_delete, actionholder_changed, ActionHolder),
+        (post_save, related_doc_changed, RpcRelatedDocument),
+        (post_delete, related_doc_changed, RpcRelatedDocument),
+        (post_save, cluster_member_changed, ClusterMember),
+        (post_delete, cluster_member_changed, ClusterMember),
+        (m2m_changed, rfc_labels_m2m_changed, RfcToBe.labels.through),
+    ]
+
     @staticmethod
     @contextmanager
     def disabled():
@@ -68,27 +80,15 @@ class SignalsManager:
 
     @staticmethod
     def disable():
-        post_save.disconnect(assignment_changed, sender=Assignment)
-        post_delete.disconnect(assignment_changed, sender=Assignment)
-        post_save.disconnect(actionholder_changed, sender=ActionHolder)
-        post_delete.disconnect(actionholder_changed, sender=ActionHolder)
-        post_save.disconnect(related_doc_changed, sender=RpcRelatedDocument)
-        post_delete.disconnect(related_doc_changed, sender=RpcRelatedDocument)
-        post_save.disconnect(cluster_member_changed, sender=ClusterMember)
-        post_delete.disconnect(cluster_member_changed, sender=ClusterMember)
-        m2m_changed.disconnect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
+        """Disconnect all registered signals"""
+        for signal, handler, sender in SignalsManager._SIGNAL_REGISTRY:
+            signal.disconnect(handler, sender=sender)
 
     @staticmethod
     def enable():
-        post_save.connect(assignment_changed, sender=Assignment)
-        post_delete.connect(assignment_changed, sender=Assignment)
-        post_save.connect(actionholder_changed, sender=ActionHolder)
-        post_delete.connect(actionholder_changed, sender=ActionHolder)
-        post_save.connect(related_doc_changed, sender=RpcRelatedDocument)
-        post_delete.connect(related_doc_changed, sender=RpcRelatedDocument)
-        post_save.connect(cluster_member_changed, sender=ClusterMember)
-        post_delete.connect(cluster_member_changed, sender=ClusterMember)
-        m2m_changed.connect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
+        """Connect all registered signals"""
+        for signal, handler, sender in SignalsManager._SIGNAL_REGISTRY:
+            signal.connect(handler, sender=sender)
 
     @staticmethod
     def process_in_progress_rfctobes():
