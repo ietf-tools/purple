@@ -445,6 +445,9 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
+    filter_backends = (filters.DjangoFilterBackend, drf_filters.OrderingFilter)
+    ordering_fields = ["id"]
+    ordering = ["-id"]
 
     def get_queryset(self):
         user = self.request.user
