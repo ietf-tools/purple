@@ -150,6 +150,7 @@ def _create_blocked_assignment(rfc: RfcToBe) -> bool:
 
     return True
 
+
 def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
     """Mark the latest active 'blocked' assignment as done."""
 

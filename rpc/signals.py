@@ -51,6 +51,7 @@ def rfc_labels_m2m_changed(sender, instance: RfcToBeLabel, action, **kwargs):
 
     defer_apply(instance)
 
+
 class SignalsManager:
     @staticmethod
     @contextmanager
@@ -76,7 +77,6 @@ class SignalsManager:
         post_save.disconnect(cluster_member_changed, sender=ClusterMember)
         post_delete.disconnect(cluster_member_changed, sender=ClusterMember)
         m2m_changed.disconnect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
-
 
     @staticmethod
     def enable():
