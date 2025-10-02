@@ -3,6 +3,7 @@
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
 from datatracker.models import DatatrackerPerson, Document
+from rpc.signals import SignalsManager
 
 from ...models import (
     ActionHolder,
@@ -40,17 +41,18 @@ class Command(BaseCommand):
                 )
             )
 
-        Assignment.objects.all().delete()
-        ActionHolder.objects.all().delete()
-        HistoricalRfcToBeLabel.objects.all().delete()
-        HistoricalRfcToBe.objects.all().delete()
-        HistoricalLabel.objects.all().delete()
-        RpcDocumentComment.objects.all().delete()
-        RpcRelatedDocument.objects.all().delete()
-        RfcAuthor.objects.all().delete()
-        RfcToBe.objects.all().delete()
-        RpcPerson.objects.all().delete()
-        DatatrackerPerson.objects.all().delete()
-        Document.objects.all().delete()
-        Label.objects.all().delete()
-        Cluster.objects.all().delete()
+        with SignalsManager.disabled():
+            Assignment.objects.all().delete()
+            ActionHolder.objects.all().delete()
+            HistoricalRfcToBeLabel.objects.all().delete()
+            HistoricalRfcToBe.objects.all().delete()
+            HistoricalLabel.objects.all().delete()
+            RpcDocumentComment.objects.all().delete()
+            RpcRelatedDocument.objects.all().delete()
+            RfcAuthor.objects.all().delete()
+            RfcToBe.objects.all().delete()
+            RpcPerson.objects.all().delete()
+            DatatrackerPerson.objects.all().delete()
+            Document.objects.all().delete()
+            Label.objects.all().delete()
+            Cluster.objects.all().delete()
