@@ -211,7 +211,7 @@ const columns = [
             ...assignments.map(assignment => {
               const rpcPerson = people.value.find((p) => p.id === assignment.person)
               return h(Anchor, {
-                href: assignment ? `/team/${assignment.id}` : undefined,
+                href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
                 class: [ANCHOR_STYLE, 'text-sm nowrap']
               }, () => [
                 rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
