@@ -27,7 +27,7 @@
               {{ person.name }}
               <span class="font-normal text-gray-700">(#{{ person.id }})</span>
             </label>
-            <div v-if="person.capabilities.length > 0" class="mb-1">
+            <div v-if="person.capabilities.length > 0" class="text-sm mb-1">
               Capabilities:
               <ul class="inline-block ml-1">
                 <li v-for="capability in person.capabilities" class="inline-block mr-1">

@@ -448,27 +448,30 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
 
   // Calculate the workload of an editor
   const peopleWorkload: Record<number, RpcPersonWorkload> = {}
-  const addToPersonWorkload = (personId: number | null | undefined, clusterId: number, role: Assignment['role'], pageCount: number | undefined): void => {
+  const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
     assertIsNumber(personId)
     assert(role.length !== 0)
     assert(typeof pageCount === 'number')
 
     const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
-    if (!editorWorkload.clusterIds.includes(clusterId)) {
-      editorWorkload.clusterIds.push(clusterId)
+    if (clusterIds !== undefined) {
+      clusterIds.forEach(clusterId => {
+        if (!editorWorkload.clusterIds.includes(clusterId)) {
+          editorWorkload.clusterIds.push(clusterId)
+        }
+      })
     }
     editorWorkload.pageCountByRole[role] = (editorWorkload.pageCountByRole[role] ?? 0) + pageCount
 
     peopleWorkload[personId] = editorWorkload
   }
-  clusters.value.forEach(cluster => {
-    cluster.documents.forEach(doc => {
-      const resolvedDocByName = data.value.find(datum => datum.name === doc.name)
-      if (resolvedDocByName?.assignmentSet) {
-        resolvedDocByName.assignmentSet.forEach(assignmentItem =>
-          addToPersonWorkload(assignmentItem.person, cluster.number, assignmentItem.role, resolvedDocByName.pages)
-        )
-      }
+  data.value.forEach(doc => {
+    const clustersWithDocument = clusters.value.filter(cluster => cluster.documents.some(clusterDocument =>
+      clusterDocument.name === doc.name
+    ))
+    const clusterIds = clustersWithDocument.map(cluster => cluster.number)
+    doc.assignmentSet?.forEach(assignment => {
+      addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
     })
   })
 
