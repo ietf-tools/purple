@@ -24,11 +24,14 @@ class Command(BaseCommand):
     help = "Populate data for RPC Tools Refresh demo"
 
     def handle(self, *args, **options):
+        # run all operations with signals disabled
         with SignalsManager.disabled():
             self.people: dict[str, RpcPerson] = {}
             self.create_rpc_people()
             self.create_documents()
             self.create_real_people()
+        # then process them all at once
+        SignalsManager.process_in_progress_rfctobes()
 
     @with_rpcapi
     def create_real_people(self, *, rpcapi: rpcapi_client.PurpleApi):

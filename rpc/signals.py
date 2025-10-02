@@ -89,3 +89,9 @@ class SignalsManager:
         post_save.connect(cluster_member_changed, sender=ClusterMember)
         post_delete.connect(cluster_member_changed, sender=ClusterMember)
         m2m_changed.connect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
+
+    @staticmethod
+    def process_in_progress_rfctobes():
+        """Process all in_progress RfcToBe instances to apply blocked assignments"""
+        for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
+            apply_blocked_assignment_for_rfc(rfc)
