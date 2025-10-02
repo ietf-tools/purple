@@ -144,6 +144,12 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
+  columnHelper.accessor('rfcNumber', {
+    header: 'RFC Number',
+    cell: data => data.getValue(),
+    sortingFn: 'alphanumeric',
+    sortUndefined: 'last',
+  }),
   columnHelper.accessor(
     'labels', {
     header: 'Labels',
@@ -465,9 +471,6 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
       }
     })
   })
-
-  console.log(peopleWorkload)
-  // A.Editor: 2 clusters, 104 first edit pages, 93 second edit pages
 
   openOverlayModal({
     component: AssignmentModal,
