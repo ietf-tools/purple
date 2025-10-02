@@ -143,13 +143,13 @@ def _create_blocked_assignment(rfc: RfcToBe) -> bool:
 
         # create assignment without person
         Assignment.objects.create(rfc_to_be=rfc, role=role)
-        return True
     except Exception as err:
         logger.exception(
             "Failed to create blocked assignment for rfc %s", getattr(rfc, "pk", None)
         )
         raise NotFound("Failed to create blocked assignment for rfc") from err
 
+    return True
 
 def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
     """Mark the latest active 'blocked' assignment as done."""
