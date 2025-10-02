@@ -197,9 +197,12 @@
 
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
+import { snackbarForErrors } from "~/utils/snackbar"
 
 const route = useRoute()
 const api = useApi()
+const snackbar = useSnackbar()
+const isInitialLoad = ref(true)
 
 // COMPUTED
 
@@ -271,16 +274,36 @@ const labels3 = computed(
 watch(
   selectedLabelIds,
   async () => {
-    await api.documentsPartialUpdate({
-      draftName: draftName.value,
-      patchedRfcToBe: { labels: selectedLabelIds.value }
-    })
+    if (isInitialLoad.value) {
+      isInitialLoad.value = false
+      return
+    }
 
-    // Refresh both history and assignments
-    await Promise.all([
-      historyRefresh(),
-      refreshAssignments()
-    ])
+    try {
+      await api.documentsPartialUpdate({
+        draftName: draftName.value,
+        patchedRfcToBe: { labels: selectedLabelIds.value }
+      })
+
+      snackbar.add({
+        type: 'success',
+        title: `Updated labels for "${draftName.value}"`,
+        text: ''
+      })
+
+    } catch (e: unknown) {
+      snackbarForErrors({
+        snackbar,
+        defaultTitle: `Unable to update labels for "${draftName.value}"`,
+        error: e
+      })
+    } finally {
+      // Refresh history and assignments
+      await Promise.all([
+        historyRefresh(),
+        refreshAssignments()
+      ])
+    }
   },
   { deep: true }
 )

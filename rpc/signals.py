@@ -14,7 +14,7 @@ from .models import (
 from .blocked_assignments import apply_blocked_assignment_for_rfc
 
 
-def defer_apply(rfc: RfcToBe):
+def defer_apply(rfc: RfcToBe | None):
     if not rfc:
         return
     transaction.on_commit(lambda: apply_blocked_assignment_for_rfc(rfc))
