@@ -181,16 +181,29 @@ const columns = [
   columnHelper.accessor(
     'submittedAt',
     {
-      header: 'Submitted',
+      header: 'Submitted (Weeks in queue)',
       cell: data => {
         const value = data.getValue()
+
+        const submittedDate = DateTime.fromJSDate(value)
+        const now = DateTime.now()
+        const diffInDays = now.diff(submittedDate, 'days').days
+        const weeksInQueue = Math.round(diffInDays / 7 * 2) / 2 // Round to nearest 0.5
+
         return h(
-          'span',
+          'div',
           { class: 'text-xs' },
-          [value ? DateTime.fromJSDate(value).toISODate() : '']
+          value ? [
+            h('div', submittedDate.toISODate()),
+            h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
+          ] : []
         )
       },
-      sortingFn: 'alphanumeric',
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = rowA.getValue(columnId)
+        const b = rowB.getValue(columnId)
+        return (a > b) ? 1 : (a < b) ? -1 : 0
+      },
     }
   ),
   columnHelper.accessor(
@@ -301,14 +314,6 @@ const columns = [
         ))
       },
       enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'id',
-    {
-      header: 'Estimated Completion',
-      cell: _data => '---',
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
