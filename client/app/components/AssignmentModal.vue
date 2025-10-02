@@ -33,14 +33,9 @@
               </li>
             </ul>
             <div>
-              <p class="text-gray-500" v-if="person.id && person.id in clustersByPerson">
+              <p class="text-sm" v-if="person.id && person.id in peopleWorkload">
                 Currently assigned:
-                <template v-for="cluster in clustersByPerson[person.id]" :key="cluster.number">
-                  {{ cluster.number }}
-                  <span v-for="document in cluster.documents" :key="document.id">
-                    {{ document.name }}, {{ document.pages }} pages
-                  </span>
-                </template>
+                <WorkloadSummary :workload="peopleWorkload[person.id]" />
               </p>
               <p v-else class="italic text-sm">(No other assignments)</p>
             </div>
@@ -52,13 +47,13 @@
       <h2 class="font-bold">Changes to save</h2>
       <div class="flex flex-col gap-y-1 text-sm">
 
-        <div v-for="action in actions">
+        <div v-for="(action, actionIndex) in actions">
           <div v-if="action.type === 'withdraw'">
             <p>
               &bull; <b>Withdraw assignment</b> for <b>{{ getPersonNameById(action.personId) }}</b> #{{ action.personId
               }}
               <span class="ml-4">Reason <i>(optional)</i>: <input type="text" value=""
-                  class="text-xs px-2 py-1 "></span>
+                  @input="e => changeReason(action, e)" class="text-xs px-2 py-1 "></span>
             </p>
           </div>
           <p v-else-if="action.type === 'assign'">
@@ -70,7 +65,7 @@
     <div class="flex justify-between p-4 border-t border-gray-300">
       <BaseButton btnType="cancel" @click="closeOverlayModal">Cancel</BaseButton>
       <div class="flex flex-row items-center">
-        <div role="alert" aria-atomic="true" class="mr-1">
+        <div v-if="isSaving" role="alert" aria-atomic="true" class="mr-1">
           {{ saveStatus }}
         </div>
         <BaseButton btnType="default" @click="saveChanges" :disabled="!canSave">Save changes</BaseButton>
@@ -94,31 +89,13 @@ type ResolvedCluster = {
 type Props = {
   message: AssignmentMessageProps
   people: RpcPerson[]
+  peopleWorkload: Record<number, RpcPersonWorkload>
   clusters: ResolvedCluster[]
   onSuccess: () => void
 }
 const props = defineProps<Props>()
 
 const generateId = (personId: number | undefined, personIndex: number): string => `person-${personId ?? personIndex}`
-
-const currentTime = useCurrentTime()
-
-const clustersByPerson = computed(() => {
-  return props.clusters.reduce((acc, cluster) => {
-    cluster.documents.forEach(document => {
-      document.assignments?.forEach(assignment => {
-        const personId = assignment.person?.id
-        if (personId) {
-          if (!Array.isArray(acc[personId])) {
-            acc[personId] = []
-          }
-          acc[personId].push(cluster)
-        }
-      })
-    })
-    return acc
-  }, {} as Record<number, ResolvedCluster[]>)
-})
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
@@ -155,7 +132,7 @@ const toggleSelection = (personId?: number) => {
   }
 }
 
-type ActionWithdrawn = { type: 'withdraw', personId: number, reason: string, assignmentId: number }
+type ActionWithdrawn = { type: 'withdraw', personId: number, reason: string, existingComment?: string, assignmentId: number }
 type ActionAssign = { type: 'assign', personId: number, rfcToBeId: number, role: Assignment["role"] }
 type Action = ActionWithdrawn | ActionAssign
 
@@ -191,7 +168,8 @@ watch(isPersonSelected, () => {
           type: 'withdraw',
           personId: person,
           reason: existingAction?.type === 'withdraw' ? existingAction.reason : '',
-          assignmentId: assignmentToWithdraw.id
+          assignmentId: assignmentToWithdraw.id,
+          existingComment: assignmentToWithdraw.comment
         }
       })
     )
@@ -253,11 +231,20 @@ const saveChanges = async () => {
   await promiseAllProgress(actions.value.map(async (action) => {
     switch (action.type) {
       case 'withdraw':
+        // make new `patchedAssignment.comment` string with the goal of preserving any existing comment by appending `action.reason` to it
+        const newComment = `${
+          // existing comment
+          action.existingComment ?? ''}${
+          // linebreak between if there's both an existing comment and a reason provided
+          action.existingComment && action.reason.trim().length > 0 ? '\n' : ''}${
+          // the reason
+          action.reason.trim().length > 0 ? `Withdrawn reason: ${action.reason}` : ''}`.trim()
+
         return api.assignmentsPartialUpdate({
           id: action.assignmentId,
           patchedAssignment: {
             state: 'withdrawn',
-            comment: action.reason,
+            comment: newComment.trim().length > 0 ? newComment : undefined // only save newComment when it has content, not just an empty string
           }
         })
       case 'assign':
@@ -268,10 +255,11 @@ const saveChanges = async () => {
             role: action.role
           }
         })
-        break;
     }
+    assertNever(action)
   },), (progressPercent) => {
-    saveStatus.value = `${progressPercent}% saved`
+    // Show progress to user
+    saveStatus.value = `${Math.round(progressPercent)}%`
   }).catch(e => {
     console.error(e)
     saveStatus.value = e.toString()
@@ -281,12 +269,19 @@ const saveChanges = async () => {
   })
 
   // if it got this far it was successful
-  props.onSuccess() // trigger reload of table before modal closes
 
-  saveStatus.value = 'Successful update'
-  await sleep(1000) // allow the user time to read the status
+  props.onSuccess() // trigger early reload of table before modal closes
+
+  saveStatus.value = '100%'
+  await sleep(500) // allow the user time to see the status, and screen readers time to speak the status
+  saveStatus.value = 'Success'
+  await sleep(500) // allow the user time to see the status, and screen readers time to speak the status
 
   closeOverlayModal()
 }
 
+const changeReason = (action: ActionWithdrawn, e: Event): void => {
+  assert(e.target instanceof HTMLInputElement)
+  action.reason = e.target.value
+}
 </script>

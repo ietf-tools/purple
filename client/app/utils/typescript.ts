@@ -30,3 +30,7 @@ export function assertIsArrayOfNumbers (val: any): asserts val is number[] {
     throw new Error(`Not a number[] typeof=${typeof val} typeof values: "${JSON.stringify(Array.isArray(val) ? val.map(x => typeof x) : val)}"`)
   }
 }
+
+export function assertNever(value: never) {
+  throw new Error("Unexpected value: " + value);
+}

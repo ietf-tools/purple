@@ -89,12 +89,11 @@ import {
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
-import type { Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
+import type { Assignment, Cluster, Label, QueueItem, RpcPerson, RpcRole } from '~/purple_client'
 import { sortDate, sortLabels } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { overlayModalKey } from '~/providers/providerKeys'
-import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 
 const api = useApi()
 
@@ -118,7 +117,7 @@ const {
 
 const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
-  lazy: false,
+  lazy: true,
   default: () => [] as RpcPerson[]
 })
 
@@ -390,7 +389,7 @@ const table = useVueTable({
   },
 })
 
-const { data: clusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
+const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
   server: false,
   lazy: false,
   default: () => [] as Cluster[]
@@ -441,13 +440,46 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     return
   }
 
+  // Calculate the workload of an editor
+  const peopleWorkload: Record<number, RpcPersonWorkload> = {}
+  const addToPersonWorkload = (personId: number | null | undefined, clusterId: number, role: Assignment['role'], pageCount: number | undefined): void => {
+    assertIsNumber(personId)
+    assert(role.length !== 0)
+    assert(typeof pageCount === 'number')
+
+    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
+    if (!editorWorkload.clusterIds.includes(clusterId)) {
+      editorWorkload.clusterIds.push(clusterId)
+    }
+    editorWorkload.pageCountByRole[role] = (editorWorkload.pageCountByRole[role] ?? 0) + pageCount
+
+    peopleWorkload[personId] = editorWorkload
+  }
+  clusters.value.forEach(cluster => {
+    cluster.documents.forEach(doc => {
+      const resolvedDocByName = data.value.find(datum => datum.name === doc.name)
+      if (resolvedDocByName?.assignmentSet) {
+        resolvedDocByName.assignmentSet.forEach(assignmentItem =>
+          addToPersonWorkload(assignmentItem.person, cluster.number, assignmentItem.role, resolvedDocByName.pages)
+        )
+      }
+    })
+  })
+
+  console.log(peopleWorkload)
+  // A.Editor: 2 clusters, 104 first edit pages, 93 second edit pages
+
   openOverlayModal({
     component: AssignmentModal,
     componentProps: {
       message: assignmentMessage,
       people: people.value,
       clusters: clusters.value,
-      onSuccess: () => refresh()
+      peopleWorkload,
+      onSuccess: () => {
+        refresh()
+        refreshClusters()
+      }
     },
   })
 }

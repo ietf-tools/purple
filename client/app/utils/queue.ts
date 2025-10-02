@@ -87,9 +87,18 @@ export const sortCluster = (
 export type AssignmentMessageProps =
   | {
       type: 'assign'
-      rpcRole: RpcRole
+      role: Assignment['role']
+      rfcToBeId: number
     }
   | {
       type: 'change'
-      assignment: Assignment
+      assignments: Assignment[]
+      role: Assignment['role']
+      rfcToBeId: number
     }
+
+export type RpcPersonWorkload = {
+  personId: number
+  clusterIds: number[]
+  pageCountByRole: Record<string, number>
+}
