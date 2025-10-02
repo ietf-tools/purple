@@ -2,6 +2,7 @@
 
 import datetime
 
+from rpc.signals import SignalsManager
 import rpcapi_client
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
@@ -23,10 +24,11 @@ class Command(BaseCommand):
     help = "Populate data for RPC Tools Refresh demo"
 
     def handle(self, *args, **options):
-        self.people: dict[str, RpcPerson] = {}
-        self.create_rpc_people()
-        self.create_documents()
-        self.create_real_people()
+        with SignalsManager.disabled():
+            self.people: dict[str, RpcPerson] = {}
+            self.create_rpc_people()
+            self.create_documents()
+            self.create_real_people()
 
     @with_rpcapi
     def create_real_people(self, *, rpcapi: rpcapi_client.PurpleApi):

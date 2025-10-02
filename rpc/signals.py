@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 from django.db import transaction
 from django.db.models.signals import post_save, post_delete, m2m_changed
 from django.dispatch import receiver
@@ -49,3 +50,42 @@ def rfc_labels_m2m_changed(sender, instance: RfcToBeLabel, action, **kwargs):
         return
 
     defer_apply(instance)
+
+class SignalsManager:
+    @staticmethod
+    @contextmanager
+    def disabled():
+        """Context manager to temporarily disable signals"""
+
+        SignalsManager.disable()
+
+        try:
+            yield
+        finally:
+            # Re-enable signals when exiting the 'with' block
+            SignalsManager.enable()
+
+    @staticmethod
+    def disable():
+        post_save.disconnect(assignment_changed, sender=Assignment)
+        post_delete.disconnect(assignment_changed, sender=Assignment)
+        post_save.disconnect(actionholder_changed, sender=ActionHolder)
+        post_delete.disconnect(actionholder_changed, sender=ActionHolder)
+        post_save.disconnect(related_doc_changed, sender=RpcRelatedDocument)
+        post_delete.disconnect(related_doc_changed, sender=RpcRelatedDocument)
+        post_save.disconnect(cluster_member_changed, sender=ClusterMember)
+        post_delete.disconnect(cluster_member_changed, sender=ClusterMember)
+        m2m_changed.disconnect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
+
+
+    @staticmethod
+    def enable():
+        post_save.connect(assignment_changed, sender=Assignment)
+        post_delete.connect(assignment_changed, sender=Assignment)
+        post_save.connect(actionholder_changed, sender=ActionHolder)
+        post_delete.connect(actionholder_changed, sender=ActionHolder)
+        post_save.connect(related_doc_changed, sender=RpcRelatedDocument)
+        post_delete.connect(related_doc_changed, sender=RpcRelatedDocument)
+        post_save.connect(cluster_member_changed, sender=ClusterMember)
+        post_delete.connect(cluster_member_changed, sender=ClusterMember)
+        m2m_changed.connect(rfc_labels_m2m_changed, sender=RfcToBe.labels.through)
