@@ -17,7 +17,7 @@ from .blocked_assignments import apply_blocked_assignment_for_rfc
 def defer_apply(rfc: RfcToBe):
     if not rfc:
         return
-    transaction.on_commit(lambda rfc=rfc: apply_blocked_assignment_for_rfc(rfc))
+    transaction.on_commit(lambda: apply_blocked_assignment_for_rfc(rfc))
 
 
 @receiver([post_save, post_delete], sender=Assignment)

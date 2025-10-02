@@ -78,7 +78,6 @@ def is_blocked(rfc: RfcToBe) -> bool:
     # Gate 4: Blocks final review
     slugs = ["final_review_editor"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        logger.info("test gate 4")
         # any document this draft normatively references has not completed 2nd edit
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
