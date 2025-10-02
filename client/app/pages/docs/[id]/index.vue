@@ -231,9 +231,8 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
 
 const rfcToBeAssignments = computed(() =>
-  assignments.value
-    .filter((a) => a.rfcToBe === rfcToBe.value?.id)
-    .sort((a, b) => b.id - a.id)
+  assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
+)
 
 const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
 
