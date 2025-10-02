@@ -325,15 +325,15 @@ class Command(BaseCommand):
         )
         AssignmentFactory(
             rfc_to_be=rfctobe,
-            role__slug="first_editor",
-            person=self.people["pparker"],
-            state=Assignment.State.ASSIGNED,
-        )
-        AssignmentFactory(
-            rfc_to_be=rfctobe,
             role__slug="formatting",
             person=self.people["kstrawberry"],
             state=Assignment.State.DONE,
+        )
+        AssignmentFactory(
+            rfc_to_be=rfctobe,
+            role__slug="first_editor",
+            person=self.people["pparker"],
+            state=Assignment.State.ASSIGNED,
         )
 
         rfctobe = self._demo_rfctobe_factory(
