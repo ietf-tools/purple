@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -501,9 +502,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         if form.is_valid():
             days = form.cleaned_data.get("published_within_days")
             if days is not None:
-                days_ago_limit = datetime.datetime.now() - datetime.timedelta(
-                    days=int(days)
-                )
+                days_ago_limit = timezone.now() - datetime.timedelta(days=int(days))
                 queryset = queryset.filter(published_at__gte=days_ago_limit)
         else:
             raise serializers.ValidationError(form.errors)
