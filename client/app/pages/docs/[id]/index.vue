@@ -36,7 +36,7 @@
         <BaseCard class="lg:col-start-3 lg:row-start-1 lg:row-span-1 grid place-items-stretch">
           <h2 class="sr-only">Status Summary</h2>
           <div class="px-0 pt-6 sm:px-6">
-            <h3 class="text-base font-semibold leading-7">Current Assignments</h3>
+            <h3 class="text-base font-semibold leading-7">Assignments</h3>
             <div class="text-sm font-medium">
               <div v-if="rfcToBeAssignments.length === 0">
                 None
@@ -46,10 +46,28 @@
                   v-for="assignment of rfcToBeAssignments"
                   :key="assignment.id"
                   class="py-1 grid grid-cols-2">
-                  <dt>{{ people.find(p => p.id === assignment.person)?.name }}</dt>
+                  <dt>{{ people.find(p => p.id === assignment.person)?.name ?? '(System)' }}</dt>
                   <dd class="relative">
                     <BaseBadge :label="assignment.role"/>
                     <AssignmentState :state="assignment.state" />
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          </div>
+          <div class="px-0 pt-6 sm:px-6">
+            <h3 class="text-base font-semibold leading-7">Pending Activities</h3>
+            <div class="text-sm font-medium">
+              <div v-if="rfcToBe?.pendingActivities.length === 0">
+                None
+              </div>
+              <dl v-else>
+                <div
+                  v-for="pendingAct of rfcToBe?.pendingActivities"
+                  :key="pendingAct.slug"
+                  class="py-1 grid grid-cols-2">
+                  <dd class="relative">
+                    <BaseBadge :label="pendingAct.slug"/>
                   </dd>
                 </div>
               </dl>
@@ -179,9 +197,12 @@
 
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
+import { snackbarForErrors } from "~/utils/snackbar"
 
 const route = useRoute()
 const api = useApi()
+const snackbar = useSnackbar()
+const isInitialLoad = ref(true)
 
 // COMPUTED
 
@@ -212,7 +233,10 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
 
 const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
 
-const rfcToBeAssignments = computed(() => assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id))
+const rfcToBeAssignments = computed(() =>
+  assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
+)
+
 const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
 
 const rfcToBe = computed(() => {
@@ -249,16 +273,43 @@ const labels3 = computed(
 
 watch(
   selectedLabelIds,
-  async () => api.documentsPartialUpdate({
-    draftName: draftName.value,
-    patchedRfcToBe: { labels: selectedLabelIds.value } }
-  ).finally(historyRefresh),
+  async () => {
+    if (isInitialLoad.value) {
+      isInitialLoad.value = false
+      return
+    }
+
+    try {
+      await api.documentsPartialUpdate({
+        draftName: draftName.value,
+        patchedRfcToBe: { labels: selectedLabelIds.value }
+      })
+
+      snackbar.add({
+        type: 'success',
+        title: `Updated labels for "${draftName.value}"`,
+        text: ''
+      })
+
+    } catch (e: unknown) {
+      snackbarForErrors({
+        snackbar,
+        defaultTitle: `Unable to update labels for "${draftName.value}"`,
+        error: e
+      })
+    } finally {
+      // Refresh history and assignments
+      await Promise.all([
+        historyRefresh(),
+        refreshAssignments()
+      ])
+    }
+  },
   { deep: true }
 )
 
-
 // todo retrieve assignments for a single draft more efficiently
-const { data: assignments } = await useAsyncData(
+const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   () => api.assignmentsList(),
   { server: false, default: () => [] }
 )
