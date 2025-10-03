@@ -178,20 +178,45 @@ const columns = [
     },
     enableSorting: false,
   }),
-  columnHelper.display({
-    id: 'submitted',
-    header: 'Submitted',
-    cell: _data => '',
-  }),
+  columnHelper.accessor(
+    'submittedAt',
+    {
+      header: 'Submitted (Weeks in queue)',
+      cell: data => {
+        const value = data.getValue()
+
+        const submittedDate = DateTime.fromJSDate(value)
+        const now = DateTime.now()
+        const diffInDays = now.diff(submittedDate, 'days').days
+        const weeksInQueue = Math.round(diffInDays / 7 * 2) / 2 // Round to nearest 0.5
+
+        return h(
+          'div',
+          { class: 'text-xs' },
+          value ? [
+            h('div', submittedDate.toISODate()),
+            h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
+          ] : []
+        )
+      },
+      sortingFn: (rowA, rowB, columnId) => {
+        const a = rowA.getValue(columnId)
+        const b = rowB.getValue(columnId)
+        return (a > b) ? 1 : (a < b) ? -1 : 0
+      },
+    }
+  ),
   columnHelper.accessor(
     'externalDeadline',
     {
       header: 'Deadline',
       cell: data => {
         const value = data.getValue()
-        return h('span', { class: 'text-xs' }, value ? DateTime.fromJSDate(value).toLocaleString(
-          DateTime.DATE_MED_WITH_WEEKDAY
-        ) : undefined)
+        return h(
+          'span',
+          { class: 'text-xs' },
+          [value ? DateTime.fromJSDate(value).toISODate() : '']
+        )
       },
       sortingFn: (rowA, rowB) => sortDate(rowA.original.externalDeadline, rowB.original.externalDeadline),
     }
@@ -289,14 +314,6 @@ const columns = [
         ))
       },
       enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'id',
-    {
-      header: 'Estimated Completion',
-      cell: _data => '---',
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
