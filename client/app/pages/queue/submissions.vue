@@ -24,8 +24,17 @@
               :sort-direction="header.column.getIsSorted()"
               @click="header.column.getToggleSortingHandler()?.($event)"
             >
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                :props="header.getContext()" />
+              <div class="flex items-center gap-2">
+                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                  :props="header.getContext()" />
+                <Transition name="sort-indicator">
+                  <Icon
+                    v-if="header.column.getCanSort()"
+                    name="heroicons:arrows-up-down"
+                    class="text-gray-400 opacity-60 hover:opacity-100"
+                  />
+                </Transition>
+              </div>
             </RpcTh>
           </tr>
         </RpcThead>
@@ -109,7 +118,7 @@ const columns = [
   columnHelper.accessor('stream', {
     header: 'Labels',
     cell: _data => '',
-    sortingFn: 'alphanumeric',
+    enableSorting: false,
   }),
   columnHelper.accessor('submitted', {
     header: 'Submitted',
@@ -118,7 +127,7 @@ const columns = [
         DateTime.DATE_MED_WITH_WEEKDAY
       )),
     sortingFn: (rowA, rowB) => sortDate(rowA.original.submitted, rowB.original.submitted)
-  })
+  }),
 ]
 
 const sorting = ref<SortingState>([])
