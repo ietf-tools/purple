@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Development-mode Django settings for RPC project"""
 
-from hashlib import sha384
+import os
 
 from .base import *
 
@@ -15,9 +15,12 @@ ALLOWED_HOSTS = []
 
 # Datatracker
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
-DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000/"
+DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000"
 DATATRACKER_API_V1_BASE = "http://host.docker.internal:8000/api/v1"
-DATATRACKER_BASE = "http://localhost:8000"
+DATATRACKER_BASE = os.environ.get(
+    "NUXT_PUBLIC_DATATRACKER_BASE",  # matches name used by Nuxt runtimeConfig
+    "http://localhost:8000",
+)
 
 
 # OIDC configuration (see also base.py)
@@ -43,18 +46,12 @@ SESSION_COOKIE_NAME = (
 
 DATABASES = {
     "default": {
-        # "ENGINE": "django.db.backends.postgresql",
-        # "NAME": os.environ.get("POSTGRES_DB"),
-        # "USER": os.environ.get("POSTGRES_USER"),
-        # "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        # "HOST": "db",
-        # "PORT": 5432,
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "purple",
-        "USER": "postgres",
-        "PASSWORD": "postgres",
-        "HOST": "host.docker.internal",
-        "PORT": 5455,
+        "NAME": os.environ.get("POSTGRES_DB"),
+        "USER": os.environ.get("POSTGRES_USER"),
+        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+        "HOST": "db",
+        "PORT": 5432,
     }
 }
 
@@ -68,3 +65,37 @@ try:
     from .development_local import *
 except ImportError:
     pass
+# email
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = os.getenv("PURPLE_EMAIL_HOST", "mailpit")
+EMAIL_PORT = int(os.getenv("PURPLE_EMAIL_PORT", 1025))
+
+# Uncomment to enable caching in development
+# CACHES = {
+#     "default": {
+#         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
+#         "LOCATION": "memcache:11211",
+#         "KEY_PREFIX": "ietf:purple",
+#         "KEY_FUNCTION": lambda key, key_prefix, version: (
+#             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
+#         ),
+#         "TIMEOUT": 600,  # 10 minute default timeout
+#     }
+# }
+
+INSTALLED_APPS = INSTALLED_APPS + [
+    'debug_toolbar',
+    'django_filters',
+]
+
+# Add debug toolbar middleware
+MIDDLEWARE = [
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+] + MIDDLEWARE
+
+# Add debug toolbar configuration
+# set IPs where debug toolbar should be shown, might need to add local IPs for docker
+INTERNAL_IPS = [
+    '127.0.0.1',
+    'localhost',
+]
