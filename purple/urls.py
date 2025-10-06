@@ -24,6 +24,7 @@ from rest_framework import routers
 
 from rpc import api as rpc_api
 from rpc import views
+from errata import api as errata_api
 
 
 class DraftNameConverter:
@@ -104,6 +105,7 @@ urlpatterns = [
     path("api/rpc/submissions/<int:document_id>/import/", rpc_api.import_submission),
     path("api/rpc/version/", rpc_api.version),
     path("api/rpc/", include(router.urls)),
+    path("api/errata/", include("errata.urls")),
 ]
 
 # Add debug toolbar URLs for development
