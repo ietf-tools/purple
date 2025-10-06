@@ -1,17 +1,18 @@
 from contextlib import contextmanager
+
 from django.db import transaction
-from django.db.models.signals import post_save, post_delete, m2m_changed
+from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
+from .blocked_assignments import apply_blocked_assignment_for_rfc
 from .models import (
-    Assignment,
     ActionHolder,
-    RfcToBeLabel,
-    RpcRelatedDocument,
+    Assignment,
     ClusterMember,
     RfcToBe,
+    RfcToBeLabel,
+    RpcRelatedDocument,
 )
-from .blocked_assignments import apply_blocked_assignment_for_rfc
 
 
 def defer_apply(rfc: RfcToBe | None):

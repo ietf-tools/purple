@@ -1,9 +1,9 @@
 import logging
 
-from openapi.rpcapi_client.build.lib.rpcapi_client.models import rfc
-from .models import Assignment, RfcToBe, RpcRole
-from rest_framework.exceptions import NotFound
 from django.db import transaction
+from rest_framework.exceptions import NotFound
+
+from .models import Assignment, RfcToBe, RpcRole
 
 logger = logging.getLogger(__name__)
 
@@ -183,7 +183,8 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
             blocked_before = _has_active_blocked_assignment(locked)
 
             logger.info(
-                "Applying blocked assignment for rfc %s: blocked_now=%s, blocked_before=%s",
+                "Applying blocked assignment for rfc %s: "
+                "blocked_now=%s, blocked_before=%s",
                 locked.pk,
                 blocked_now,
                 blocked_before,

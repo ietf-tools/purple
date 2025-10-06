@@ -2,12 +2,12 @@
 
 import datetime
 
-from rpc.signals import SignalsManager
 import rpcapi_client
 from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
 from datatracker.rpcapi import with_rpcapi
+from rpc.signals import SignalsManager
 
 from ...factories import (
     AssignmentFactory,
