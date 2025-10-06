@@ -11,4 +11,5 @@ mozilla-django-oidc>=4.0.0
 psycopg2>=2.9.7
 pymemcache>=4.0.0
 python-json-logger>=2.0.7
+django-debug-toolbar>=4.0.0
 ./openapi/rpcapi_client

@@ -1,7 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """Development-mode Django settings for RPC project"""
 
-import os
+from hashlib import sha384
 
 from .base import *
 
@@ -15,12 +15,9 @@ ALLOWED_HOSTS = []
 
 # Datatracker
 DATATRACKER_RPC_API_TOKEN = os.environ["PURPLE_RPC_API_TOKEN"]
-DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000"
+DATATRACKER_RPC_API_BASE = "http://host.docker.internal:8000/"
 DATATRACKER_API_V1_BASE = "http://host.docker.internal:8000/api/v1"
-DATATRACKER_BASE = os.environ.get(
-    "NUXT_PUBLIC_DATATRACKER_BASE",  # matches name used by Nuxt runtimeConfig
-    "http://localhost:8000",
-)
+DATATRACKER_BASE = "http://localhost:8000"
 
 
 # OIDC configuration (see also base.py)
@@ -46,12 +43,18 @@ SESSION_COOKIE_NAME = (
 
 DATABASES = {
     "default": {
+        # "ENGINE": "django.db.backends.postgresql",
+        # "NAME": os.environ.get("POSTGRES_DB"),
+        # "USER": os.environ.get("POSTGRES_USER"),
+        # "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
+        # "HOST": "db",
+        # "PORT": 5432,
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB"),
-        "USER": os.environ.get("POSTGRES_USER"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD"),
-        "HOST": "db",
-        "PORT": 5432,
+        "NAME": "purple",
+        "USER": "postgres",
+        "PASSWORD": "postgres",
+        "HOST": "host.docker.internal",
+        "PORT": 5455,
     }
 }
 
