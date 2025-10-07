@@ -317,14 +317,6 @@ const columns = [
     }
   ),
   columnHelper.accessor(
-    'id',
-    {
-      header: 'Estimated Completion',
-      cell: _data => '---',
-      sortingFn: 'alphanumeric',
-    }
-  ),
-  columnHelper.accessor(
     'pages',
     {
       header: 'Status',
