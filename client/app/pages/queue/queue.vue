@@ -188,7 +188,7 @@ const columns = [
         const submittedDate = DateTime.fromJSDate(value)
         const now = DateTime.now()
         const diffInDays = now.diff(submittedDate, 'days').days
-        const weeksInQueue = Math.round(diffInDays / 7 * 2) / 2 // Round to nearest 0.5
+        const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
 
         return h(
           'div',
