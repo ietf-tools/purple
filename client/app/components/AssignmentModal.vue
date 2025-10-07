@@ -18,7 +18,7 @@
     </div>
     <div class="flex-1 overflow-y-scroll px-4 pt-4 pb-7">
       <ul class="flex flex-col gap-2">
-        <li v-for="(person, personIndex) in props.people" class="flex mx-1 flex-row gap-4 items-start">
+        <li v-if="props.people.length > 0" v-for="(person, personIndex) in props.people" class="flex mx-1 flex-row gap-4 items-start">
           <input type="checkbox" name="assign" :checked="person.id ? isPersonSelected[person.id] : false"
             :value="person.id" :id="generateId(person.id, personIndex)" class="mt-1.5 w-7 h-7 cursor-pointer"
             @click="toggleSelection(person.id)">
@@ -43,6 +43,9 @@
               <p v-else class="italic text-sm">(No other assignments)</p>
             </div>
           </div>
+        </li>
+        <li v-else class="italic">
+          (no people)
         </li>
       </ul>
     </div>
