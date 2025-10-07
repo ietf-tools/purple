@@ -111,11 +111,13 @@ import type { Assignment, Cluster, Label, QueueItem, RpcPerson, RpcRole } from '
 import { sortDate, sortLabels } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
+import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const api = useApi()
 
 const currentTab: TabId = 'queue'
+const siteStore = useSiteStore()
 
 const {
   data,
@@ -364,7 +366,12 @@ const table = useVueTable({
   columns,
   state: {
     get globalFilter() {
-      return JSON.stringify([needsAssignmentTristate.value, hasExceptionTristate.value, selectedLabelFilters.value])
+      return JSON.stringify([
+        needsAssignmentTristate.value,
+        hasExceptionTristate.value,
+        selectedLabelFilters.value,
+        searchQuery.value
+      ])
     },
     get sorting() {
       return sorting.value
@@ -374,6 +381,16 @@ const table = useVueTable({
     const d = row.original
     if (d.disposition !== 'in_progress') {
       return false
+    }
+
+    // Search filter
+    if (searchQuery.value && searchQuery.value.trim()) {
+      const searchTerm = searchQuery.value.trim().toLowerCase()
+      const nameMatch = d.name?.toLowerCase().includes(searchTerm)
+      const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
+      if (!nameMatch && !rfcMatch) {
+        return false
+      }
     }
 
     const needsAssignmentFilterFn = () => {
@@ -428,6 +445,11 @@ const table = useVueTable({
         ? updaterOrValue(sorting.value)
         : updaterOrValue
   },
+})
+
+const searchQuery = computed({
+  get: () => siteStore.search,
+  set: (value: string) => { siteStore.search = value }
 })
 
 const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
