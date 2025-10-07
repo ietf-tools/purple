@@ -16,11 +16,11 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path, register_converter
 from rest_framework import routers
-from django.conf import settings
 
 from rpc import api as rpc_api
 from rpc import views
