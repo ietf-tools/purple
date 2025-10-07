@@ -24,6 +24,9 @@ logs
 !.env.example
 secrets.env
 
+# Local settings
+purple/settings/development_local.py
+
 # Python
 *.pyc
 __pycache__

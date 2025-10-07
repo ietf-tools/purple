@@ -60,15 +60,8 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("PURPLE_EMAIL_HOST", "mailpit")
 EMAIL_PORT = int(os.getenv("PURPLE_EMAIL_PORT", 1025))
 
-# Uncomment to enable caching in development
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-#         "LOCATION": "memcache:11211",
-#         "KEY_PREFIX": "ietf:purple",
-#         "KEY_FUNCTION": lambda key, key_prefix, version: (
-#             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-#         ),
-#         "TIMEOUT": 600,  # 10 minute default timeout
-#     }
-# }
+# Local settings override
+try:
+    from .development_local import *
+except ImportError:
+    pass
