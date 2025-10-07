@@ -90,9 +90,3 @@ class SignalsManager:
         """Connect all registered signals"""
         for signal, handler, sender in SignalsManager._SIGNAL_REGISTRY:
             signal.connect(handler, sender=sender)
-
-    @staticmethod
-    def process_in_progress_rfctobes():
-        """Process all in_progress RfcToBe instances to apply blocked assignments"""
-        for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
-            apply_blocked_assignment_for_rfc(rfc)

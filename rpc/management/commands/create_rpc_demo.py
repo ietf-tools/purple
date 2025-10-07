@@ -8,6 +8,7 @@ from django.db.utils import IntegrityError
 
 from datatracker.rpcapi import with_rpcapi
 from rpc.signals import SignalsManager
+from rpc.blocked_assignments import update_blocked_assignments_for_in_progress_rfcs
 
 from ...factories import (
     AssignmentFactory,
@@ -31,7 +32,7 @@ class Command(BaseCommand):
             self.create_documents()
             self.create_real_people()
         # then process them all at once
-        SignalsManager.process_in_progress_rfctobes()
+        update_blocked_assignments_for_in_progress_rfcs()
 
     @with_rpcapi
     def create_real_people(self, *, rpcapi: rpcapi_client.PurpleApi):

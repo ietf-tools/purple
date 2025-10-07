@@ -205,3 +205,9 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
             "Failed to apply blocked assignment for rfc %s", getattr(rfc, "pk", None)
         )
         raise RuntimeError("Failed to apply blocked assignment") from err
+
+
+def update_blocked_assignments_for_in_progress_rfcs():
+    """Process all in_progress RfcToBe instances to apply blocked assignments"""
+    for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
+        apply_blocked_assignment_for_rfc(rfc)
