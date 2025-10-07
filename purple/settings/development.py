@@ -60,42 +60,30 @@ EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = os.getenv("PURPLE_EMAIL_HOST", "mailpit")
 EMAIL_PORT = int(os.getenv("PURPLE_EMAIL_PORT", 1025))
 
+REST_FRAMEWORK["DEFAULT_RENDERER_CLASSES"] += [
+    "rest_framework.renderers.BrowsableAPIRenderer",
+]
+
+INSTALLED_APPS += [
+    "debug_toolbar",
+    "django_filters",
+]
+
+# Add debug toolbar middleware
+MIDDLEWARE += [
+    "debug_toolbar.middleware.DebugToolbarMiddleware",
+]
+
+# Add debug toolbar configuration
+# set IPs where debug toolbar should be shown, might need to add local IPs for docker
+# or comment out to disable toolbar
+INTERNAL_IPS = [
+    "127.0.0.1",
+    "localhost",
+]
+
 # Local settings override
 try:
     from .development_local import *
 except ImportError:
     pass
-# email
-EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
-EMAIL_HOST = os.getenv("PURPLE_EMAIL_HOST", "mailpit")
-EMAIL_PORT = int(os.getenv("PURPLE_EMAIL_PORT", 1025))
-
-# Uncomment to enable caching in development
-# CACHES = {
-#     "default": {
-#         "BACKEND": "django.core.cache.backends.memcached.PyMemcacheCache",
-#         "LOCATION": "memcache:11211",
-#         "KEY_PREFIX": "ietf:purple",
-#         "KEY_FUNCTION": lambda key, key_prefix, version: (
-#             f"{key_prefix}:{version}:{sha384(str(key).encode('utf8')).hexdigest()}"
-#         ),
-#         "TIMEOUT": 600,  # 10 minute default timeout
-#     }
-# }
-
-INSTALLED_APPS = INSTALLED_APPS + [
-    'debug_toolbar',
-    'django_filters',
-]
-
-# Add debug toolbar middleware
-MIDDLEWARE = [
-    'debug_toolbar.middleware.DebugToolbarMiddleware',
-] + MIDDLEWARE
-
-# Add debug toolbar configuration
-# set IPs where debug toolbar should be shown, might need to add local IPs for docker
-INTERNAL_IPS = [
-    '127.0.0.1',
-    'localhost',
-]
