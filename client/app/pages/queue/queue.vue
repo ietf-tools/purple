@@ -528,7 +528,11 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
     doc.assignmentSet?.forEach(assignment => {
-      addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
+      if(assignment.person !== undefined) {
+        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
+      } else {
+        console.warn("Doc", doc.draft, " has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
+      }
     })
   })
 
