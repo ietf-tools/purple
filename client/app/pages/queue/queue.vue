@@ -507,6 +507,7 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
   const peopleWorkload: Record<number, RpcPersonWorkload> = {}
   const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
     assertIsNumber(personId)
+
     assert(role.length !== 0)
     assert(typeof pageCount === 'number')
 
@@ -528,10 +529,10 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
     doc.assignmentSet?.forEach(assignment => {
-      if(assignment.person !== undefined) {
+      if(assignment.person !== undefined && assignment.person !== null) {
         addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
       } else {
-        console.warn("Doc", doc.draft, " has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
+        console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
       }
     })
   })
