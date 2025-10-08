@@ -27,7 +27,7 @@
         </DescriptionListItem>
         <DescriptionListItem
           term="Submitted Pages"
-          :details="rfcToBe.draft.pages?.toString()"
+          :details="rfcToBe.draft?.pages?.toString()"
         />
         <DescriptionListItem
           term="Document Shepherd"
