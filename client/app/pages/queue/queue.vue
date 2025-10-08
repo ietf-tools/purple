@@ -115,8 +115,9 @@ import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const api = useApi()
-
 const currentTab: TabId = 'queue'
+const route = useRoute()
+const router = useRouter()
 const siteStore = useSiteStore()
 
 const {
@@ -450,6 +451,26 @@ const table = useVueTable({
 const searchQuery = computed({
   get: () => siteStore.search,
   set: (value: string) => { siteStore.search = value }
+})
+
+onMounted(() => {
+  if (route.query.search && route.query.search !== siteStore.search) {
+    siteStore.search = route.query.search as string
+  }
+})
+
+watch(() => route.query.search, (newSearch) => {
+  siteStore.search = newSearch as string || ''
+})
+
+watch(() => siteStore.search, (newSearch) => {
+  const query = { ...route.query }
+  if (newSearch) {
+    query.search = newSearch
+  } else {
+    delete query.search
+  }
+  router.replace({ query })
 })
 
 const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
