@@ -96,8 +96,8 @@ import {
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
-import type { Assignment, Cluster, Label, QueueItem, RpcPerson, RpcRole } from '~/purple_client'
-import { sortDate, sortLabels } from '~/utils/queue'
+import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
+import { sortDate } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
@@ -185,7 +185,7 @@ const columns = [
           'div',
           { class: 'text-xs' },
           value ? [
-            h('div', submittedDate.toISODate()),
+            h('div', submittedDate.toISODate() ?? ''),
             h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
           ] : []
         )
@@ -229,20 +229,37 @@ const columns = [
 
         const listItems: VNode[] = []
 
-        const assignmentsByRole = groupBy(
+        const assignmentsByRoles = groupBy(
           assignments,
           (assignment) => assignment.role
         )
 
-        const orderedRole = Object.keys(assignmentsByRole)
+        const orderedRoles = Object.keys(assignmentsByRoles)
           .sort((a, b) => a.localeCompare(b, 'en'))
 
-        for (const role of orderedRole) {
-          const assignments = assignmentsByRole[role] ?? []
+        for (const role of orderedRoles) {
+          const assignmentsOfRole = assignmentsByRoles[role] ?? []
+
+          const redundantAssignmentsOfSamePersonToSameRole = assignmentsOfRole.filter((assignment, _index, arr) => {
+            const { person } = assignment
+            if (person === undefined || person == null) {
+              return false
+            }
+            const firstAssignmentOfPersonToRole = arr.find(arrAssignment => assignment.person && arrAssignment.person && arrAssignment.person === assignment.person)
+            if (!firstAssignmentOfPersonToRole) {
+              console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
+              throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
+            }
+            // the first assignment of person should always match the current assignment of person
+            // because there shouldn't be redundant assignments
+            // but if the id is different then it is a redundant assignment,
+            // so we'll prompt the user to delete them
+            return assignment.id !== firstAssignmentOfPersonToRole.id
+          })
 
           listItems.push(h('li', {}, [
             h(BaseBadge, { label: role, class: 'mr-1' }),
-            ...assignments.map(assignment => {
+            ...assignmentsOfRole.map(assignment => {
               const rpcPerson = people.value.find((p) => p.id === assignment.person)
               return h(Anchor, {
                 href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
@@ -259,7 +276,10 @@ const columns = [
               }
               return acc
             }, [] as (VNode | string)[]),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments, role, rfcToBeId }) }, () => 'Change'),
+            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
+            ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
+              return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
+            })
           ]))
         }
 
@@ -452,6 +472,12 @@ const reloadTableAfterAssignmentChange = () => {
   refreshClusters()
 }
 
+const getPersonNameById = (personId?: number | null): string => {
+  if (personId === undefined || personId === null) return 'Unknown'
+  const person = people.value.find(person => person.id === personId)
+  return person?.name ?? 'Unknown'
+}
+
 const snackbar = useSnackbar()
 const overlayModal = inject(overlayModalKey)
 
@@ -549,6 +575,42 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
       throw e
     }
   })
+}
+
+const deleteRedundantAssignment = async (redundantAssignment: Assignment) => {
+  const { id, person, role } = redundantAssignment
+  if (id === undefined || id === null) {
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment without an id",
+      text: `typeof id = ${typeof id}`
+    })
+    return
+  }
+  if (person === undefined || person === null) {
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment without an person",
+      text: `typeof person = ${typeof person}`
+    })
+    return
+  }
+  try {
+    await api.assignmentsDestroy({ id })
+    reloadTableAfterAssignmentChange()
+    snackbar.add({
+      type: 'success',
+      title: "Successfully deleted redundant assignment. Reloading...",
+      text: `${getPersonNameById(person)} had multiple assignments to role ${JSON.stringify(role)}`
+    })
+  } catch (e) {
+    console.error('Deleting redundant assignment error:', e)
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment. See console for details.",
+      text: `Error: ${JSON.stringify(e).substring(0, 100)}`
+    })
+  }
 }
 
 </script>
