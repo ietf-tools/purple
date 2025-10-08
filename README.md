@@ -37,7 +37,7 @@
 
 1. Clone this repository locally.
 2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `feat/rpc-api` branch, start the Docker environment, and start the dev server.
-3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) *(optional)*
+3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) *(optional, and not generally available)*
 4. Continue using the steps for your preferred IDE:
    - [Visual Studio Code](#using-vs-code)
    - [Generic](#using-generic)
