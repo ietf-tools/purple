@@ -444,7 +444,7 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         """Get clusters with RFC number annotations"""
-        return Cluster.objects.all().with_rfc_number_annotated()
+        return Cluster.objects.with_rfc_number_annotated()
 
 
 class AssignmentViewSet(viewsets.ModelViewSet):
