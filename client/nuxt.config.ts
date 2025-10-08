@@ -73,13 +73,6 @@ export default defineNuxtConfig({
     typeCheck: false
   },
   vite: {
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler'
-        }
-      }
-    },
     optimizeDeps: {
       // Deps that vite does not detect statically
       include: [

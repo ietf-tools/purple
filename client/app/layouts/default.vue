@@ -68,7 +68,7 @@ provide(overlayModalKey, {
 })
 </script>
 
-<style lang="scss">
+<style>
 :root { font-family: 'Inter', sans-serif; }
 @supports (font-variation-settings: normal) {
   :root { font-family: 'Inter var', sans-serif; }
