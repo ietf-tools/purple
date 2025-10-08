@@ -604,7 +604,8 @@ const deleteRedundantAssignment = async (redundantAssignment: Assignment) => {
       text: `${getPersonNameById(person)} had multiple assignments to role ${JSON.stringify(role)}`
     })
   } catch (e) {
-    console.error('Deleting redundant assignment error:', e)
+    reloadTableAfterAssignmentChange() // although there was an error it's possible a db change occurred so we should resync
+    console.error('Deleting redundant assignment error:', e, redundantAssignment)
     snackbar.add({
       type: 'error',
       title: "Can't delete redundant assignment. See console for details.",
