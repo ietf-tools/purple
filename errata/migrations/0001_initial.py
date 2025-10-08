@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
                 ("submitter_email", models.EmailField(blank=True, max_length=120)),
                 ("notes", models.TextField(blank=True)),
                 ("submitted_at", models.DateField()),
-                ("posted_at", models.DateField(null=True)),
+                ("verified_at", models.DateField(null=True, blank=True)),
                 ("created_at", models.DateTimeField(default=django.utils.timezone.now)),
                 ("updated_at", errata.models.AutoDateTimeField()),
                 (

@@ -19,8 +19,16 @@ class ErrataSerializer(serializers.ModelSerializer):
             "submitter_name",
             "submitter_email",
             "submitter_dt_person",
-            "posted_at",
+            "submitted_at",
+            "verified_at",
+            "verifier_dt_person",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ["id", "rfc_to_be", "created_at", "updated_at", "posted_at"]
+        read_only_fields = [
+            "id",
+            "rfc_to_be",
+            "created_at",
+            "updated_at",
+            "submitted_at",
+        ]

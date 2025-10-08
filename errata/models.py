@@ -62,7 +62,7 @@ class Errata(models.Model):
     )
     notes = models.TextField(blank=True)
     submitted_at = models.DateField()
-    posted_at = models.DateField(null=True)
+    verified_at = models.DateField(null=True)
     verifier_dt_person = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         null=True,
