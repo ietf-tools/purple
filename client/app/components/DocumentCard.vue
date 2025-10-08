@@ -14,8 +14,8 @@ Based on https://tailwindui.com/components/application-ui/lists/grid-lists#compo
           {{ cookedDocument.name }}
         </div>
       </Anchor>
-      <div v-for="assignment in cookedDocument.needsAssignment">
-        <BaseBadge :label="`Needs ${assignment.name}`"/>
+      <div v-for="role in cookedDocument.needsAssignment">
+        <BaseBadge :label="`Needs ${role ?? '(unnamed)' }`"/>
       </div>
       <HeadlessMenu as="div" class="relative ml-auto">
         <HeadlessMenuButton class="-m-2.5 block p-2.5 text-gray-400 hover:text-gray-500">
