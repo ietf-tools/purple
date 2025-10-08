@@ -638,17 +638,18 @@ class ClusterMemberSerializer(serializers.Serializer):
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
         # Use the annotated field if available
-        if hasattr(clustermember, 'rfc_number_annotated'):
+        if hasattr(clustermember, "rfc_number_annotated"):
             return clustermember.rfc_number_annotated
 
         # Fallback to original logic
-        rfctobe = RfcToBe.objects.filter(
-            draft=clustermember.doc
-        ).exclude(
-            disposition__slug="withdrawn"
-        ).values('rfc_number').first()
+        rfctobe = (
+            RfcToBe.objects.filter(draft=clustermember.doc)
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")
+            .first()
+        )
 
-        return rfctobe['rfc_number'] if rfctobe else None
+        return rfctobe["rfc_number"] if rfctobe else None
 
 
 class ClusterSerializer(serializers.ModelSerializer):

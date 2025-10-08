@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Q, Subquery, OuterRef, Prefetch
+from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -84,6 +84,7 @@ from .serializers import (
     check_user_has_role,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
 @api_view(["GET"])
@@ -444,17 +445,21 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         # Annotate cluster members with RFC numbers
-        rfc_number_subquery = RfcToBe.objects.filter(
-            draft=OuterRef('doc')
-        ).exclude(
-            disposition__slug="withdrawn"
-        ).values('rfc_number')[:1]
+        rfc_number_subquery = (
+            RfcToBe.objects.filter(draft=OuterRef("doc"))
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")[:1]
+        )
 
-        return super().get_queryset().prefetch_related(
-            Prefetch(
-                'clustermember_set',
-                queryset=ClusterMember.objects.select_related('doc').annotate(
-                    rfc_number_annotated=Subquery(rfc_number_subquery)
+        return (
+            super()
+            .get_queryset()
+            .prefetch_related(
+                Prefetch(
+                    "clustermember_set",
+                    queryset=ClusterMember.objects.select_related("doc").annotate(
+                        rfc_number_annotated=Subquery(rfc_number_subquery)
+                    ),
                 )
             )
         )
