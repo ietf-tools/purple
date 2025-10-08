@@ -14,11 +14,11 @@
 
     <div class="flex flex-row gap-x-8 justify-between mb-4">
       <fieldset>
-        <legend class="font-bold text-base">
+        <legend class="font-bold text-sm flex">
           Filters
           <span class="text-md">&nbsp;</span>
         </legend>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 pt-1">
           <RpcTristateButton :checked="needsAssignmentTristate"
             @change="(tristate: TristateValue) => needsAssignmentTristate = tristate">
             Needs Assignment?
@@ -29,12 +29,29 @@
           </RpcTristateButton>
         </div>
       </fieldset>
+      <fieldset class="w-64">
+        <legend class="font-bold text-sm flex items-end">
+          Current Assignment Role
+          <span class="text-md">&nbsp;</span>
+        </legend>
+          <div class="flex flex-col pt-1">
+            <select
+              v-model="selectedRoleFilter"
+              class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="null">All Roles</option>
+              <option v-for="role in allRoles" :key="role" :value="role">
+                {{ role }}
+              </option>
+            </select>
+          </div>
+      </fieldset>
       <fieldset class="flex-1">
         <legend class="font-bold text-sm flex items-end">
-          Label filters
-          <span class="text-base">&nbsp;</span>
+          Label
+          <span class="text-md">&nbsp;</span>
         </legend>
-        <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 gap-y-1">
+        <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 pt-1">
           <LabelsFilter v-model:all-label-filters="allLabelFilters"
             v-model:selected-label-filters="selectedLabelFilters" />
         </div>
@@ -144,6 +161,7 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
 const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
 const selectedLabelFilters = ref<Record<number, TristateValue>>({})
+const selectedRoleFilter = ref<string | null>(null)
 
 const columnHelper = createColumnHelper<QueueItem>()
 
@@ -345,6 +363,16 @@ const columns = [
   ),
 ]
 
+const allRoles = computed(() => {
+  if (data.value === undefined) {
+    return []
+  }
+  const roles = data.value.flatMap(
+    (doc) => doc.assignmentSet?.map(assignment => assignment.role) || []
+  )
+  return [...new Set(roles)].sort()
+})
+
 const allLabelFilters = computed(() => {
   if (data.value === undefined) {
     return []
@@ -370,6 +398,7 @@ const table = useVueTable({
         needsAssignmentTristate.value,
         hasExceptionTristate.value,
         selectedLabelFilters.value,
+        selectedRoleFilter.value,
         searchQuery.value
       ])
     },
@@ -389,6 +418,13 @@ const table = useVueTable({
       const nameMatch = d.name?.toLowerCase().includes(searchTerm)
       const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
       if (!nameMatch && !rfcMatch) {
+        return false
+      }
+    }
+
+    if (selectedRoleFilter.value) {
+      const hasRole = d.assignmentSet?.some(assignment => assignment.role === selectedRoleFilter.value)
+      if (!hasRole) {
         return false
       }
     }
