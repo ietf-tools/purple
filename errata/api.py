@@ -5,6 +5,7 @@ from rpc.pagination import DefaultLimitOffsetPagination
 
 from .models import Errata
 from .serializers import ErrataSerializer
+from rest_framework import mixins
 
 
 @extend_schema_view(
@@ -29,12 +30,14 @@ from .serializers import ErrataSerializer
         summary="Partially update errata",
         description="Partially update an existing erratum.",
     ),
-    destroy=extend_schema(
-        summary="Delete errata",
-        description="Delete an erratum.",
-    ),
 )
-class ErrataViewSet(viewsets.ModelViewSet):
+class ErrataViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
     """ViewSet for managing errata entries"""
 
     queryset = Errata.objects.all()
