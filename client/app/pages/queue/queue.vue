@@ -189,22 +189,25 @@ const columns = [
     enableSorting: false,
   }),
   columnHelper.accessor(
-    'submittedAt',
+    'createdAt',
     {
-      header: 'Submitted (Weeks in queue)',
+      header: () => h('div', { class: 'text-center' }, [
+        h('div', 'Enqueue Date'),
+        h('div', '(Weeks in queue)')
+      ]),
       cell: data => {
         const value = data.getValue()
 
-        const submittedDate = DateTime.fromJSDate(value)
+        const createdDate = DateTime.fromJSDate(value)
         const now = DateTime.now()
-        const diffInDays = now.diff(submittedDate, 'days').days
+        const diffInDays = now.diff(createdDate, 'days').days
         const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
 
         return h(
           'div',
           { class: 'text-xs' },
           value ? [
-            h('div', submittedDate.toISODate() ?? ''),
+            h('div', createdDate.toISODate() ?? ''),
             h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
           ] : []
         )

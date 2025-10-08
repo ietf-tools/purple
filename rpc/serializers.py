@@ -307,7 +307,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
-    submitted_at = serializers.SerializerMethodField()
+    created_at = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -325,11 +325,11 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "pages",
-            "submitted_at",
+            "created_at",
         ]
 
     @extend_schema_field(serializers.DateField())
-    def get_submitted_at(self, obj):
+    def get_created_at(self, obj):
         """Get the creation date from the history record"""
         try:
             create_history = obj.history.filter(history_type="+").earliest(
