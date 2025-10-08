@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col shadow-sm mx-auto" :modelValue="props.value" @update:modelValue="handleChange">
+  <div class="flex flex-col shadow-sm mx-auto">
     <div class="flex flex-col gap-1">
       <RpcCheckbox
         v-for="label in props.labels"
@@ -57,6 +57,4 @@ const handleCheckboxChange = (e: Event) => {
     selectedLabelIds.value.splice(indexOf, 1)
   }
 }
-
-
 </script>
