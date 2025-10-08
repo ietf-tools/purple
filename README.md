@@ -37,10 +37,18 @@
 
 1. Clone this repository locally.
 2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `feat/rpc-api` branch, start the Docker environment, and start the dev server.
-3. Continue using the steps for your preferred IDE:
+3. [Obtain and enable an xfer database dump](#obtain-an-xfer-database-dump) *(optional)*
+4. Continue using the steps for your preferred IDE:
    - [Visual Studio Code](#using-vs-code)
    - [Generic](#using-generic)
-4. [Create demo data](#create-demo-data) if you have not already
+5. [Create demo data](#create-demo-data) if you have not already
+
+## Obtain an xfer Database Dump
+This step is required if you need a populated database to work with. In addition to the steps here, the datatracker's database needs to be populated with a compatible dataset. Instructions for that are TBD.
+
+1. Open a shell _on the host_ (not in the docker container) and navigate to the project root directory.
+2. Run `./refresh_xfer_dump.sh`. This will prompt you to authenticate with Azure and download the most recent xfer dump.
+3. Adjust `docker-compose.yml` to change the `db` service to use the `build` step instead of the `image`.
 
 ## Using VS Code
 
