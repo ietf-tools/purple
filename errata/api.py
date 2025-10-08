@@ -1,6 +1,7 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import filters, viewsets
+from rpc.pagination import DefaultLimitOffsetPagination
 
 from .models import Errata
 from .serializers import ErrataSerializer
@@ -43,6 +44,7 @@ class ErrataViewSet(viewsets.ModelViewSet):
         filters.SearchFilter,
         filters.OrderingFilter,
     ]
+    pagination_class = DefaultLimitOffsetPagination
 
     filterset_fields = ["status", "type"]
     search_fields = [

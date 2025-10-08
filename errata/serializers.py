@@ -19,6 +19,7 @@ class ErrataSerializer(serializers.ModelSerializer):
             "submitter_name",
             "submitter_email",
             "submitter_dt_person",
+            "posted_at",
             "created_at",
             "updated_at",
         ]
