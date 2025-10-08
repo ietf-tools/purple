@@ -18,23 +18,9 @@ from .serializers import ErrataSerializer
         summary="Get errata details",
         description="Retrieve detailed information about a specific erratum.",
     ),
-    create=extend_schema(
-        summary="Create errata",
-        description="Create a new erratum.",
-    ),
-    update=extend_schema(
-        summary="Update errata",
-        description="Update an existing erratum.",
-    ),
-    partial_update=extend_schema(
-        summary="Partially update errata",
-        description="Partially update an existing erratum.",
-    ),
 )
 class ErrataViewSet(
-    mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
