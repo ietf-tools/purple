@@ -45,27 +45,16 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()"
-              :sort-direction="header.column.getIsSorted()"
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
               @click="header.column.getToggleSortingHandler()?.($event)"
-              :title="header.column.getCanSort() ? 'Click to sort' : ''"
-            >
+              :title="header.column.getCanSort() ? 'Click to sort' : ''">
               <div class="flex items-center gap-2">
-                <FlexRender
-                  v-if="!header.isPlaceholder"
-                  :render="header.column.columnDef.header"
-                  :props="header.getContext()"
-                />
+                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                  :props="header.getContext()" />
                 <Transition name="sort-indicator">
-                  <Icon
-                    v-if="header.column.getCanSort()"
-                    name="heroicons:arrows-up-down"
-                    class="text-gray-400 opacity-60 hover:opacity-100"
-                  />
+                  <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                    class="text-gray-400 opacity-60 hover:opacity-100" />
                 </Transition>
               </div>
             </RpcTh>
@@ -458,6 +447,11 @@ const { data: clusters, refresh: refreshClusters, status: clustersStatus, error:
   default: () => [] as Cluster[]
 })
 
+const reloadTableAfterAssignmentChange = () => {
+  refresh()
+  refreshClusters()
+}
+
 const snackbar = useSnackbar()
 const overlayModal = inject(overlayModalKey)
 
@@ -529,7 +523,7 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
     doc.assignmentSet?.forEach(assignment => {
-      if(assignment.person !== undefined && assignment.person !== null) {
+      if (assignment.person !== undefined && assignment.person !== null) {
         addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
       } else {
         console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
@@ -544,11 +538,16 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
       people: people.value,
       clusters: clusters.value,
       peopleWorkload,
-      onSuccess: () => {
-        refresh()
-        refreshClusters()
-      }
+      onSuccess: reloadTableAfterAssignmentChange
     },
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+      console.info("Modal has closed", { e })
+    } else {
+      console.error(e)
+      throw e
+    }
   })
 }
 

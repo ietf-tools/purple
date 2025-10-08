@@ -18,7 +18,8 @@
     </div>
     <div class="flex-1 overflow-y-scroll px-4 pt-4 pb-7">
       <ul class="flex flex-col gap-2">
-        <li v-if="props.people.length > 0" v-for="(person, personIndex) in props.people" class="flex mx-1 flex-row gap-4 items-start">
+        <li v-if="visiblePeople.length > 0" v-for="(person, personIndex) in visiblePeople"
+          class="flex mx-1 flex-row gap-4 items-start">
           <input type="checkbox" name="assign" :checked="person.id ? isPersonSelected[person.id] : false"
             :value="person.id" :id="generateId(person.id, personIndex)" class="mt-1.5 w-7 h-7 cursor-pointer"
             @click="toggleSelection(person.id)">
@@ -53,7 +54,7 @@
       <h2 class="font-bold">Changes to save</h2>
       <div class="flex flex-col gap-y-1 text-sm">
 
-        <div v-for="(action, actionIndex) in actions">
+        <div v-for="(action) in actions">
           <div v-if="action.type === 'withdraw'">
             <p>
               &bull; <b>Withdraw assignment</b> for <b>{{ getPersonNameById(action.personId) }}</b> #{{ action.personId
@@ -70,12 +71,7 @@
     </div>
     <div class="flex justify-between p-4 border-t border-gray-300">
       <BaseButton btnType="cancel" @click="closeOverlayModal">Cancel</BaseButton>
-      <div class="flex flex-row items-center">
-        <div v-if="isSaving" role="alert" aria-atomic="true" class="mr-1">
-          {{ saveStatus }}
-        </div>
-        <BaseButton btnType="default" @click="saveChanges" :disabled="!canSave">Save changes</BaseButton>
-      </div>
+      <BaseButton btnType="default" @click="saveChanges" :disabled="!canSave">Save changes</BaseButton>
     </div>
   </div>
 </template>
@@ -144,7 +140,6 @@ type Action = ActionWithdrawn | ActionAssign
 
 const isSaving = ref(false)
 const actions = ref<Action[]>([])
-const saveStatus = ref('')
 
 watch(isPersonSelected, () => {
   const newActions: Action[] = []
@@ -219,6 +214,23 @@ watch(isPersonSelected, () => {
   actions.value = newActions
 }, { deep: true })
 
+// filter the list of editors to those who are active or currently assigned
+const visiblePeople = computed(() => {
+  return props.people.filter(person => {
+    // if the person is active show them
+    if (person.isActive) {
+      return true
+    }
+    if (props.message.type === 'change') {
+      // if the person isActive===false but currently assigned show them so that we can unassign them
+      if (props.message.assignments.some(assignment => assignment.person === person.id)) {
+        return true
+      }
+    }
+    return false
+  })
+})
+
 const canSave = computed(() => {
   return actions.value.length === 0 || !isSaving.value
 })
@@ -231,10 +243,12 @@ const getPersonNameById = (personId?: number): string => {
 
 const api = useApi()
 
+const snackbar = useSnackbar()
+
 const saveChanges = async () => {
   isSaving.value = true
 
-  await promiseAllProgress(actions.value.map(async (action) => {
+  await Promise.all(actions.value.map(async (action) => {
     switch (action.type) {
       case 'withdraw':
         // make new `patchedAssignment.comment` string with the goal of preserving any existing comment by appending `action.reason` to it
@@ -252,6 +266,13 @@ const saveChanges = async () => {
             state: 'withdrawn',
             comment: newComment.trim().length > 0 ? newComment : undefined // only save newComment when it has content, not just an empty string
           }
+        }).then(assignment => {
+          if (assignment.state !== 'withdrawn') {
+            const errorMessage = "Problem updating assignment. Saved data didn't match requested data."
+            console.error(errorMessage, assignment, action)
+            throw Error(errorMessage)
+          }
+          return assignment
         })
       case 'assign':
         return api.assignmentsCreate({
@@ -260,28 +281,31 @@ const saveChanges = async () => {
             person: action.personId,
             role: action.role
           }
+        }).then(assignment => {
+          if (assignment.rfcToBe !== action.rfcToBeId || assignment.person !== action.personId || assignment.role !== action.role) {
+            const errorMessage = "Problem creating assignment. Saved data didn't match requested data."
+            console.error(errorMessage, assignment, action)
+            throw Error(errorMessage)
+          }
+          return assignment
         })
     }
     assertNever(action)
-  },), (progressPercent) => {
-    // Show progress to user
-    saveStatus.value = `${Math.round(progressPercent)}%`
-  }).catch(e => {
+  })).catch(e => {
     console.error(e)
-    saveStatus.value = e.toString()
+    snackbar.add({
+      type: 'error',
+      title: `Problem saving assignment changes. See console for more.`,
+      text: JSON.stringify(e).substring(0, 100) // substring because the JSON could be too long for a snackbar toast
+    })
     throw e
   }).finally(() => {
     isSaving.value = false
   })
 
-  // if it got this far it was successful
+  // if it got this far assume it was successful
 
-  props.onSuccess() // trigger early reload of table before modal closes
-
-  saveStatus.value = '100%'
-  await sleep(500) // allow the user time to see the status, and screen readers time to speak the status
-  saveStatus.value = 'Success'
-  await sleep(500) // allow the user time to see the status, and screen readers time to speak the status
+  props.onSuccess() // triggers reload of page table data
 
   closeOverlayModal()
 }
