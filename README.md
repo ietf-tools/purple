@@ -98,6 +98,31 @@ Access Mailpit from http://localhost:8025/
 - Run Dev Server: `npm run dev`
 - Generate Production Build: `npm run build`
 
+## Using rfced-xfer data
+
+### Obtaining or updating a database dump
+
+To obtain or update your rfced-xfer database dump, on the host (i.e., _outside_ the docker container) run
+```sh
+./refresh_xfer_dump.sh
+```
+This will prompt you to log in to Azure if necessary, then download the latest xfer dump.
+
+### Loading a new database dump
+
+After obtaining the new database dump, on the host (i.e., _outside_ the docker container), run
+```sh
+./rebuild_db_container.sh
+```
+This will destroy your db container and its data, then build a new one using the dump found in `.db-dump/purple.dump`. If there is no such file, an empty database will be created.
+
+### Returning to an empty database
+
+To start over with an empty database after using an rfced-xfer dump
+1. Remove the file `.db-dump/purple.dump`
+2. Follow the steps to [load a new database dump](#loading-a-new-database-dump)
+3. Restart your docker environment or run `./manage.py migrate` in your app container.
+
 ## Create demo data
 
 To create demo data, open an app container shell and run the management command
