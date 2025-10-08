@@ -1,12 +1,7 @@
 services:
   db:
-    # To use a populated rfced-xfer dump, before starting the containers remove all
-    # containers, images, and volumes and run `refresh_xfer_dump.sh` on the host.
-    # Comment out the `image` line below and uncomment the `build` section, then
-    # start the docker compose stack.
-    image: postgres:17
-#    build:
-#      dockerfile: docker/db.Dockerfile
+    build:
+      dockerfile: docker/db.Dockerfile
     volumes:
       - postgresdb-data:/var/lib/postgresql/data
     restart: unless-stopped
