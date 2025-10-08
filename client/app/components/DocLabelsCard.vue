@@ -84,7 +84,7 @@ const labelGroupRefs = computed(() => {
     assert(selectedLabelIds.value)
     return Object.keys(groupsOfLabels.value)
       .reduce((acc, slugGroup) => {
-        const defaultSelectedSlug = groupsOfLabels.value[slugGroup].find(label => {
+        const defaultSelectedSlug = groupsOfLabels.value[slugGroup]?.find(label => {
           assert(selectedLabelIds.value)
           assert(label.id)
           return selectedLabelIds.value.includes(label.id)
