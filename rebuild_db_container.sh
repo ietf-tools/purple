@@ -8,9 +8,6 @@ echo "Removing db container and volume..."
 docker compose rm -fv db
 docker volume rm -f purple_postgresdb-data
 
-echo "Building new db image..."
-docker compose build db
-
 echo "Creating db container..."
 docker compose create db
 

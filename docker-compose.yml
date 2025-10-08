@@ -4,12 +4,14 @@ services:
       dockerfile: docker/db.Dockerfile
     volumes:
       - postgresdb-data:/var/lib/postgresql/data
+      - .:/workspace
     restart: unless-stopped
     environment:
       - POSTGRES_DB=rpctools
       - POSTGRES_USER=rpc
       - POSTGRES_PASSWORD=abcd1234
       - POSTGRES_HOST_AUTH_METHOD=trust
+      - DUMPFILE=/workspace/purple.dump
 
   app:
     build:

@@ -17,7 +17,6 @@ logs
 .DS_Store
 .fleet
 .idea
-.gitkeep
 
 # Local env files
 .env
@@ -38,4 +37,4 @@ __pycache__
 client/app/purple_client
 /static
 purple_api.yaml
-
+/purple.dump

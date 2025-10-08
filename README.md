@@ -49,7 +49,7 @@ This step is required if you need a populated database to work with. In addition
 1. Open a shell _on the host_ (not in the docker container) and navigate to the project root directory.
 2. Run `./refresh_xfer_dump.sh`. This will prompt you to authenticate with Azure and download the most recent xfer dump.
 
-To return to an empty DB as a starting point, remove the `.db-dump/purple.dump` file this downloaded and rebuild your docker environment.
+To return to an empty DB as a starting point, remove the `purple.dump` and rebuild your docker environment.
 
 ## Using VS Code
 
@@ -114,12 +114,12 @@ After obtaining the new database dump, on the host (i.e., _outside_ the docker c
 ```sh
 ./rebuild_db_container.sh
 ```
-This will destroy your db container and its data, then build a new one using the dump found in `.db-dump/purple.dump`. If there is no such file, an empty database will be created.
+This will destroy your db container and its data, then build a new one using the dump found in `purple.dump`. If there is no such file, an empty database will be created.
 
 ### Returning to an empty database
 
 To start over with an empty database after using an rfced-xfer dump
-1. Remove the file `.db-dump/purple.dump`
+1. Remove the file `purple.dump`
 2. Follow the steps to [load a new database dump](#loading-a-new-database-dump)
 3. Restart your docker environment or run `./manage.py migrate` in your app container.
 
