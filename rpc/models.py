@@ -11,6 +11,7 @@ from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
+from django.db.models import OuterRef, Prefetch, Subquery
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
     NoSuchSlug,
@@ -287,7 +288,27 @@ class ClusterMember(models.Model):
         ordering = ["order"]
 
 
+class ClusterManager(models.Manager):
+    def with_rfc_number_annotated(self):
+        """Annotate cluster members with RFC numbers"""
+        rfc_number_subquery = Subquery(
+            RfcToBe.objects.filter(draft=OuterRef("doc"))
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")[:1]
+        )
+
+        return self.prefetch_related(
+            Prefetch(
+                "clustermember_set",
+                queryset=ClusterMember.objects.select_related("doc").annotate(
+                    rfc_number_annotated=rfc_number_subquery
+                ),
+            )
+        )
+
+
 class Cluster(models.Model):
+    objects = ClusterManager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
 

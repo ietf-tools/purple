@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -42,7 +42,6 @@ from .models import (
     Assignment,
     Capability,
     Cluster,
-    ClusterMember,
     DocRelationshipName,
     Label,
     RfcAuthor,
@@ -444,25 +443,8 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
     lookup_field = "number"
 
     def get_queryset(self):
-        # Annotate cluster members with RFC numbers
-        rfc_number_subquery = (
-            RfcToBe.objects.filter(draft=OuterRef("doc"))
-            .exclude(disposition__slug="withdrawn")
-            .values("rfc_number")[:1]
-        )
-
-        return (
-            super()
-            .get_queryset()
-            .prefetch_related(
-                Prefetch(
-                    "clustermember_set",
-                    queryset=ClusterMember.objects.select_related("doc").annotate(
-                        rfc_number_annotated=Subquery(rfc_number_subquery)
-                    ),
-                )
-            )
-        )
+        """Get clusters with RFC number annotations"""
+        return Cluster.objects.all().with_rfc_number_annotated()
 
 
 class AssignmentViewSet(viewsets.ModelViewSet):
