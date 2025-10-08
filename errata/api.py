@@ -1,11 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import filters, viewsets
+from rest_framework import filters, mixins, viewsets
+
 from rpc.pagination import DefaultLimitOffsetPagination
 
 from .models import Errata
 from .serializers import ErrataSerializer
-from rest_framework import mixins
 
 
 @extend_schema_view(

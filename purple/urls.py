@@ -24,7 +24,6 @@ from rest_framework import routers
 
 from rpc import api as rpc_api
 from rpc import views
-from errata import api as errata_api
 
 
 class DraftNameConverter:
