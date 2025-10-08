@@ -6,12 +6,12 @@ from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import models
+from django.db.models import OuterRef, Prefetch, Subquery
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
-from django.db.models import OuterRef, Prefetch, Subquery
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
     NoSuchSlug,
