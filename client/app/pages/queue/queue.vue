@@ -537,19 +537,6 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     })
   })
 
-  console.log(
-    'About to open modal',
-    { openOverlayModal },
-    { AssignmentModal },
-    {
-      assignmentMessage,
-      people: people.value,
-      clusters: clusters.value,
-      peopleWorkload,
-      onSuccess: "that callback"
-    }
-  )
-
   openOverlayModal({
     component: AssignmentModal,
     componentProps: {
