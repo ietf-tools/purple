@@ -288,7 +288,7 @@ class ClusterMember(models.Model):
         ordering = ["order"]
 
 
-class ClusterManager(models.Manager):
+class ClusterQuerySet(models.QuerySet):
     def with_rfc_number_annotated(self):
         """Annotate cluster members with RFC numbers"""
         rfc_number_subquery = Subquery(
@@ -308,7 +308,8 @@ class ClusterManager(models.Manager):
 
 
 class Cluster(models.Model):
-    objects = ClusterManager()
+
+    objects = ClusterQuerySet.as_manager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
 
