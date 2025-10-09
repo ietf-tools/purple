@@ -386,6 +386,17 @@ class Assignment(models.Model):
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
     history = HistoricalRecords()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person", "rfc_to_be", "role"],
+                condition=~models.Q(state__in=["done", "withdrawn", "closed_for_hold"]),
+                name="unique_active_assignment_per_person_rfc_role",
+                violation_error_message="A person can only have one active assignment "
+                "per RFC and role",
+            ),
+        ]
+
     def __str__(self):
         return f"{self.person} assigned as {self.role} for {self.rfc_to_be}"
 
