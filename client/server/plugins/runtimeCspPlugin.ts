@@ -1,12 +1,13 @@
 // Copyright The IETF Trust 2025, All Rights Reserved
 import defu from 'defu'
+import type { NuxtSecurityRouteRules } from 'nuxt-security'
 
 export default defineNitroPlugin((nitroApp) => {
   // Plugin to augment the build-time nuxt-security configuration with runtime values
   // See https://nuxt-security.vercel.app/advanced/hooks, particularly the examples
   nitroApp.hooks.hook(
     'nuxt-security:routeRules',
-    async (appSecurityOptions) => {
+    async (appSecurityOptions: Record<string, NuxtSecurityRouteRules> ) => {
       const runtimeConfig = useRuntimeConfig()
       const scriptSrcHashes = runtimeConfig.public?.cspScriptSrcHashes
         ?.split(',')
