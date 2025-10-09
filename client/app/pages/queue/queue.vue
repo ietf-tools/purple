@@ -198,16 +198,16 @@ const columns = [
       cell: data => {
         const value = data.getValue()
 
-        const createdDate = DateTime.fromJSDate(value)
+        const enqueuedAt = DateTime.fromJSDate(value)
         const now = DateTime.now()
-        const diffInDays = now.diff(createdDate, 'days').days
+        const diffInDays = now.diff(enqueuedAt, 'days').days
         const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
 
         return h(
           'div',
           { class: 'text-xs' },
           value ? [
-            h('div', createdDate.toISODate() ?? ''),
+            h('div', enqueuedAt.toISODate() ?? ''),
             h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
           ] : []
         )
