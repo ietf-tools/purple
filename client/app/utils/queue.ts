@@ -1,4 +1,4 @@
-import type { Assignment, Label, RpcRole, SimpleCluster } from '~/purple_client'
+import type { Assignment, Label, SimpleCluster } from '~/purple_client'
 
 export type Tab = {
   id: string
