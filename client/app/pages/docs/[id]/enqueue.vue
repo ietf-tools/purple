@@ -70,13 +70,13 @@ import { QUEUE_QUEUE_PATH } from '~/utils/url'
 const route = useRoute()
 const api = useApi()
 
-const id = computed(() => route.params.id.toString())
+const id = computed(() => route.params.id?.toString() ?? '')
 
 const rfcToBeKey = computed(() => `rfcToBe-${id.value}`)
 
-const { data: rfcToBe, error: rfcToBeError } = await useAsyncData<RfcToBe>(
+const { data: rfcToBe, error: rfcToBeError } = await useAsyncData(
   rfcToBeKey,
-  () => api.documentsRetrieve({ draftName: route.params.id.toString() }),
+  () => api.documentsRetrieve({ draftName: id.value }),
   {
     server: false,
     deep: true // author editing relies on deep reactivity

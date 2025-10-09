@@ -31,7 +31,7 @@ type Props = {
 
 const props = defineProps<Props>()
 
-const draft = defineModel<CookedDraft>({ required: true })
+const draft = defineModel<CookedDraft | RfcToBe>({ required: true })
 
 const api = useApi()
 
