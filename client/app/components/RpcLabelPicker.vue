@@ -73,7 +73,12 @@ const emit = defineEmits(['update:modelValue'])
 
 const selectedLabels = computed({
   get () {
-    return props.labels.filter((lbl) => props.modelValue.includes(lbl.id))
+    return props.labels.filter((lbl) => {
+      if(lbl.id === undefined) {
+        return false
+      }
+      props.modelValue.includes(lbl.id)
+    })
   },
   set (value) {
     emit('update:modelValue', value.map((lbl) => lbl.id))

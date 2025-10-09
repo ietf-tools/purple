@@ -2,7 +2,7 @@
   <div v-for="labelFilter in allLabelFilters">
     <RpcTristateButton
       :checked="labelFilter.id && selectedLabelsTristate?.[labelFilter.id] !== undefined ?
-        selectedLabelsTristate[labelFilter.id] :
+        selectedLabelsTristate[labelFilter.id] ?? false :
         TRISTATE_MIXED"
       @change="(tristate) => {
         if(!selectedLabelsTristate || !labelFilter.id) {
