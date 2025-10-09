@@ -307,7 +307,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
-    submitted_at = serializers.SerializerMethodField()
+    enqueued_at = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -325,12 +325,12 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "pages",
-            "submitted_at",
+            "enqueued_at",
         ]
 
     @extend_schema_field(serializers.DateField())
-    def get_submitted_at(self, obj):
-        """Get the creation date from the history record"""
+    def get_enqueued_at(self, obj):
+        """Get the date when the RFC was added to the queue"""
         try:
             create_history = obj.history.filter(history_type="+").earliest(
                 "history_date"
@@ -637,13 +637,19 @@ class ClusterMemberSerializer(serializers.Serializer):
         list_serializer_class = ClusterMemberListSerializer
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
-        qs = RfcToBe.objects.filter(draft=clustermember.doc).exclude(
-            disposition__slug="withdrawn"
+        # Use the annotated field if available
+        if hasattr(clustermember, "rfc_number_annotated"):
+            return clustermember.rfc_number_annotated
+
+        # Fallback to original logic
+        rfctobe = (
+            RfcToBe.objects.filter(draft=clustermember.doc)
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")
+            .first()
         )
-        rfctobe = qs.first()
-        if not rfctobe:
-            return None
-        return rfctobe.rfc_number
+
+        return rfctobe["rfc_number"] if rfctobe else None
 
 
 class ClusterSerializer(serializers.ModelSerializer):

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import models
+from django.db.models import OuterRef, Prefetch, Subquery
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -287,7 +288,27 @@ class ClusterMember(models.Model):
         ordering = ["order"]
 
 
+class ClusterQuerySet(models.QuerySet):
+    def with_rfc_number_annotated(self):
+        """Annotate cluster members with RFC numbers"""
+        rfc_number_subquery = Subquery(
+            RfcToBe.objects.filter(draft=OuterRef("doc"))
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")[:1]
+        )
+
+        return self.prefetch_related(
+            Prefetch(
+                "clustermember_set",
+                queryset=ClusterMember.objects.select_related("doc").annotate(
+                    rfc_number_annotated=rfc_number_subquery
+                ),
+            )
+        )
+
+
 class Cluster(models.Model):
+    objects = ClusterQuerySet.as_manager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
 

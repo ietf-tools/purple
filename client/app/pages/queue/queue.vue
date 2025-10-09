@@ -14,11 +14,11 @@
 
     <div class="flex flex-row gap-x-8 justify-between mb-4">
       <fieldset>
-        <legend class="font-bold text-base">
+        <legend class="font-bold text-sm flex">
           Filters
           <span class="text-md">&nbsp;</span>
         </legend>
-        <div class="flex flex-col gap-1">
+        <div class="flex flex-col gap-1 pt-1">
           <RpcTristateButton :checked="needsAssignmentTristate"
             @change="(tristate: TristateValue) => needsAssignmentTristate = tristate">
             Needs Assignment?
@@ -29,12 +29,29 @@
           </RpcTristateButton>
         </div>
       </fieldset>
+      <fieldset class="w-64">
+        <legend class="font-bold text-sm flex items-end">
+          Current Assignment Role
+          <span class="text-md">&nbsp;</span>
+        </legend>
+          <div class="flex flex-col pt-1">
+            <select
+              v-model="selectedRoleFilter"
+              class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option :value="null">All Roles</option>
+              <option v-for="role in allRoles" :key="role" :value="role">
+                {{ role }}
+              </option>
+            </select>
+          </div>
+      </fieldset>
       <fieldset class="flex-1">
         <legend class="font-bold text-sm flex items-end">
-          Label filters
-          <span class="text-base">&nbsp;</span>
+          Label
+          <span class="text-md">&nbsp;</span>
         </legend>
-        <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 gap-y-1">
+        <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 pt-1">
           <LabelsFilter v-model:all-label-filters="allLabelFilters"
             v-model:selected-label-filters="selectedLabelFilters" />
         </div>
@@ -45,27 +62,16 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()"
-              :sort-direction="header.column.getIsSorted()"
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
               @click="header.column.getToggleSortingHandler()?.($event)"
-              :title="header.column.getCanSort() ? 'Click to sort' : ''"
-            >
+              :title="header.column.getCanSort() ? 'Click to sort' : ''">
               <div class="flex items-center gap-2">
-                <FlexRender
-                  v-if="!header.isPlaceholder"
-                  :render="header.column.columnDef.header"
-                  :props="header.getContext()"
-                />
+                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                  :props="header.getContext()" />
                 <Transition name="sort-indicator">
-                  <Icon
-                    v-if="header.column.getCanSort()"
-                    name="heroicons:arrows-up-down"
-                    class="text-gray-400 opacity-60 hover:opacity-100"
-                  />
+                  <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                    class="text-gray-400 opacity-60 hover:opacity-100" />
                 </Transition>
               </div>
             </RpcTh>
@@ -107,16 +113,17 @@ import {
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
-import type { Assignment, Cluster, Label, QueueItem, RpcPerson, RpcRole } from '~/purple_client'
-import { sortDate, sortLabels } from '~/utils/queue'
+import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
+import { sortDate } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const api = useApi()
-
 const currentTab: TabId = 'queue'
+const route = useRoute()
+const router = useRouter()
 const siteStore = useSiteStore()
 
 const {
@@ -144,6 +151,7 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
 const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
 const selectedLabelFilters = ref<Record<number, TristateValue>>({})
+const selectedRoleFilter = ref<string | null>(null)
 
 const columnHelper = createColumnHelper<QueueItem>()
 
@@ -181,22 +189,26 @@ const columns = [
     enableSorting: false,
   }),
   columnHelper.accessor(
-    'submittedAt',
+    'enqueuedAt',
     {
-      header: 'Submitted (Weeks in queue)',
+      header: () => h('div', { class: 'text-center' }, [
+        h('div', 'Enqueue Date'),
+        h('div', '(Weeks in queue)')
+      ]),
       cell: data => {
         const value = data.getValue()
         if(!value) return ''
-        const submittedDate = DateTime.fromJSDate(value)
+
+        const enqueuedAt = DateTime.fromJSDate(value)
         const now = DateTime.now()
-        const diffInDays = now.diff(submittedDate, 'days').days
+        const diffInDays = now.diff(enqueuedAt, 'days').days
         const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
 
         return h(
           'div',
           { class: 'text-xs' },
           value ? [
-            h('div', submittedDate.toISODate() ?? ''),
+            h('div', enqueuedAt.toISODate() ?? ''),
             h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
           ] : []
         )
@@ -244,20 +256,37 @@ const columns = [
 
         const listItems: VNode[] = []
 
-        const assignmentsByRole = groupBy(
+        const assignmentsByRoles = groupBy(
           assignments,
           (assignment) => assignment.role
         )
 
-        const orderedRole = Object.keys(assignmentsByRole)
+        const orderedRoles = Object.keys(assignmentsByRoles)
           .sort((a, b) => a.localeCompare(b, 'en'))
 
-        for (const role of orderedRole) {
-          const assignments = assignmentsByRole[role] ?? []
+        for (const role of orderedRoles) {
+          const assignmentsOfRole = assignmentsByRoles[role] ?? []
+
+          const redundantAssignmentsOfSamePersonToSameRole = assignmentsOfRole.filter((assignment, _index, arr) => {
+            const { person } = assignment
+            if (person === undefined || person == null) {
+              return false
+            }
+            const firstAssignmentOfPersonToRole = arr.find(arrAssignment => assignment.person && arrAssignment.person && arrAssignment.person === assignment.person)
+            if (!firstAssignmentOfPersonToRole) {
+              console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
+              throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
+            }
+            // the first assignment of person should always match the current assignment of person
+            // because there shouldn't be redundant assignments
+            // but if the id is different then it is a redundant assignment,
+            // so we'll prompt the user to delete them
+            return assignment.id !== firstAssignmentOfPersonToRole.id
+          })
 
           listItems.push(h('li', {}, [
             h(BaseBadge, { label: role, class: 'mr-1' }),
-            ...assignments.map(assignment => {
+            ...assignmentsOfRole.map(assignment => {
               const rpcPerson = people.value.find((p) => p.id === assignment.person)
               return h(Anchor, {
                 href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
@@ -274,7 +303,10 @@ const columns = [
               }
               return acc
             }, [] as (VNode | string)[]),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments, role, rfcToBeId }) }, () => 'Change'),
+            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
+            ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
+              return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
+            })
           ]))
         }
 
@@ -349,6 +381,16 @@ const columns = [
   ),
 ]
 
+const allRoles = computed(() => {
+  if (data.value === undefined) {
+    return []
+  }
+  const roles = data.value.flatMap(
+    (doc) => doc.assignmentSet?.map(assignment => assignment.role) || []
+  )
+  return [...new Set(roles)].sort()
+})
+
 const allLabelFilters = computed(() => {
   if (data.value === undefined) {
     return []
@@ -374,6 +416,7 @@ const table = useVueTable({
         needsAssignmentTristate.value,
         hasExceptionTristate.value,
         selectedLabelFilters.value,
+        selectedRoleFilter.value,
         searchQuery.value
       ])
     },
@@ -393,6 +436,13 @@ const table = useVueTable({
       const nameMatch = d.name?.toLowerCase().includes(searchTerm)
       const rfcMatch = d.rfcNumber?.toString().toLowerCase().includes(searchTerm)
       if (!nameMatch && !rfcMatch) {
+        return false
+      }
+    }
+
+    if (selectedRoleFilter.value) {
+      const hasRole = d.assignmentSet?.some(assignment => assignment.role === selectedRoleFilter.value)
+      if (!hasRole) {
         return false
       }
     }
@@ -456,11 +506,42 @@ const searchQuery = computed({
   set: (value: string) => { siteStore.search = value }
 })
 
+onMounted(() => {
+  if (route.query.search && route.query.search !== siteStore.search) {
+    siteStore.search = route.query.search as string
+  }
+})
+
+watch(() => route.query.search, (newSearch) => {
+  siteStore.search = newSearch as string || ''
+})
+
+watch(() => siteStore.search, (newSearch) => {
+  const query = { ...route.query }
+  if (newSearch) {
+    query.search = newSearch
+  } else {
+    delete query.search
+  }
+  router.replace({ query })
+})
+
 const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
   server: false,
   lazy: false,
   default: () => [] as Cluster[]
 })
+
+const reloadTableAfterAssignmentChange = () => {
+  refresh()
+  refreshClusters()
+}
+
+const getPersonNameById = (personId?: number | null): string => {
+  if (personId === undefined || personId === null) return 'Unknown'
+  const person = people.value.find(person => person.id === personId)
+  return person?.name ?? 'Unknown'
+}
 
 const snackbar = useSnackbar()
 const overlayModal = inject(overlayModalKey)
@@ -533,7 +614,7 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
     doc.assignmentSet?.forEach(assignment => {
-      if(assignment.person !== undefined && assignment.person !== null) {
+      if (assignment.person !== undefined && assignment.person !== null) {
         addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
       } else {
         console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
@@ -548,12 +629,54 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
       people: people.value,
       clusters: clusters.value,
       peopleWorkload,
-      onSuccess: () => {
-        refresh()
-        refreshClusters()
-      }
+      onSuccess: reloadTableAfterAssignmentChange
     },
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+      console.info("Modal has closed", { e })
+    } else {
+      console.error(e)
+      throw e
+    }
   })
+}
+
+const deleteRedundantAssignment = async (redundantAssignment: Assignment) => {
+  const { id, person, role } = redundantAssignment
+  if (id === undefined || id === null) {
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment without an id",
+      text: `typeof id = ${typeof id}`
+    })
+    return
+  }
+  if (person === undefined || person === null) {
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment without an person",
+      text: `typeof person = ${typeof person}`
+    })
+    return
+  }
+  try {
+    await api.assignmentsDestroy({ id })
+    reloadTableAfterAssignmentChange()
+    snackbar.add({
+      type: 'success',
+      title: "Successfully deleted redundant assignment. Reloading...",
+      text: `${getPersonNameById(person)} had multiple assignments to role ${JSON.stringify(role)}`
+    })
+  } catch (e) {
+    reloadTableAfterAssignmentChange() // although there was an error it's possible a db change occurred so we should resync
+    console.error('Deleting redundant assignment error:', e, redundantAssignment)
+    snackbar.add({
+      type: 'error',
+      title: "Can't delete redundant assignment. See console for details.",
+      text: `Error: ${JSON.stringify(e).substring(0, 100)}`
+    })
+  }
 }
 
 </script>
