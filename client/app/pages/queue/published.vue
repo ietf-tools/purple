@@ -6,7 +6,7 @@
       </template>
     </TitleBlock>
 
-    <QueueTabs :current-tab="currentTab" @pending="pending" @refresh="refresh" />
+    <QueueTabs :current-tab="currentTab" />
 
     <ErrorAlert v-if="error">
       {{ error }}
