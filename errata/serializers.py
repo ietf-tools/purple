@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
-from .models import Errata
+from .models import Erratum
 
 
-class ErrataSerializer(serializers.ModelSerializer):
-    """Serializer for Errata model"""
+class ErratumSerializer(serializers.ModelSerializer):
+    """Serializer for Erratum model"""
 
     class Meta:
-        model = Errata
+        model = Erratum
         fields = [
             "id",
             "rfc_to_be",
