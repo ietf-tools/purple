@@ -308,7 +308,6 @@ class ClusterQuerySet(models.QuerySet):
 
 
 class Cluster(models.Model):
-
     objects = ClusterQuerySet.as_manager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
