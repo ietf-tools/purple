@@ -325,12 +325,12 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "pages",
-            "created_at",
+            "enqueued_at",
         ]
 
     @extend_schema_field(serializers.DateField())
-    def get_created_at(self, obj):
-        """Get the creation date from the history record"""
+    def get_enqueued_at(self, obj):
+        """Get the date when the RFC was added to the queue"""
         try:
             create_history = obj.history.filter(history_type="+").earliest(
                 "history_date"
