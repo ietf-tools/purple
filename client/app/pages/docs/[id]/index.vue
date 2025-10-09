@@ -58,7 +58,7 @@
           <div class="px-0 pt-6 sm:px-6">
             <h3 class="text-base font-semibold leading-7">Pending Activities</h3>
             <div class="text-sm font-medium">
-              <div v-if="rfcToBe?.pendingActivities.length === 0">
+              <div v-if="!rfcToBe || !rfcToBe.pendingActivities || rfcToBe.pendingActivities.length === 0">
                 None
               </div>
               <dl v-else>
@@ -198,6 +198,7 @@
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
+import type { RfcToBe } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -206,7 +207,7 @@ const isInitialLoad = ref(true)
 
 // COMPUTED
 
-const draftName = computed(() => route.params.id.toString())
+const draftName = computed(() => route.params.id?.toString() ?? '')
 
 const {
   data: commentList,
@@ -231,7 +232,10 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
   }
 )
 
-const appliedLabels = computed(() => labels.value.filter((lbl) => rawRfcToBe.value?.labels.includes(lbl.id)))
+const appliedLabels = computed(() => labels.value.filter((lbl) => {
+  if(lbl.id === undefined) return false
+  return rawRfcToBe.value?.labels.includes(lbl.id)
+}))
 
 const rfcToBeAssignments = computed(() =>
   assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
@@ -239,7 +243,7 @@ const rfcToBeAssignments = computed(() =>
 
 const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
 
-const rfcToBe = computed(() => {
+const rfcToBe = computed((): CookedDraft | null => {
   if (rawRfcToBe.value) {
     if (rawRfcToBe.value.labels) {
       selectedLabelIds.value = [...rawRfcToBe.value.labels]

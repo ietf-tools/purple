@@ -45,10 +45,10 @@ import {
   ComboboxRoot,
   ComboboxViewport,
 } from "reka-ui"
-import type { RfcToBe, BaseDatatrackerPerson } from "~/purple_client"
+import type { BaseDatatrackerPerson } from "~/purple_client"
 import { snackbarForErrors } from "~/utils/snackbar"
 
-const draft = defineModel<RfcToBe>({ required: true })
+const draft = defineModel<CookedDraft>({ required: true })
 
 const selectedAuthor = ref<BaseDatatrackerPerson | undefined>()
 
