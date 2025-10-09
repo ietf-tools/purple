@@ -40,7 +40,7 @@ import type { Tab } from '~/utils/queue'
 
 type Props = {
   tabs: Tab[]
-  selected: string
+  selected?: string
 }
 
 const props = withDefaults(defineProps<Props>(), {

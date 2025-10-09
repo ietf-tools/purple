@@ -7,8 +7,8 @@
     <!-- TABS -->
 
     <div class="flex justify-center items-center">
-      <TabNav :tabs="tabs" :selected="currentTab.toString()" />
-      <RefreshButton :pending="pending" class="ml-3" @refresh="refresh"/>
+      <TabNav :tabs="tabs" :selected="currentTab?.toString()" />
+      <RefreshButton class="ml-3" />
       <button type="button" class="btn-secondary ml-3" @click.stop>
         <span class="sr-only">Filter</span>
         <Icon
