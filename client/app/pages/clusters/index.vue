@@ -63,6 +63,7 @@ import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 import RefreshButton from '~/components/RefreshButton.vue'
 import { overlayModalKey } from '../../providers/providerKeys'
 import { DocumentDependenciesGraph } from '#components'
+import { error } from 'console'
 
 useHead({
   title: 'Manage Clusters'
@@ -100,7 +101,7 @@ const { data: clusters, pending, refresh } = await useFetch<Cluster[]>('/api/rpc
     snackbar.add({
       type: 'error',
       title: 'Fetch Failed',
-      text: error
+      text: String(error)
     })
   },
   onResponseError ({ response, error }) {
@@ -112,7 +113,13 @@ const { data: clusters, pending, refresh } = await useFetch<Cluster[]>('/api/rpc
   }
 })
 
-const { openOverlayModal, closeOverlayModal } = inject(overlayModalKey)
+const overlayModal = inject(overlayModalKey)
+
+if(!overlayModal) {
+  throw Error('Expected overlay modal to be available')
+}
+
+const { openOverlayModal, closeOverlayModal } = overlayModal
 
 const showDocumentDependencies = () => {
   openOverlayModal({

@@ -2,7 +2,7 @@
   <div v-if="cluster">
     Cluster {{ cluster.number }}
     <ol>
-      <li v-for="document in cluster.documents" :key="document.id">
+      <li v-for="(document, index) in cluster.documents" :key="`${index}${document.name}`">
         {{ document.name }}
       </li>
     </ol>
@@ -16,7 +16,7 @@
 const route = useRoute()
 
 // Only allow numbers as route parameter, rejecting leading zeros
-definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number.toString()) })
+definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number?.toString() ?? '') })
 
 const clusterNumber = route.params.number
 
