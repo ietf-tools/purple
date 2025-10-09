@@ -143,8 +143,8 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import humanizeDuration from 'humanize-duration'
-import type { PaginatedDocumentCommentList, SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~/purple_client'
-import { ref, watch, computed } from 'vue'
+import type { PaginatedDocumentCommentList, Name } from '~/purple_client'
+import { computed } from 'vue'
 
 const route = useRoute()
 const api = useApi()
@@ -154,10 +154,10 @@ const currentTime = useCurrentTime()
 const today = computed(() => currentTime.value.startOf('day'))
 
 type State = {
-  boilerplate: TlpBoilerplateChoiceName | null,
-  sourceFormat: SourceFormatName | null,
-  stdLevel: StdLevelName | null,
-  stream: StreamName | null,
+  boilerplate: Name | null,
+  sourceFormat: Name | null,
+  stdLevel: Name | null,
+  stream: Name | null,
   deadline: string | null,
   labels: number[]
 }
@@ -270,7 +270,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       // state.boilerplate = boilerplateChoices ? boilerplateChoices[0] : null
       state.sourceFormat = submission.sourceFormat
       state.stream = submission.stream
-      state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] : null)
+      state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] ?? null : null)
       return {
         submission, boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices
       }

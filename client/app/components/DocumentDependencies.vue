@@ -37,7 +37,11 @@ import { h } from 'vue'
 import { Anchor } from '#components'
 import BaseBadge from './BaseBadge.vue'
 
-const relatedDocuments = defineModel<RpcRelatedDocument[]>({ default: [] })
+type RpcRelatedDocumentAsObject = {
+  [K in keyof RpcRelatedDocument]: RpcRelatedDocument[K]
+}
+
+const relatedDocuments = defineModel<RpcRelatedDocumentAsObject[]>({ default: [] as RpcRelatedDocumentAsObject[] })
 
 const columns: Column[] = [
   {
