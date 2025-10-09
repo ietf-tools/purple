@@ -4,8 +4,8 @@ from rest_framework import filters, mixins, viewsets
 
 from rpc.pagination import DefaultLimitOffsetPagination
 
-from .models import Errata
-from .serializers import ErrataSerializer
+from .models import Erratum
+from .serializers import ErratumSerializer
 
 
 @extend_schema_view(
@@ -15,19 +15,19 @@ from .serializers import ErrataSerializer
         "pagination support.",
     ),
     retrieve=extend_schema(
-        summary="Get errata details",
+        summary="Get erratum details",
         description="Retrieve detailed information about a specific erratum.",
     ),
 )
-class ErrataViewSet(
+class ErratumViewSet(
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """ViewSet for managing errata entries"""
+    """ViewSet for managing erratum entries"""
 
-    queryset = Errata.objects.all()
-    serializer_class = ErrataSerializer
+    queryset = Erratum.objects.all()
+    serializer_class = ErratumSerializer
     filter_backends = [
         DjangoFilterBackend,
         filters.SearchFilter,

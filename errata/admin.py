@@ -4,14 +4,14 @@ from django.contrib import admin
 
 from .models import (
     AreaAssignment,
-    Errata,
+    Erratum,
     Log,
     Status,
     Type,
 )
 
 
-class ErrataAdmin(admin.ModelAdmin):
+class ErratumAdmin(admin.ModelAdmin):
     search_fields = ["rfc_to_be__rfc_number"]
     list_display = [
         "rfc_to_be",
@@ -24,7 +24,7 @@ class ErrataAdmin(admin.ModelAdmin):
     raw_id_fields = ["rfc_to_be", "verifier_dt_person"]
 
 
-admin.site.register(Errata, ErrataAdmin)
+admin.site.register(Erratum, ErratumAdmin)
 
 
 class TypeAdmin(admin.ModelAdmin):
@@ -43,14 +43,14 @@ admin.site.register(Status, StatusAdmin)
 
 class LogAdmin(admin.ModelAdmin):
     list_display = [
-        "errata",
+        "erratum",
         "verifier_dt_person",
         "status",
         "type",
         "editor_dt_person",
         "created_at",
     ]
-    raw_id_fields = ["errata", "verifier_dt_person", "editor_dt_person"]
+    raw_id_fields = ["erratum", "verifier_dt_person", "editor_dt_person"]
 
 
 admin.site.register(Log, LogAdmin)
