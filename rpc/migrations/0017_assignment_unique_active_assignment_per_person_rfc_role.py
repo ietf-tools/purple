@@ -18,7 +18,8 @@ class Migration(migrations.Migration):
                 ),
                 fields=("person", "rfc_to_be", "role"),
                 name="unique_active_assignment_per_person_rfc_role",
-                violation_error_message="A person can only have one active assignment per RFC and role",
+                violation_error_message="A person can only have one active assignment "
+                "per RFC and role",
             ),
         ),
     ]
