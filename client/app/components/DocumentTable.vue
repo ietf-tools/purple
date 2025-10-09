@@ -34,7 +34,7 @@
         </tr>
       </thead>
       <tbody v-if="!loading" class="text-sm divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
-        <tr v-for="row of rows" :key="row.key">
+        <tr v-for="(row, rowIndex) of rows" :key="`${row.key}${rowIndex}`">
           <td class="pl-3">
             <Icon name="uil:file-alt" size="1.25em" class="text-gray-400 dark:text-neutral-500" />
           </td>
@@ -43,7 +43,7 @@
             :key="col.key"
             :class="[
               'px-3 py-4 text-gray-500 dark:text-neutral-400',
-              col.classes && isFunction(col.classes) ? col.classes(col.field ? row[col.field] : row) : col.classes
+              col.classes && isFunction(col.classes) ? col.classes(col.field ? (row as Record<string, unknown>)[col.field] : row) : col.classes
             ]"
           >
             <component :is="buildCell(col, row)" />

@@ -36,9 +36,9 @@
               </ul>
             </div>
             <div>
-              <p class="text-sm" v-if="person.id && person.id in peopleWorkload">
+              <p class="text-sm" v-if="person.id && peopleWorkload[person.id]">
                 Currently assigned:
-                <WorkloadSummary :workload="peopleWorkload[person.id]" />
+                <WorkloadSummary :workload="peopleWorkload[person.id]!" />
               </p>
               <p v-else class="italic text-sm">(No other assignments)</p>
             </div>
