@@ -76,7 +76,10 @@
               <div class="flex-auto pl-6 pt-6">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Availability</dt>
                 <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
-                  {{ person?.availability || 'Unknown' }}
+                  {{
+                    // FIXME: use person?.availability
+                    'Unknown'
+                  }}
                 </dd>
               </div>
               <div class="flex-none self-end px-6 pt-4">
@@ -144,7 +147,7 @@
                   <div class="flex items-start justify-between">
                     <div class="flex-1">
                       <h3 class="text-sm font-semibold text-gray-900">
-                        {{ assignment.rfcToBe?.draft.name }}
+                        {{ assignment.rfcToBe?.draft?.name }}
                       </h3>
                       <span v-if="assignment.comment">
                         {{ assignment.comment }}

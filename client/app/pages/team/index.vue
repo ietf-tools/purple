@@ -97,14 +97,14 @@ const { data: people, pending, refresh } = await useFetch<RpcPerson[]>('/api/rpc
     snackbar.add({
       type: 'error',
       title: 'Fetch Failed',
-      text: error
+      text: String(error)
     })
   },
   onResponseError ({ response, error }) {
     snackbar.add({
       type: 'error',
       title: 'Server Error',
-      text: response.statusText ?? error
+      text: String(response.statusText ?? error)
     })
   }
 })
