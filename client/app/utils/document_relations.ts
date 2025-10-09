@@ -9,6 +9,8 @@ const link_color: Record<Rel, string> = {
   "refqueue": green,
   "not-received": blue,
   "withdrawnref": orange,
+  'refnorm':  teal,
+  'relinfo': yellow
 } as const
 
 const get_link_color = (key: Rel) => {
