@@ -24,6 +24,10 @@ jobs:
           cache: "npm"
           cache-dependency-path: "**/package-lock.json"
 
+      - name: Generate client
+        run: ./update-rpcapi
+        working-directory: .
+
       - name: Install dependencies
         run: npm ci
         working-directory: ./client
