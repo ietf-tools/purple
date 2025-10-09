@@ -12,6 +12,6 @@
 </template>
 
 <script setup lang="ts">
-type Props = { title: string }
+type Props = { title?: string }
 const props = withDefaults(defineProps<Props>(), { title: 'Error' })
 </script>
