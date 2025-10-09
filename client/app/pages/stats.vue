@@ -32,21 +32,18 @@
 
 import { Duration } from 'luxon'
 import humanizeDuration from 'humanize-duration'
-import type { LabelStats } from '../purple_client'
+import type { LabelStats, PaginatedRfcToBeList } from '../purple_client'
 
 const api = useApi()
-
-// COMPUTED
-
-const labelById = computed(() => Object.fromEntries(labels?.value.map(lbl => [lbl.id, lbl])))
-
-const documentById = computed(() => Object.fromEntries(documents?.value.map(doc => [doc.id, doc])))
 
 // DATA
 
 const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
 
-const { data: documents } = await useAsyncData(() => api.documentsList(), { server: false, default: () => [] })
+const { data: documents } = await useAsyncData(
+  () => api.documentsList(),
+  { server: false, default: () => ({ count: 0, results:[] }) as PaginatedRfcToBeList }
+)
 
 const { data: labelStats } = await useAsyncData(
   () => api.statsLabels(), {
@@ -54,5 +51,11 @@ const { data: labelStats } = await useAsyncData(
     default: () => ({ labelStats: [] }) as LabelStats
   }
 )
+
+// COMPUTED
+
+const documentById = computed(() => Object.fromEntries(documents.value.results.map(doc => [doc.id, doc])))
+
+const labelById = computed(() => Object.fromEntries(labels?.value.map(lbl => [lbl.id, lbl])))
 
 </script>
