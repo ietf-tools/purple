@@ -75,7 +75,7 @@
               <HeadlessMenuItem v-for="item in allUsers" :key="item.id" v-slot="{ active }">
                 <div
                   :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']"
-                  @click="switchUser(item.id)">
+                  @click="switchUser(item.id ?? null)">
                   <Icon
                     v-if="item.id === userStore.pretendingToBe"
                     name="uil:arrow-right" class="h-6 w-6 -ml-1" aria-hidden="true" />
@@ -93,7 +93,7 @@
         <HeadlessMenu v-if="userStore.authenticated" as="div" class="relative">
           <HeadlessMenuButton class="-m-1.5 flex items-center p-1.5">
             <span class="sr-only">Open user menu</span>
-            <img class="h-8 w-6 rounded-full bg-gray-50" :src="userStore.avatar" alt="" >
+            <img class="h-8 w-6 rounded-full bg-gray-50" :src="userStore.avatar ?? undefined" alt="" >
             <span class="hidden lg:flex lg:items-center">
               <span class="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-neutral-300" aria-hidden="true">{{ userStore.name }}</span>
               <Icon name="uil:angle-down" class="ml-2 h-5 w-5 text-gray-400 dark:text-neutral-400" aria-hidden="true" />
@@ -160,7 +160,18 @@ const { data: allUsers } = await useAsyncData(
   {
     default: () => ([]),
     server: false,
-    transform: (resp) => resp?.toSorted((a, b) => a.name.localeCompare(b.name))
+    transform: (resp) => resp?.toSorted((a, b) => {
+      if (!a.name && !b.name) {
+        return 0
+      }
+      if (!a.name) {
+        return -1
+      }
+      if (!b.name) {
+        return 1
+      }
+      return a.name.localeCompare(b.name)
+    })
   }
 )
 

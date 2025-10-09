@@ -143,7 +143,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import humanizeDuration from 'humanize-duration'
-import type { SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~/purple_client'
+import type { PaginatedDocumentCommentList, SourceFormatName, StdLevelName, StreamName, TlpBoilerplateChoiceName } from '~/purple_client'
 import { ref, watch, computed } from 'vue'
 
 const route = useRoute()
@@ -228,7 +228,7 @@ async function importSubmission () {
     snackbar.add({
       type: 'error',
       title: 'Error saving',
-      text: e
+      text: String(e)
     })
   }
   if (imported) {
@@ -278,7 +278,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       snackbar.add({
         type: 'error',
         title: 'Data fetch not successful',
-        text: e
+        text: String(e)
       })
     }
   },
@@ -288,12 +288,15 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
 const submissionName = computed(() => fetchedData.value?.submission?.name)
 const commentsKey = computed(() => `comments-import-${submissionName.value}`)
 
-const comments = computed(() => ({
-  data: commentList.value || [],
-  pending: commentsPending.value,
-  error: commentsError.value,
-  reload: commentsReload ?? (() => {})
-}))
+const comments = computed(() => {
+  const defaultValue: PaginatedDocumentCommentList = { count: 0, results: [] }
+  return ({
+    data: commentList.value || defaultValue,
+    pending: commentsPending.value,
+    error: commentsError.value,
+    reload: commentsReload ?? (() => {})
+  })
+})
 
 const {
   data: commentList,

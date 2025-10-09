@@ -106,16 +106,18 @@
           <fieldset>
             <legend class="sr-only">Roles</legend>
             <div class="space-y-5">
-              <RpcCheckbox
-                v-for="role of roles"
-                :id="`role-${role.value}`"
-                :key="role.value"
-                v-model="state.roles"
-                :name="`role-${role.value}`"
-                :value="role.value"
-                :caution="Boolean(role.caution)"
-                :label="role.label"
-                :desc="role.description"/>
+              <template v-for="role of roles" :key="role.value">
+                <RpcCheckbox
+                  :id="`role-${role.value}`"
+                  :name="`role-${role.value}`"
+                  :value="role.value"
+                  :caution="Boolean(role.caution)"
+                  :label="role.label"
+                  :desc="role.description"
+                  :checked="state.roles.includes(role.value)"
+                  @change="handleRoleCheckboxChange"
+                />
+              </template>
             </div>
           </fieldset>
         </div>
@@ -168,11 +170,49 @@ const state = reactive<State>({
   confirmShown: false
 })
 
+const handleRoleCheckboxChange = (e: Event) => {
+  const { target } = e;
+  if (!(target instanceof HTMLInputElement)) {
+    console.error(e)
+    throw Error(`Unsupported event wasn't from expected element`)
+  }
+
+  const { value, checked } = target
+
+  assert(!Number.isNaN(value))
+
+  if(checked && !state.roles.includes(value)) {
+    state.roles.push(value)
+  } else if (!checked && state.roles.includes(value)) {
+    const indexOf = state.roles.indexOf(value)
+    if(indexOf === -1) {
+      throw Error(`Unexpected state. Should be able to find indexOf ${value} in ${JSON.stringify(state.roles)}`)
+    }
+    state.roles.splice(indexOf, 1)
+  }
+}
+
 const managers: string[] = []
 const timezones = import.meta.client ? Intl.supportedValuesOf('timeZone') : []
-const roles = [
-  { value: 'formatting', label: 'Formatter', description: 'An editor for docs that require extensive XML formatting.' },
-  { value: 'pe', label: 'Primary Editor', description: 'An editor who makes the first editing pass.' },
+
+type Role = {
+  value: string
+  label: string
+  description: string
+  caution?: boolean
+}
+
+const roles: Role[] = [
+  {
+    value: 'formatting',
+    label: 'Formatter',
+    description: 'An editor for docs that require extensive XML formatting.'
+  },
+  {
+    value: 'pe',
+    label: 'Primary Editor',
+    description: 'An editor who makes the first editing pass.'
+  },
   {
     value: 're',
     label: 'RFC Editor',
