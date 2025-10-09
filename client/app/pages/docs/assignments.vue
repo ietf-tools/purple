@@ -94,7 +94,11 @@ const documents = computed(
     // Add some fake properties for demonstration purposes
     const assignments = cookedAssignments.value?.filter(a => a.rfcToBe === rtb.id)
     const needsAssignment = rtb.pendingActivities
-    const resolvedDocument: ResolvedQueueItem = { ...rtb, assignments, needsAssignment }
+    const resolvedDocument: ResolvedQueueItem = {
+      ...rtb,
+      assignments,
+      needsAssignment
+    }
     return resolvedDocument
   })
     .sort(rtb => rtb.externalDeadline ? DateTime.fromJSDate(rtb.externalDeadline).toSeconds() : 0)
@@ -102,7 +106,7 @@ const documents = computed(
 
 const filteredDocuments = computed(
   () => documents.value?.filter(
-    (rtb: any) => !state.roleFilter || rtb.needsAssignment.some((a) => a.slug === state.roleFilter)
+    (rtb) => !state.roleFilter || rtb.needsAssignment?.some((a) => a.slug === state.roleFilter)
   ) ?? []
 )
 
@@ -125,11 +129,13 @@ const currentFilterDesc = computed(() => {
 // METHODS
 
 async function saveAssignment(assignment: Pick<Assignment, 'rfcToBe' | 'person'>) {
+  // FIXME: is it ok to take the first needsAssignment?
+  const role = documents.value.find((d) => d.id === assignment.rfcToBe)?.needsAssignment?.[0]?.slug ?? 'first_editor'
   await $fetch('/api/rpc/assignments/', {
     body: {
       rfc_to_be: assignment.rfcToBe,
       person: assignment.person,
-      role: documents.value.find((d: any) => d.id === assignment.rfcToBe)?.needsAssignment?.slug ?? 'first_editor'
+      role,
     },
     method: 'POST',
     headers: { 'X-CSRFToken': csrf.value?.toString() ?? '' }
@@ -138,8 +144,10 @@ async function saveAssignment(assignment: Pick<Assignment, 'rfcToBe' | 'person'>
 }
 
 // Order editors for display
-function compareEditors(a: RpcPerson, b: RpcPerson) {
-  const keys: (keyof RpcPerson)[] = ['completeBy', 'name']
+function compareEditors(a: ResolvedPerson, b: ResolvedPerson) {
+  // FIXME: ok to remove 'completeBy' from keys? It's not a valid key on RpcPerson
+  const keys: (keyof ResolvedPerson)[] = ['name']
+
   const comparisons = keys.map(attr => {
     const aval = a[attr]
     const bval = b[attr]
@@ -201,7 +209,7 @@ const { data: roles } = await useAsyncData<RpcRole[]>(
       snackbar.add({
         type: 'error',
         title: 'Unable to list roles',
-        text: e
+        text: String(e)
       })
       return []
     }
