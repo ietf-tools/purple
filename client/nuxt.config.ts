@@ -79,7 +79,7 @@ export default defineNuxtConfig({
         'lodash-es',
         'luxon',
         'humanize-duration',
-        'vue3-snackbar'
+        // 'vue3-snackbar'
       ]
     },
     plugins: [

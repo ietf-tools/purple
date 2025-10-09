@@ -72,13 +72,19 @@ const { data: documentsReferencesByRfcs, error: documentsReferencesByRfcsError }
         (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
       ))
     return documentsReferencesArray.map((documentsReferences, index) => {
-      const { rfcNumber, name: draftName } = props.cluster.documents[index]
+      const clusterDocument = props.cluster.documents[index]
+      if (!clusterDocument) {
+        return undefined
+      }
+      const { rfcNumber, name: draftName } = clusterDocument
       assert(rfcNumber)
       return ({
         rfcNumber,
         draftName,
         documentsReferences
       })
+    }).filter(item => {
+      return (item !== undefined)
     })
   }
 )
@@ -112,7 +118,7 @@ const data = computed((): DataParam => {
 
         return {
           source: `rfc${rfcNumber}`,
-          rel: 'relinfo',
+          rel: 'relinfo', //
           target: draftName,
         }
       }) ?? [],

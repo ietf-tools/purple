@@ -20,12 +20,14 @@ export const white = "#fff";
 export const black = "#212529";
 export const gray400 = "#ced4da";
 
-export type Rel = 'refqueue' | 'not-received' | 'withdrawnref'
+export type Rel = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
 
 export const ref_type: Record<Rel, string> = {
-  refqueue: "has ref queue to",
-  'not-received': "has not received to",
-  withdrawnref: "has withdrawn ref to",
+  refqueue: 'has ref queue to',
+  'not-received': 'has not received to',
+  withdrawnref: 'has withdrawn ref to',
+  refnorm: 'has ref norm to',
+  relinfo: 'has rel info to'
 } as const;
 
 export const get_ref_type = (key: string) => {
