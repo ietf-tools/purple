@@ -6,7 +6,7 @@
       </template>
     </TitleBlock>
 
-    <QueueTabs :current-tab="currentTab" @pending="pending" @refresh="refresh" />
+    <QueueTabs :current-tab="currentTab" />
 
     <ErrorAlert v-if="error || peopleError">
       {{ error }} {{ peopleError }}
@@ -186,7 +186,7 @@ const columns = [
       header: 'Submitted (Weeks in queue)',
       cell: data => {
         const value = data.getValue()
-
+        if(!value) return ''
         const submittedDate = DateTime.fromJSDate(value)
         const now = DateTime.now()
         const diffInDays = now.diff(submittedDate, 'days').days
@@ -196,7 +196,7 @@ const columns = [
           'div',
           { class: 'text-xs' },
           value ? [
-            h('div', submittedDate.toISODate()),
+            h('div', submittedDate.toISODate() ?? ''),
             h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
           ] : []
         )
@@ -204,6 +204,10 @@ const columns = [
       sortingFn: (rowA, rowB, columnId) => {
         const a = rowA.getValue(columnId)
         const b = rowB.getValue(columnId)
+        if(typeof a !== 'number' || typeof b !== 'number') {
+          console.warn(`sortingFn expected column ${JSON.stringify(columnId)} to be a number`)
+          return 0
+        }
         return (a > b) ? 1 : (a < b) ? -1 : 0
       },
     }
