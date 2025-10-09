@@ -307,7 +307,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
-    created_at = serializers.SerializerMethodField()
+    enqueued_at = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe

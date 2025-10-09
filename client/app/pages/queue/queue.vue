@@ -189,7 +189,7 @@ const columns = [
     enableSorting: false,
   }),
   columnHelper.accessor(
-    'createdAt',
+    'enqueuedAt',
     {
       header: () => h('div', { class: 'text-center' }, [
         h('div', 'Enqueue Date'),
