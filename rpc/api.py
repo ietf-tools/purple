@@ -225,7 +225,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         queryset = (
             super()
             .get_queryset()
-            .select_related("rfc_to_be")
+            .select_related("rfc_to_be__draft", "person__datatracker_person")
             .filter(person_id=req_person_id)
         )
 
