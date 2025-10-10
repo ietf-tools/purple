@@ -348,29 +348,31 @@ class Capability(models.Model):
         return self.name
 
 
+class _AssignmentState(models.TextChoices):
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    WITHDRAWN = "withdrawn"
+    CLOSED_FOR_HOLD = "closed_for_hold"
+
+
+ASSIGNMENT_INACTIVE_STATES = [
+    _AssignmentState.DONE,
+    _AssignmentState.WITHDRAWN,
+    _AssignmentState.CLOSED_FOR_HOLD,
+]
+
+
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only active Assignments"""
-        return super().exclude(
-            state__in=[
-                Assignment.State.DONE,
-                Assignment.State.WITHDRAWN,
-                Assignment.State.CLOSED_FOR_HOLD,
-            ]
-        )
+        return super().exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
 
 
 class Assignment(models.Model):
     """Assignment of an RpcPerson to an RfcToBe"""
 
-    class State(models.TextChoices):
-        """Choices for the state field"""
-
-        ASSIGNED = "assigned"
-        IN_PROGRESS = "in_progress"
-        DONE = "done"
-        WITHDRAWN = "withdrawn"
-        CLOSED_FOR_HOLD = "closed_for_hold"
+    State = _AssignmentState
 
     # Custom manager
     objects = AssignmentQuerySet.as_manager()
@@ -390,7 +392,9 @@ class Assignment(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["person", "rfc_to_be", "role"],
-                condition=~models.Q(state__in=["done", "withdrawn", "closed_for_hold"]),
+                condition=~models.Q(
+                    state__in=ASSIGNMENT_INACTIVE_STATES
+                ),
                 name="unique_active_assignment_per_person_rfc_role",
                 violation_error_message="A person can only have one active assignment "
                 "per RFC and role",
@@ -410,7 +414,7 @@ class Assignment(models.Model):
         return None if following_state is None else following_state.history_date
 
     def when_assigned(self) -> datetime.datetime | None:
-        return self.when_entered_state(Assignment.State.ASSIGNED)
+        return self.when_entered_state(self.State.ASSIGNED)
 
     def when_started(self) -> datetime.datetime | None:
         return self.when_entered_state(self.State.IN_PROGRESS)
