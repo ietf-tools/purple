@@ -392,9 +392,7 @@ class Assignment(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["person", "rfc_to_be", "role"],
-                condition=~models.Q(
-                    state__in=ASSIGNMENT_INACTIVE_STATES
-                ),
+                condition=~models.Q(state__in=ASSIGNMENT_INACTIVE_STATES),
                 name="unique_active_assignment_per_person_rfc_role",
                 violation_error_message="A person can only have one active assignment "
                 "per RFC and role",
