@@ -120,6 +120,7 @@ class UnusableRfcNumberAdmin(admin.ModelAdmin):
     list_display = ["number", "comment"]
     search_fields = ["number", "comment"]
 
+
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)

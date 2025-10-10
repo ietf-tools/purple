@@ -792,6 +792,7 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
 
 class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     """Serialize an Unusable Rfc Number"""
+
     class Meta:
         model = UnusableRfcNumber
         fields = ["number", "comment"]
