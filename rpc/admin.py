@@ -76,9 +76,6 @@ class ClusterAdmin(admin.ModelAdmin):
         return ", ".join(member.doc.name for member in cluster.clustermember_set.all())
 
 
-admin.site.register(UnusableRfcNumber)
-
-
 class RpcRoleAdmin(admin.ModelAdmin):
     search_fields = ["name"]
     list_display = ["name", "slug"]
@@ -119,6 +116,10 @@ class LabelAdmin(admin.ModelAdmin):
     list_filter = ["is_complexity", "is_exception", "color"]
 
 
+class UnusableRfcNumberAdmin(admin.ModelAdmin):
+    list_display = ["number", "comment"]
+    search_fields = ["number", "comment"]
+
 admin.site.register(RfcAuthor, RfcAuthorAdmin)
 admin.site.register(AdditionalEmail)
 admin.site.register(FinalApproval)
@@ -128,3 +129,4 @@ admin.site.register(RpcDocumentComment)
 admin.site.register(Label, LabelAdmin)
 admin.site.register(RpcAuthorComment)
 admin.site.register(ApprovalLogMessage, ApprovalLogMessageAdmin)
+admin.site.register(UnusableRfcNumber, UnusableRfcNumberAdmin)

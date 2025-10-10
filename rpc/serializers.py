@@ -32,6 +32,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    UnusableRfcNumber,
 )
 
 
@@ -787,3 +788,11 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
             "last_edit",
         ]
         read_only_fields = ["rfc_to_be", "by", "time"]
+
+
+class UnusableRfcNumberSerializer(serializers.ModelSerializer):
+    """Serialize an Unusable Rfc Number"""
+    class Meta:
+        model = UnusableRfcNumber
+        fields = ["number", "comment"]
+        read_only_fields = ["number"]

@@ -54,6 +54,7 @@ from .models import (
     StdLevelName,
     StreamName,
     TlpBoilerplateChoiceName,
+    UnusableRfcNumber,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
@@ -79,6 +80,7 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
 )
@@ -733,6 +735,11 @@ class StatsLabels(views.APIView):
                         }
                     )
         return Response({"label_stats": results})
+
+
+class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
+    queryset = UnusableRfcNumber.objects.all()
+    serializer_class = UnusableRfcNumberSerializer
 
 
 class DocRelationshipNameViewSet(viewsets.ReadOnlyModelViewSet):
