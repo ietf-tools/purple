@@ -12,14 +12,17 @@
 
       <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
-          <div class="flex items-center gap-x-6 text-gray-900 dark:text-white">
-            <Icon name="solar:document-text-line-duotone" class="w-10 h-10"/>
-            <h1>
-              <span class="mt-1 text-xl font-semibold leading-6">
-                <span v-if="rfcToBe">{{ rfcToBe.name }}</span>
-              </span>
-            </h1>
+          <div class="flex justify-between items-center gap-x-6 text-gray-900 dark:text-white">
+            <div class="flex  items-center gap-x-6 justify-between">
+              <Icon name="solar:document-text-line-duotone" class="w-10 h-10"/>
+              <h1>
+                <span class="mt-1 text-xl font-semibold leading-6">
+                  <span v-if="rfcToBe">{{ rfcToBe.name }}</span>
+                </span>
+              </h1>
+            </div>
           </div>
+          <BaseButton @click="openAssignmentFinishedModal">Finish assignments</BaseButton>
         </div>
       </div>
     </header>
@@ -189,16 +192,21 @@
           </div>
         </BaseCard>
       </div>
+
+      <div class="mt-6">
+        <BaseButton @click="openAssignmentFinishedModal">Finish assignments</BaseButton>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
-import type { RfcToBe } from '~/purple_client'
+import type { Assignment, RfcToBe } from '~/purple_client'
+import { overlayModalKey } from '~/providers/providerKeys';
+import AssignmentFinishedModal from '../../../components/AssignmentFinishedModal.vue'
 
 const route = useRoute()
 const api = useApi()
@@ -236,6 +244,12 @@ const appliedLabels = computed(() => labels.value.filter((lbl) => {
   if(lbl.id === undefined) return false
   return rawRfcToBe.value?.labels.includes(lbl.id)
 }))
+
+// todo retrieve assignments for a single draft more efficiently
+const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
+  () => api.assignmentsList(),
+  { server: false, default: () => [] as Assignment[] }
+)
 
 const rfcToBeAssignments = computed(() =>
   assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
@@ -312,16 +326,40 @@ watch(
   { deep: true }
 )
 
-// todo retrieve assignments for a single draft more efficiently
-const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
-  () => api.assignmentsList(),
-  { server: false, default: () => [] }
-)
-
 const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
   { server: false, default: () => [] }
 )
 
 const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
+
+const overlayModal = inject(overlayModalKey)
+
+const openAssignmentFinishedModal = () => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+  const { openOverlayModal, closeOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: AssignmentFinishedModal,
+    componentProps: {
+      assignments: rfcToBeAssignments.value,
+      people: people.value,
+      rfcToBe: rfcToBe.value,
+      onSuccess: () => {
+
+      }
+    },
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
+
 </script>
