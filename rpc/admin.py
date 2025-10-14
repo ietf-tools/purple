@@ -31,33 +31,59 @@ from .models import (
     UnusableRfcNumber,
 )
 
-admin.site.register(DumpInfo)
+
+@admin.register(DumpInfo)
+class DumpInfoAdmin(admin.ModelAdmin):
+    pass
 
 
+@admin.register(RpcPerson)
 class RpcPersonAdmin(SimpleHistoryAdmin):
     search_fields = ["datatracker_person__datatracker_id"]
     list_display = ["id", "datatracker_person", "can_hold_role__name"]
     list_display_links = ["id", "datatracker_person"]
 
 
-admin.site.register(RpcPerson, RpcPersonAdmin)
-admin.site.register(RfcToBeLabel)
+@admin.register(RfcToBeLabel)
+class RfcToBeLabelAdmin(admin.ModelAdmin):
+    pass
 
 
+@admin.register(RfcToBe)
 class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
     list_display = ["draft", "draft__rev", "rfc_number", "disposition"]
     list_filter = ["disposition"]
     search_fields = ["draft__name", "rfc_number"]
 
 
-admin.site.register(RfcToBe, RfcToBeAdmin)
+@admin.register(DispositionName)
+class DispositionNameAdmin(admin.ModelAdmin):
+    pass
 
-admin.site.register(DispositionName)
-admin.site.register(SourceFormatName)
-admin.site.register(StdLevelName)
-admin.site.register(TlpBoilerplateChoiceName)
-admin.site.register(StreamName)
-admin.site.register(DocRelationshipName)
+
+@admin.register(SourceFormatName)
+class SourceFormatNameAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(StdLevelName)
+class StdLevelNameAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TlpBoilerplateChoiceName)
+class TlpBoilerplateChoiceNameAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(StreamName)
+class StreamNameAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(DocRelationshipName)
+class DocRelationshipNameAdmin(admin.ModelAdmin):
+    pass
 
 
 class ClusterMemberInline(admin.TabularInline):
@@ -76,15 +102,18 @@ class ClusterAdmin(admin.ModelAdmin):
         return ", ".join(member.doc.name for member in cluster.clustermember_set.all())
 
 
+@admin.register(RpcRole)
 class RpcRoleAdmin(admin.ModelAdmin):
     search_fields = ["name"]
     list_display = ["name", "slug"]
 
 
-admin.site.register(RpcRole, RpcRoleAdmin)
-admin.site.register(Capability)
+@admin.register(Capability)
+class CapabilityAdmin(admin.ModelAdmin):
+    pass
 
 
+@admin.register(Assignment)
 class AssignmentAdmin(admin.ModelAdmin):
     search_fields = ["person__datatracker_person__datatracker_id"]
     list_display = ["id", "__str__", "rfc_to_be", "person", "role", "state"]
@@ -92,9 +121,7 @@ class AssignmentAdmin(admin.ModelAdmin):
     raw_id_fields = ["rfc_to_be", "person"]
 
 
-admin.site.register(Assignment, AssignmentAdmin)
-
-
+@admin.register(RfcAuthor)
 class RfcAuthorAdmin(admin.ModelAdmin):
     search_fields = [
         "datatracker_person__datatracker_id",
@@ -104,30 +131,51 @@ class RfcAuthorAdmin(admin.ModelAdmin):
     list_display = ["titlepage_name", "rfc_to_be", "is_editor"]
 
 
+@admin.register(ApprovalLogMessage)
 class ApprovalLogMessageAdmin(admin.ModelAdmin):
     list_display = ["id", "rfc_to_be", "time", "by"]
     raw_id_fields = ["rfc_to_be", "by"]
     search_fields = ["rfc_to_be", "by", "log_message"]
 
 
+@admin.register(Label)
 class LabelAdmin(admin.ModelAdmin):
     list_display = ["slug", "is_complexity", "is_exception", "color"]
     search_fields = ["slug"]
     list_filter = ["is_complexity", "is_exception", "color"]
 
 
+@admin.register(UnusableRfcNumber)
 class UnusableRfcNumberAdmin(admin.ModelAdmin):
     list_display = ["number", "comment"]
     search_fields = ["number", "comment"]
 
 
-admin.site.register(RfcAuthor, RfcAuthorAdmin)
-admin.site.register(AdditionalEmail)
-admin.site.register(FinalApproval)
-admin.site.register(ActionHolder)
-admin.site.register(RpcRelatedDocument)
-admin.site.register(RpcDocumentComment)
-admin.site.register(Label, LabelAdmin)
-admin.site.register(RpcAuthorComment)
-admin.site.register(ApprovalLogMessage, ApprovalLogMessageAdmin)
-admin.site.register(UnusableRfcNumber, UnusableRfcNumberAdmin)
+@admin.register(AdditionalEmail)
+class AdditionalEmailAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(FinalApproval)
+class FinalApprovalAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(ActionHolder)
+class ActionHolderAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(RpcRelatedDocument)
+class RpcRelatedDocumentAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(RpcDocumentComment)
+class RpcDocumentCommentAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(RpcAuthorComment)
+class RpcAuthorCommentAdmin(admin.ModelAdmin):
+    pass
