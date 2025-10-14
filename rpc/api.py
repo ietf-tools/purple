@@ -737,7 +737,13 @@ class StatsLabels(views.APIView):
         return Response({"label_stats": results})
 
 
-class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
+class UnusableRfcNumberViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet
+):
     queryset = UnusableRfcNumber.objects.all()
     serializer_class = UnusableRfcNumberSerializer
 
