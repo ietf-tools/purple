@@ -756,7 +756,7 @@ class UnusableRfcNumberViewSet(
 
         if not provided_fields.issubset(allowed_fields):
             return Response(
-                {"detail": f"Only 'comment' field can be updated."},
+                {"detail": "Only 'comment' field can be updated."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
