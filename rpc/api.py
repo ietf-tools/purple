@@ -743,11 +743,11 @@ class UnusableRfcNumberViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
-    viewsets.GenericViewSet
+    viewsets.GenericViewSet,
 ):
     queryset = UnusableRfcNumber.objects.all()
     serializer_class = UnusableRfcNumberSerializer
-    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def partial_update(self, request, *args, **kwargs):
         """Allow PATCH operations only for the comment field"""
@@ -756,9 +756,7 @@ class UnusableRfcNumberViewSet(
 
         if not provided_fields.issubset(allowed_fields):
             return Response(
-                {
-                    "detail": f"Only 'comment' field can be updated."
-                },
+                {"detail": f"Only 'comment' field can be updated."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
