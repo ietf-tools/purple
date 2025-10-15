@@ -737,9 +737,32 @@ class StatsLabels(views.APIView):
         return Response({"label_stats": results})
 
 
-class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
+class UnusableRfcNumberViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet
+):
     queryset = UnusableRfcNumber.objects.all()
     serializer_class = UnusableRfcNumberSerializer
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def partial_update(self, request, *args, **kwargs):
+        """Allow PATCH operations only for the comment field"""
+        allowed_fields = {"comment"}
+        provided_fields = set(request.data.keys())
+
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {
+                    "detail": f"Only 'comment' field can be updated."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().partial_update(request, *args, **kwargs)
 
 
 class DocRelationshipNameViewSet(viewsets.ReadOnlyModelViewSet):
