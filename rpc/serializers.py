@@ -32,6 +32,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     UnusableRfcNumber,
 )
 
@@ -354,6 +355,26 @@ class QueueItemSerializer(serializers.ModelSerializer):
             return None
 
 
+class SubseriesMemberSerializer(serializers.ModelSerializer):
+    """Serialize a SubseriesMember"""
+
+    class Meta:
+        model = SubseriesMember
+        fields = ["rfc_to_be", "std_level", "number"]
+
+
+class SubseriesSerializer(serializers.ModelSerializer):
+    """Serialize a Subseries"""
+
+    class Meta:
+        model = SubseriesMember
+        fields = ["rfc_to_be", "std_level", "number"]
+
+    def to_representation(self, instance):
+        """Return a string like bcp40"""
+        return f"{instance.std_level.slug}{instance.number}"
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
     """RfcToBeSerializer suitable for displaying full details of a single instance"""
 
@@ -370,6 +391,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     consensus = serializers.SerializerMethodField()
+
+    subseries = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -397,11 +420,19 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "rfc_number",
             "published_at",
             "consensus",
+            "subseries",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
     def get_consensus(self, obj) -> bool:
         return obj.draft.consensus
+
+    def get_subseries(self, obj):
+        """Return subseries as a string or None"""
+        subseries = obj.subseriesmember_set.first()
+        if subseries is not None:
+            return f"{subseries.std_level.slug.upper()} {subseries.number}"
+        return None
 
 
 class RfcToBeHistorySerializer(HistorySerializer):

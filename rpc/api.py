@@ -55,6 +55,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -82,6 +83,7 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    SubseriesSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -1004,3 +1006,39 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class SubseriesViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """ViewSet for Subseries"""
+
+    queryset = SubseriesMember.objects.all()
+    serializer_class = SubseriesSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["number", "std_level"]
+    lookup_field = "subseries_slug"
+
+    def list(self, request, *args, **kwargs):
+        """Return subseries data grouped by subseries name with RFC numbers"""
+        from collections import defaultdict
+
+        # Get all subseries members
+        queryset = self.get_queryset()
+
+        # Group by subseries
+        subseries_groups = defaultdict(list)
+
+        for member in queryset:
+            subseries_key = f"{member.std_level.slug}{member.number}"
+            rfc_number = member.rfc_to_be.rfc_number
+            if rfc_number:  # Only include if RFC number exists
+                subseries_groups[subseries_key].append(rfc_number)
+
+        result = {
+            key: sorted(rfc_numbers)
+            for key, rfc_numbers in subseries_groups.items()
+            if rfc_numbers
+        }
+
+        return Response(result)
