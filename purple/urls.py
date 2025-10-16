@@ -86,6 +86,7 @@ router.register(
     r"tlp_boilerplate_choice_names", rpc_api.TlpBoilerplateChoiceNameViewSet
 )
 router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
+router.register(r'subseries', rpc_api.SubseriesViewSet)
 
 urlpatterns = [
     path("health/", lambda _: HttpResponse(status=204)),  # no content

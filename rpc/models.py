@@ -202,6 +202,9 @@ class RfcToBe(models.Model):
             slug__in=[activity.role_slug for activity in pending_activities(self)]
         )
 
+    def subseries_member(self):
+        return SubseriesMember.objects.filter(rfc_to_be=self).first()
+
 
 class Name(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
@@ -825,4 +828,27 @@ class ApprovalLogMessage(models.Model):
             self.rfc_to_be,
             self.by,
             self.time.strftime("%Y-%m-%d"),
+        )
+
+
+class SubseriesMember(models.Model):
+    """Tracks which RFC belongs to which subseries and its number"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    std_level = models.ForeignKey(StdLevelName, on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be"],
+                name="unique_rfctobe",
+                violation_error_message="Each RFC can only belong to a subseries once",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"RfcToBe {self.rfc_to_be.id} is part of subseries {self.std_level.slug} "
+            f" {self.number}"
         )
