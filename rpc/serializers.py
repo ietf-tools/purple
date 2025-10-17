@@ -358,13 +358,13 @@ class QueueItemSerializer(serializers.ModelSerializer):
 class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 
-    display_string = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
 
     class Meta:
         model = SubseriesMember
-        fields = ["id", "rfc_to_be", "type", "number", "display_string"]
+        fields = ["id", "rfc_to_be", "type", "number", "display_name"]
 
-    def get_display_string(self, obj) -> str:
+    def get_display_name(self, obj) -> str:
         if not obj:
             return None
         return f"{obj.type.slug.upper()} {obj.number}"
