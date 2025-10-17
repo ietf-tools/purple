@@ -417,8 +417,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     def get_consensus(self, obj) -> bool:
         return obj.draft.consensus
 
-    def get_subseries(self, obj):
-        """Return subseries as a string or None"""
+    def get_subseries(self, obj) -> str | None:
+        """Return subseries as a string like "BCP 123" or None if not in a subseries"""
         subseries = obj.subseriesmember_set.first()
         if subseries is not None:
             return f"{subseries.std_level.slug.upper()} {subseries.number}"
