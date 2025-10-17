@@ -184,4 +184,4 @@ class RpcAuthorCommentAdmin(admin.ModelAdmin):
 
 @admin.register(SubseriesMember)
 class SubseriesMemberAdmin(admin.ModelAdmin):
-    search_fields = ["number", "std_level__slug", "rfc_to_be__rfc_number"]
+    search_fields = ["number", "type__slug", "rfc_to_be__rfc_number"]
