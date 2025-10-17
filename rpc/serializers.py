@@ -358,21 +358,11 @@ class QueueItemSerializer(serializers.ModelSerializer):
 class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 
-    class Meta:
-        model = SubseriesMember
-        fields = ["rfc_to_be", "std_level", "number"]
-
-
-class SubseriesSerializer(serializers.ModelSerializer):
-    """Serialize a Subseries"""
+    rfc_number = serializers.IntegerField(source="rfc_to_be.rfc_number", read_only=True)
 
     class Meta:
         model = SubseriesMember
-        fields = ["rfc_to_be", "std_level", "number"]
-
-    def to_representation(self, instance):
-        """Return a string like bcp40"""
-        return f"{instance.std_level.slug}{instance.number}"
+        fields = ["id", "rfc_to_be", "std_level", "number", "rfc_number"]
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):

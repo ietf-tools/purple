@@ -83,7 +83,7 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
-    SubseriesSerializer,
+    SubseriesMemberSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -1008,37 +1008,25 @@ class SearchDatatrackerPersons(ListAPIView):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
 
 
-class SubseriesViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
-):
-    """ViewSet for Subseries"""
+class SubseriesMemberViewSet(viewsets.ModelViewSet):
+    """ViewSet to track which RfcToBes have been assigned to which subseries"""
 
-    queryset = SubseriesMember.objects.all()
-    serializer_class = SubseriesSerializer
+    queryset = SubseriesMember.objects.select_related("std_level")
+    serializer_class = SubseriesMemberSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["number", "std_level"]
-    lookup_field = "subseries_slug"
+    filterset_fields = ["number", "std_level", "rfc_to_be"]
+    ordering = ["std_level", "number", "id"]
 
-    def list(self, request, *args, **kwargs):
-        """Return subseries data grouped by subseries name with RFC numbers"""
-        from collections import defaultdict
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
-        # Get all subseries members
-        queryset = self.get_queryset()
+    def partial_update(self, request, *args, **kwargs):
+        allowed_fields = {"std_level", "number"}
+        provided_fields = set(request.data.keys())
 
-        # Group by subseries
-        subseries_groups = defaultdict(list)
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {"detail": "Only 'std_level' and 'number' fields can be updated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        for member in queryset:
-            subseries_key = f"{member.std_level.slug}{member.number}"
-            rfc_number = member.rfc_to_be.rfc_number
-            if rfc_number:  # Only include if RFC number exists
-                subseries_groups[subseries_key].append(rfc_number)
-
-        result = {
-            key: sorted(rfc_numbers)
-            for key, rfc_numbers in subseries_groups.items()
-            if rfc_numbers
-        }
-
-        return Response(result)
+        return super().partial_update(request, *args, **kwargs)
