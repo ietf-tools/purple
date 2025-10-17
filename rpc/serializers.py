@@ -370,7 +370,6 @@ class SubseriesMemberSerializer(serializers.ModelSerializer):
         return f"{obj.type.slug.upper()} {obj.number}"
 
 
-
 class RfcToBeSerializer(serializers.ModelSerializer):
     """RfcToBeSerializer suitable for displaying full details of a single instance"""
 
