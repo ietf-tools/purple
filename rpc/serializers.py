@@ -32,6 +32,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     UnusableRfcNumber,
 )
 
@@ -342,6 +343,21 @@ class QueueItemSerializer(serializers.ModelSerializer):
             return None
 
 
+class SubseriesMemberSerializer(serializers.ModelSerializer):
+    """Serialize a SubseriesMember"""
+
+    display_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubseriesMember
+        fields = ["id", "rfc_to_be", "type", "number", "display_name"]
+
+    def get_display_name(self, obj) -> str:
+        if not obj:
+            return None
+        return f"{obj.type.slug.upper()} {obj.number}"
+
+
 class RfcToBeSerializer(serializers.ModelSerializer):
     """RfcToBeSerializer suitable for displaying full details of a single instance"""
 
@@ -358,6 +374,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     consensus = serializers.SerializerMethodField()
+
+    subseries = SubseriesMemberSerializer(
+        source="subseriesmember_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -385,6 +405,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "rfc_number",
             "published_at",
             "consensus",
+            "subseries",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 

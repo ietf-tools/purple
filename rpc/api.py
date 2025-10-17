@@ -53,6 +53,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -80,6 +81,7 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    SubseriesMemberSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -972,3 +974,27 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class SubseriesMemberViewSet(viewsets.ModelViewSet):
+    """ViewSet to track which RfcToBes have been assigned to which subseries"""
+
+    queryset = SubseriesMember.objects.select_related("type")
+    serializer_class = SubseriesMemberSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["number", "type", "rfc_to_be"]
+    ordering = ["type", "number", "id"]
+
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def partial_update(self, request, *args, **kwargs):
+        allowed_fields = {"type", "number"}
+        provided_fields = set(request.data.keys())
+
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {"detail": "Only 'type' and 'number' fields can be updated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().partial_update(request, *args, **kwargs)
