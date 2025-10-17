@@ -1011,21 +1011,21 @@ class SearchDatatrackerPersons(ListAPIView):
 class SubseriesMemberViewSet(viewsets.ModelViewSet):
     """ViewSet to track which RfcToBes have been assigned to which subseries"""
 
-    queryset = SubseriesMember.objects.select_related("std_level")
+    queryset = SubseriesMember.objects.select_related("type")
     serializer_class = SubseriesMemberSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["number", "std_level", "rfc_to_be"]
-    ordering = ["std_level", "number", "id"]
+    filterset_fields = ["number", "type", "rfc_to_be"]
+    ordering = ["type", "number", "id"]
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
     def partial_update(self, request, *args, **kwargs):
-        allowed_fields = {"std_level", "number"}
+        allowed_fields = {"type", "number"}
         provided_fields = set(request.data.keys())
 
         if not provided_fields.issubset(allowed_fields):
             return Response(
-                {"detail": "Only 'std_level' and 'number' fields can be updated."},
+                {"detail": "Only 'type' and 'number' fields can be updated."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 

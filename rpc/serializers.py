@@ -358,11 +358,17 @@ class QueueItemSerializer(serializers.ModelSerializer):
 class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 
-    rfc_number = serializers.IntegerField(source="rfc_to_be.rfc_number", read_only=True)
+    display_string = serializers.SerializerMethodField()
 
     class Meta:
         model = SubseriesMember
-        fields = ["id", "rfc_to_be", "std_level", "number", "rfc_number"]
+        fields = ["id", "rfc_to_be", "type", "number", "display_string"]
+
+    def get_display_string(self, obj) -> str:
+        if not obj:
+            return None
+        return f"{obj.type.slug.upper()} {obj.number}"
+
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
@@ -382,7 +388,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     consensus = serializers.SerializerMethodField()
 
-    subseries = serializers.SerializerMethodField()
+    subseries = SubseriesMemberSerializer(
+        source="subseriesmember_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -416,13 +424,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
 
     def get_consensus(self, obj) -> bool:
         return obj.draft.consensus
-
-    def get_subseries(self, obj) -> str | None:
-        """Return subseries as a string like "BCP 123" or None if not in a subseries"""
-        subseries = obj.subseriesmember_set.first()
-        if subseries is not None:
-            return f"{subseries.std_level.slug.upper()} {subseries.number}"
-        return None
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
