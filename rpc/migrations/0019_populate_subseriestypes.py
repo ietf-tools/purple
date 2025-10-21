@@ -4,15 +4,15 @@ from django.db import migrations
 
 
 def forward(apps, schema_editor):
-    SubseriesType = apps.get_model("rpc", "SubseriesType")
-    SubseriesType.objects.create(slug="bcp", name="Best Current Practice")
-    SubseriesType.objects.create(slug="std", name="Internet Standard")
-    SubseriesType.objects.create(slug="fyi", name="For Your Information")
+    SubseriesTypeName = apps.get_model("rpc", "SubseriesTypeName")
+    SubseriesTypeName.objects.create(slug="bcp", name="Best Current Practice")
+    SubseriesTypeName.objects.create(slug="std", name="Internet Standard")
+    SubseriesTypeName.objects.create(slug="fyi", name="For Your Information")
 
 
 def reverse(apps, schema_editor):
-    SubseriesType = apps.get_model("rpc", "SubseriesType")
-    SubseriesType.objects.filter(
+    SubseriesTypeName = apps.get_model("rpc", "SubseriesTypeName")
+    SubseriesTypeName.objects.filter(
         slug__in=[
             "bcp",
             "std",
@@ -23,7 +23,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0018_subseriestype_historicalsubseriesmember_and_more"),
+        ("rpc", "0018_subseriestypename_historicalsubseriesmember_and_more"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]

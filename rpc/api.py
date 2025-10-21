@@ -1,6 +1,8 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import re
+from collections import defaultdict
 from dataclasses import dataclass
 
 import rpcapi_client
@@ -83,6 +85,7 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    SubseriesListItemSerializer,
     SubseriesMemberSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
@@ -1030,3 +1033,70 @@ class SubseriesMemberViewSet(viewsets.ModelViewSet):
             )
 
         return super().partial_update(request, *args, **kwargs)
+
+
+class SubseriesViewSet(
+    viewsets.GenericViewSet, mixins.ListModelMixin, mixins.RetrieveModelMixin
+):
+    """ViewSet for listing subseries and contained RFCs"""
+
+    lookup_field = "subseries_slug"
+    lookup_value_regex = r"[a-z]+\d+"  # Matches patterns like bcp123
+
+    def get_queryset(self):
+        return SubseriesMember.objects.select_related(
+            "type", "rfc_to_be", "rfc_to_be__draft"
+        ).all()
+
+    def retrieve(self, request, subseries_slug=None):
+        """Get all RfcToBe items in a specific subseries"""
+
+        # Parse subseries slug (e.g., "bcp123" -> type="bcp", number=123)
+        match = re.match(r"^([a-z]+)(\d+)$", subseries_slug.lower())
+
+        if not match:
+            return Response(
+                {
+                    "error": "Invalid subseries format. Use format like 'bcp123', "
+                    "'std123', 'fyi123'"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        type_slug = match.group(1)
+        number = int(match.group(2))
+
+        members = self.get_queryset().filter(type__slug=type_slug, number=number)
+
+        if not members.exists():
+            raise NotFound(f"Subseries '{subseries_slug}' not found")
+
+        rfc_to_be_ids = list(members.values_list("rfc_to_be_id", flat=True))
+
+        data = SubseriesListItemSerializer.format_data(type_slug, number, rfc_to_be_ids)
+        return Response(data)
+
+    def list(self, request):
+        """List all subseries"""
+
+        # Group subseries by type and number
+        subseries_groups = defaultdict(lambda: {"rfcs": []})
+
+        members = self.get_queryset()
+        for member in members:
+            key = f"{member.type.slug}{member.number}"
+
+            if not subseries_groups[key]["rfcs"]:
+                subseries_groups[key]["type"] = member.type.slug
+                subseries_groups[key]["number"] = member.number
+
+            subseries_groups[key]["rfcs"].append(member.rfc_to_be_id)
+
+        result = []
+        for _, subseries_data in subseries_groups.items():
+            data = SubseriesListItemSerializer.format_data(
+                subseries_data["type"], subseries_data["number"], subseries_data["rfcs"]
+            )
+            result.append(data)
+
+        return Response(sorted(result, key=lambda x: (x["type"], x["number"])))

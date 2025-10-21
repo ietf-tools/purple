@@ -832,7 +832,7 @@ class SubseriesMember(models.Model):
     """Tracks which RFC belongs to which subseries and its number"""
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    type = models.ForeignKey("SubseriesType", on_delete=models.PROTECT)
+    type = models.ForeignKey("SubseriesTypeName", on_delete=models.PROTECT)
     number = models.PositiveIntegerField()
     history = HistoricalRecords()
 
@@ -853,7 +853,7 @@ class SubseriesMember(models.Model):
         )
 
 
-class SubseriesType(Name):
+class SubseriesTypeName(Name):
     """Types of subseries, e.g., BCP, FYI, STD, etc."""
 
     pass
