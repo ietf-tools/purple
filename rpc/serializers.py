@@ -376,7 +376,7 @@ class SubseriesListItemSerializer(serializers.Serializer):
     type = serializers.CharField()
     number = serializers.IntegerField()
     rfc_to_be_ids = serializers.ListField(child=serializers.IntegerField())
-    total_count = serializers.IntegerField()
+    rfc_count = serializers.IntegerField()
 
     @classmethod
     def format_data(cls, type_slug, number, rfc_to_be_ids):
@@ -388,7 +388,7 @@ class SubseriesListItemSerializer(serializers.Serializer):
             "type": type_slug,
             "number": number,
             "rfc_to_be_ids": sorted(rfc_to_be_ids),
-            "total_count": len(rfc_to_be_ids),
+            "rfc_count": len(rfc_to_be_ids),
         }
 
 
