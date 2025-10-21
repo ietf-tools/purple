@@ -6,17 +6,16 @@
     <form class="flex gap-4 whitespace-nowrap" @submit.prevent>
       <label class="text-xs">time spent:
         <input type="text" size="4" :id="props.assignment.id?.toString() ?? 'assignment'"
-          v-model="props.assignment.timeSpent"
-          class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
-          :readonly="isDone"
-          >
+          v-model="props.assignment.timeSpent" class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
+          :readonly="props.assignment.state === 'done'">
       </label>
-      <BaseButton v-if="!isDone" btnType="default" @click="finishAssignment" size="xs" :disabled="isSaving">
+      <BaseButton v-if="props.assignment.state !== 'done'" btnType="default" @click="finishAssignment" size="xs"
+        :disabled="isSaving">
         Finish
       </BaseButton>
-      <BaseBadge v-else color="green" @click="reopenAssignment">
-        done
-      </BaseBadge>
+      <button v-else @click="reopenAssignment">
+        <BaseBadge color="green">{{ props.assignment.state }}</BaseBadge>
+      </button>
     </form>
   </li>
 </template>
@@ -32,7 +31,6 @@ type Props = {
 }
 const props = defineProps<Props>()
 
-const isDone = ref(props.assignment.state === 'done')
 const isSaving = ref(false)
 
 const api = useApi()
@@ -60,9 +58,10 @@ const finishAssignment = async () => {
       throw Error("Unable to set assignment to 'done'")
     }
     props.assignment.timeSpent = updatedAssignment.timeSpent
+    props.assignment.state = updatedAssignment.state
     // if it got this far assume it was successful
-    isDone.value = true
   } catch (e) {
+    console.log(e)
     snackbarForErrors({ snackbar, error: e })
   }
   isSaving.value = false
@@ -71,7 +70,7 @@ const finishAssignment = async () => {
 
 const reopenAssignment = async () => {
   isSaving.value = true
-  const { id  } = props.assignment
+  const { id } = props.assignment
   if (id === undefined) {
     throw Error('Internal error: expected assignment to have id')
   }
@@ -85,8 +84,8 @@ const reopenAssignment = async () => {
     if (updatedAssignment.state !== 'in_progress') {
       throw Error("Unable to set assignment to 'in_progress'")
     }
+    props.assignment.state = updatedAssignment.state
     // if it got this far assume it was successful
-    isDone.value = false
   } catch (e) {
     snackbarForErrors({ snackbar, error: e })
   }
