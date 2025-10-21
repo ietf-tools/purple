@@ -192,10 +192,6 @@
           </div>
         </BaseCard>
       </div>
-
-      <div class="mt-6">
-        <BaseButton @click="openAssignmentFinishedModal">Finish assignments</BaseButton>
-      </div>
     </div>
   </div>
 </template>
@@ -341,6 +337,33 @@ const openAssignmentFinishedModal = () => {
   }
   const { openOverlayModal, closeOverlayModal } = overlayModal
 
+  if (!rfcToBeAssignments.value || rfcToBeAssignments.value.length === 0) {
+    snackbar.add({
+      type: 'warning',
+      title: `Still loading assignments...`,
+      text: 'Try again in a few seconds'
+    })
+    return
+  }
+
+  if (!people.value || people.value.length === 0) {
+    snackbar.add({
+      type: 'warning',
+      title: `Still loading people...`,
+      text: 'Try again in a few seconds'
+    })
+    return
+  }
+
+  if (!rfcToBe.value) {
+    snackbar.add({
+      type: 'warning',
+      title: `Still loading RFC details...`,
+      text: 'Try again in a few seconds'
+    })
+    return
+  }
+
   openOverlayModal({
     component: AssignmentFinishedModal,
     componentProps: {
@@ -348,7 +371,7 @@ const openAssignmentFinishedModal = () => {
       people: people.value,
       rfcToBe: rfcToBe.value,
       onSuccess: () => {
-
+        refreshAssignments()
       }
     },
     mode: 'side',

@@ -18,16 +18,13 @@
           <h2 class="text-lg font-bold w-[10em]">
             <BaseBadge :label="role" size="xl"></BaseBadge>
           </h2>
-          <ul class="">
-            <li v-for="assignment in assignments" class="flex flex-row gap-4 mb-4 justify-between items-center">
-              <div class="w-[13em] text-xs font-bold">
-                {{ getPersonNameById(assignment.person) }}:
-              </div>
-              <form class="flex gap-4">
-                <label class="text-xs">time spent: <input type="text" size="4" v-model="assignment.timeSpent" class="text-xs p-1"></label>
-                <BaseButton btnType="default" @click="" size="xs">Finish</BaseButton>
-              </form>
-            </li>
+          <ul>
+            <AssignmentFinishedModalPerson
+              v-for="assignment in assignments"
+              :assignment="assignment"
+              :on-success="props.onSuccess"
+              :person-name="getPersonNameById(assignment.person)"
+            />
           </ul>
         </li>
         <li v-else class="italic">
@@ -59,7 +56,7 @@ const assignmentsByRolesObj = groupBy(
 const assignmentsByRoles = ref(Object.entries(assignmentsByRolesObj).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)))
 
 const getPersonNameById = (personId?: number | null): string => {
-  if (personId === undefined || personId === null) return 'Unknown'
+  if (personId === undefined || personId === null) return '(System)'
   const person = props.people.find(person => person.id === personId)
   return person?.name ?? 'Unknown'
 }
@@ -71,20 +68,5 @@ if (!overlayModalKeyInjection) {
 }
 
 const { closeOverlayModal } = overlayModalKeyInjection
-
-const canSave = ref(false)
-
-const isSaving = ref(false)
-
-const api = useApi()
-
-const snackbar = useSnackbar()
-
-const saveChanges = async () => {
-  isSaving.value = true
-  // if it got this far assume it was successful
-  props.onSuccess() // triggers reload of page table data
-  closeOverlayModal()
-}
 
 </script>
