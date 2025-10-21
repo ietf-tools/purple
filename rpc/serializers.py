@@ -211,10 +211,9 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     def to_internal_value(self, data):
         # For partial updates, add "state" field to avoid constraint violations
-        if getattr(self, 'partial', False) and self.instance:
-            if 'state' not in data:
-                existing_value = getattr(self.instance, 'state')
-                data['state'] = existing_value
+        if getattr(self, "partial", False) and self.instance:
+            if "state" not in data:
+                data["state"] = self.instance.state
 
         return super().to_internal_value(data)
 
