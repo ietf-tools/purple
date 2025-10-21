@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="SubseriesType",
+            name="SubseriesTypeName",
             fields=[
                 (
                     "slug",
@@ -76,7 +76,7 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
-                        to="rpc.subseriestype",
+                        to="rpc.subseriestypename",
                     ),
                 ),
             ],
@@ -111,7 +111,7 @@ class Migration(migrations.Migration):
                     "type",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        to="rpc.subseriestype",
+                        to="rpc.subseriestypename",
                     ),
                 ),
             ],
