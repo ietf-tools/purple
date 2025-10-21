@@ -209,6 +209,15 @@ class AssignmentSerializer(serializers.ModelSerializer):
             "time_spent",
         ]
 
+    def to_internal_value(self, data):
+        # For partial updates, add "state" field to avoid constraint violations
+        if getattr(self, 'partial', False) and self.instance:
+            if 'state' not in data:
+                existing_value = getattr(self.instance, 'state')
+                data['state'] = existing_value
+
+        return super().to_internal_value(data)
+
 
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
