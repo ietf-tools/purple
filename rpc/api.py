@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Max, Q, Prefetch, OuterRef, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -39,6 +39,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
 from .models import (
+    ActionHolder,
     Assignment,
     Capability,
     Cluster,
@@ -55,6 +56,7 @@ from .models import (
     StreamName,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
+    ASSIGNMENT_INACTIVE_STATES,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
@@ -427,7 +429,37 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # lists its contents. Normally we'd expect the List action to list queues and
     # the Retrieve action to retrieve a single queue. That does not apply to our
     # concept of a singular queue, so I'm using this because it works.
-    queryset = RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+    HistoricalRfcToBe = RfcToBe.history.model
+    enqueued_at_sq = Subquery(
+        HistoricalRfcToBe.objects.filter(id=OuterRef("pk"), history_type="+")
+        .order_by("history_date")
+        .values("history_date")[:1]
+    )
+
+    queryset = (
+        RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+        .annotate(enqueued_at=enqueued_at_sq)
+        .select_related(
+            "draft",
+        )
+        .prefetch_related(
+            "labels",
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.exclude(
+                    state__in=ASSIGNMENT_INACTIVE_STATES
+                ).select_related("person__datatracker_person", "role"),
+                to_attr="active_assignments",
+            ),
+            Prefetch(
+                "actionholder_set",
+                queryset=ActionHolder.objects.filter(
+                    completed__isnull=True
+                ).select_related("datatracker_person"),
+                to_attr="active_actionholders",
+            ),
+        )
+    )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["disposition"]
