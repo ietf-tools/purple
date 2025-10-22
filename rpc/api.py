@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Q, Prefetch, OuterRef, Subquery
+from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -39,6 +39,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
 from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
     Assignment,
     Capability,
@@ -56,7 +57,6 @@ from .models import (
     StreamName,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
-    ASSIGNMENT_INACTIVE_STATES,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
