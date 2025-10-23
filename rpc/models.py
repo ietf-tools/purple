@@ -826,3 +826,34 @@ class ApprovalLogMessage(models.Model):
             self.by,
             self.time.strftime("%Y-%m-%d"),
         )
+
+
+class SubseriesMember(models.Model):
+    """Tracks which RFC belongs to which subseries and its number"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    type = models.ForeignKey("SubseriesTypeName", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "type", "number"],
+                name="unique_subseries_member",
+                violation_error_message="an RfcToBe can only be in the same subseries "
+                "once",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"RfcToBe {self.rfc_to_be.id} is part of subseries {self.type.slug} "
+            f" {self.number}"
+        )
+
+
+class SubseriesTypeName(Name):
+    """Types of subseries, e.g., BCP, FYI, STD, etc."""
+
+    pass
