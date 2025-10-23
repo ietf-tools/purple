@@ -310,10 +310,10 @@ class QueueItemSerializer(serializers.ModelSerializer):
     cluster = SimpleClusterSerializer(read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
-        source="assignment_set.active", many=True, read_only=True
+        source="active_assignments", many=True, read_only=True
     )
     actionholder_set = ActionHolderSerializer(
-        source="actionholder_set.active", many=True, read_only=True
+        source="active_actionholders", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     enqueued_at = serializers.SerializerMethodField()
@@ -340,6 +340,10 @@ class QueueItemSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.DateField())
     def get_enqueued_at(self, obj):
         """Get the date when the RFC was added to the queue"""
+        # Use annotated value if present to avoid per-row history queries
+        annotated = getattr(obj, "enqueued_at", None)
+        if annotated is not None:
+            return annotated
         try:
             create_history = obj.history.filter(history_type="+").earliest(
                 "history_date"
