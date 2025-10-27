@@ -399,9 +399,9 @@ class SubseriesDocSerializer(serializers.Serializer):
     type = serializers.CharField()
     number = serializers.IntegerField()
     members = serializers.ListField(child=serializers.IntegerField())
-    rfc_count = serializers.ReadOnlyField()
-    slug = serializers.ReadOnlyField()
-    display_name = serializers.ReadOnlyField()
+    rfc_count = serializers.IntegerField(read_only=True)
+    slug = serializers.CharField(read_only=True)
+    display_name = serializers.CharField(read_only=True)
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
