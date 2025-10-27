@@ -27,6 +27,10 @@
             @change="(tristate: TristateValue) => hasExceptionTristate = tristate">
             Has Exception?
           </RpcTristateButton>
+          <RpcTristateButton :checked="isBlockedTristate"
+            @change="(tristate: TristateValue) => isBlockedTristate = tristate">
+            Is Blocked?
+          </RpcTristateButton>
         </div>
       </fieldset>
       <fieldset class="w-64">
@@ -150,6 +154,7 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
 const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
+const isBlockedTristate = ref<TristateValue>(TRISTATE_MIXED)
 const selectedLabelFilters = ref<Record<number, TristateValue>>({})
 const selectedRoleFilter = ref<string | null>(null)
 
@@ -415,6 +420,7 @@ const table = useVueTable({
       return JSON.stringify([
         needsAssignmentTristate.value,
         hasExceptionTristate.value,
+        isBlockedTristate.value,
         selectedLabelFilters.value,
         selectedRoleFilter.value,
         searchQuery.value
@@ -468,7 +474,17 @@ const table = useVueTable({
       }
     }
 
-    if (!(needsAssignmentFilterFn() && hasExceptionFilterFn())) {
+    const isBlockedFilterFn = () => {
+      if (isBlockedTristate.value === true) {
+        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length > 0 : false)
+      } else if (isBlockedTristate.value === false) {
+        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length === 0 : true)
+      } else if (isBlockedTristate.value == TRISTATE_MIXED) {
+        return true
+      }
+    }
+
+    if (!(needsAssignmentFilterFn() && hasExceptionFilterFn() && isBlockedFilterFn())) {
       return false
     }
 
