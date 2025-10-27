@@ -359,37 +359,49 @@ class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 
     display_name = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
 
     class Meta:
         model = SubseriesMember
-        fields = ["id", "rfc_to_be", "type", "number", "display_name"]
+        fields = ["id", "rfc_to_be", "type", "number", "display_name", "slug"]
 
     def get_display_name(self, obj) -> str:
         if not obj:
             return None
         return f"{obj.type.slug.upper()} {obj.number}"
 
+    def get_slug(self, obj) -> str:
+        if not obj:
+            return None
+        return f"{obj.type.slug.lower()}{obj.number}"
 
-class SubseriesListItemSerializer(serializers.Serializer):
-    slug = serializers.CharField()
-    display_name = serializers.CharField()
+
+@dataclass
+class SubseriesDoc:
+    type: str
+    number: int
+    members: list[int]
+
+    @property
+    def rfc_count(self):
+        return len(self.members)
+
+    @property
+    def display_name(self):
+        return f"{self.type.upper()} {self.number}"
+
+    @property
+    def slug(self):
+        return f"{self.type.lower()}{self.number}"
+
+
+class SubseriesDocSerializer(serializers.Serializer):
     type = serializers.CharField()
     number = serializers.IntegerField()
-    rfc_to_be_ids = serializers.ListField(child=serializers.IntegerField())
-    rfc_count = serializers.IntegerField()
-
-    @classmethod
-    def format_data(cls, type_slug, number, rfc_to_be_ids):
-        """Helper to format data for serialization"""
-
-        return {
-            "slug": f"{type_slug.lower()}{number}",
-            "display_name": f"{type_slug.upper()} {number}",
-            "type": type_slug,
-            "number": number,
-            "rfc_to_be_ids": sorted(rfc_to_be_ids),
-            "rfc_count": len(rfc_to_be_ids),
-        }
+    members = serializers.ListField(child=serializers.IntegerField())
+    rfc_count = serializers.ReadOnlyField()
+    slug = serializers.ReadOnlyField()
+    display_name = serializers.ReadOnlyField()
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
