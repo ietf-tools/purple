@@ -85,9 +85,9 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
-    SubseriesDoc,
-    SubseriesDocSerializer,
+    Subseries,
     SubseriesMemberSerializer,
+    SubseriesSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -1041,7 +1041,7 @@ class SubseriesViewSet(
 ):
     """ViewSet for listing subseries and contained RFCs"""
 
-    serializer_class = SubseriesDocSerializer
+    serializer_class = SubseriesSerializer
 
     lookup_field = "subseries_slug"
     lookup_value_regex = r"[a-z]+\d+"  # Matches patterns like bcp123
@@ -1068,19 +1068,9 @@ class SubseriesViewSet(
 
         type_slug = match.group(1)
         number = int(match.group(2))
+        subseries = Subseries(type=type_slug, number=number)
+        serializer = SubseriesSerializer(subseries)
 
-        members = self.get_queryset().filter(type__slug=type_slug, number=number)
-
-        if not members.exists():
-            raise NotFound(f"Subseries '{subseries_slug}' not found")
-
-        rfc_to_be_ids = list(members.values_list("rfc_to_be_id", flat=True))
-
-        subseries_doc = SubseriesDoc(
-            type=type_slug, number=number, members=rfc_to_be_ids
-        )
-
-        serializer = SubseriesDocSerializer(subseries_doc)
         return Response(serializer.data)
 
     def list(self, request):
@@ -1097,16 +1087,12 @@ class SubseriesViewSet(
                 subseries_groups[key]["type"] = member.type.slug
                 subseries_groups[key]["number"] = member.number
 
-            subseries_groups[key]["rfcs"].append(member.rfc_to_be_id)
-
         result = []
         for _, subseries_data in subseries_groups.items():
-            subseries_doc = SubseriesDoc(
-                type=subseries_data["type"],
-                number=subseries_data["number"],
-                members=subseries_data["rfcs"],
+            subseries = Subseries(
+                type=subseries_data["type"], number=subseries_data["number"]
             )
-            serializer = SubseriesDocSerializer(subseries_doc)
+            serializer = SubseriesSerializer(subseries)
             result.append(serializer.data)
 
         return Response(sorted(result, key=lambda x: (x["type"], x["number"])))

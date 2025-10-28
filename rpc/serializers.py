@@ -378,30 +378,61 @@ class SubseriesMemberSerializer(serializers.ModelSerializer):
 
 @dataclass
 class SubseriesDoc:
-    type: str
-    number: int
-    members: list[int]
-
-    @property
-    def rfc_count(self):
-        return len(self.members)
-
-    @property
-    def display_name(self):
-        return f"{self.type.upper()} {self.number}"
-
-    @property
-    def slug(self):
-        return f"{self.type.lower()}{self.number}"
+    name: str
+    rfc_number: int
 
 
 class SubseriesDocSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    rfc_number = serializers.IntegerField()
+
+
+@dataclass
+class Subseries:
+    type: str
+    number: int
+
+
+class SubseriesSerializer(serializers.Serializer):
     type = serializers.CharField()
     number = serializers.IntegerField()
-    members = serializers.ListField(child=serializers.IntegerField())
-    rfc_count = serializers.IntegerField(read_only=True)
-    slug = serializers.CharField(read_only=True)
-    display_name = serializers.CharField(read_only=True)
+    documents = serializers.SerializerMethodField()
+    rfc_count = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+    display_name = serializers.SerializerMethodField()
+
+    @extend_schema_field(SubseriesDocSerializer(many=True))
+    def get_documents(self, obj):
+        type_slug = obj.type
+        number = obj.number
+
+        documents = SubseriesMember.objects.select_related("rfc_to_be__draft").filter(
+            type__slug=type_slug, number=number
+        )
+        docs = []
+        for doc in documents:
+            rfc_to_be = doc.rfc_to_be
+            draft = getattr(rfc_to_be, "draft", None) if rfc_to_be else None
+            if rfc_to_be and draft:
+                docs.append(
+                    {
+                        "name": draft.name,
+                        "rfc_number": rfc_to_be.rfc_number,
+                    }
+                )
+        return docs
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_rfc_count(self, obj):
+        return len(self.get_documents(obj))
+
+    @extend_schema_field(serializers.CharField())
+    def get_slug(self, obj):
+        return f"{obj.type.lower()}{obj.number}"
+
+    @extend_schema_field(serializers.CharField())
+    def get_display_name(self, obj):
+        return f"{obj.type.upper()} {obj.number}"
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
