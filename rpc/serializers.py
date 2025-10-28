@@ -376,32 +376,26 @@ class SubseriesMemberSerializer(serializers.ModelSerializer):
         return f"{obj.type.slug.lower()}{obj.number}"
 
 
-@dataclass
-class MinimalRfcToBe:
-    """Minimal representation of an RfcToBe suitable for displaying lists of RfcToBes"""
-
-    name: str
-    rfc_number: int
-
-
-class MinimalRfcToBeSerializer(serializers.Serializer):
-    name = serializers.CharField(source="rfc_to_be.draft.name")
-    rfc_number = serializers.IntegerField(source="rfc_to_be.rfc_number")
+class MinimalRfcToBeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RfcToBe
+        fields = ["name", "rfc_number"]
 
 
 @dataclass
 class SubseriesDoc:
-    """Representation of a single Subseries Document (e.g. BCP 123) and its containing
+    """Representation of a single Subseries Doc (e.g. BCP 123) and its containing
     RFCs"""
 
     type: str
     number: int
 
     @property
-    def documents(self) -> list[MinimalRfcToBe]:
-        return SubseriesMember.objects.select_related("rfc_to_be__draft").filter(
-            type__slug=self.type, number=self.number
-        )
+    def documents(self) -> list[RfcToBe]:
+        return RfcToBe.objects.filter(
+            subseriesmember__type__slug=self.type,
+            subseriesmember__number=self.number,
+        ).prefetch_related("subseriesmember_set")
 
     @property
     def rfc_count(self) -> int:
