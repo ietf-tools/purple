@@ -85,9 +85,9 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
-    Subseries,
+    SubseriesDoc,
+    SubseriesDocSerializer,
     SubseriesMemberSerializer,
-    SubseriesSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -1041,7 +1041,7 @@ class SubseriesViewSet(
 ):
     """ViewSet for listing subseries and contained RFCs"""
 
-    serializer_class = SubseriesSerializer
+    serializer_class = SubseriesDocSerializer
 
     lookup_field = "subseries_slug"
     lookup_value_regex = r"[a-z]+\d+"  # Matches patterns like bcp123
@@ -1068,8 +1068,8 @@ class SubseriesViewSet(
 
         type_slug = match.group(1)
         number = int(match.group(2))
-        subseries = Subseries(type=type_slug, number=number)
-        serializer = SubseriesSerializer(subseries)
+        subseries = SubseriesDoc(type=type_slug, number=number)
+        serializer = SubseriesDocSerializer(subseries)
 
         return Response(serializer.data)
 
@@ -1089,10 +1089,10 @@ class SubseriesViewSet(
 
         result = []
         for _, subseries_data in subseries_groups.items():
-            subseries = Subseries(
+            subseries = SubseriesDoc(
                 type=subseries_data["type"], number=subseries_data["number"]
             )
-            serializer = SubseriesSerializer(subseries)
+            serializer = SubseriesDocSerializer(subseries)
             result.append(serializer.data)
 
         return Response(sorted(result, key=lambda x: (x["type"], x["number"])))
