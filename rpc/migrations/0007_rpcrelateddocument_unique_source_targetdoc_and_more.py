@@ -13,10 +13,21 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="rpcrelateddocument",
             constraint=models.UniqueConstraint(
-                fields=("source", "target_document", "target_rfctobe", "relationship"),
-                name="unique_source_target_relationship",
-                violation_error_message="A source/target relationship must be unique "
-                "per relationship type.",
+                condition=models.Q(("target_document__isnull", False)),
+                fields=("source", "target_document", "relationship"),
+                name="unique_source_targetdoc_relationship",
+                violation_error_message="A source/target_document/relationship "
+                "combination must be unique.",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="rpcrelateddocument",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("target_rfctobe__isnull", False)),
+                fields=("source", "target_rfctobe", "relationship"),
+                name="unique_source_targetrfctobe_relationship",
+                violation_error_message="A source/target_rfctobe/relationship "
+                "combination must be unique.",
             ),
         ),
     ]
