@@ -391,7 +391,8 @@ class MinimalRfcToBeSerializer(serializers.Serializer):
 
 @dataclass
 class SubseriesDoc:
-    """Representation of a single Subseries Doc (e.g. BCP 123) and its containing RFCs"""
+    """Representation of a single Subseries Document (e.g. BCP 123) and its containing
+    RFCs"""
 
     type: str
     number: int
