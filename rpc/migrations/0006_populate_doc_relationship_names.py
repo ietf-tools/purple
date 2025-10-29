@@ -45,7 +45,7 @@ def forward(apps, schema_editor):
 def reverse(apps, schema_editor):
     DocRelationshipName = apps.get_model("rpc", "DocRelationshipName")
     DocRelationshipName.objects.filter(
-        slug__in=["not-received", "refqueue", "withdrawnref"]
+        slug__in=["not-received", "refqueue", "withdrawnref", "obs", "updates"]
     ).delete()
 
 
