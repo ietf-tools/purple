@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import IntegrityError
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import empty
@@ -391,7 +392,7 @@ class SubseriesDoc:
     number: int
 
     @property
-    def documents(self) -> list[RfcToBe]:
+    def documents(self) -> QuerySet[RfcToBe]:
         return RfcToBe.objects.filter(
             subseriesmember__type__slug=self.type,
             subseriesmember__number=self.number,
