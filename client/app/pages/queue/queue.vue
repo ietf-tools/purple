@@ -313,40 +313,47 @@ const columns = [
               console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
               throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
             }
-            // the first assignment of person should always match the current assignment of person
-            // because there shouldn't be redundant assignments
+            // the first assignment of person in the list of assignments should always match the current assignment of person
+            // because there shouldn't be duplicate/redundant assignments
             // but if the id is different then it is a redundant assignment,
             // so we'll prompt the user to delete them
             return assignment.id !== firstAssignmentOfPersonToRole.id
           })
 
-          listItems.push(h('li', {}, [
-            h(BaseBadge, { label: role, class: 'mr-1' }),
-            ...assignmentsOfRole.map(assignment => {
-              const rpcPerson = people.value.find((p) => p.id === assignment.person)
-              return h(Anchor, {
-                href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-                class: [ANCHOR_STYLE, 'text-sm nowrap']
-              }, () => [
-                rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
-              ])
-            }).reduce((acc, item, index, arr) => {
-              acc.push(item)
-              if (index < arr.length - 1) {
-                acc.push(', ')
-              } else {
-                acc.push(' ')
-              }
-              return acc
-            }, [] as (VNode | string)[]),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
-            ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
-              return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
-            })
+          listItems.push(h('li', { class: 'flex gap-3' }, [
+            h('span',
+              h(BaseBadge, { label: role, class: 'mr-1' })),
+            h('ul', { class: 'flex flex-col gap-2' }, [
+              ...assignmentsOfRole.map(assignment => {
+                const rpcPerson = people.value.find((p) => p.id === assignment.person)
+                return h(Anchor, {
+                  href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+                  class: [ANCHOR_STYLE, 'text-sm nowrap']
+                }, () => [
+                  rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
+                ])
+              }).reduce((acc, item, index, arr) => {
+                // add commas between items
+                const listItemChildren = []
+                listItemChildren.push(item)
+                if (index < arr.length - 1) {
+                  listItemChildren.push(', ')
+                } else {
+                  listItemChildren.push(' ')
+                }
+                const listItem = h('li', listItemChildren)
+                acc.push(listItem)
+                return acc
+              }, [] as (VNode | string)[])]),
+            h('span', [
+              h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
+              ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
+                return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
+              })])
           ]))
         }
 
-        return h('ul', {}, listItems)
+        return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
       },
       enableSorting: false,
     }
@@ -380,10 +387,10 @@ const columns = [
           throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
         }
 
-        return h('ul', {}, value.map(rpcRole =>
-          h('li', {}, [
-            h(BaseBadge, { label: rpcRole.name }),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign'),
+        return h('ul', { class: 'flex flex-col gap-3' }, value.map(rpcRole =>
+          h('li', { class: 'flex flex-row gap-2' }, [
+            h('div', h(BaseBadge, { label: rpcRole.slug })),
+            h('div', h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign')),
           ])
         ))
       },
