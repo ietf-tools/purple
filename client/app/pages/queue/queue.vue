@@ -219,13 +219,25 @@ const columns = [
         )
       },
       sortingFn: (rowA, rowB, columnId) => {
+        const now = DateTime.now()
+
         const a = rowA.getValue(columnId)
-        const b = rowB.getValue(columnId)
-        if(typeof a !== 'number' || typeof b !== 'number') {
-          console.warn(`sortingFn expected column ${JSON.stringify(columnId)} to be a number`)
-          return 0
+        if (!(a instanceof Date)) {
+          console.error("Not date was", a)
+          throw Error(`Expected date but was something else. See console.`)
         }
-        return (a > b) ? 1 : (a < b) ? -1 : 0
+        const aDateTime = DateTime.fromJSDate(a)
+        const aDiffInDays = now.diff(aDateTime, 'days').days
+
+        const b = rowB.getValue(columnId)
+        if (!(b instanceof Date)) {
+          console.error("Not date was", b)
+          throw Error(`Expected date but was something else. See console.`)
+        }
+        const bDateTime = DateTime.fromJSDate(b)
+        const bDiffInDays = now.diff(bDateTime, 'days').days
+
+        return (aDiffInDays > bDiffInDays) ? 1 : (aDiffInDays < bDiffInDays) ? -1 : 0
       },
     }
   ),
