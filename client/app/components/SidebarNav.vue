@@ -129,7 +129,7 @@ const navigation: Navigation[] = [
   { name: 'My Documents', href: '/docs', icon: h(Icon, { name: 'solar:documents-minimalistic-line-duotone' }) },
   { name: 'Team', href: '/team', icon: h(Icon, { name: 'solar:users-group-rounded-bold-duotone' }) },
   { name: 'Statistics', href: '/stats', icon: h(Icon, { name: 'solar:chart-line-duotone' }) },
-  { name: 'Final Reviews', href: '/auth48', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
+  { name: 'Final Review', href: '/final-review', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
 ]
 
 type Team = {
