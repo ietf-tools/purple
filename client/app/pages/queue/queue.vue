@@ -33,23 +33,42 @@
           </RpcTristateButton>
         </div>
       </fieldset>
-      <fieldset class="w-64">
-        <legend class="font-bold text-sm flex items-end">
-          Current Assignment Role
-          <span class="text-md">&nbsp;</span>
-        </legend>
-          <div class="flex flex-col pt-1">
-            <select
-              v-model="selectedRoleFilter"
-              class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="null">All Roles</option>
-              <option v-for="role in allRoles" :key="role" :value="role">
-                {{ role }}
-              </option>
-            </select>
-          </div>
-      </fieldset>
+      <div class="w-64 flex flex-col gap-4">
+        <fieldset>
+          <legend class="font-bold text-sm flex items-end">
+            Current Assignment Role
+            <span class="text-md">&nbsp;</span>
+          </legend>
+            <div class="flex flex-col pt-1">
+              <select
+                v-model="selectedRoleFilter"
+                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option :value="null">All Roles</option>
+                <option v-for="role in allRoles" :key="role" :value="role">
+                  {{ role }}
+                </option>
+              </select>
+            </div>
+        </fieldset>
+        <fieldset>
+          <legend class="font-bold text-sm flex items-end">
+            Pending Assignment Role
+            <span class="text-md">&nbsp;</span>
+          </legend>
+            <div class="flex flex-col pt-1">
+              <select
+                v-model="selectedPendingRoleFilter"
+                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option :value="null">All Roles</option>
+                <option v-for="role in allPendingRoles" :key="role" :value="role">
+                  {{ role }}
+                </option>
+              </select>
+            </div>
+        </fieldset>
+      </div>
       <fieldset class="flex-1">
         <legend class="font-bold text-sm flex items-end">
           Label
@@ -396,6 +415,18 @@ const allRoles = computed(() => {
   return [...new Set(roles)].sort()
 })
 
+const allPendingRoles = computed(() => {
+  if (data.value === undefined) {
+    return []
+  }
+  const roleSlugs = data.value.flatMap(
+    (doc) => doc.pendingActivities?.map(role => role.slug) || []
+  )
+  return [...new Set(roleSlugs)].sort()
+})
+
+const selectedPendingRoleFilter = ref(null)
+
 const allLabelFilters = computed(() => {
   if (data.value === undefined) {
     return []
@@ -423,6 +454,7 @@ const table = useVueTable({
         isBlockedTristate.value,
         selectedLabelFilters.value,
         selectedRoleFilter.value,
+        selectedPendingRoleFilter.value,
         searchQuery.value
       ])
     },
@@ -448,6 +480,13 @@ const table = useVueTable({
 
     if (selectedRoleFilter.value) {
       const hasRole = d.assignmentSet?.some(assignment => assignment.role === selectedRoleFilter.value)
+      if (!hasRole) {
+        return false
+      }
+    }
+
+    if (selectedPendingRoleFilter.value) {
+      const hasRole = d.pendingActivities?.some(role => role.slug === selectedPendingRoleFilter.value)
       if (!hasRole) {
         return false
       }
