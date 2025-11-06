@@ -141,21 +141,13 @@ type Team = {
 
 const teams: Team[] = []
 
-const links = computed(() => {
-  const val = userStore.isManager
-    ? [
-        { name: 'Manage RFC Numbers', href: '/rfcs', icon: h(Icon, { name: 'fluent-mdl2:number-field' }) },
-        { name: 'Cluster Management', href: '/clusters', icon: h(Icon, { name: 'pajamas:group' }) },
-        { name: 'Legal Requests', href: '/legal', icon: h(Icon, { name: 'octicon:law-24' }) }
-      ]
-    : []
+const links: Navigation[] = [
+  { name: 'Manage RFC Numbers', href: '/rfcs', icon: h(Icon, { name: 'fluent-mdl2:number-field' }) },
+  { name: 'Cluster Management', href: '/clusters', icon: h(Icon, { name: 'pajamas:group' }) },
+  { name: 'Legal Requests', href: '/legal', icon: h(Icon, { name: 'octicon:law-24' }) },
+  { name: 'Manage Labels', href: '/labels', icon: h(Icon, { name: 'pajamas:labels' }) }
+]
 
-  // links for everyone
-  val.push(
-    { name: 'Manage Labels', href: '/labels', icon: h(Icon, { name: 'pajamas:labels' }) }
-  )
-  return val
-})
 
 // METHODS
 
