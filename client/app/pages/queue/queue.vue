@@ -137,7 +137,7 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { sortDate } from '~/utils/queue'
+import { calculatePeopleWorkload, sortDate } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
@@ -662,39 +662,7 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     return
   }
 
-  // Calculate the workload of an editor
-  const peopleWorkload: Record<number, RpcPersonWorkload> = {}
-  const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
-    assertIsNumber(personId)
-
-    assert(role.length !== 0)
-    assert(typeof pageCount === 'number')
-
-    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
-    if (clusterIds !== undefined) {
-      clusterIds.forEach(clusterId => {
-        if (!editorWorkload.clusterIds.includes(clusterId)) {
-          editorWorkload.clusterIds.push(clusterId)
-        }
-      })
-    }
-    editorWorkload.pageCountByRole[role] = (editorWorkload.pageCountByRole[role] ?? 0) + pageCount
-
-    peopleWorkload[personId] = editorWorkload
-  }
-  data.value.forEach(doc => {
-    const clustersWithDocument = clusters.value.filter(cluster => cluster.documents.some(clusterDocument =>
-      clusterDocument.name === doc.name
-    ))
-    const clusterIds = clustersWithDocument.map(cluster => cluster.number)
-    doc.assignmentSet?.forEach(assignment => {
-      if (assignment.person !== undefined && assignment.person !== null) {
-        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
-      } else {
-        console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
-      }
-    })
-  })
+  const peopleWorkload = calculatePeopleWorkload(clusters.value, data.value)
 
   openOverlayModal({
     component: AssignmentModal,
