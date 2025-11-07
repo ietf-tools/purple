@@ -230,7 +230,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 
     def get_queryset(self):
         user = self.request.user
-        req_person_id = self.kwargs["person_id"]
+        req_person_id = int(self.kwargs["person_id"])
 
         queryset = (
             super()
@@ -250,7 +250,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         if (
             dt_person is None
             or not hasattr(dt_person, "rpcperson")
-            or dt_person.rpc_person.id != req_person_id
+            or dt_person.rpcperson.id != req_person_id
         ):
             raise PermissionDenied("Unauthorized request")
 
