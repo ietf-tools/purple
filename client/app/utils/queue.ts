@@ -106,7 +106,7 @@ export type RpcPersonWorkload = {
 export type RpcPeopleWorkload = Record<number, RpcPersonWorkload>
 
 /**
- * Calculate the workload of an editor
+ * Calculate the workload of people
  */
 export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<QueueItem, 'id' | 'name' | 'assignmentSet' | 'pages'>[]): RpcPeopleWorkload => {
   const peopleWorkload: Record<number, RpcPersonWorkload> = {}
