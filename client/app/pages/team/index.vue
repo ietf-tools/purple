@@ -128,7 +128,7 @@ const columns = [
     cell: data => {
       return h(Anchor, { href: `/team/${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
-        ` (#${data.row.original.id}${isActiveFilter.value === false ? `, ${data.row.original.isActive ? 'active' : 'inactive' }` : ''})`
+        h('span', { class: 'font-normal text-gray-600 dark:text-gray-200 ml-1' }, ` (#${data.row.original.id}${isActiveFilter.value === false ? `, ${data.row.original.isActive ? 'active' : 'inactive' }` : ''})`)
       ])
     },
     sortingFn: 'alphanumeric',
@@ -138,6 +138,11 @@ const columns = [
     header: 'Roles',
     cell: data => {
       const roles = data.getValue()
+
+      if (roles.length === 0) {
+        return h('i', '(none)')
+      }
+
       return h('ul', { class: ''}, roles.map(
         role => h('li', { class: ''}, [
           h(BaseBadge, { label: role.slug, class: 'mr-1' }),
@@ -152,6 +157,11 @@ const columns = [
     header: 'Capabilities',
     cell: data => {
       const capabilities = data.getValue()
+
+      if (capabilities.length === 0) {
+        return h('i', '(none)')
+      }
+
       return h('ul', { class: ''}, capabilities.map(
         capability => h('li', { class: ''}, [
           JSON.stringify(capability)
