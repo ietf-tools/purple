@@ -1,72 +1,88 @@
 <template>
   <div>
-    <TitleBlock
-      title="Manage Team Members"
+    <TitleBlock title="Manage Team Members"
       summary="A list of all the users having access to this tool.">
       <template #right>
-        <RefreshButton :pending="pending" class="mr-3" @refresh="refresh"/>
-        <button
-          v-if="userStore.isManager"
-          type="button"
+        <RefreshButton :pending="pending" class="mr-3" @refresh="refresh" />
+        <button v-if="userStore.isManager" type="button"
           class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           @click="newTeamMember">
-          <Icon name="uil:plus" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true"/>
+          <Icon name="uil:plus" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true" />
           New Team Member
         </button>
       </template>
     </TitleBlock>
-    <div class="mt-8 flow-root">
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            <table class="min-w-full divide-y divide-gray-300 dark:divide-neutral-600">
-              <thead class="bg-gray-50 dark:bg-neutral-800">
-              <tr>
-                <th
-                  scope="col"
-                  class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 dark:text-neutral-400 sm:pl-6">
-                  Name
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-neutral-400">
-                  Roles
-                </th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-neutral-400">
-                  Expertise
-                </th>
-              </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
-              <tr v-for="person in people" :key="person.id">
-                <td
-                  class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 dark:text-neutral-100 sm:pl-6">
-                  <NuxtLink
-                    :to="`/team/${person.id}`"
-                    class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100">
-                    {{ person.name }}
-                  </NuxtLink>
-                </td>
-                <td class="px-3 py-4 text-xs text-gray-500 dark:text-neutral-400">
-                  {{ person.roles.map(r => r.name).join(', ') }}
-                </td>
-                <td class="px-3 py-4 text-xs text-gray-500 dark:text-neutral-400">
-                  {{ person.capabilities.map(r => r.name).join(', ') }}
-                </td>
-              </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+
+    <ErrorAlert v-if="error">
+      {{ error }}
+    </ErrorAlert>
+
+    <h2 class="font-bold mt-5">Filters</h2>
+    <div class="ml-1">
+      <RpcCheckbox
+        label="Only show active?"
+        :value="true"
+        :checked="isActiveFilter"
+        @change="isActiveFilter = !isActiveFilter"
+        size='medium'
+        class="mr-3"
+      />
     </div>
+
+    <RpcTable class="mt-5">
+      <RpcThead>
+        <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+            @click="header.column.getToggleSortingHandler()?.($event)">
+            <div class="flex items-center gap-2">
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                :props="header.getContext()" />
+              <Transition name="sort-indicator">
+                <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                  class="text-gray-400 opacity-60 hover:opacity-100" />
+              </Transition>
+            </div>
+          </RpcTh>
+        </tr>
+      </RpcThead>
+      <RpcTbody>
+        <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+          :row-count="table.getRowModel().rows.length" />
+        <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+          </RpcTd>
+        </tr>
+      </RpcTbody>
+      <RpcTfoot>
+        <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
+          <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+              :props="header.getContext()" />
+          </RpcTh>
+        </tr>
+      </RpcTfoot>
+    </RpcTable>
   </div>
 </template>
 
 <script setup lang="ts">
+import {
+  FlexRender,
+  getCoreRowModel,
+  useVueTable,
+  createColumnHelper,
+  getFilteredRowModel,
+  getSortedRowModel,
+  type SortingState,
+} from '@tanstack/vue-table'
 import { UserCreateDialog } from '#components'
 import { overlayModalKey } from '~/providers/providerKeys'
 import type { RpcPerson } from '~/purple_client'
+import Anchor from '~/components/Anchor.vue'
+import BaseBadge from '~/components/BaseBadge.vue'
 
-const snackbar = useSnackbar()
 const _overlayModal = inject(overlayModalKey)
 if (!_overlayModal) {
   throw Error('Expected injection of overlayModalKey')
@@ -79,9 +95,11 @@ useHead({
 
 const userStore = useUserStore()
 
+const api = useApi()
+
 // METHODS
 
-function newTeamMember () {
+function newTeamMember() {
   openOverlayModal({
     component: UserCreateDialog,
     mode: 'side'
@@ -90,22 +108,94 @@ function newTeamMember () {
 
 // INIT
 
-const { data: people, pending, refresh } = await useFetch<RpcPerson[]>('/api/rpc/rpc_person/', {
-  baseURL: '/',
-  server: false,
-  onRequestError ({ error }) {
-    snackbar.add({
-      type: 'error',
-      title: 'Fetch Failed',
-      text: String(error)
-    })
+const { data: people, pending, status, error, refresh } = await useAsyncData(
+  'team',
+  () => {
+    return api.rpcPersonList()
   },
-  onResponseError ({ response, error }) {
-    snackbar.add({
-      type: 'error',
-      title: 'Server Error',
-      text: String(response.statusText ?? error)
-    })
+  {
+    default: () => [] as RpcPerson[],
+    lazy: true,
+    server: false,
+  }
+)
+
+const columnHelper = createColumnHelper<RpcPerson>()
+
+const columns = [
+  columnHelper.accessor('name', {
+    header: 'Document',
+    cell: data => {
+      return h(Anchor, { href: `/team/${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
+        data.getValue(),
+        ` (#${data.row.original.id}${isActiveFilter.value === false ? `, ${data.row.original.isActive ? 'active' : 'inactive' }` : ''})`
+      ])
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor(
+    'roles', {
+    header: 'Roles',
+    cell: data => {
+      const roles = data.getValue()
+      return h('ul', { class: ''}, roles.map(
+        role => h('li', { class: ''}, [
+          h(BaseBadge, { label: role.slug, class: 'mr-1' }),
+          JSON.stringify(role)
+        ])
+      ))
+    },
+    enableSorting: false,
+  }),
+  columnHelper.accessor(
+    'capabilities', {
+    header: 'Capabilities',
+    cell: data => {
+      const capabilities = data.getValue()
+      return h('ul', { class: ''}, capabilities.map(
+        capability => h('li', { class: ''}, [
+          JSON.stringify(capability)
+        ])
+      ))
+    },
+    sortingFn: 'alphanumeric',
+  })
+]
+
+const sorting = ref<SortingState>([])
+
+const isActiveFilter = ref(true)
+
+const table = useVueTable({
+  get data() {
+    return people.value
+  },
+  columns,
+  state: {
+    get globalFilter() {
+      return JSON.stringify([
+        isActiveFilter.value
+      ])
+    },
+    get sorting() {
+      return sorting.value
+    },
+  },
+  enableFilters: true,
+  globalFilterFn: (row) => {
+    if (isActiveFilter.value) {
+      return row.original.isActive === isActiveFilter.value
+    }
+    return true
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  onSortingChange: updaterOrValue => {
+    sorting.value =
+      typeof updaterOrValue === 'function'
+        ? updaterOrValue(sorting.value) : updaterOrValue
   }
 })
+
 </script>
