@@ -23,6 +23,7 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
+    FinalApproval,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -879,3 +880,60 @@ class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnusableRfcNumber
         fields = ["number", "comment"]
+
+
+class FinalApprovalSerializer(serializers.Serializer):
+    """Serialize final approval information for an RfcToBe"""
+
+    id = serializers.IntegerField(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    body = serializers.CharField(required=False, allow_blank=True)
+    requested = serializers.DateTimeField(required=False)
+    approver = BaseDatatrackerPersonSerializer(read_only=True)
+    overriding_approver = BaseDatatrackerPersonSerializer(
+        read_only=True, allow_null=True
+    )
+
+    class Meta:
+        model = FinalApproval
+        fields = [
+            "id",
+            "rfc_to_be",
+            "body",
+            "requested",
+            "approved",
+            "approver",
+            "overriding_approver"
+        ]
+        read_only_fields = ["id", "approved", "requested", "rfc_to_be"]
+
+
+class CreateFinalApprovalSerializer(FinalApprovalSerializer):
+    """Serializer for creating FinalApproval instances"""
+
+    approver_person_id = serializers.IntegerField(write_only=True, required=True)
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True
+    )
+
+    def create(self, validated_data):
+        approver_person_id = validated_data.pop("approver_person_id")
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+
+        approver_dt_person = DatatrackerPerson.objects.get(
+            datatracker_id=approver_person_id
+        )
+
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        return FinalApproval.objects.create(
+            approver=approver_dt_person,
+            overriding_approver=overriding_approver_dt_person,
+            **validated_data,
+        )

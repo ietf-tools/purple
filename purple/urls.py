@@ -69,6 +69,11 @@ router.register(
     rpc_api.RpcRelatedDocumentViewSet,
     basename="documents-references",
 )
+router.register(
+    r"documents/(?P<draft_name>[^/.]+)/final_approvals",
+    rpc_api.FinalApprovalViewSet,
+    basename="documents-final-approvals",
+)
 router.register(r"labels", rpc_api.LabelViewSet)
 router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)

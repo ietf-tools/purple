@@ -47,6 +47,7 @@ from .models import (
     Capability,
     Cluster,
     DocRelationshipName,
+    FinalApproval,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -68,10 +69,12 @@ from .serializers import (
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
+    CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     CreateRpcRelatedDocumentSerializer,
     DocumentCommentSerializer,
+    FinalApprovalSerializer,
     LabelSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
@@ -1096,3 +1099,28 @@ class SubseriesViewSet(
             result.append(serializer.data)
 
         return Response(sorted(result, key=lambda x: (x["type"], x["number"])))
+
+
+@extend_schema_with_draft_name(actions=["list", "create", "update", "partial_update"])
+class FinalApprovalViewSet(viewsets.ModelViewSet):
+    queryset = FinalApproval.objects.all()
+    serializer_class = FinalApprovalSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id", "body"]
+    ordering = ["-requested"]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+        )
+
+    def perform_create(self, serializer):
+        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
+        serializer.save(rfc_to_be=rfc_to_be)
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateFinalApprovalSerializer
+        return FinalApprovalSerializer
