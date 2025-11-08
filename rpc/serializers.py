@@ -885,13 +885,14 @@ class UnusableRfcNumberSerializer(serializers.ModelSerializer):
 class FinalApprovalSerializer(serializers.Serializer):
     """Serialize final approval information for an RfcToBe"""
 
-    id = serializers.IntegerField(read_only=True)
-    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    id = serializers.IntegerField()
+    rfc_to_be = MinimalRfcToBeSerializer()
     body = serializers.CharField(required=False, allow_blank=True)
     requested = serializers.DateTimeField(required=False)
-    approver = BaseDatatrackerPersonSerializer(read_only=True)
+    approver = BaseDatatrackerPersonSerializer()
+    approved = serializers.DateTimeField(required=False, allow_null=True)
     overriding_approver = BaseDatatrackerPersonSerializer(
-        read_only=True, allow_null=True
+        required=False, allow_null=True
     )
 
     class Meta:
@@ -903,9 +904,21 @@ class FinalApprovalSerializer(serializers.Serializer):
             "requested",
             "approved",
             "approver",
-            "overriding_approver"
+            "overriding_approver",
         ]
-        read_only_fields = ["id", "approved", "requested", "rfc_to_be"]
+        read_only_fields = [
+            "id",
+            "requested",
+            "rfc_to_be",
+            "approver",
+            "overriding_approver",
+        ]
+
+    def update(self, instance, validated_data):
+        # Only 'approved', 'body' field shall be updated, for other fields we consider
+        # it a different item
+        FinalApproval.objects.filter(pk=instance.pk).update(**validated_data)
+        return FinalApproval.objects.get(pk=instance.pk)
 
 
 class CreateFinalApprovalSerializer(FinalApprovalSerializer):

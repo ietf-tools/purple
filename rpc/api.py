@@ -1101,7 +1101,7 @@ class SubseriesViewSet(
         return Response(sorted(result, key=lambda x: (x["type"], x["number"])))
 
 
-@extend_schema_with_draft_name(actions=["list", "create", "update", "partial_update"])
+@extend_schema_with_draft_name()
 class FinalApprovalViewSet(viewsets.ModelViewSet):
     queryset = FinalApproval.objects.all()
     serializer_class = FinalApprovalSerializer
