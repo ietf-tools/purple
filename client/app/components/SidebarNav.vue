@@ -128,7 +128,6 @@ const navigation: Navigation[] = [
   { name: 'Queue', href: '/queue', icon: h(Icon, { name: 'solar:layers-minimalistic-bold-duotone' }) },
   { name: 'My Documents', href: '/docs', icon: h(Icon, { name: 'solar:documents-minimalistic-line-duotone' }) },
   { name: 'Team', href: '/team', icon: h(Icon, { name: 'solar:users-group-rounded-bold-duotone' }) },
-  { name: 'Statistics', href: '/stats', icon: h(Icon, { name: 'solar:chart-line-duotone' }) },
   { name: 'Final Review', href: '/final-review', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
 ]
 
