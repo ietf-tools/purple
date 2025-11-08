@@ -978,12 +978,12 @@ class SearchDatatrackerPersons(ListAPIView):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
 
 
-class SendMail(views.APIView):
+class Mail(views.APIView):
     parser_classes = [MultiPartParser]  # needed for FileField
     permission_classes = [AllowAny]  # todo not this
 
     @extend_schema(
-        operation_id="send_mail",
+        operation_id="mail_send",
         request=MailMessageSerializer,
         responses=MailResponseSerializer,
     )

@@ -99,7 +99,7 @@ urlpatterns = [
     path(
         "api/rpc/profile/<int:rpc_person_id>", rpc_api.profile_as_person
     ),  # for demo only
-    path("api/rpc/mail", rpc_api.SendMail.as_view()),
+    path("api/rpc/mail", rpc_api.Mail.as_view()),
     path("api/rpc/stats/label/", rpc_api.StatsLabels.as_view()),
     path("api/rpc/submissions/", rpc_api.submissions),
     path("api/rpc/submissions/<int:document_id>/", rpc_api.submission),
