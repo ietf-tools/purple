@@ -145,37 +145,27 @@
               <tbody class="divide-y divide-gray-200">
                 <tr v-for="item in finalApprovalsList">
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
-                    <NuxtLink v-if="item.approver.name" :href="`/team/${item.approver.personId}`"
-                      class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100  hover:underline focus:underline">
-                      {{ item.approver.name }}</NuxtLink>
-
-                      {{  item. }}
+                    {{ item.approver.name }}
                     <span v-if="item.overridingApprover">
-                      (approval overriden by
-                      <NuxtLink :href="`/team/${item.overridingApprover.personId}`"
-                        class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100  hover:underline focus:underline">
-                        {{ item.overridingApprover.name }}
-                      </NuxtLink>)
+                      (approval overriden by {{ item.overridingApprover.name }})
                     </span>
-
                     <span v-if="item.approved">
-                      (approved on <time :datetime="DateTime.fromJSDate(item.approved).toString()">
+                      (approved on
+                      <time :datetime="DateTime.fromJSDate(item.approved).toString()">
                         {{ DateTime.fromJSDate(item.approved).toLocaleString(DateTime.DATE_MED) }}
-                      </time>
+                      </time>)
                     </span>
                     <span v-else>
                       (not yet approved)
                     </span>
                   </td>
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
-                    <NuxtLink v-if="item.rfcToBe.name" :href="`/docs/${item.rfcToBe.name}`"
-                      class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100 hover:underline focus:underline">
-                      {{ item.rfcToBe.name }}</NuxtLink>
+                    <NuxtLink v-if="item.rfcToBe.name" :href="`/docs/${item.rfcToBe.name}`" class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100 hover:underline focus:underline">
+                      {{ item.rfcToBe.name }}
+                    </NuxtLink>
                   </td>
                   <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
                     {{ `RFC${item.rfcToBe.rfcNumber}` }}
-
-
                   </td>
                 </tr>
               </tbody>
