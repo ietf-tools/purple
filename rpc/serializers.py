@@ -826,6 +826,12 @@ class MailMessageSerializer(serializers.Serializer):
     attachments = MailAttachmentSerializer(many=True, required=False)
 
 
+class MailTemplateSerializer(serializers.Serializer):
+    msgtype = serializers.CharField(help_text="slug that identifies message type ")
+    label = serializers.CharField(help_text="human readable text for UI")
+    template = MailMessageSerializer()
+
+
 class MailResponseSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["success", "error"])
     message = serializers.CharField()

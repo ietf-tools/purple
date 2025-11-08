@@ -1,0 +1,199 @@
+{% autoescape off %}{% comment %}
+Original comment:
+
+This is the template file for email messages sent to notify authors
+that their document is in AUTH48 state and available for review
+(when using an XML source file).
+The template text becomes the body of the message. (Headers are
+handled differently.)
+
+Text above the marker "TEXT:" is ignored. The message is below that
+marker. Other markers are substituted based on the table below.
+
+Database Column             Marker
+---------------             ------
+doc-id                      RFCXXXX   (e.g., RFC5124)
+title                       RFCTITLE
+draft                       RFCDRAFT
+authors                     RFCAUTHORS
+working_group.wg_chair_name WGCHAIRNAMES
+area.AREA_DIRECTOR_NAME     ADNAMES
+
+
+Not in the database as far as I know
+------------------------------------
+curr_date                  CURRDATE
+lowercase doc-id           LCXXXX  (e.g., rfc5124)
+
+TEXT:
+{% endcomment %}*****IMPORTANT*****
+
+TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
+
+Updated {{
+
+RFC Author(s):
+--------------
+
+Instructions for Completing AUTH48
+
+Your document has now entered AUTH48.  Once it has been reviewed and
+approved by you and all coauthors, it will be published as an RFC.
+If an author is no longer available, there are several remedies
+available as listed in the FAQ (https://www.rfc-editor.org/faq/).
+
+You and you coauthors are responsible for engaging other parties
+(e.g., Contributors or Working Group) as necessary before providing
+your approval.
+
+Planning your review
+---------------------
+
+Please review the following aspects of your document:
+
+*  RFC Editor questions
+
+   Please review and resolve any questions raised by the RFC Editor
+   that have been included in the XML file as comments marked as
+   follows:
+
+   <!-- [rfced] ... -->
+
+   These questions will also be sent in a subsequent email.
+
+*  Changes submitted by coauthors
+
+   Please ensure that you review any changes submitted by your
+   coauthors.  We assume that if you do not speak up that you
+   agree to changes submitted by your coauthors.
+
+*  Content
+
+   Please review the full content of the document, as this cannot
+   change once the RFC is published.  Please pay particular attention to:
+   - IANA considerations updates (if applicable)
+   - contact information
+   - references
+
+*  Copyright notices and legends
+
+   Please review the copyright notice and legends as defined in
+   RFC 5378 and the Trust Legal Provisions
+   (TLP – https://trustee.ietf.org/license-info).
+
+*  Semantic markup
+
+   Please review the markup in the XML file to ensure that elements of
+   content are correctly tagged.  For example, ensure that <sourcecode>
+   and <artwork> are set correctly.  See details at
+   <https://authors.ietf.org/rfcxml-vocabulary>.
+
+*  Formatted output
+
+   Please review the PDF, HTML, and TXT files to ensure that the
+   formatted output, as generated from the markup in the XML file, is
+   reasonable.  Please note that the TXT will have formatting
+   limitations compared to the PDF and HTML.
+
+
+Submitting changes
+------------------
+
+To submit changes, please reply to this email using ‘REPLY ALL’ as all
+the parties CCed on this message need to see your changes. The parties
+include:
+
+   *  your coauthors
+
+   *  rfc-editor@rfc-editor.org (the RPC team)
+
+   *  other document participants, depending on the stream (e.g.,
+      IETF Stream participants are your working group chairs, the
+      responsible ADs, and the document shepherd).
+
+   *  auth48archive@rfc-editor.org, which is a new archival mailing list
+      to preserve AUTH48 conversations; it is not an active discussion
+      list:
+
+     *  More info:
+        https://mailarchive.ietf.org/arch/msg/ietf-announce/yb6lpIGh-4Q9l2USxIAe6P8O4Zc
+
+     *  The archive itself:
+        https://mailarchive.ietf.org/arch/browse/auth48archive/
+
+     *  Note: If only absolutely necessary, you may temporarily opt out
+        of the archiving of messages (e.g., to discuss a sensitive matter).
+        If needed, please add a note at the top of the message that you
+        have dropped the address. When the discussion is concluded,
+        auth48archive@rfc-editor.org will be re-added to the CC list and
+        its addition will be noted at the top of the message.
+
+You may submit your changes in one of two ways:
+
+An update to the provided XML file
+ — OR —
+An explicit list of changes in this format
+
+Section # (or indicate Global)
+
+OLD:
+old text
+
+NEW:
+new text
+
+You do not need to reply with both an updated XML file and an explicit
+list of changes, as either form is sufficient.
+
+We will ask a stream manager to review and approve any changes that seem
+beyond editorial in nature, e.g., addition of new text, deletion of text,
+and technical changes.  Information about stream managers can be found in
+the FAQ.  Editorial changes do not require approval from a stream manager.
+
+
+Approving for publication
+--------------------------
+
+To approve your RFC for publication, please reply to this email stating
+that you approve this RFC for publication.  Please use ‘REPLY ALL’,
+as all the parties CCed on this message need to see your approval.
+
+
+Files
+-----
+
+The files are available here:
+   https://www.rfc-editor.org/authors/LCXXXX.xml
+   https://www.rfc-editor.org/authors/LCXXXX.html
+   https://www.rfc-editor.org/authors/LCXXXX.pdf
+   https://www.rfc-editor.org/authors/LCXXXX.txt
+
+Diff file of the text:
+   https://www.rfc-editor.org/authors/LCXXXX-diff.html
+   https://www.rfc-editor.org/authors/LCXXXX-rfcdiff.html (side by side)
+
+Diff of the XML:
+   https://www.rfc-editor.org/authors/LCXXXX-xmldiff1.html
+
+
+Tracking progress
+-----------------
+
+The details of the AUTH48 status of your document are here:
+   https://www.rfc-editor.org/auth48/LCXXXX
+
+Please let us know if you have any questions.
+
+Thank you for your cooperation,
+
+RFC Editor
+
+--------------------------------------
+RFCXXXX (RFCDRAFT)
+
+Title            : RFCTITLE
+Author(s)        : RFCAUTHORS
+WG Chair(s)      : WGCHAIRNAMES
+Area Director(s) : ADNAMES
+
+{% endautoescape %}

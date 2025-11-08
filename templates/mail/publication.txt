@@ -1,0 +1,60 @@
+{% autoescape off %}A new Request for Comments is now available in online RFC libraries.
+
+        TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
+
+        RFC {% firstof rfc_to_be.rfc_number "XXXX" %}
+
+        Title:      {{ rfc_to_be.title }}
+{% for author in rfc_to_be.authors.all %}{% if forloop.first %}        Author:     {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}
+{% else %}                    {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
+        Status:     Informational
+        Stream:     IRTF
+        Date:       October 2025
+        Mailbox:    cs.ru.nl@viguier.nl,
+                    davidwong.crypto@gmail.com,
+                    gilles.vanassche@st.com,
+                    quynh.dang@nist.gov,
+                    joan@cs.ru.nl
+        Pages:      28
+        Updates/Obsoletes/SeeAlso:   None
+
+        I-D Tag:    draft-irtf-cfrg-kangarootwelve-17.txt
+
+        URL:        https://www.rfc-editor.org/info/rfc9861
+
+        DOI:        10.17487/RFC9861
+
+This document defines four eXtendable-Output Functions (XOFs), hash
+functions with output of arbitrary length, named TurboSHAKE128,
+TurboSHAKE256, KT128, and KT256.
+
+All four functions provide efficient and secure hashing primitives,
+and the last two are able to exploit the parallelism of the
+implementation in a scalable way.
+
+This document is a product of the Crypto Forum Research Group. It
+builds up on the definitions of the permutations and of the sponge
+construction in NIST FIPS 202 and is meant to serve as a stable
+reference and an implementation guide.
+
+
+INFORMATIONAL: This memo provides information for the Internet community.
+It does not specify an Internet standard of any kind. Distribution of
+this memo is unlimited.
+
+This announcement is sent to the IETF-Announce, rfc-dist and IRTF-Announce lists.To subscribe or unsubscribe, see
+  https://www.ietf.org/mailman/listinfo/ietf-announce
+  https://mailman.rfc-editor.org/mailman/listinfo/rfc-dist
+  https://www.irtf.org/mailman/listinfo/irtf-announce
+
+For searching the RFC series, see https://www.rfc-editor.org/search
+For downloading RFCs, see https://www.rfc-editor.org/retrieve/bulk
+
+Requests for special distribution should be addressed to either the
+author of the RFC in question, or to rfc-editor@rfc-editor.org.  Unless
+specifically noted otherwise on the RFC itself, all RFCs are for
+unlimited distribution.
+
+
+The RFC Editor Team
+{% endautoescape %}

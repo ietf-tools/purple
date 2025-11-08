@@ -9,6 +9,7 @@ from django.db import transaction
 from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
@@ -87,6 +88,7 @@ from .serializers import (
     check_user_has_role,
     MailMessageSerializer,
     MailResponseSerializer,
+    MailTemplateSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
@@ -992,14 +994,67 @@ class Mail(views.APIView):
         # todo debug whether attachments work as intended
         serializer = MailMessageSerializer(data=request.data)
         if serializer.is_valid():
-            print(f"to: {serializer.validated_data["to"]}")
-            print(f"cc: {serializer.validated_data["cc"]}")
-            print(f"subject: {serializer.validated_data["subject"]}")
+            print(f"to: {serializer.validated_data['to']}")
+            print(f"cc: {serializer.validated_data['cc']}")
+            print(f"subject: {serializer.validated_data['subject']}")
             for attachment in serializer.validated_data["attachments"]:
-                print(f"attachment: {attachment["name"]}")
+                print(f"attachment: {attachment['name']}")
         else:
             print(serializer.errors)
-        return Response(MailResponseSerializer({
-            "type": "success",
-            "message": "Message accepted",
-        }).data)
+        return Response(
+            MailResponseSerializer(
+                {
+                    "type": "success",
+                    "message": "Message accepted",
+                }
+            ).data
+        )
+
+
+class RfcMailTemplatesList(views.APIView):
+    permission_classes = [AllowAny]  # todo not this
+
+    @extend_schema(
+        responses=MailTemplateSerializer(many=True),
+        parameters=[
+            OpenApiParameter(
+                name="rfctobe_id",
+                type=OpenApiTypes.INT,
+                location="path",
+            ),
+        ],
+    )
+    def get(self, request, rfctobe_id, format=None):
+        try:
+            rfc_to_be = RfcToBe.objects.get(pk=rfctobe_id)
+        except RfcToBe.DoesNotExist:
+            raise NotFound("Unknown rfctobe_id")
+
+        message_templates = (
+            ("blank", "mail/blank.txt", "Blank Message"),
+            ("finalreview", "mail/finalreview.txt", "Final Review"),
+            ("publication", "mail/publication.txt", "Announce Publication"),
+        )
+
+        serializer = MailTemplateSerializer(
+            [
+                {
+                    "msgtype": msgtype,
+                    "label": label,
+                    "template": {
+                        "to": "someone@example.com",
+                        "cc": "nobody@example.com",
+                        "subject": f"Message that is a {label}",
+                        "body": (
+                            render_to_string(
+                                template_filename,
+                                context={"rfc_to_be": rfc_to_be},
+                            )
+                        ),
+                    },
+                }
+                for msgtype, template_filename, label in message_templates
+            ],
+            many=True,
+        )
+        return Response(serializer.data)
