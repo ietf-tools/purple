@@ -225,6 +225,7 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
     server: false,
+    lazy: true,
     deep: true // author editing relies on deep reactivity
   }
 )
@@ -378,7 +379,27 @@ const openAssignmentFinishedModal = () => {
   })
 }
 
-const openEmailModal = () => {
+const { data: mailTemplateList, error: mailTemplateListError, status: mailTemplateListStatus } = await useAsyncData(
+  () => `mail-template-${rawRfcToBe.value?.id}`,
+  async () => {
+    if (!rawRfcToBe.value) {
+      return []
+    }
+    const { id } = rawRfcToBe.value
+    if (id === undefined) {
+      console.warn('Expected rfcToBe to have id')
+      return []
+    }
+    return api.mailtemplateList({
+      rfctobeId: id
+    })
+  }, {
+    server: false,
+    lazy: true
+  }
+)
+
+const openEmailModal = async () => {
   if (!overlayModal) {
     throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
   }
@@ -400,30 +421,30 @@ const openEmailModal = () => {
     return
   }
 
-  const RFC_EDITOR_EMAIL = 'rfc-editor@rfc-editor.org'
+  if (!mailTemplateList.value && mailTemplateListStatus.value === 'pending') {
+    snackbar.add({
+      type: 'warning',
+      title: `Still loading mail templates...`,
+      text: 'Try again in a few seconds'
+    })
+    return
+  }
 
-  const defaultToEmails: string[] =
-    [...rawRfcToBe.value.authors.map(author => author.email).filter(email => typeof email === 'string')]
-
-  const defaultCCEmails: string[] = [
-    RFC_EDITOR_EMAIL
-  ]
+  if (mailTemplateListStatus.value === 'error') {
+    snackbar.add({
+      type: 'error',
+      title: `Failed to load mail templates. Reload page then try again`,
+      text: mailTemplateListError.value?.message ?? ''
+    })
+    return
+  }
 
   const { openOverlayModal } = overlayModal
-
-  const emailTemplates: EmailTemplate[] = [{
-    name: "Final Review",
-    subject: "Final review",
-    body: "Your RFC is going to final review"
-  }]
 
   openOverlayModal({
     component: EmailModal,
     componentProps: {
-      defaultToEmails,
-      defaultCCEmails,
-      defaultSubject: '',
-      emailTemplates,
+      mailTemplates: mailTemplateList.value,
       onSuccess: () => {
         historyRefresh()
       }

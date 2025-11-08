@@ -1,15 +1,17 @@
 <template>
   <div class="h-full flex flex-col bg-white text-black dark:bg-black dark:text-white">
     <div class="flex flex-row bg-gray-200 dark:bg-gray-800 justify-between border-b border-gray-300">
-      <div>
+      <div class="flex flex-row items-center">
         <h1 class="text-xl font-bold pt-4 px-4 py-3 inline-block">
           New Email
         </h1>
         <p class="inline-block text-sm ml-4 mr-2">templates: </p>
-        <ul class="inline-block">
-          <li class="inline">
-            <BaseButton v-for="emailTemplate in props.emailTemplates" @click="applyEmailTemplate(emailTemplate)" size="xs">
-              {{ emailTemplate.name }}
+        <ul class="flex flex-row flex-wrap gap-2">
+          <li v-for="mailTemplate in props.mailTemplates">
+            <BaseButton @click="applyEmailTemplate(mailTemplate)" size="xs" :class="{
+              'border-2 border-black': mailTemplate.template.msgtype === msgType
+            }">
+              {{ mailTemplate.label }}
             </BaseButton>
           </li>
         </ul>
@@ -19,7 +21,6 @@
       </BaseButton>
     </div>
     <div class="flex-1 flex flex-col gap-5 overflow-y-scroll px-4 pt-4 pb-7">
-
       <EmailFieldEmails v-model="toEmails" label="To" />
       <EmailFieldEmails v-model="ccEmails" label="CC" />
       <EmailFieldText v-model="subject" label="Subject" field-id="subject" :is-multiline="false" fieldClass="flex-1" />
@@ -34,14 +35,11 @@
 <script setup lang="ts">
 import { BaseButton } from '#components'
 import { overlayModalKey } from '~/providers/providerKeys';
+import type { MailTemplate } from '~/purple_client';
 
 type Props = {
-  defaultToEmails: string[]
-  defaultCCEmails: string[]
-  defaultSubject: string
-  defaultBody: string
-  emailTemplates: EmailTemplate[]
-  onSuccess: () => void
+  mailTemplates: MailTemplate[]
+  onSuccess: () => Promise<void>
 }
 const props = defineProps<Props>()
 
@@ -49,10 +47,19 @@ const api = useApi()
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
-const toEmails = ref<string[]>([...props.defaultToEmails])
-const ccEmails = ref<string[]>([...props.defaultCCEmails])
-const subject = ref<string>(props.defaultSubject ?? '')
-const body = ref<string>(props.defaultBody ?? '')
+const firstMailTemplate = props.mailTemplates[0]
+
+if (!firstMailTemplate) {
+  throw Error('Expected at least one mail template but there were none')
+}
+
+const snackbar = useSnackbar()
+
+const toEmails = ref<string[]>(firstMailTemplate.template.to.split(','))
+const ccEmails = ref<string[]>(firstMailTemplate.template.cc?.split(',') ?? [])
+const subject = ref<string>(firstMailTemplate.template.subject ?? '')
+const body = ref<string>(firstMailTemplate.template.body ?? '')
+const msgType = ref<MailTemplate['template']['msgtype']>(firstMailTemplate.template.msgtype)
 
 if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
@@ -60,24 +67,48 @@ if (!overlayModalKeyInjection) {
 
 const { closeOverlayModal } = overlayModalKeyInjection
 
-const confirmSend = () => {
+const confirmSend = async () => {
   const shouldSend = confirm("Really send email?")
   if (!shouldSend) {
     return
   }
-
-
+  const mailSendResponse = await api.mailSend({
+    msgtype: msgType.value,
+    to: toEmails.value.join(','),
+    subject: subject.value,
+    body: body.value,
+    cc: ccEmails.value.join(','),
+    attachments: []
+  })
+  if(mailSendResponse.type === 'success') {
+    await props.onSuccess()
+    snackbar.add({
+      type: 'success',
+      title: 'Email sent',
+      text: 'Email sent'
+    })
+    closeOverlayModal()
+  } else {
+    snackbar.add({
+      type: 'error',
+      title: `Email wasn't sent`,
+      text: mailSendResponse.message
+    })
+  }
 }
 
-const applyEmailTemplate = (emailTemplate: EmailTemplate) => {
+const applyEmailTemplate = (mailTemplate: MailTemplate) => {
   if (subject.value.trim().length > 0 || body.value.trim().length > 0) {
-    const shouldOverwrite = confirm(`Email subject/body are not blank. Overwrite with template '${emailTemplate.name}'?`)
+    const shouldOverwrite = confirm(`Email subject/body are not blank. Overwrite with template '${mailTemplate.label}'?`)
     if (!shouldOverwrite) {
       return
     }
   }
-  subject.value = emailTemplate.subject
-  body.value = emailTemplate.body
+  toEmails.value = mailTemplate.template.to.split(',')
+  ccEmails.value = mailTemplate.template.cc?.split(',') ?? []
+  subject.value = mailTemplate.template.subject
+  body.value = mailTemplate.template.body
+  msgType.value = mailTemplate.template.msgtype
 }
 
 </script>
