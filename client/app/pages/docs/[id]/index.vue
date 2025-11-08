@@ -382,7 +382,7 @@ const openEmailModal = () => {
   if (!overlayModal) {
     throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
   }
-if (!rawRfcToBe.value) {
+  if (!rawRfcToBe.value) {
     snackbar.add({
       type: 'warning',
       title: `Still loading RFC authors...`,
@@ -400,9 +400,14 @@ if (!rawRfcToBe.value) {
     return
   }
 
-  const defaultToEmails: string[] = rawRfcToBe.value.authors.map(author => author.email).filter(email => typeof email === 'string')
+  const RFC_EDITOR_EMAIL = 'rfc-editor@rfc-editor.org'
 
-  const defaultCCEmails: string[] = rawRfcToBe.value.authors.map(author => author.email).filter(email => typeof email === 'string')
+  const defaultToEmails: string[] =
+    [...rawRfcToBe.value.authors.map(author => author.email).filter(email => typeof email === 'string')]
+
+  const defaultCCEmails: string[] = [
+    RFC_EDITOR_EMAIL
+  ]
 
   const { openOverlayModal } = overlayModal
 

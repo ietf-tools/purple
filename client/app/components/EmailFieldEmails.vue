@@ -7,7 +7,7 @@
         <div class="flex flex-wrap gap-2">
           <TagsInputItem v-for="item in value" :key="item" :value="item"
             class="flex gap-0.5 bg-gray-200 border border-gray-400 items-center justify-center shadow-sm shadow-gray-400/50 focus-within:shadow-red-400 focus-within:border-red-300 rounded-md px-2 py-1">
-            <TagsInputItemText class="text-sm pl-1 max-w-[10em] text-ellipsis overflow-hidden" :title="item"
+            <TagsInputItemText class="text-sm pl-1 max-w-[10em] whitespace-nowrap text-ellipsis overflow-hidden" :title="item"
               @click="handleEmailClick(item)" />
             <TagsInputItemDelete tabindex
               class="flex items-center p-1 bg-transparent focus:bg-red-300 hover:bg-red-300 hover:text-black rounded-full text-black">
