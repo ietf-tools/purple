@@ -67,7 +67,7 @@
               <div class="flex-auto pl-6 pt-6">
                 <dt class="text-sm font-semibold leading-6 text-gray-900">Workload</dt>
                 <dd class="mt-1 text-sm leading-6 text-gray-900">
-                  <WorkloadSummary v-if="personWorkload" :workload="personWorkload" />
+                  <WorkloadSummary v-if="personWorkload" :workload="personWorkload" mode="rows" />
                   <Icon v-else name="ei:spinner-3" size="0.8em" class="animate-spin" />
                 </dd>
               </div>
@@ -241,8 +241,11 @@ if (personError.value) {
 const personWorkload = computed((): RpcPeopleWorkload[number] | undefined => {
   if (!person.value || !assignments.value) return undefined
   const { id: personId } = person.value
-  if(personId === undefined) return undefined
-  const docs = assignments.value.map(assignment => assignment.rfcToBe).filter(maybeDoc => !!maybeDoc)
+  if (personId === undefined) return undefined
+  const docs = assignments.value.map(assignment => {
+    const pages = assignment.rfcToBe?.draft?.pages ?? 0
+    return { ...assignment.rfcToBe, pages }
+  }).filter(maybeDoc => !!maybeDoc)
   return calculatePeopleWorkload(clusters.value, docs)[personId]
 })
 

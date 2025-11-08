@@ -137,7 +137,7 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
     doc.assignmentSet?.forEach(assignment => {
       if (assignment.person !== undefined && assignment.person !== null) {
-        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages ?? 1)
+        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
       } else {
         console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
       }
