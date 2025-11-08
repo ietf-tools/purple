@@ -9,3 +9,11 @@
     <FinalReviewForPublication />
   </div>
 </template>
+
+<script setup lang="ts">
+
+const api = useApi()
+
+api.final
+
+</script>

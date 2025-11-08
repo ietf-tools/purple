@@ -3,18 +3,17 @@
     <header class="relative isolate">
       <div class="absolute inset-0 -z-10 overflow-hidden" aria-hidden="true">
         <div class="absolute left-16 top-full -mt-16 transform-gpu opacity-50 blur-3xl xl:left-1/2 xl:-ml-80">
-          <div
-            class="aspect-[1154/678] w-[72.125rem] bg-gradient-to-br from-[#FF80B5] to-[#9089FC]"
-            style="clip-path: polygon(100% 38.5%, 82.6% 100%, 60.2% 37.7%, 52.4% 32.1%, 47.5% 41.8%, 45.2% 65.6%, 27.5% 23.4%, 0.1% 35.3%, 17.9% 0%, 27.7% 23.4%, 76.2% 2.5%, 74.2% 56%, 100% 38.5%)"/>
+          <div class="aspect-[1154/678] w-[72.125rem] bg-gradient-to-br from-[#FF80B5] to-[#9089FC]"
+            style="clip-path: polygon(100% 38.5%, 82.6% 100%, 60.2% 37.7%, 52.4% 32.1%, 47.5% 41.8%, 45.2% 65.6%, 27.5% 23.4%, 0.1% 35.3%, 17.9% 0%, 27.7% 23.4%, 76.2% 2.5%, 74.2% 56%, 100% 38.5%)" />
         </div>
-        <div class="absolute inset-x-0 bottom-0 h-px bg-gray-900/5"/>
+        <div class="absolute inset-x-0 bottom-0 h-px bg-gray-900/5" />
       </div>
 
       <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-2xl items-center justify-between gap-x-8 lg:mx-0 lg:max-w-none">
           <div class="flex justify-between items-center gap-x-6 text-gray-900 dark:text-white">
             <div class="flex  items-center gap-x-6 justify-between">
-              <Icon name="solar:document-text-line-duotone" class="w-10 h-10"/>
+              <Icon name="solar:document-text-line-duotone" class="w-10 h-10" />
               <h1>
                 <span class="mt-1 text-xl font-semibold leading-6">
                   <span v-if="rfcToBe">{{ rfcToBe.name }}</span>
@@ -31,8 +30,7 @@
       <ErrorAlert v-if="rawRfcToBeError" title="API Error">
         API error while requesting draft: {{ rawRfcToBeError }}
       </ErrorAlert>
-      <div
-        v-else
+      <div v-else
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
 
         <!-- Status summary -->
@@ -45,13 +43,10 @@
                 None
               </div>
               <dl v-else>
-                <div
-                  v-for="assignment of rfcToBeAssignments"
-                  :key="assignment.id"
-                  class="py-1 grid grid-cols-2">
-                  <dt>{{ people.find(p => p.id === assignment.person)?.name ?? '(System)' }}</dt>
+                <div v-for="assignment of rfcToBeAssignments" :key="assignment.id" class="py-1 grid grid-cols-2">
+                  <dt>{{people.find(p => p.id === assignment.person)?.name ?? '(System)'}}</dt>
                   <dd class="relative">
-                    <BaseBadge :label="assignment.role"/>
+                    <BaseBadge :label="assignment.role" />
                     <AssignmentState :state="assignment.state" />
                   </dd>
                 </div>
@@ -65,12 +60,10 @@
                 None
               </div>
               <dl v-else>
-                <div
-                  v-for="pendingAct of rfcToBe?.pendingActivities"
-                  :key="pendingAct.slug"
+                <div v-for="pendingAct of rfcToBe?.pendingActivities" :key="pendingAct.slug"
                   class="py-1 grid grid-cols-2">
                   <dd class="relative">
-                    <BaseBadge :label="pendingAct.slug"/>
+                    <BaseBadge :label="pendingAct.slug" />
                   </dd>
                 </div>
               </dl>
@@ -98,7 +91,7 @@
                   <dt>Est. Completion</dt>
                   <dd>
                     <time datetime="2024-07-30">Jul 30, 2024</time>
-                    <BaseBadge label="Overdue" color="red"/>
+                    <BaseBadge label="Overdue" color="red" />
                   </dd>
                 </div>
               </dl>
@@ -107,9 +100,9 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe"/>
+        <DocInfoCard :rfc-to-be="rawRfcToBe" />
 
-        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe"/>
+        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
 
         <div class="flex w-full lg:col-span-2 space-x-4">
           <div class="flex flex-col">
@@ -125,13 +118,71 @@
         </div>
 
         <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
-          <DocumentDependencies v-model="relatedDocuments"
-                                :id="rawRfcToBe.id"
-                                :draft-name="draftName"
-                                :people="people"
-                                :cluster-number="rawRfcToBe.cluster?.number">
+          <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName" :people="people"
+            :cluster-number="rawRfcToBe.cluster?.number">
           </DocumentDependencies>
         </div>
+
+        <BaseCard class="lg:col-span-full grid place-items-stretch">
+          <h3 class="text-base font-semibold leading-7">
+            Final Approval
+            <Icon v-show="finalApprovalStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+          </h3>
+          <div v-if="finalApprovalStatus === 'error' && finalApprovalsError">
+            <ErrorAlert title="Error loading history">
+              <p>{{ finalApprovalsError }}</p>
+            </ErrorAlert>
+          </div>
+          <div v-if="finalApprovalsList">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50 dark:bg-neutral-800">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Approver</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Draft name</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">RFC #</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="item in finalApprovalsList">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    <NuxtLink v-if="item.approver.name" :href="`/team/${item.approver.personId}`"
+                      class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100  hover:underline focus:underline">
+                      {{ item.approver.name }}</NuxtLink>
+
+                      {{  item. }}
+                    <span v-if="item.overridingApprover">
+                      (approval overriden by
+                      <NuxtLink :href="`/team/${item.overridingApprover.personId}`"
+                        class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100  hover:underline focus:underline">
+                        {{ item.overridingApprover.name }}
+                      </NuxtLink>)
+                    </span>
+
+                    <span v-if="item.approved">
+                      (approved on <time :datetime="DateTime.fromJSDate(item.approved).toString()">
+                        {{ DateTime.fromJSDate(item.approved).toLocaleString(DateTime.DATE_MED) }}
+                      </time>
+                    </span>
+                    <span v-else>
+                      (not yet approved)
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    <NuxtLink v-if="item.rfcToBe.name" :href="`/docs/${item.rfcToBe.name}`"
+                      class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100 hover:underline focus:underline">
+                      {{ item.rfcToBe.name }}</NuxtLink>
+                  </td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    {{ `RFC${item.rfcToBe.rfcNumber}` }}
+
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </BaseCard>
 
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
@@ -148,32 +199,30 @@
           <div v-else-if="history && history.length > 0" class="flex">
             <table class="min-w-full divide-y divide-gray-300">
               <thead class="bg-gray-50 dark:bg-neutral-800">
-              <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Date</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">By</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Description</th>
-              </tr>
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Date</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">By</th>
+                  <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Description</th>
+                </tr>
               </thead>
               <tbody class="divide-y divide-gray-200">
-              <tr v-for="entry of history ?? []" :key="entry.id">
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
-                  <time :datetime="DateTime.fromJSDate(entry.time).toString()">
-                    {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
-                  </time>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm">
-                  <NuxtLink
-                    v-if="entry.by?.personId"
-                    :to="`/team/${entry.by.personId}`"
-                    class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100">
-                    {{ entry.by.name }}
-                  </NuxtLink>
-                  <span v-else>
-                    {{ entry.by?.name ?? '(System)' }}
-                  </span>
-                </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm">{{ entry.desc }}</td>
-              </tr>
+                <tr v-for="entry of history ?? []" :key="entry.id">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    <time :datetime="DateTime.fromJSDate(entry.time).toString()">
+                      {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
+                    </time>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">
+                    <NuxtLink v-if="entry.by?.personId" :to="`/team/${entry.by.personId}`"
+                      class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100">
+                      {{ entry.by.name }}
+                    </NuxtLink>
+                    <span v-else>
+                      {{ entry.by?.name ?? '(System)' }}
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap px-3 py-4 text-sm">{{ entry.desc }}</td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -185,7 +234,8 @@
             <CardHeader title="Comments" />
           </template>
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
+            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload"
+              class="w-4/5 min-w-100" />
             <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
               :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
               class="w-3/5 min-w-100" />
@@ -232,12 +282,13 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = awai
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
     server: false,
+    lazy: true,
     deep: true // author editing relies on deep reactivity
   }
 )
 
 const appliedLabels = computed(() => labels.value.filter((lbl) => {
-  if(lbl.id === undefined) return false
+  if (lbl.id === undefined) return false
   return rawRfcToBe.value?.labels.includes(lbl.id)
 }))
 
@@ -324,7 +375,15 @@ watch(
 
 const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
-  { server: false, default: () => [] }
+  { server: false, lazy: true, default: () => [] }
+)
+
+const { data: finalApprovalsList, error: finalApprovalsError, status: finalApprovalStatus } = useAsyncData(() =>
+  api.documentsFinalApprovalsList({ draftName: draftName.value }),
+  {
+    server: false,
+    lazy: true,
+  }
 )
 
 const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)

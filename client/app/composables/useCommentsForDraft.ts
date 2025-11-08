@@ -3,6 +3,6 @@ export function useCommentsForDraft(draftName: string) {
   return useAsyncData(
     `comments-${draftName}`,
     () => api.documentsCommentsList({ draftName: draftName }),
-    { server: false }
+    { server: false, lazy: true }
   )
 }
