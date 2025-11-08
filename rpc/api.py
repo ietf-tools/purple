@@ -1039,9 +1039,9 @@ class RfcMailTemplatesList(views.APIView):
         serializer = MailTemplateSerializer(
             [
                 {
-                    "msgtype": msgtype,
                     "label": label,
                     "template": {
+                        "msgtype": msgtype,
                         "to": "someone@example.com",
                         "cc": "nobody@example.com",
                         "subject": f"Message that is a {label}",
