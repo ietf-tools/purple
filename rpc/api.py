@@ -79,6 +79,9 @@ from .serializers import (
     DocumentCommentSerializer,
     FinalApprovalSerializer,
     LabelSerializer,
+    MailMessageSerializer,
+    MailResponseSerializer,
+    MailTemplateSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
@@ -97,9 +100,6 @@ from .serializers import (
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
-    MailMessageSerializer,
-    MailResponseSerializer,
-    MailTemplateSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
@@ -1180,7 +1180,7 @@ class RfcMailTemplatesList(views.APIView):
         try:
             rfc_to_be = RfcToBe.objects.get(pk=rfctobe_id)
         except RfcToBe.DoesNotExist:
-            raise NotFound("Unknown rfctobe_id")
+            raise NotFound("Unknown rfctobe_id") from None
 
         message_templates = (
             ("blank", "mail/blank.txt", "Blank Message"),

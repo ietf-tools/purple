@@ -965,6 +965,7 @@ class MailMessageSerializer(serializers.Serializer):
 
     Because of the FileField, this cannot be used with a JSONParser.
     """
+
     msgtype = serializers.CharField(help_text="slug that identifies message type ")
     to = serializers.CharField(allow_blank=False)
     cc = serializers.CharField(default="", allow_blank=True)
