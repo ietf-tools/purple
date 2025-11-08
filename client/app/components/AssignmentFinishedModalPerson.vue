@@ -6,7 +6,7 @@
     <form class="flex gap-4 whitespace-nowrap" @submit.prevent>
       <label class="text-xs">time spent:
         <input type="text" size="4" :id="props.assignment.id?.toString() ?? 'assignment'"
-          v-model="props.assignment.timeSpent" class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
+          v-model="hours" class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
           @blur="patchTimeSpent"
         >
       </label>
@@ -23,7 +23,6 @@ import { BaseButton } from '#components'
 import type { Assignment } from '~/purple_client';
 
 type Props = {
-  rfcToBe: CookedDraft
   assignment: Assignment
   personName: string
   onSuccess: () => void
@@ -35,6 +34,8 @@ const isSaving = ref(false)
 const api = useApi()
 
 const snackbar = useSnackbar()
+
+const hours = ref(durationStringToHours(props.assignment.timeSpent))
 
 const finishAssignment = async () => {
   isSaving.value = true
@@ -68,10 +69,11 @@ const finishAssignment = async () => {
 }
 
 const patchTimeSpent = async () => {
-  const { id, timeSpent } = props.assignment
+  const { id } = props.assignment
   if (id === undefined) {
     throw Error('Internal error: expected assignment to have id')
   }
+  const timeSpent = hoursToDurationString(hours.value)
   try {
     const updatedAssignment = await api.assignmentsPartialUpdate({
       id,
@@ -80,6 +82,9 @@ const patchTimeSpent = async () => {
       }
     })
     props.assignment.timeSpent = updatedAssignment.timeSpent
+    if(updatedAssignment.timeSpent !== timeSpent) {
+      console.warn('potential time spent translation bug', timeSpent, '!==', updatedAssignment.timeSpent)
+    }
   } catch (e) {
     snackbarForErrors({ snackbar, error: e })
   }

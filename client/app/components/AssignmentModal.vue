@@ -314,4 +314,5 @@ const changeReason = (action: ActionWithdrawn, e: Event): void => {
   assert(e.target instanceof HTMLInputElement)
   action.reason = e.target.value
 }
+
 </script>
