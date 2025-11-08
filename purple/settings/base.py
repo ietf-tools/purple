@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
 """Django settings for RPC project common to all environments"""
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -95,6 +96,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_RENDERER_CLASSES": [
         "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
     ],
     "DEFAULT_PARSER_CLASSES": [
         "rest_framework.parsers.JSONParser",
@@ -145,6 +147,7 @@ CACHES = {
 
 # email
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
+DEFAULT_FROM_EMAIL = os.getenv("PURPLE_DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
 
 
 # Celery

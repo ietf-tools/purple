@@ -37,10 +37,19 @@
 
 1. Clone this repository locally.
 2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `feat/rpc-api` branch, start the Docker environment, and start the dev server.
-3. Continue using the steps for your preferred IDE:
+3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) *(optional, and not generally available)*
+4. Continue using the steps for your preferred IDE:
    - [Visual Studio Code](#using-vs-code)
    - [Generic](#using-generic)
-4. [Create demo data](#create-demo-data) if you have not already
+5. [Create demo data](#create-demo-data) if you have not already
+
+## Obtain an xfer Database Dump
+This step is required if you need a populated database to work with. In addition to the steps here, the datatracker's database needs to be populated with a compatible dataset. Instructions for that are TBD.
+
+1. Open a shell _on the host_ (not in the docker container) and navigate to the project root directory.
+2. Run `./refresh_xfer_dump.sh`. This will prompt you to authenticate with Azure and download the most recent xfer dump.
+
+To return to an empty DB as a starting point, remove the `purple.dump` and rebuild your docker environment.
 
 ## Using VS Code
 
@@ -68,8 +77,8 @@
 
 ## Using MailHog
 
-Emails sentout from dev enviroment is caught by [MailHog](https://github.com/mailhog/MailHog).
-Access MailHog from http://localhost:8025/
+Emails sentout from dev enviroment is caught by [Mailpit](https://github.com/axllent/mailpit).
+Access Mailpit from http://localhost:8025/
 
 ## Using pgAdmin
 
@@ -88,6 +97,31 @@ Access MailHog from http://localhost:8025/
 
 - Run Dev Server: `npm run dev`
 - Generate Production Build: `npm run build`
+
+## Using rfced-xfer data
+
+### Obtaining or updating a database dump
+
+To obtain or update your rfced-xfer database dump, on the host (i.e., _outside_ the docker container) run
+```sh
+./refresh_xfer_dump.sh
+```
+This will prompt you to log in to Azure if necessary, then download the latest xfer dump.
+
+### Loading a new database dump
+
+After obtaining the new database dump, on the host (i.e., _outside_ the docker container), run
+```sh
+./rebuild_db_container.sh
+```
+This will destroy your db container and its data, then build a new one using the dump found in `purple.dump`. If there is no such file, an empty database will be created.
+
+### Returning to an empty database
+
+To start over with an empty database after using an rfced-xfer dump
+1. Remove the file `purple.dump`
+2. Follow the steps to [load a new database dump](#loading-a-new-database-dump)
+3. Restart your docker environment or run `./manage.py migrate` in your app container.
 
 ## Create demo data
 

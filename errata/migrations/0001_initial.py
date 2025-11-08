@@ -12,8 +12,8 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("datatracker", "0001_initial"),
-        ("rpc", "0001_initial"),
+        ("datatracker", "0002_initial"),
+        ("rpc", "0016_alter_assignment_state_and_more"),
     ]
 
     operations = [
@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
-            name="Errata",
+            name="Erratum",
             fields=[
                 (
                     "id",
@@ -65,8 +65,8 @@ class Migration(migrations.Migration):
                 ("submitter_name", models.CharField(blank=True, max_length=80)),
                 ("submitter_email", models.EmailField(blank=True, max_length=120)),
                 ("notes", models.TextField(blank=True)),
-                ("submitted_at", models.DateField()),
-                ("posted_at", models.DateField(null=True)),
+                ("submitted_at", models.DateTimeField(blank=True, null=True)),
+                ("verified_at", models.DateTimeField(blank=True, null=True)),
                 ("created_at", models.DateTimeField(default=django.utils.timezone.now)),
                 ("updated_at", errata.models.AutoDateTimeField()),
                 (
@@ -78,10 +78,8 @@ class Migration(migrations.Migration):
                         ),
                         blank=True,
                         default=list,
-                        help_text=(
-                            "A list of formats. Possible values: 'HTML', 'PDF', "
-                            "and 'TXT'."
-                        ),
+                        help_text="A list of formats. Possible values: 'HTML', 'PDF', "
+                        "and 'TXT'.",
                         size=None,
                     ),
                 ),
@@ -89,7 +87,7 @@ class Migration(migrations.Migration):
                     "rfc_to_be",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="errata",
+                        related_name="erratum",
                         to="rpc.rfctobe",
                     ),
                 ),
@@ -98,7 +96,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="errata_submitter_dt_person",
+                        related_name="erratum_submitter_dt_person",
                         to="datatracker.datatrackerperson",
                     ),
                 ),
@@ -107,7 +105,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="errata_verifier_dt_person",
+                        related_name="erratum_verifier_dt_person",
                         to="datatracker.datatrackerperson",
                     ),
                 ),
@@ -117,16 +115,18 @@ class Migration(migrations.Migration):
                         db_column="status_slug",
                         default="reported",
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="errata",
+                        related_name="erratum",
                         to="errata.status",
                     ),
                 ),
                 (
                     "type",
                     models.ForeignKey(
+                        blank=True,
                         db_column="type_slug",
+                        null=True,
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="errata",
+                        related_name="erratum",
                         to="errata.type",
                     ),
                 ),
@@ -161,11 +161,11 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
-                    "errata",
+                    "erratum",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
-                        related_name="logs_errata",
-                        to="errata.errata",
+                        related_name="logs_erratum",
+                        to="errata.erratum",
                     ),
                 ),
                 (

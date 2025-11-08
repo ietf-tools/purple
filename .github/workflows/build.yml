@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 1
           fetch-tags: false
           path: purple
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 1
           fetch-tags: false
@@ -94,11 +94,11 @@ jobs:
           docker cp "${container_id}:/workspace/purple_api.yaml" ./
           docker rm "${container_id}"
           npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
-          tar cfz ../purple_client.tgz -C client purple_client
+          tar cfz ../purple_client.tgz -C client/app purple_client
           cp purple_api.yaml ..
 
       - name: Upload API
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: api-clients
           path: |

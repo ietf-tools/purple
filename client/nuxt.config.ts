@@ -19,12 +19,12 @@ export default defineNuxtConfig({
   modules: [
     '@nuxt/devtools',
     '@nuxt/eslint',
+    '@nuxt/icon',
     '@nuxtjs/color-mode',
     '@nuxtjs/tailwindcss',
     '@nuxtjs/robots',
     '@pinia/nuxt',
     'nuxt-headlessui',
-    'nuxt-icon',
     'nuxt-snackbar',
     'nuxt-svgo',
     'nuxt-security',
@@ -73,20 +73,13 @@ export default defineNuxtConfig({
     typeCheck: false
   },
   vite: {
-    css: {
-      preprocessorOptions: {
-        scss: {
-          api: 'modern-compiler'
-        }
-      }
-    },
     optimizeDeps: {
       // Deps that vite does not detect statically
       include: [
         'lodash-es',
         'luxon',
         'humanize-duration',
-        'vue3-snackbar'
+        // 'vue3-snackbar'
       ]
     },
     plugins: [
@@ -98,5 +91,10 @@ export default defineNuxtConfig({
         }
       }
     ]
-  }
+  },
+  nitro: {
+    routeRules: {
+      '/__debug__/**': { proxy: 'http://localhost:8088/__debug__/**' },
+    },
+  },
 })

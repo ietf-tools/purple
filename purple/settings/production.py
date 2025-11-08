@@ -118,3 +118,21 @@ if _memcached_host is not None:
             "TIMEOUT": 600,  # 10 minute default timeout
         }
     }
+
+
+# Email
+_email_host = os.environ.get("PURPLE_EMAIL_HOST", None)
+if _email_host is not None:
+    # Email is configured via the PURPLE_EMAIL_* settings. Use those.
+    _email_port = os.environ.get("PURPLE_EMAIL_PORT", None)
+else:
+    # Use the mailpit k8s service settings if present
+    _email_host = os.environ.get("MAILPIT_SERVICE_HOST", None)
+    _email_port = os.environ.get("MAILPIT_SERVICE_PORT", None)
+
+# Set up mail if it is configured
+if _email_host is not None:
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = _email_host
+    if _email_port is not None:
+        EMAIL_PORT = _email_port

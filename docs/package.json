@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "description": "",
   "devDependencies": {
-    "vue-docgen-cli": "^4.67.0"
+    "vue-docgen-cli": "4.79.0"
   },
   "scripts": {
-    "build": "vue-docgen ../../client/components ./output"
+    "build": "vue-docgen"
   }
 }

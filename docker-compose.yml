@@ -1,14 +1,17 @@
 services:
   db:
-    image: postgres:16
+    build:
+      dockerfile: docker/db.Dockerfile
     volumes:
       - postgresdb-data:/var/lib/postgresql/data
+      - .:/workspace
     restart: unless-stopped
     environment:
       - POSTGRES_DB=rpctools
       - POSTGRES_USER=rpc
       - POSTGRES_PASSWORD=abcd1234
       - POSTGRES_HOST_AUTH_METHOD=trust
+      - DUMPFILE=/workspace/purple.dump
 
   app:
     build:
@@ -58,8 +61,11 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
-  mailhog:
-    image: mailhog/mailhog:latest
+  mailpit:
+    image: axllent/mailpit:v1.27
+    environment:
+      - MP_DISABLE_VERSION_CHECK=true
+      - MP_LABEL=PurpleMail
     ports:
       - "1025:1025"
       - "8025:8025"

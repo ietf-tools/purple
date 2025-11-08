@@ -3,10 +3,10 @@ import formsPlugin from '@tailwindcss/forms'
 /** @type {import('tailwindcss').Config} */
 export default {
   content: [
-    "./layouts/*.{html,ts,vue}",
-    "./pages/*.{html,ts,vue}",
-    "./utilities/*.{html,ts,vue}",
-    "./components/*.{html,ts,vue}",
+    "./app/layouts/*.{html,ts,vue}",
+    "./app/pages/*.{html,ts,vue}",
+    "./app/components/*.{html,ts,vue}",
+    "./app/utils/*.{html,ts,vue}",
   ],
   darkMode: 'class',
   plugins: [

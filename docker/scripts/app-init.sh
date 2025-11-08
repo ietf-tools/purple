@@ -40,13 +40,16 @@ cd ..
 echo "Running migrations..."
 ./manage.py migrate --no-input || true
 
+echo "Populating initial history..."
+./manage.py populate_history --auto || true
+
 # Collect statics
 ./manage.py collectstatic --no-input || true
 
 # Django should be operational now. Build purple API client.
 ./manage.py spectacular --file purple_api.yaml && \
     npx --yes @openapitools/openapi-generator-cli generate --generator-key purple  || true
-    /bin/cp purple_api.yaml client/purple_client/.purple_api.yaml
+    /bin/cp purple_api.yaml client/app/purple_client/.purple_api.yaml
 
 sudo touch /.dev-ready
 

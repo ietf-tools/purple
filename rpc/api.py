@@ -1,13 +1,17 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import re
+from collections import defaultdict
 from dataclasses import dataclass
 
 import rpcapi_client
+from django import forms
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -17,6 +21,7 @@ from drf_spectacular.utils import (
     extend_schema_view,
     inline_serializer,
 )
+from rest_framework import filters as drf_filters
 from rest_framework import mixins, serializers, status, views, viewsets
 from rest_framework.decorators import (
     action,
@@ -36,6 +41,8 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
 from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
+    ActionHolder,
     Assignment,
     Capability,
     Cluster,
@@ -50,7 +57,9 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     TlpBoilerplateChoiceName,
+    UnusableRfcNumber,
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
@@ -68,6 +77,7 @@ from .serializers import (
     NestedAssignmentSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
+    RfcToBeHistorySerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
@@ -75,6 +85,10 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    SubseriesDoc,
+    SubseriesDocSerializer,
+    SubseriesMemberSerializer,
+    UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
 )
@@ -111,6 +125,14 @@ def profile(request):
     dt_person = user.datatracker_person()
     # hasattr() test also handles None case
     rpcperson = dt_person.rpcperson if hasattr(dt_person, "rpcperson") else None
+    # grant manager permissions to managers and superusers
+    if user.is_superuser:
+        is_manager = True
+    elif rpcperson is None:
+        is_manager = False
+    else:
+        is_manager = rpcperson.can_hold_role.filter(slug="manager").exists()
+
     return JsonResponse(
         {
             "authenticated": True,
@@ -118,11 +140,7 @@ def profile(request):
             "name": user.name,
             "avatar": user.avatar,
             "rpcPersonId": rpcperson.id if rpcperson is not None else None,
-            "isManager": (
-                False
-                if rpcperson is None
-                else rpcperson.can_hold_role.filter(slug="manager").exists()
-            ),
+            "isManager": is_manager,
         }
     )
 
@@ -139,7 +157,7 @@ def profile_as_person(request, rpc_person_id):
             "authenticated": request.user.is_authenticated,
             "id": None,
             "name": rpcperson.datatracker_person.plain_name,
-            "avatar": f"https://i.pravatar.cc/150?u={rpcperson.datatracker_person.datatracker_id}",
+            "avatar": rpcperson.datatracker_person.picture,
             "rpcPersonId": rpcperson.id,
             "isManager": (
                 False
@@ -205,17 +223,19 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     TODO: permissions
     """
 
-    queryset = Assignment.objects.exclude(state="done")
+    queryset = Assignment.objects.exclude(
+        state__in=[Assignment.State.DONE, Assignment.State.WITHDRAWN]
+    )
     serializer_class = NestedAssignmentSerializer
 
     def get_queryset(self):
         user = self.request.user
-        req_person_id = self.kwargs["person_id"]
+        req_person_id = int(self.kwargs["person_id"])
 
         queryset = (
             super()
             .get_queryset()
-            .select_related("rfc_to_be")
+            .select_related("rfc_to_be__draft", "person__datatracker_person")
             .filter(person_id=req_person_id)
         )
 
@@ -230,7 +250,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         if (
             dt_person is None
             or not hasattr(dt_person, "rpcperson")
-            or dt_person.rpc_person.id != req_person_id
+            or dt_person.rpcperson.id != req_person_id
         ):
             raise PermissionDenied("Unauthorized request")
 
@@ -311,6 +331,7 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
+    draft_info = None
     try:
         draft = Document.objects.get(datatracker_id=document_id)
     except Document.DoesNotExist:
@@ -339,44 +360,70 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # Get ref list from Datatracker
             references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
-            already_in_queue = dict(
+            existing_rfc_to_be = dict(
                 RfcToBe.objects.filter(
-                    draft__datatracker_id__in=[s.id for s in references],
-                    disposition__slug__in=("created", "in_progress"),
-                ).values_list("draft__datatracker_id", "draft__name")
+                    draft__datatracker_id__in=[s.id for s in references]
+                ).values_list("draft__datatracker_id", "disposition__slug")
             )
-            rfc_to_be_exists = RfcToBe.objects.filter(
-                draft__datatracker_id__in=[s.id for s in references],
-            ).values_list("draft__datatracker_id", flat=True)
             for reference in references:
                 # Create a RelatedDoc for each normative reference
-                if reference.id not in rfc_to_be_exists:
+                if reference.id not in existing_rfc_to_be:
                     # Get the draft for the reference, otherwise create it
                     try:
                         draft = Document.objects.get(datatracker_id=reference.id)
                     except Document.DoesNotExist as err:
-                        draft_info = rpcapi.get_draft_by_id(reference.id)
-                        if draft_info is None:
+                        draft_info_ref = rpcapi.get_draft_by_id(reference.id)
+                        if draft_info_ref is None:
                             raise NotFound(
                                 "Unable to get draft info for reference"
                             ) from err
                         draft, _ = Document.objects.get_or_create(
                             datatracker_id=reference.id,
                             defaults={
-                                "name": draft_info.name,
-                                "rev": draft_info.rev,
-                                "title": draft_info.title,
-                                "stream": draft_info.stream,
-                                "pages": draft_info.pages,
-                                "intended_std_level": draft_info.intended_std_level,
+                                "name": draft_info_ref.name,
+                                "rev": draft_info_ref.rev,
+                                "title": draft_info_ref.title,
+                                "stream": draft_info_ref.stream,
+                                "pages": draft_info_ref.pages,
+                                "intended_std_level": draft_info_ref.intended_std_level,
                             },
                         )
-                    create_rpc_related_document("missref", rfctobe.pk, draft.name)
+                    create_rpc_related_document("not-received", rfctobe.pk, draft.name)
+                else:
+                    disposition = existing_rfc_to_be[reference.id]
+                    if disposition in ("created", "in_progress"):
+                        create_rpc_related_document(
+                            "refqueue", rfctobe.pk, reference.name
+                        )
+                    elif disposition == "withdrawn":
+                        create_rpc_related_document(
+                            "withdrawnref", rfctobe.pk, reference.name
+                        )
+                    else:
+                        pass  # ignoring references to already published RfcToBe
 
-                if reference.id in already_in_queue:
-                    create_rpc_related_document(
-                        "refqueue", rfctobe.pk, already_in_queue[reference.id]
+            # create the authors
+            if draft_info is None:
+                draft_info = rpcapi.get_draft_by_id(document_id)
+            author_order = 1
+            for author in draft_info.authors:
+                datatracker_person, _ = DatatrackerPerson.objects.get_or_create(
+                    datatracker_id=author.person
+                )
+                author_serializer = CreateRfcAuthorSerializer(
+                    data={
+                        "titlepage_name": author.plain_name,
+                    }
+                )
+                if author_serializer.is_valid():
+                    author_serializer.save(
+                        datatracker_person=datatracker_person,
+                        rfc_to_be=rfctobe,
+                        order=author_order,
                     )
+                    author_order += 1
+                else:
+                    return Response(author_serializer.errors, status=400)
 
         return Response(RfcToBeSerializer(rfctobe).data)
     else:
@@ -388,8 +435,40 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # lists its contents. Normally we'd expect the List action to list queues and
     # the Retrieve action to retrieve a single queue. That does not apply to our
     # concept of a singular queue, so I'm using this because it works.
-    queryset = RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+    HistoricalRfcToBe = RfcToBe.history.model
+    enqueued_at_sq = Subquery(
+        HistoricalRfcToBe.objects.filter(id=OuterRef("pk"), history_type="+")
+        .order_by("history_date")
+        .values("history_date")[:1]
+    )
+
+    queryset = (
+        RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+        .annotate(enqueued_at=enqueued_at_sq)
+        .select_related(
+            "draft",
+        )
+        .prefetch_related(
+            "labels",
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.exclude(
+                    state__in=ASSIGNMENT_INACTIVE_STATES
+                ).select_related("person__datatracker_person", "role"),
+                to_attr="active_assignments",
+            ),
+            Prefetch(
+                "actionholder_set",
+                queryset=ActionHolder.objects.filter(
+                    completed__isnull=True
+                ).select_related("datatracker_person"),
+                to_attr="active_actionholders",
+            ),
+        )
+    )
     serializer_class = QueueItemSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["disposition"]
 
 
 class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
@@ -403,10 +482,17 @@ class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ClusterSerializer
     lookup_field = "number"
 
+    def get_queryset(self):
+        """Get clusters with RFC number annotations"""
+        return Cluster.objects.with_rfc_number_annotated()
+
 
 class AssignmentViewSet(viewsets.ModelViewSet):
     queryset = Assignment.objects.all()
     serializer_class = AssignmentSerializer
+    filter_backends = (filters.DjangoFilterBackend, drf_filters.OrderingFilter)
+    ordering_fields = ["id"]
+    ordering = ["-id"]
 
     def get_queryset(self):
         user = self.request.user
@@ -429,16 +515,51 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         return base_queryset.filter(person=dt_person.rpcperson)
 
 
+class RfcToBeQueryParamsForm(forms.Form):
+    published_within_days = forms.IntegerField(required=False, min_value=0)
+
+
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="published_within_days",
+            type=OpenApiTypes.INT,
+            location=OpenApiParameter.QUERY,
+            required=False,
+            description="Show only RFCs published within the last N days.",
+        ),
+    ]
+)
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
+    filter_backends = (
+        filters.DjangoFilterBackend,
+        drf_filters.OrderingFilter,
+    )
+    filterset_fields = ["disposition"]
+    ordering_fields = ["id", "published_at", "draft__name"]
+    ordering = ["-id"]
+    pagination_class = DefaultLimitOffsetPagination
 
-    @extend_schema(responses=RfcToBeSerializer(many=True))
-    @action(detail=False)
-    def in_progress(self, request):
-        in_progress = RfcToBe.objects.filter(disposition_id="in_progress")
-        serializer = self.get_serializer(in_progress, many=True)
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        form = RfcToBeQueryParamsForm(self.request.query_params)
+        if form.is_valid():
+            days = form.cleaned_data.get("published_within_days")
+            if days is not None:
+                days_ago_limit = timezone.now() - datetime.timedelta(days=int(days))
+                queryset = queryset.filter(published_at__gte=days_ago_limit)
+        else:
+            raise serializers.ValidationError(form.errors)
+        return queryset
+
+    @extend_schema(responses=RfcToBeHistorySerializer(many=True))
+    @action(detail=True, pagination_class=None)
+    def history(self, request, draft__name=None):
+        rfc_to_be = self.get_object()
+        serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
         return Response(serializer.data)
 
 
@@ -553,7 +674,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             OpenApiExample(
                 "Create Related Document",
                 value={
-                    "relationship": "missref",
+                    "relationship": "not-received",
                     "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
                 },
                 request_only=True,
@@ -562,7 +683,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 "Created Related Document Response",
                 value={
                     "id": 1,
-                    "relationship": "missref",
+                    "relationship": "not-received",
                     "draft_name": "draft-source-document",
                     "target_draft_name": "draft-lorem-ipsum-dolor-sit-amet",
                 },
@@ -652,6 +773,25 @@ class StatsLabels(views.APIView):
                         }
                     )
         return Response({"label_stats": results})
+
+
+class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
+    queryset = UnusableRfcNumber.objects.all()
+    serializer_class = UnusableRfcNumberSerializer
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def partial_update(self, request, *args, **kwargs):
+        """Allow PATCH operations only for the comment field"""
+        allowed_fields = {"comment"}
+        provided_fields = set(request.data.keys())
+
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {"detail": "Only 'comment' field can be updated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().partial_update(request, *args, **kwargs)
 
 
 class DocRelationshipNameViewSet(viewsets.ReadOnlyModelViewSet):
@@ -870,3 +1010,89 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class SubseriesMemberViewSet(viewsets.ModelViewSet):
+    """ViewSet to track which RfcToBes have been assigned to which subseries"""
+
+    queryset = SubseriesMember.objects.select_related("type")
+    serializer_class = SubseriesMemberSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["number", "type", "rfc_to_be"]
+    ordering = ["type", "number", "id"]
+
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def partial_update(self, request, *args, **kwargs):
+        allowed_fields = {"type", "number"}
+        provided_fields = set(request.data.keys())
+
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {"detail": "Only 'type' and 'number' fields can be updated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().partial_update(request, *args, **kwargs)
+
+
+class SubseriesViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """ViewSet for listing subseries and contained RFCs"""
+
+    serializer_class = SubseriesDocSerializer
+
+    lookup_field = "subseries_slug"
+    lookup_value_regex = r"[a-z]+\d+"  # Matches patterns like bcp123
+
+    def get_queryset(self):
+        return SubseriesMember.objects.select_related(
+            "type", "rfc_to_be", "rfc_to_be__draft"
+        ).all()
+
+    def retrieve(self, request, subseries_slug=None):
+        """Get all RfcToBe items in a specific subseries"""
+
+        # Parse subseries slug (e.g., "bcp123" -> type="bcp", number=123)
+        match = re.match(r"^([a-z]+)(\d+)$", subseries_slug.lower())
+
+        if match is None:
+            return Response(
+                {
+                    "error": "Invalid subseries format. Use format like 'bcp123', "
+                    "'std123', 'fyi123'"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        type_slug = match.group(1)
+        number = int(match.group(2))
+        subseries = SubseriesDoc(type=type_slug, number=number)
+        serializer = SubseriesDocSerializer(subseries)
+
+        return Response(serializer.data)
+
+    def list(self, request):
+        """List all subseries"""
+
+        # Group subseries by type and number
+        subseries_groups = defaultdict(lambda: {"rfcs": []})
+
+        members = self.get_queryset()
+        for member in members:
+            key = f"{member.type.slug}{member.number}"
+
+            if not subseries_groups[key]["rfcs"]:
+                subseries_groups[key]["type"] = member.type.slug
+                subseries_groups[key]["number"] = member.number
+
+        result = []
+        for _, subseries_data in subseries_groups.items():
+            subseries = SubseriesDoc(
+                type=subseries_data["type"], number=subseries_data["number"]
+            )
+            serializer = SubseriesDocSerializer(subseries)
+            result.append(serializer.data)
+
+        return Response(sorted(result, key=lambda x: (x["type"], x["number"])))

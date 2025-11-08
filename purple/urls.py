@@ -16,6 +16,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from django.conf import settings
 from django.contrib import admin
 from django.http import HttpResponse
 from django.urls import include, path, register_converter
@@ -84,6 +85,10 @@ router.register(r"stream_names", rpc_api.StreamNameViewSet)
 router.register(
     r"tlp_boilerplate_choice_names", rpc_api.TlpBoilerplateChoiceNameViewSet
 )
+router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
+router.register(r"subseries_members", rpc_api.SubseriesMemberViewSet)
+router.register(r"subseries", rpc_api.SubseriesViewSet, basename="subseries")
+
 
 urlpatterns = [
     path("health/", lambda _: HttpResponse(status=204)),  # no content
@@ -103,4 +108,13 @@ urlpatterns = [
     path("api/rpc/submissions/<int:document_id>/import/", rpc_api.import_submission),
     path("api/rpc/version/", rpc_api.version),
     path("api/rpc/", include(router.urls)),
+    path("api/errata/", include("errata.urls")),
 ]
+
+# Add debug toolbar URLs for development
+if settings.DEBUG:
+    import debug_toolbar
+
+    urlpatterns = [
+        path("__debug__/", include(debug_toolbar.urls)),
+    ] + urlpatterns

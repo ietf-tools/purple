@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import logging
 from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import models
+from django.db.models import OuterRef, Prefetch, Subquery
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -17,6 +19,8 @@ from .dt_v1_api_utils import (
     datatracker_streamname,
 )
 from .rules import is_comment_author, is_rpc_person
+
+logger = logging.getLogger(__name__)
 
 
 class DumpInfo(models.Model):
@@ -98,6 +102,7 @@ class RfcToBe(models.Model):
 
     external_deadline = models.DateTimeField(null=True, blank=True)
     internal_goal = models.DateTimeField(null=True, blank=True)
+    published_at = models.DateTimeField(null=True, blank=True)
 
     # Labels applied to this instance. To track history, see
     # https://django-simple-history.readthedocs.io/en/latest/historical_model.html#tracking-many-to-many-relationships
@@ -122,6 +127,36 @@ class RfcToBe(models.Model):
         return (
             f"RfcToBe for {self.draft if self.rfc_number is None else self.rfc_number}"
         )
+
+    def _warn_if_not_april1_rfc(self):
+        """Emit a warning if called with a non-April-first RFC"""
+        if not self.is_april_first_rfc:
+            logger.warning(
+                f"Warning! RfcToBe(pk={self.pk}) has no draft "
+                "and is not an April 1st RFC"
+            )
+
+    # Properties that we currently only get from our draft
+    @property
+    def name(self) -> str:
+        if self.draft:
+            return self.draft.name
+        self._warn_if_not_april1_rfc()
+        if self.rfc_number is not None:
+            return f"RFC {self.rfc_number}"
+        return f"<RfcToBe {self.pk}>"
+
+    @property
+    def title(self) -> str:
+        if self.draft:
+            return self.draft.title
+        self._warn_if_not_april1_rfc()
+        return "<No title>"
+
+    # Easier interface to the cluster_set
+    @property
+    def cluster(self) -> "Cluster | None":
+        return self.draft.cluster_set.first() if self.draft else None
 
     @dataclass
     class Interval:
@@ -152,6 +187,20 @@ class RfcToBe(models.Model):
         if len(intervals) > 0 and intervals[-1].end is None:
             intervals[-1].end = datetime.datetime.now().astimezone(datetime.UTC)
         return intervals
+
+    def incomplete_activities(self):
+        from .lifecycle import incomplete_activities
+
+        return RpcRole.objects.filter(
+            slug__in=[activity.role_slug for activity in incomplete_activities(self)]
+        )
+
+    def pending_activities(self):
+        from .lifecycle import pending_activities
+
+        return RpcRole.objects.filter(
+            slug__in=[activity.role_slug for activity in pending_activities(self)]
+        )
 
 
 class Name(models.Model):
@@ -239,7 +288,27 @@ class ClusterMember(models.Model):
         ordering = ["order"]
 
 
+class ClusterQuerySet(models.QuerySet):
+    def with_rfc_number_annotated(self):
+        """Annotate cluster members with RFC numbers"""
+        rfc_number_subquery = Subquery(
+            RfcToBe.objects.filter(draft=OuterRef("doc"))
+            .exclude(disposition__slug="withdrawn")
+            .values("rfc_number")[:1]
+        )
+
+        return self.prefetch_related(
+            Prefetch(
+                "clustermember_set",
+                queryset=ClusterMember.objects.select_related("doc").annotate(
+                    rfc_number_annotated=rfc_number_subquery
+                ),
+            )
+        )
+
+
 class Cluster(models.Model):
+    objects = ClusterQuerySet.as_manager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
 
@@ -279,35 +348,77 @@ class Capability(models.Model):
         return self.name
 
 
-ASSIGNMENT_STATE_CHOICES = (
-    ("assigned", "assigned"),
-    ("in progress", "in progress"),
-    ("done", "done"),
-)
+class _AssignmentState(models.TextChoices):
+    ASSIGNED = "assigned"
+    IN_PROGRESS = "in_progress"
+    DONE = "done"
+    WITHDRAWN = "withdrawn"
+    CLOSED_FOR_HOLD = "closed_for_hold"
+
+
+ASSIGNMENT_INACTIVE_STATES = [
+    _AssignmentState.DONE,
+    _AssignmentState.WITHDRAWN,
+    _AssignmentState.CLOSED_FOR_HOLD,
+]
 
 
 class AssignmentQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only active Assignments"""
-        return super().exclude(state="done")
+        return super().exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
 
 
 class Assignment(models.Model):
     """Assignment of an RpcPerson to an RfcToBe"""
 
+    State = _AssignmentState
+
+    # Custom manager
     objects = AssignmentQuerySet.as_manager()
 
+    # Fields
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    person = models.ForeignKey(RpcPerson, on_delete=models.PROTECT)
-    role = models.ForeignKey(RpcRole, on_delete=models.PROTECT)
-    state = models.CharField(
-        max_length=32, choices=ASSIGNMENT_STATE_CHOICES, default="assigned"
+    person = models.ForeignKey(
+        RpcPerson, on_delete=models.PROTECT, null=True, blank=True
     )
+    role = models.ForeignKey(RpcRole, on_delete=models.PROTECT)
+    state = models.CharField(max_length=32, choices=State, default=State.ASSIGNED)
     comment = models.TextField(blank=True)
     time_spent = models.DurationField(default=datetime.timedelta(0))  # tbd
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["person", "rfc_to_be", "role"],
+                condition=~models.Q(state__in=ASSIGNMENT_INACTIVE_STATES),
+                name="unique_active_assignment_per_person_rfc_role",
+                violation_error_message="A person can only have one active assignment "
+                "per RFC and role",
+            ),
+        ]
 
     def __str__(self):
         return f"{self.person} assigned as {self.role} for {self.rfc_to_be}"
+
+    def when_entered_state(self, state: State) -> datetime.datetime | None:
+        last_held = self.history.filter(state=state).last()
+        return None if last_held is None else last_held.history_date
+
+    def when_left_state(self, state: State) -> datetime.datetime | None:
+        last_held = self.history.filter(state=state).last()
+        following_state = None if last_held is None else last_held.next_record
+        return None if following_state is None else following_state.history_date
+
+    def when_assigned(self) -> datetime.datetime | None:
+        return self.when_entered_state(self.State.ASSIGNED)
+
+    def when_started(self) -> datetime.datetime | None:
+        return self.when_entered_state(self.State.IN_PROGRESS)
+
+    def when_completed(self) -> datetime.datetime | None:
+        return self.when_entered_state(self.State.DONE)
 
 
 class RfcAuthor(models.Model):
@@ -330,6 +441,7 @@ class RfcAuthor(models.Model):
         null=False,
         blank=False,
     )
+    affiliation = models.CharField(max_length=255, null=True, blank=True)
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
@@ -360,6 +472,12 @@ class AdditionalEmail(models.Model):
         return f"{self.email} associated with {self.rfc_to_be}"
 
 
+class FinalApprovalQuerySet(models.QuerySet):
+    def active(self):
+        """QuerySet including only not-completed FinalApprovals"""
+        return self.filter(approved__isnull=True)
+
+
 class FinalApproval(models.Model):
     """Captures approvals for publication
 
@@ -378,6 +496,8 @@ class FinalApproval(models.Model):
     becomes non-responsive). Overriding approver should never be not None if
     approver is None.
     """
+
+    objects = FinalApprovalQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     body = models.CharField(max_length=64, blank=True, default="")
@@ -542,21 +662,23 @@ class RpcRelatedDocument(models.Model):
                 name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
             ),
-            # Unique for (source, target_document) when target_document is set
+            # Unique for (source, target_document, relationship) when target_document
+            # is set
             models.UniqueConstraint(
-                fields=["source", "target_document"],
+                fields=["source", "target_document", "relationship"],
                 condition=models.Q(target_document__isnull=False),
-                name="unique_source_targetdoc",
-                violation_error_message="A source/target_document relationship must "
-                "be unique.",
+                name="unique_source_targetdoc_relationship",
+                violation_error_message="A source/target_document/relationship "
+                "combination must be unique.",
             ),
-            # Unique for (source, target_rfctobe) when target_rfctobe is set
+            # Unique for (source, target_rfctobe, relationship) when target_rfctobe
+            # is set
             models.UniqueConstraint(
-                fields=["source", "target_rfctobe"],
+                fields=["source", "target_rfctobe", "relationship"],
                 condition=models.Q(target_rfctobe__isnull=False),
-                name="unique_source_targetrfctobe",
-                violation_error_message="A source/target_rfctobe relationship must "
-                "be unique.",
+                name="unique_source_targetrfctobe_relationship",
+                violation_error_message="A source/target_rfctobe/relationship "
+                "combination must be unique.",
             ),
         ]
 
@@ -648,6 +770,7 @@ class Label(models.Model):
         default="purple",
         choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
+    used = models.BooleanField(default=True)
     history = HistoricalRecords()
 
     def __str__(self):
@@ -705,3 +828,34 @@ class ApprovalLogMessage(models.Model):
             self.by,
             self.time.strftime("%Y-%m-%d"),
         )
+
+
+class SubseriesMember(models.Model):
+    """Tracks which RFC belongs to which subseries and its number"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    type = models.ForeignKey("SubseriesTypeName", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "type", "number"],
+                name="unique_subseries_member",
+                violation_error_message="an RfcToBe can only be in the same subseries "
+                "once",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"RfcToBe {self.rfc_to_be.id} is part of subseries {self.type.slug} "
+            f" {self.number}"
+        )
+
+
+class SubseriesTypeName(Name):
+    """Types of subseries, e.g., BCP, FYI, STD, etc."""
+
+    pass

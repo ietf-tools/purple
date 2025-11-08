@@ -16,7 +16,7 @@
       "purple": {
         "generatorName": "typescript-fetch",
         "inputSpec": "#{cwd}/purple_api.yaml",
-        "output": "#{cwd}/client/purple_client",
+        "output": "#{cwd}/client/app/purple_client",
         "additionalProperties": {
           "packageName": "purple_client",
           "disallowAdditionalPropertiesIfNotPresent": false

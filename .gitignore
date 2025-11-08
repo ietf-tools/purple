@@ -24,6 +24,9 @@ logs
 !.env.example
 secrets.env
 
+# Local settings
+purple/settings/development_local.py
+
 # Python
 *.pyc
 __pycache__
@@ -31,7 +34,7 @@ __pycache__
 /rpcapi.yaml
 /openapi/rpcapi_client
 /docker/docker-compose.extend-custom.yml
-client/purple_client
+client/app/purple_client
 /static
 purple_api.yaml
-
+/purple.dump

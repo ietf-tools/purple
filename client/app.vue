@@ -13,7 +13,7 @@
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user'
-import { testIsAuthRoute } from './utilities/url'
+import { testIsAuthRoute } from '~/utils/url'
 
 const route = useRoute()
 const userStore = useUserStore()
