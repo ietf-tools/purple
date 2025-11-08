@@ -804,3 +804,23 @@ class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnusableRfcNumber
         fields = ["number", "comment"]
+
+
+class MailAttachmentSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    content = serializers.FileField(
+        allow_empty_file=False,
+        use_url=False,
+    )
+
+
+class MailMessageSerializer(serializers.Serializer):
+    """Mail message serializer
+
+    Because of the FileField, this cannot be used with a JSONParser.
+    """
+    to = serializers.CharField(allow_blank=False)
+    cc = serializers.CharField(default="", allow_blank=True)
+    subject = serializers.CharField(allow_blank=False)
+    body = serializers.CharField(allow_blank=False)
+    attachments = MailAttachmentSerializer(many=True)

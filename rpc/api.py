@@ -32,6 +32,8 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.parsers import MultiPartParser
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
@@ -83,6 +85,7 @@ from .serializers import (
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
+    MailMessageSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
@@ -972,3 +975,33 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class SendMail(views.APIView):
+    parser_classes = [MultiPartParser]  # needed for FileField
+    permission_classes = [AllowAny]  # todo not this
+
+    @extend_schema(
+        operation_id="send_mail",
+        request=MailMessageSerializer,
+        responses=inline_serializer(
+            name="Null",
+            fields={},
+        ),
+    )
+    def post(self, request, format=None):
+        from hashlib import sha384
+
+        print(request.data)
+        serializer = MailMessageSerializer(data=request.data)
+        if serializer.is_valid():
+            print(f"to: {serializer.validated_data["to"]}")
+            print(f"cc: {serializer.validated_data["cc"]}")
+            print(f"subject: {serializer.validated_data["subject"]}")
+            for attachment in serializer.validated_data["attachments"]:
+                with attachment["content"].open("rb") as f:
+                    digest = sha384(f.read(), usedforsecurity=False).hexdigest()
+                print(f"{attachment["name"]}: {digest}")
+        else:
+            print(serializer.errors)
+        return JsonResponse({})
