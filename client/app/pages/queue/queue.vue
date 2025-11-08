@@ -27,25 +27,48 @@
             @change="(tristate: TristateValue) => hasExceptionTristate = tristate">
             Has Exception?
           </RpcTristateButton>
+          <RpcTristateButton :checked="isBlockedTristate"
+            @change="(tristate: TristateValue) => isBlockedTristate = tristate">
+            Is Blocked?
+          </RpcTristateButton>
         </div>
       </fieldset>
-      <fieldset class="w-64">
-        <legend class="font-bold text-sm flex items-end">
-          Current Assignment Role
-          <span class="text-md">&nbsp;</span>
-        </legend>
-          <div class="flex flex-col pt-1">
-            <select
-              v-model="selectedRoleFilter"
-              class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option :value="null">All Roles</option>
-              <option v-for="role in allRoles" :key="role" :value="role">
-                {{ role }}
-              </option>
-            </select>
-          </div>
-      </fieldset>
+      <div class="w-64 flex flex-col gap-4">
+        <fieldset>
+          <legend class="font-bold text-sm flex items-end">
+            Current Assignment Role
+            <span class="text-md">&nbsp;</span>
+          </legend>
+            <div class="flex flex-col pt-1">
+              <select
+                v-model="selectedRoleFilter"
+                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option :value="null">All Roles</option>
+                <option v-for="role in allRoles" :key="role" :value="role">
+                  {{ role }}
+                </option>
+              </select>
+            </div>
+        </fieldset>
+        <fieldset>
+          <legend class="font-bold text-sm flex items-end">
+            Pending Assignment Role
+            <span class="text-md">&nbsp;</span>
+          </legend>
+            <div class="flex flex-col pt-1">
+              <select
+                v-model="selectedPendingRoleFilter"
+                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option :value="null">All Roles</option>
+                <option v-for="role in allPendingRoles" :key="role" :value="role">
+                  {{ role }}
+                </option>
+              </select>
+            </div>
+        </fieldset>
+      </div>
       <fieldset class="flex-1">
         <legend class="font-bold text-sm flex items-end">
           Label
@@ -114,7 +137,7 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { sortDate } from '~/utils/queue'
+import { calculatePeopleWorkload, sortDate } from '~/utils/queue'
 import type { TabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
@@ -150,6 +173,7 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
 const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
+const isBlockedTristate = ref<TristateValue>(TRISTATE_MIXED)
 const selectedLabelFilters = ref<Record<number, TristateValue>>({})
 const selectedRoleFilter = ref<string | null>(null)
 
@@ -214,13 +238,25 @@ const columns = [
         )
       },
       sortingFn: (rowA, rowB, columnId) => {
+        const now = DateTime.now()
+
         const a = rowA.getValue(columnId)
-        const b = rowB.getValue(columnId)
-        if(typeof a !== 'number' || typeof b !== 'number') {
-          console.warn(`sortingFn expected column ${JSON.stringify(columnId)} to be a number`)
-          return 0
+        if (!(a instanceof Date)) {
+          console.error("Not date was", a)
+          throw Error(`Expected date but was something else. See console.`)
         }
-        return (a > b) ? 1 : (a < b) ? -1 : 0
+        const aDateTime = DateTime.fromJSDate(a)
+        const aDiffInDays = now.diff(aDateTime, 'days').days
+
+        const b = rowB.getValue(columnId)
+        if (!(b instanceof Date)) {
+          console.error("Not date was", b)
+          throw Error(`Expected date but was something else. See console.`)
+        }
+        const bDateTime = DateTime.fromJSDate(b)
+        const bDiffInDays = now.diff(bDateTime, 'days').days
+
+        return (aDiffInDays > bDiffInDays) ? 1 : (aDiffInDays < bDiffInDays) ? -1 : 0
       },
     }
   ),
@@ -277,40 +313,47 @@ const columns = [
               console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
               throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
             }
-            // the first assignment of person should always match the current assignment of person
-            // because there shouldn't be redundant assignments
+            // the first assignment of person in the list of assignments should always match the current assignment of person
+            // because there shouldn't be duplicate/redundant assignments
             // but if the id is different then it is a redundant assignment,
             // so we'll prompt the user to delete them
             return assignment.id !== firstAssignmentOfPersonToRole.id
           })
 
-          listItems.push(h('li', {}, [
-            h(BaseBadge, { label: role, class: 'mr-1' }),
-            ...assignmentsOfRole.map(assignment => {
-              const rpcPerson = people.value.find((p) => p.id === assignment.person)
-              return h(Anchor, {
-                href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-                class: [ANCHOR_STYLE, 'text-sm nowrap']
-              }, () => [
-                rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
-              ])
-            }).reduce((acc, item, index, arr) => {
-              acc.push(item)
-              if (index < arr.length - 1) {
-                acc.push(', ')
-              } else {
-                acc.push(' ')
-              }
-              return acc
-            }, [] as (VNode | string)[]),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
-            ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
-              return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
-            })
+          listItems.push(h('li', { class: 'flex gap-3' }, [
+            h('span',
+              h(BaseBadge, { label: role, class: 'mr-1' })),
+            h('ul', { class: 'flex flex-col gap-2' }, [
+              ...assignmentsOfRole.map(assignment => {
+                const rpcPerson = people.value.find((p) => p.id === assignment.person)
+                return h(Anchor, {
+                  href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+                  class: [ANCHOR_STYLE, 'text-sm nowrap']
+                }, () => [
+                  rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
+                ])
+              }).reduce((acc, item, index, arr) => {
+                // add commas between items
+                const listItemChildren = []
+                listItemChildren.push(item)
+                if (index < arr.length - 1) {
+                  listItemChildren.push(', ')
+                } else {
+                  listItemChildren.push(' ')
+                }
+                const listItem = h('li', listItemChildren)
+                acc.push(listItem)
+                return acc
+              }, [] as (VNode | string)[])]),
+            h('span', [
+              h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
+              ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
+                return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
+              })])
           ]))
         }
 
-        return h('ul', {}, listItems)
+        return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
       },
       enableSorting: false,
     }
@@ -344,10 +387,10 @@ const columns = [
           throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
         }
 
-        return h('ul', {}, value.map(rpcRole =>
-          h('li', {}, [
-            h(BaseBadge, { label: rpcRole.name }),
-            h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign'),
+        return h('ul', { class: 'flex flex-col gap-3' }, value.map(rpcRole =>
+          h('li', { class: 'flex flex-row gap-2' }, [
+            h('div', h(BaseBadge, { label: rpcRole.slug })),
+            h('div', h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign')),
           ])
         ))
       },
@@ -391,6 +434,18 @@ const allRoles = computed(() => {
   return [...new Set(roles)].sort()
 })
 
+const allPendingRoles = computed(() => {
+  if (data.value === undefined) {
+    return []
+  }
+  const roleSlugs = data.value.flatMap(
+    (doc) => doc.pendingActivities?.map(role => role.slug) || []
+  )
+  return [...new Set(roleSlugs)].sort()
+})
+
+const selectedPendingRoleFilter = ref(null)
+
 const allLabelFilters = computed(() => {
   if (data.value === undefined) {
     return []
@@ -415,8 +470,10 @@ const table = useVueTable({
       return JSON.stringify([
         needsAssignmentTristate.value,
         hasExceptionTristate.value,
+        isBlockedTristate.value,
         selectedLabelFilters.value,
         selectedRoleFilter.value,
+        selectedPendingRoleFilter.value,
         searchQuery.value
       ])
     },
@@ -447,6 +504,13 @@ const table = useVueTable({
       }
     }
 
+    if (selectedPendingRoleFilter.value) {
+      const hasRole = d.pendingActivities?.some(role => role.slug === selectedPendingRoleFilter.value)
+      if (!hasRole) {
+        return false
+      }
+    }
+
     const needsAssignmentFilterFn = () => {
       if (needsAssignmentTristate.value === true) {
         return Boolean(!d.assignmentSet || d.assignmentSet.length === 0)
@@ -468,7 +532,17 @@ const table = useVueTable({
       }
     }
 
-    if (!(needsAssignmentFilterFn() && hasExceptionFilterFn())) {
+    const isBlockedFilterFn = () => {
+      if (isBlockedTristate.value === true) {
+        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length > 0 : false)
+      } else if (isBlockedTristate.value === false) {
+        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length === 0 : true)
+      } else if (isBlockedTristate.value == TRISTATE_MIXED) {
+        return true
+      }
+    }
+
+    if (!(needsAssignmentFilterFn() && hasExceptionFilterFn() && isBlockedFilterFn())) {
       return false
     }
 
@@ -588,39 +662,7 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
     return
   }
 
-  // Calculate the workload of an editor
-  const peopleWorkload: Record<number, RpcPersonWorkload> = {}
-  const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
-    assertIsNumber(personId)
-
-    assert(role.length !== 0)
-    assert(typeof pageCount === 'number')
-
-    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
-    if (clusterIds !== undefined) {
-      clusterIds.forEach(clusterId => {
-        if (!editorWorkload.clusterIds.includes(clusterId)) {
-          editorWorkload.clusterIds.push(clusterId)
-        }
-      })
-    }
-    editorWorkload.pageCountByRole[role] = (editorWorkload.pageCountByRole[role] ?? 0) + pageCount
-
-    peopleWorkload[personId] = editorWorkload
-  }
-  data.value.forEach(doc => {
-    const clustersWithDocument = clusters.value.filter(cluster => cluster.documents.some(clusterDocument =>
-      clusterDocument.name === doc.name
-    ))
-    const clusterIds = clustersWithDocument.map(cluster => cluster.number)
-    doc.assignmentSet?.forEach(assignment => {
-      if (assignment.person !== undefined && assignment.person !== null) {
-        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
-      } else {
-        console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
-      }
-    })
-  })
+  const peopleWorkload = calculatePeopleWorkload(clusters.value, data.value)
 
   openOverlayModal({
     component: AssignmentModal,

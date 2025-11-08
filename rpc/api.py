@@ -1,12 +1,14 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import re
+from collections import defaultdict
 from dataclasses import dataclass
 
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -42,10 +44,13 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
 from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
+    ActionHolder,
     Assignment,
     Capability,
     Cluster,
     DocRelationshipName,
+    FinalApproval,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -56,6 +61,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -66,10 +72,12 @@ from .serializers import (
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterSerializer,
+    CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     CreateRpcRelatedDocumentSerializer,
     DocumentCommentSerializer,
+    FinalApprovalSerializer,
     LabelSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
@@ -83,6 +91,9 @@ from .serializers import (
     Submission,
     SubmissionListItemSerializer,
     SubmissionSerializer,
+    SubseriesDoc,
+    SubseriesDocSerializer,
+    SubseriesMemberSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -228,7 +239,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 
     def get_queryset(self):
         user = self.request.user
-        req_person_id = self.kwargs["person_id"]
+        req_person_id = int(self.kwargs["person_id"])
 
         queryset = (
             super()
@@ -248,7 +259,7 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         if (
             dt_person is None
             or not hasattr(dt_person, "rpcperson")
-            or dt_person.rpc_person.id != req_person_id
+            or dt_person.rpcperson.id != req_person_id
         ):
             raise PermissionDenied("Unauthorized request")
 
@@ -433,7 +444,37 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # lists its contents. Normally we'd expect the List action to list queues and
     # the Retrieve action to retrieve a single queue. That does not apply to our
     # concept of a singular queue, so I'm using this because it works.
-    queryset = RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+    HistoricalRfcToBe = RfcToBe.history.model
+    enqueued_at_sq = Subquery(
+        HistoricalRfcToBe.objects.filter(id=OuterRef("pk"), history_type="+")
+        .order_by("history_date")
+        .values("history_date")[:1]
+    )
+
+    queryset = (
+        RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
+        .annotate(enqueued_at=enqueued_at_sq)
+        .select_related(
+            "draft",
+        )
+        .prefetch_related(
+            "labels",
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.exclude(
+                    state__in=ASSIGNMENT_INACTIVE_STATES
+                ).select_related("person__datatracker_person", "role"),
+                to_attr="active_assignments",
+            ),
+            Prefetch(
+                "actionholder_set",
+                queryset=ActionHolder.objects.filter(
+                    completed__isnull=True
+                ).select_related("datatracker_person"),
+                to_attr="active_actionholders",
+            ),
+        )
+    )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["disposition"]
@@ -978,6 +1019,117 @@ class SearchDatatrackerPersons(ListAPIView):
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
         return rpcapi.search_person(search=search, limit=limit, offset=offset)
+
+
+class SubseriesMemberViewSet(viewsets.ModelViewSet):
+    """ViewSet to track which RfcToBes have been assigned to which subseries"""
+
+    queryset = SubseriesMember.objects.select_related("type")
+    serializer_class = SubseriesMemberSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["number", "type", "rfc_to_be"]
+    ordering = ["type", "number", "id"]
+
+    http_method_names = ["get", "post", "patch", "delete", "head", "options"]
+
+    def partial_update(self, request, *args, **kwargs):
+        allowed_fields = {"type", "number"}
+        provided_fields = set(request.data.keys())
+
+        if not provided_fields.issubset(allowed_fields):
+            return Response(
+                {"detail": "Only 'type' and 'number' fields can be updated."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        return super().partial_update(request, *args, **kwargs)
+
+
+class SubseriesViewSet(
+    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
+):
+    """ViewSet for listing subseries and contained RFCs"""
+
+    serializer_class = SubseriesDocSerializer
+
+    lookup_field = "subseries_slug"
+    lookup_value_regex = r"[a-z]+\d+"  # Matches patterns like bcp123
+
+    def get_queryset(self):
+        return SubseriesMember.objects.select_related(
+            "type", "rfc_to_be", "rfc_to_be__draft"
+        ).all()
+
+    def retrieve(self, request, subseries_slug=None):
+        """Get all RfcToBe items in a specific subseries"""
+
+        # Parse subseries slug (e.g., "bcp123" -> type="bcp", number=123)
+        match = re.match(r"^([a-z]+)(\d+)$", subseries_slug.lower())
+
+        if match is None:
+            return Response(
+                {
+                    "error": "Invalid subseries format. Use format like 'bcp123', "
+                    "'std123', 'fyi123'"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        type_slug = match.group(1)
+        number = int(match.group(2))
+        subseries = SubseriesDoc(type=type_slug, number=number)
+        serializer = SubseriesDocSerializer(subseries)
+
+        return Response(serializer.data)
+
+    def list(self, request):
+        """List all subseries"""
+
+        # Group subseries by type and number
+        subseries_groups = defaultdict(lambda: {"rfcs": []})
+
+        members = self.get_queryset()
+        for member in members:
+            key = f"{member.type.slug}{member.number}"
+
+            if not subseries_groups[key]["rfcs"]:
+                subseries_groups[key]["type"] = member.type.slug
+                subseries_groups[key]["number"] = member.number
+
+        result = []
+        for _, subseries_data in subseries_groups.items():
+            subseries = SubseriesDoc(
+                type=subseries_data["type"], number=subseries_data["number"]
+            )
+            serializer = SubseriesDocSerializer(subseries)
+            result.append(serializer.data)
+
+        return Response(sorted(result, key=lambda x: (x["type"], x["number"])))
+
+
+@extend_schema_with_draft_name()
+class FinalApprovalViewSet(viewsets.ModelViewSet):
+    queryset = FinalApproval.objects.all()
+    serializer_class = FinalApprovalSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id", "body"]
+    ordering = ["-requested"]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+        )
+
+    def perform_create(self, serializer):
+        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
+        serializer.save(rfc_to_be=rfc_to_be)
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateFinalApprovalSerializer
+        return FinalApprovalSerializer
 
 
 class Mail(views.APIView):

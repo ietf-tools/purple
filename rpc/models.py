@@ -518,6 +518,8 @@ class FinalApproval(models.Model):
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True, blank=True)
 
+    history = HistoricalRecords()
+
     def __str__(self):
         if self.approved:
             if self.overriding_approver:
@@ -662,21 +664,23 @@ class RpcRelatedDocument(models.Model):
                 name="rpcrelateddocument_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
             ),
-            # Unique for (source, target_document) when target_document is set
+            # Unique for (source, target_document, relationship) when target_document
+            # is set
             models.UniqueConstraint(
-                fields=["source", "target_document"],
+                fields=["source", "target_document", "relationship"],
                 condition=models.Q(target_document__isnull=False),
-                name="unique_source_targetdoc",
-                violation_error_message="A source/target_document relationship must "
-                "be unique.",
+                name="unique_source_targetdoc_relationship",
+                violation_error_message="A source/target_document/relationship "
+                "combination must be unique.",
             ),
-            # Unique for (source, target_rfctobe) when target_rfctobe is set
+            # Unique for (source, target_rfctobe, relationship) when target_rfctobe
+            # is set
             models.UniqueConstraint(
-                fields=["source", "target_rfctobe"],
+                fields=["source", "target_rfctobe", "relationship"],
                 condition=models.Q(target_rfctobe__isnull=False),
-                name="unique_source_targetrfctobe",
-                violation_error_message="A source/target_rfctobe relationship must "
-                "be unique.",
+                name="unique_source_targetrfctobe_relationship",
+                violation_error_message="A source/target_rfctobe/relationship "
+                "combination must be unique.",
             ),
         ]
 
@@ -826,3 +830,34 @@ class ApprovalLogMessage(models.Model):
             self.by,
             self.time.strftime("%Y-%m-%d"),
         )
+
+
+class SubseriesMember(models.Model):
+    """Tracks which RFC belongs to which subseries and its number"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    type = models.ForeignKey("SubseriesTypeName", on_delete=models.PROTECT)
+    number = models.PositiveIntegerField()
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "type", "number"],
+                name="unique_subseries_member",
+                violation_error_message="an RfcToBe can only be in the same subseries "
+                "once",
+            )
+        ]
+
+    def __str__(self):
+        return (
+            f"RfcToBe {self.rfc_to_be.id} is part of subseries {self.type.slug} "
+            f" {self.number}"
+        )
+
+
+class SubseriesTypeName(Name):
+    """Types of subseries, e.g., BCP, FYI, STD, etc."""
+
+    pass

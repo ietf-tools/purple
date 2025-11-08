@@ -129,7 +129,7 @@ const navigation: Navigation[] = [
   { name: 'My Documents', href: '/docs', icon: h(Icon, { name: 'solar:documents-minimalistic-line-duotone' }) },
   { name: 'Team', href: '/team', icon: h(Icon, { name: 'solar:users-group-rounded-bold-duotone' }) },
   { name: 'Statistics', href: '/stats', icon: h(Icon, { name: 'solar:chart-line-duotone' }) },
-  { name: 'Final Reviews', href: '/auth48', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
+  { name: 'Final Review', href: '/final-review', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
 ]
 
 type Team = {
@@ -141,21 +141,13 @@ type Team = {
 
 const teams: Team[] = []
 
-const links = computed(() => {
-  const val = userStore.isManager
-    ? [
-        { name: 'Manage RFC Numbers', href: '/rfcs', icon: h(Icon, { name: 'fluent-mdl2:number-field' }) },
-        { name: 'Cluster Management', href: '/clusters', icon: h(Icon, { name: 'pajamas:group' }) },
-        { name: 'Legal Requests', href: '/legal', icon: h(Icon, { name: 'octicon:law-24' }) }
-      ]
-    : []
+const links: Navigation[] = [
+  { name: 'Manage RFC Numbers', href: '/rfcs', icon: h(Icon, { name: 'fluent-mdl2:number-field' }) },
+  { name: 'Cluster Management', href: '/clusters', icon: h(Icon, { name: 'pajamas:group' }) },
+  { name: 'Legal Requests', href: '/legal', icon: h(Icon, { name: 'octicon:law-24' }) },
+  { name: 'Manage Labels', href: '/labels', icon: h(Icon, { name: 'pajamas:labels' }) }
+]
 
-  // links for everyone
-  val.push(
-    { name: 'Manage Labels', href: '/labels', icon: h(Icon, { name: 'pajamas:labels' }) }
-  )
-  return val
-})
 
 // METHODS
 

@@ -105,11 +105,11 @@
                 <Anchor :href="item.href" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">{{ item.name }}</Anchor>
               </HeadlessMenuItem>
               <HeadlessMenuItem v-slot="{ active }">
-                <button
+                <a
                   :class="[active ? 'bg-gray-50' : '', 'block w-full px-3 py-1 text-sm leading-6 text-gray-900 text-left']"
-                  @click="logout()">
+                  href="/oidc/logout/">
                   Sign out
-                </button>
+                </a>
               </HeadlessMenuItem>
             </HeadlessMenuItems>
           </transition>
@@ -126,11 +126,6 @@ import { useUserStore } from '@/stores/user'
 const api = useApi()
 const csrf = useCookie('csrftoken', { sameSite: 'strict' })
 const buttonId = useId() // avoid a hydration error - see https://github.com/nuxt/ui/issues/1171
-
-async function logout () {
-  await $fetch('/oidc/logout/', { method: 'POST', headers: { 'X-CSRFToken': csrf.value! } })
-  userStore.refreshAuth()
-}
 
 // STORES
 

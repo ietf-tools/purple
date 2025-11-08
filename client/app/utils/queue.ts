@@ -1,4 +1,4 @@
-import type { Assignment, Label, SimpleCluster } from '~/purple_client'
+import type { Assignment, Cluster, Label, QueueItem, SimpleCluster } from '~/purple_client'
 
 export type Tab = {
   id: string
@@ -101,4 +101,48 @@ export type RpcPersonWorkload = {
   personId: number
   clusterIds: number[]
   pageCountByRole: Record<string, number>
+}
+
+export type RpcPeopleWorkload = Record<number, RpcPersonWorkload>
+
+/**
+ * Calculate the workload of people
+ */
+export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<QueueItem, 'id' | 'name' | 'assignmentSet' | 'pages'>[]): RpcPeopleWorkload => {
+  const peopleWorkload: Record<number, RpcPersonWorkload> = {}
+
+  const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
+    assertIsNumber(personId)
+
+    console.log({ pageCount })
+    assert(role.length !== 0)
+    assert(typeof pageCount === 'number')
+
+    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
+    if (clusterIds !== undefined) {
+      clusterIds.forEach(clusterId => {
+        if (!editorWorkload.clusterIds.includes(clusterId)) {
+          editorWorkload.clusterIds.push(clusterId)
+        }
+      })
+    }
+    editorWorkload.pageCountByRole[role] = (editorWorkload.pageCountByRole[role] ?? 0) + pageCount
+
+    peopleWorkload[personId] = editorWorkload
+  }
+  queueItems.forEach(doc => {
+    const clustersWithDocument = clusters.filter(cluster => cluster.documents.some(clusterDocument =>
+      clusterDocument.name === doc.name
+    ))
+    const clusterIds = clustersWithDocument.map(cluster => cluster.number)
+    doc.assignmentSet?.forEach(assignment => {
+      if (assignment.person !== undefined && assignment.person !== null) {
+        addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
+      } else {
+        console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
+      }
+    })
+  })
+
+  return peopleWorkload
 }

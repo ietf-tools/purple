@@ -27,6 +27,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -179,3 +180,8 @@ class RpcDocumentCommentAdmin(admin.ModelAdmin):
 @admin.register(RpcAuthorComment)
 class RpcAuthorCommentAdmin(admin.ModelAdmin):
     pass
+
+
+@admin.register(SubseriesMember)
+class SubseriesMemberAdmin(admin.ModelAdmin):
+    search_fields = ["number", "type__slug", "rfc_to_be__rfc_number"]

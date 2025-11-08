@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from itertools import pairwise
 
 from django.db import IntegrityError
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.fields import empty
@@ -22,6 +23,7 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
+    FinalApproval,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -32,6 +34,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    SubseriesMember,
     UnusableRfcNumber,
 )
 
@@ -310,10 +313,10 @@ class QueueItemSerializer(serializers.ModelSerializer):
     cluster = SimpleClusterSerializer(read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
-        source="assignment_set.active", many=True, read_only=True
+        source="active_assignments", many=True, read_only=True
     )
     actionholder_set = ActionHolderSerializer(
-        source="actionholder_set.active", many=True, read_only=True
+        source="active_actionholders", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     enqueued_at = serializers.SerializerMethodField()
@@ -340,6 +343,10 @@ class QueueItemSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.DateField())
     def get_enqueued_at(self, obj):
         """Get the date when the RFC was added to the queue"""
+        # Use annotated value if present to avoid per-row history queries
+        annotated = getattr(obj, "enqueued_at", None)
+        if annotated is not None:
+            return annotated
         try:
             create_history = obj.history.filter(history_type="+").earliest(
                 "history_date"
@@ -348,6 +355,70 @@ class QueueItemSerializer(serializers.ModelSerializer):
         except obj.history.model.DoesNotExist:
             # Fallback if no history exists
             return None
+
+
+class SubseriesMemberSerializer(serializers.ModelSerializer):
+    """Serialize a SubseriesMember"""
+
+    display_name = serializers.SerializerMethodField()
+    slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SubseriesMember
+        fields = ["id", "rfc_to_be", "type", "number", "display_name", "slug"]
+
+    def get_display_name(self, obj) -> str:
+        if not obj:
+            return None
+        return f"{obj.type.slug.upper()} {obj.number}"
+
+    def get_slug(self, obj) -> str:
+        if not obj:
+            return None
+        return f"{obj.type.slug.lower()}{obj.number}"
+
+
+class MinimalRfcToBeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RfcToBe
+        fields = ["name", "rfc_number"]
+
+
+@dataclass
+class SubseriesDoc:
+    """Representation of a single Subseries Doc (e.g. BCP 123) and its containing
+    RFCs"""
+
+    type: str
+    number: int
+
+    @property
+    def documents(self) -> QuerySet[RfcToBe]:
+        return RfcToBe.objects.filter(
+            subseriesmember__type__slug=self.type,
+            subseriesmember__number=self.number,
+        ).prefetch_related("subseriesmember_set")
+
+    @property
+    def rfc_count(self) -> int:
+        return len(self.documents)
+
+    @property
+    def slug(self) -> str:
+        return f"{self.type.lower()}{self.number}"
+
+    @property
+    def display_name(self) -> str:
+        return f"{self.type.upper()} {self.number}"
+
+
+class SubseriesDocSerializer(serializers.Serializer):
+    type = serializers.CharField()
+    number = serializers.IntegerField()
+    documents = MinimalRfcToBeSerializer(many=True)
+    rfc_count = serializers.IntegerField(read_only=True)
+    slug = serializers.CharField(read_only=True)
+    display_name = serializers.CharField(read_only=True)
 
 
 class RfcToBeSerializer(serializers.ModelSerializer):
@@ -366,6 +437,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     consensus = serializers.SerializerMethodField()
+
+    subseries = SubseriesMemberSerializer(
+        source="subseriesmember_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -393,6 +468,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "rfc_number",
             "published_at",
             "consensus",
+            "subseries",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
@@ -804,6 +880,76 @@ class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnusableRfcNumber
         fields = ["number", "comment"]
+
+
+class FinalApprovalSerializer(serializers.Serializer):
+    """Serialize final approval information for an RfcToBe"""
+
+    id = serializers.IntegerField()
+    rfc_to_be = MinimalRfcToBeSerializer()
+    body = serializers.CharField(required=False, allow_blank=True)
+    requested = serializers.DateTimeField(required=False)
+    approver = BaseDatatrackerPersonSerializer()
+    approved = serializers.DateTimeField(required=False, allow_null=True)
+    overriding_approver = BaseDatatrackerPersonSerializer(
+        required=False, allow_null=True
+    )
+
+    class Meta:
+        model = FinalApproval
+        fields = [
+            "id",
+            "rfc_to_be",
+            "body",
+            "requested",
+            "approved",
+            "approver",
+            "overriding_approver",
+        ]
+        read_only_fields = [
+            "id",
+            "requested",
+            "rfc_to_be",
+            "approver",
+            "overriding_approver",
+        ]
+
+    def update(self, instance, validated_data):
+        # Only 'approved', 'body' field shall be updated, for other fields we consider
+        # it a different item
+        FinalApproval.objects.filter(pk=instance.pk).update(**validated_data)
+        return FinalApproval.objects.get(pk=instance.pk)
+
+
+class CreateFinalApprovalSerializer(FinalApprovalSerializer):
+    """Serializer for creating FinalApproval instances"""
+
+    approver_person_id = serializers.IntegerField(write_only=True, required=True)
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True
+    )
+
+    def create(self, validated_data):
+        approver_person_id = validated_data.pop("approver_person_id")
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+
+        approver_dt_person = DatatrackerPerson.objects.get(
+            datatracker_id=approver_person_id
+        )
+
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        return FinalApproval.objects.create(
+            approver=approver_dt_person,
+            overriding_approver=overriding_approver_dt_person,
+            **validated_data,
+        )
 
 
 class MailAttachmentSerializer(serializers.Serializer):

@@ -27,11 +27,25 @@ def forward(apps, schema_editor):
         used=True,
     )
 
+    DocRelationshipName.objects.create(
+        slug="obs",
+        name="Obsoletes",
+        desc="Reference to a document that is being obsoleted",
+        used=True,
+    )
+
+    DocRelationshipName.objects.create(
+        slug="updates",
+        name="Updates",
+        desc="Reference to a document that is being updated",
+        used=True,
+    )
+
 
 def reverse(apps, schema_editor):
     DocRelationshipName = apps.get_model("rpc", "DocRelationshipName")
     DocRelationshipName.objects.filter(
-        slug__in=["not-received", "refqueue", "withdrawnref"]
+        slug__in=["not-received", "refqueue", "withdrawnref", "obs", "updates"]
     ).delete()
 
 
