@@ -261,21 +261,6 @@ const columns = [
     }
   ),
   columnHelper.accessor(
-    'externalDeadline',
-    {
-      header: 'Deadline',
-      cell: data => {
-        const value = data.getValue()
-        return h(
-          'span',
-          { class: 'text-xs' },
-          [value ? DateTime.fromJSDate(value).toISODate() : '']
-        )
-      },
-      sortingFn: (rowA, rowB) => sortDate(rowA.original.externalDeadline, rowB.original.externalDeadline),
-    }
-  ),
-  columnHelper.accessor(
     'assignmentSet',
     {
       header: 'Assignees',
@@ -395,14 +380,6 @@ const columns = [
         ))
       },
       enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'pages',
-    {
-      header: 'Status',
-      cell: _data => '',
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
