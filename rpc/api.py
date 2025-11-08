@@ -86,6 +86,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
     MailMessageSerializer,
+    MailResponseSerializer,
 )
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
@@ -984,24 +985,21 @@ class SendMail(views.APIView):
     @extend_schema(
         operation_id="send_mail",
         request=MailMessageSerializer,
-        responses=inline_serializer(
-            name="Null",
-            fields={},
-        ),
+        responses=MailResponseSerializer,
     )
     def post(self, request, format=None):
-        from hashlib import sha384
-
-        print(request.data)
+        # todo actually send mail
+        # todo debug whether attachments work as intended
         serializer = MailMessageSerializer(data=request.data)
         if serializer.is_valid():
             print(f"to: {serializer.validated_data["to"]}")
             print(f"cc: {serializer.validated_data["cc"]}")
             print(f"subject: {serializer.validated_data["subject"]}")
             for attachment in serializer.validated_data["attachments"]:
-                with attachment["content"].open("rb") as f:
-                    digest = sha384(f.read(), usedforsecurity=False).hexdigest()
-                print(f"{attachment["name"]}: {digest}")
+                print(f"attachment: {attachment["name"]}")
         else:
             print(serializer.errors)
-        return JsonResponse({})
+        return Response(MailResponseSerializer({
+            "type": "success",
+            "message": "Message accepted",
+        }).data)

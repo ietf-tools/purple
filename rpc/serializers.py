@@ -823,4 +823,9 @@ class MailMessageSerializer(serializers.Serializer):
     cc = serializers.CharField(default="", allow_blank=True)
     subject = serializers.CharField(allow_blank=False)
     body = serializers.CharField(allow_blank=False)
-    attachments = MailAttachmentSerializer(many=True)
+    attachments = MailAttachmentSerializer(many=True, required=False)
+
+
+class MailResponseSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["success", "error"])
+    message = serializers.CharField()
