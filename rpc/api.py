@@ -5,6 +5,8 @@ import re
 from collections import defaultdict
 from dataclasses import dataclass
 
+import django_filters
+
 import rpcapi_client
 from django import forms
 from django.db import transaction
@@ -439,6 +441,30 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
         return Response(serializer.errors, status=400)
 
 
+class QueueFilter(django_filters.FilterSet):
+    pending_final_approval = django_filters.BooleanFilter(
+        method="filter_pending_final_approval",
+        help_text="Filter by pending final approval status",
+    )
+
+    def filter_pending_final_approval(self, queryset, name, value):
+        if value is True:
+            # has FinalApproval with approved=None
+            return queryset.filter(
+                finalapproval__isnull=False, finalapproval__approved__isnull=True
+            )
+        elif value is False:
+            # either no FinalApproval or FinalApproval with approved not None
+            return queryset.exclude(
+                finalapproval__isnull=False, finalapproval__approved__isnull=True
+            )
+        return queryset
+
+    class Meta:
+        model = RfcToBe
+        fields = ["disposition", "pending_final_approval"]
+
+
 class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # This is abusing the List action a bit - the "queue" is singular, so this
     # lists its contents. Normally we'd expect the List action to list queues and
@@ -477,7 +503,7 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["disposition"]
+    filterset_class = QueueFilter
 
 
 class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
