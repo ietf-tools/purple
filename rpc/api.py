@@ -6,7 +6,6 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 import django_filters
-
 import rpcapi_client
 from django import forms
 from django.db import transaction
