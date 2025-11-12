@@ -453,9 +453,11 @@ class QueueFilter(django_filters.FilterSet):
                 finalapproval__isnull=False, finalapproval__approved__isnull=True
             ).distinct()
         elif value is False:
-            # has at least one FinalApproval with approved not None
+            # ALL FinalApprovals are approved (no pending approvals)
             return queryset.filter(
-                finalapproval__isnull=False, finalapproval__approved__isnull=False
+                finalapproval__isnull=False
+            ).exclude(
+                finalapproval__approved__isnull=True
             ).distinct()
         return queryset
 
