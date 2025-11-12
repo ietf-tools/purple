@@ -448,15 +448,15 @@ class QueueFilter(django_filters.FilterSet):
 
     def filter_pending_final_approval(self, queryset, name, value):
         if value is True:
-            # has FinalApproval with approved=None
+            # has at least one FinalApproval with approved=None
             return queryset.filter(
                 finalapproval__isnull=False, finalapproval__approved__isnull=True
-            )
+            ).distinct()
         elif value is False:
-            # either no FinalApproval or FinalApproval with approved not None
-            return queryset.exclude(
-                finalapproval__isnull=False, finalapproval__approved__isnull=True
-            )
+            # has at least one FinalApproval with approved not None
+            return queryset.filter(
+                finalapproval__isnull=False, finalapproval__approved__isnull=False
+            ).distinct()
         return queryset
 
     class Meta:
