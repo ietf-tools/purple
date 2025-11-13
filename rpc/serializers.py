@@ -315,34 +315,15 @@ class MinimalRfcToBeSerializer(serializers.ModelSerializer):
 class FinalApprovalSerializer(serializers.Serializer):
     """Serialize final approval information for an RfcToBe"""
 
-    id = serializers.IntegerField()
-    rfc_to_be = MinimalRfcToBeSerializer()
+    id = serializers.IntegerField(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
     body = serializers.CharField(required=False, allow_blank=True)
-    requested = serializers.DateTimeField(required=False)
-    approver = BaseDatatrackerPersonSerializer()
+    requested = serializers.DateTimeField(read_only=True)
+    approver = BaseDatatrackerPersonSerializer(read_only=True)
     approved = serializers.DateTimeField(required=False, allow_null=True)
     overriding_approver = BaseDatatrackerPersonSerializer(
-        required=False, allow_null=True
+        allow_null=True, read_only=True
     )
-
-    class Meta:
-        model = FinalApproval
-        fields = [
-            "id",
-            "rfc_to_be",
-            "body",
-            "requested",
-            "approved",
-            "approver",
-            "overriding_approver",
-        ]
-        read_only_fields = [
-            "id",
-            "requested",
-            "rfc_to_be",
-            "approver",
-            "overriding_approver",
-        ]
 
     def update(self, instance, validated_data):
         # Only 'approved', 'body' field shall be updated, for other fields we consider
