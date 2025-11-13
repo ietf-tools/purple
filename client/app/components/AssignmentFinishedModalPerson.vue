@@ -18,6 +18,7 @@
     </form>
   </li>
 </template>
+
 <script setup lang="ts">
 import { BaseButton } from '#components'
 import type { Assignment } from '~/purple_client';
@@ -55,14 +56,15 @@ const finishAssignment = async () => {
       }
     })
     if (updatedAssignment.state !== 'done') {
+      console.error("Server response to update assignment to 'done' wasn't set to 'done'. Was: ", updatedAssignment)
       throw Error("Unable to set assignment to 'done'")
     }
     props.assignment.timeSpent = updatedAssignment.timeSpent
     props.assignment.state = updatedAssignment.state
     // if it got this far assume it was successful
   } catch (e) {
-    console.log(e)
-    snackbarForErrors({ snackbar, error: e })
+    console.error("Unable to update assignment to 'done'", e)
+    snackbarForErrors({ snackbar, defaultTitle: "Unable to update assignment to 'done'", error: e })
   }
   isSaving.value = false
   props.onSuccess() // triggers reload of data from page under modal
@@ -83,10 +85,11 @@ const patchTimeSpent = async () => {
     })
     props.assignment.timeSpent = updatedAssignment.timeSpent
     if(updatedAssignment.timeSpent !== timeSpent) {
-      console.warn('potential time spent translation bug', timeSpent, '!==', updatedAssignment.timeSpent)
+      console.warn('potential time spent translation bug', timeSpent, '!==', updatedAssignment.timeSpent, ' from ', updatedAssignment)
     }
   } catch (e) {
-    snackbarForErrors({ snackbar, error: e })
+    console.error('Unable to update time spent on assignment', e)
+    snackbarForErrors({ snackbar, defaultTitle: 'Unable to update time spent on assignment', error: e })
   }
   props.onSuccess() // triggers reload of data from page under modal
 }

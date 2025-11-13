@@ -126,6 +126,56 @@
           </DocumentDependencies>
         </div>
 
+        <BaseCard class="lg:col-span-full grid place-items-stretch">
+          <h3 class="text-base font-semibold leading-7">
+            Final Approval
+            <Icon v-show="finalApprovalStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+          </h3>
+          <div v-if="finalApprovalStatus === 'error' && finalApprovalsError">
+            <ErrorAlert title="Error loading history">
+              <p>{{ finalApprovalsError }}</p>
+            </ErrorAlert>
+          </div>
+          <div v-if="finalApprovalsList">
+            <table class="min-w-full divide-y divide-gray-300">
+              <thead class="bg-gray-50 dark:bg-neutral-800">
+                <tr>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Approver</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Draft name</th>
+                  <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">RFC #</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-200">
+                <tr v-for="item in finalApprovalsList">
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    {{ item.approver.name }}
+                    <span v-if="item.overridingApprover">
+                      (approval overriden by {{ item.overridingApprover.name }})
+                    </span>
+                    <span v-if="item.approved">
+                      (approved on
+                      <time :datetime="DateTime.fromJSDate(item.approved).toString()">
+                        {{ DateTime.fromJSDate(item.approved).toLocaleString(DateTime.DATE_MED) }}
+                      </time>)
+                    </span>
+                    <span v-else>
+                      (not yet approved)
+                    </span>
+                  </td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    <NuxtLink v-if="item.rfcToBe.name" :href="`/docs/${item.rfcToBe.name}`" class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100 hover:underline focus:underline">
+                      {{ item.rfcToBe.name }}
+                    </NuxtLink>
+                  </td>
+                  <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
+                    {{ `RFC${item.rfcToBe.rfcNumber}` }}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </BaseCard>
+
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">
@@ -396,6 +446,14 @@ const { data: mailTemplateList, error: mailTemplateListError, status: mailTempla
   }, {
     server: false,
     lazy: true
+  }
+)
+
+const { data: finalApprovalsList, error: finalApprovalsError, status: finalApprovalStatus } = useAsyncData(() =>
+  api.documentsFinalApprovalsList({ draftName: draftName.value }),
+  {
+    server: false,
+    lazy: true,
   }
 )
 
