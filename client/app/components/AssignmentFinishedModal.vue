@@ -69,5 +69,4 @@ if (!overlayModalKeyInjection) {
 
 const { closeOverlayModal } = overlayModalKeyInjection
 
-const isBlocked = (role: string) => Boolean(role.match(/blocked/i))
 </script>
