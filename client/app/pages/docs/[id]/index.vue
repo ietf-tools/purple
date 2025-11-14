@@ -126,6 +126,13 @@
           </DocumentDependencies>
         </div>
 
+        <div class="lg:col-span-full">
+          <h3 class="text-base font-semibold leading-7">Final Review</h3>
+          <div class="w-full">
+            <FinalReview :name="draftName" :heading-level="4" />
+          </div>
+        </div>
+
         <!-- History -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <h3 class="text-base font-semibold leading-7">
@@ -394,9 +401,9 @@ const { data: mailTemplateList, error: mailTemplateListError, status: mailTempla
       rfctobeId: id
     })
   }, {
-    server: false,
-    lazy: true
-  }
+  server: false,
+  lazy: true
+}
 )
 
 const openEmailModal = async () => {

@@ -1,10 +1,11 @@
 <template>
   <div>
-    <h2 class="font-bold text-lg mt-5">In Progress {{ status === 'success' ? `(${queueItems.length})` : '' }}</h2>
+    <Heading :heading-level="props.headingLevel" class="mt-5">
+      In Progress {{ status === 'success' ? `(${table.getRowCount()})` : '' }}
+    </Heading>
     <ErrorAlert v-if="error">
       {{ error }}
     </ErrorAlert>
-
     <RpcTable>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -56,6 +57,14 @@ import {
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
+import type { HeadingLevel } from '~/utils/html'
+
+type Props = {
+  name?: string
+  headingLevel?: HeadingLevel
+}
+
+const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
 const api = useApi()
 
@@ -86,7 +95,7 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
-      return h(Anchor, { href: `/docs/${data.row.original.name}/enqueue`, 'class': ANCHOR_STYLE }, () => [
+      return h(Anchor, { href: documentPathBuilder(data.row.original), 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
       ])
     },
@@ -118,7 +127,10 @@ const table = useVueTable({
   },
   enableFilters: true,
   globalFilterFn: (row) => {
-    return true
+    if (!props.name) {
+      return true
+    }
+    return row.original.name === props.name
   },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
