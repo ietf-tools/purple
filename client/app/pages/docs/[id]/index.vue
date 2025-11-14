@@ -290,7 +290,7 @@ watch(
     try {
       await api.documentsPartialUpdate({
         draftName: draftName.value,
-        patchedRfcToBe: { labels: selectedLabelIds.value }
+        patchedRfcToBeRequest: { labels: selectedLabelIds.value }
       })
 
       snackbar.add({

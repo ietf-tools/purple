@@ -262,7 +262,7 @@ const saveChanges = async () => {
 
         return api.assignmentsPartialUpdate({
           id: action.assignmentId,
-          patchedAssignment: {
+          patchedAssignmentRequest: {
             state: 'withdrawn',
             comment: newComment.trim().length > 0 ? newComment : undefined // only save newComment when it has content, not just an empty string
           }
@@ -276,7 +276,7 @@ const saveChanges = async () => {
         })
       case 'assign':
         return api.assignmentsCreate({
-          assignment: {
+          assignmentRequest: {
             rfcToBe: action.rfcToBeId,
             person: action.personId,
             role: action.role

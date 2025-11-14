@@ -65,7 +65,7 @@ watch(() => draft.value?.authors, async () => {
 
   api.documentsAuthorsOrder({
     draftName: props.draftName,
-    authorOrder: {
+    authorOrderRequest: {
       order: authorIds
     }
   })
@@ -74,7 +74,7 @@ watch(() => draft.value?.authors, async () => {
     api.documentsAuthorsPartialUpdate({
       draftName: props.draftName,
       id: author.id!,
-      patchedRfcAuthor: {
+      patchedRfcAuthorRequest: {
         isEditor: Boolean(author.isEditor),
         titlepageName: author.titlepageName
       }

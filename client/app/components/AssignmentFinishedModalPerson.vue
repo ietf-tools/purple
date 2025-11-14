@@ -50,7 +50,7 @@ const finishAssignment = async () => {
   try {
     const updatedAssignment = await api.assignmentsPartialUpdate({
       id,
-      patchedAssignment: {
+      patchedAssignmentRequest: {
         timeSpent,
         state: 'done'
       }
@@ -79,7 +79,7 @@ const patchTimeSpent = async () => {
   try {
     const updatedAssignment = await api.assignmentsPartialUpdate({
       id,
-      patchedAssignment: {
+      patchedAssignmentRequest: {
         timeSpent
       }
     })

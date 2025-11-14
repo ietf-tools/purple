@@ -67,7 +67,7 @@ watch(selectedAuthor, async () => {
     try {
       const rpcAuthor = await api.documentsAuthorsCreate({
         draftName,
-        createRfcAuthor: {
+        createRfcAuthorRequest: {
           titlepageName: value.name ?? `(no name)`,
           personId: value.personId,
         }
