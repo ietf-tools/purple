@@ -1,6 +1,6 @@
 <template>
   <div>
-    <h2 class="font-bold text-lg mt-5">In Progress</h2>
+    <h2 class="font-bold text-lg mt-5">In Progress {{ status === 'success' ? `(${queueItems.length})` : '' }}</h2>
     <ErrorAlert v-if="error">
       {{ error }}
     </ErrorAlert>
@@ -60,14 +60,14 @@ import { ANCHOR_STYLE } from '~/utils/html'
 const api = useApi()
 
 const {
-  data,
+  data: queueItems,
   pending,
   status,
   refresh,
   error,
 } = await useAsyncData(
   'final-review-in-progress',
-  () => api.queueList(),
+  () => api.queueList({ pendingFinalApproval: true }),
   {
     server: false,
     lazy: true,
@@ -110,7 +110,7 @@ const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return data.value
+    return queueItems.value
   },
   columns,
   initialState: {
@@ -118,7 +118,7 @@ const table = useVueTable({
   },
   enableFilters: true,
   globalFilterFn: (row) => {
-    return row.original.disposition === 'created'
+    return true
   },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),

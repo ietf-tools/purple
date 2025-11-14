@@ -1,10 +1,6 @@
 <template>
   <div>
-    <h2 class="font-bold text-lg mt-5">For PUB</h2>
-
-    <ErrorAlert v-if="error">
-      {{ error }}
-    </ErrorAlert>
+    <h2 class="font-bold text-lg mt-5">For PUB {{ props.status === 'success' ? `(${props.queueItems.length})` : '' }}</h2>
 
     <RpcTable>
       <RpcThead>
@@ -45,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import type { AsyncDataRequestStatus, NuxtError } from '#app'
 import { Anchor, Icon } from '#components'
 import {
   FlexRender,
@@ -58,23 +55,13 @@ import {
 import type { QueueItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
 
-const api = useApi()
+type Props = {
+  queueItems: QueueItem[]
+  error?: NuxtError<unknown>
+  status: AsyncDataRequestStatus
+}
 
-const {
-  data,
-  pending,
-  status,
-  refresh,
-  error,
-} = await useAsyncData(
-  'final-review-for-publication',
-  () => api.queueList(),
-  {
-    server: false,
-    lazy: true,
-    default: () => [] as QueueItem[],
-  }
-)
+const props = defineProps<Props>()
 
 const columnHelper = createColumnHelper<QueueItem>()
 
@@ -111,7 +98,7 @@ const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return data.value
+    return props.queueItems
   },
   columns,
   initialState: {
@@ -119,7 +106,7 @@ const table = useVueTable({
   },
   enableFilters: true,
   globalFilterFn: (row) => {
-    return row.original.disposition === 'created'
+    return true
   },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
