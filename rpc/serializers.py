@@ -587,7 +587,9 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
         if obj.target_document is not None:
             return obj.target_document.name
-        return obj.target_rfctobe.draft.name
+        if obj.target_rfctobe is not None and obj.target_rfctobe.draft is not None:
+            return obj.target_rfctobe.draft.name
+        return None
 
     @extend_schema_field(serializers.CharField())
     def get_draft_name(self, obj: RpcRelatedDocument) -> str:
@@ -623,7 +625,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     def get_target_draft_name_output(self, obj):
         if obj.target_document is not None:
             return obj.target_document.name
-        if obj.target_rfctobe is not None:
+        if obj.target_rfctobe is not None and obj.target_rfctobe.draft is not None:
             return obj.target_rfctobe.draft.name
         return None
 
