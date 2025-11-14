@@ -102,6 +102,11 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
+  columnHelper.accessor('rfcNumber', {
+    header: 'RFC Number',
+    cell: data => data.getValue(),
+    sortingFn: 'alphanumeric',
+  }),
   columnHelper.accessor(
     'cluster', {
     header: 'Cluster',
