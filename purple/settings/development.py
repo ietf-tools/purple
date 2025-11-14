@@ -74,6 +74,59 @@ MIDDLEWARE += [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "default",
+        },
+        "celery_task_console": {
+            "class": "logging.StreamHandler",
+            "formatter": "celery_task",
+        },
+    },
+    "formatters": {
+        "default": {
+            "()": "utils.log.SimpleFormatter",
+            "format": "[{asctime}] ({levelname}) {message} ({name})",
+            "style": "{",
+        },
+        "celery_task": {
+            "()": "utils.log.CeleryTaskFormatter",
+            "format": (
+                "[%(asctime)s] (%(levelname)s) "
+                "Task %(task_name)s[%(task_id)s] log: %(message)s"
+            ),
+        },
+    },
+    "loggers": {
+        "django": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery": {
+            "handlers": ["console"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "celery.task": {
+            "handlers": ["celery_task_console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "WARNING",
+    },
+}
+
+
 # Add debug toolbar configuration
 # set IPs where debug toolbar should be shown, might need to add local IPs for docker
 # or comment out to disable toolbar
