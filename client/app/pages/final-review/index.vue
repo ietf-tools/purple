@@ -34,7 +34,7 @@ const {
   refresh,
   error,
 } = await useAsyncData(
-  'final-review-in-progress',
+  'final-review-pending-false',
   () => api.queueList({ pendingFinalApproval: false }),
   {
     server: false,
