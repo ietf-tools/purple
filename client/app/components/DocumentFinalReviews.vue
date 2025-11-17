@@ -1,0 +1,222 @@
+<template>
+  <ErrorAlert v-if="error" title="API Error for Done / PUB">
+    {{ error }}
+  </ErrorAlert>
+
+  <Heading :heading-level="props.headingLevel" class="mt-5">
+    Final Reviews {{ status === 'success' ? `(${table.getRowCount()})` : '' }}
+  </Heading>
+
+  <RpcTable>
+    <RpcThead>
+      <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+        <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+          :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+          @click="header.column.getToggleSortingHandler()?.($event)">
+          <div class="flex items-center gap-2">
+            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+              :props="header.getContext()" />
+            <Transition name="sort-indicator">
+              <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                class="text-gray-400 opacity-60 hover:opacity-100" />
+            </Transition>
+          </div>
+        </RpcTh>
+      </tr>
+    </RpcThead>
+    <RpcTbody>
+      <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+        :row-count="table.getRowModel().rows.length" />
+      <tr v-for="row in table.getRowModel().rows" :key="row.id">
+        <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+          <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+        </RpcTd>
+      </tr>
+    </RpcTbody>
+    <RpcTfoot>
+      <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
+        <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+          <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+            :props="header.getContext()" />
+        </RpcTh>
+      </tr>
+    </RpcTfoot>
+  </RpcTable>
+
+</template>
+
+<script setup lang="ts">
+import { Anchor, Icon, BaseButton } from '#components'
+import { createColumnHelper, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useVueTable, FlexRender } from '@tanstack/vue-table'
+import { DateTime } from 'luxon'
+import type { SortingState } from '@tanstack/vue-table'
+import type { FinalApproval } from '~/purple_client'
+import DocumentFinalReviewsModal from './DocumentFinalReviewsModal.vue'
+import { overlayModalKey } from '~/providers/providerKeys'
+
+type Props = {
+  name: string
+  headingLevel?: HeadingLevel
+  onSuccess?: () => Promise<void>
+}
+
+const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
+
+const api = useApi()
+
+const {
+  data: finalApprovalsList,
+  pending,
+  status,
+  refresh,
+  error,
+} = await useAsyncData(
+  'final-review-for-document',
+  () => api.documentsFinalApprovalsList({ draftName: props.name }),
+  {
+    server: false,
+    lazy: true,
+    default: () => [] as FinalApproval[],
+  }
+)
+
+const columnHelper = createColumnHelper<FinalApproval>()
+
+const columns = [
+  columnHelper.accessor('approver.name', {
+    header: 'Approver Name',
+    cell: data => {
+      return h(Anchor, { href: `/team/${data.row.original.approver?.personId}`, 'class': ANCHOR_STYLE }, () => [
+        data.getValue(),
+      ])
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor(
+    'requested', {
+    header: 'Date Requested',
+    cell: data => {
+      const date = data.getValue()
+      if (!date) {
+        return '(N/A)'
+      }
+      const dateTime = DateTime.fromJSDate(date)
+      return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY
+      ))
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.display({
+    id: 'status',
+    header: 'Approval Status',
+    cell: data => {
+      const status = finalApprovalToStatus(data.row.original)
+      switch (status) {
+        case 'approved':
+          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "duo-icons:approved", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }), 'Approved'])
+        case 'pending':
+          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "emojione:hourglass-not-done", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }), 'Pending'])
+      }
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor(
+    'approved', {
+    header: 'Date Approved / (N/A)',
+    cell: data => {
+      const date = data.getValue()
+      if (!date) {
+        return '(N/A)'
+      }
+      const dateTime = DateTime.fromJSDate(date)
+      return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY
+      ))
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.display({
+    id: 'action',
+    header: 'Action',
+    cell: (data) => {
+      const status = finalApprovalToStatus(data.row.original)
+      switch (status) {
+        case 'approved':
+          return h('i', 'Complete')
+        case 'pending':
+          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openApproveModal(data.row.original) }, () => 'Approve')
+      }
+    }
+  }),
+]
+
+type FinalApprovalStatus = 'pending' | 'approved'
+
+const finalApprovalToStatus = (finalApproval: FinalApproval): FinalApprovalStatus => {
+  if (finalApproval.approved) {
+    return 'approved'
+  }
+  if (finalApproval.requested) {
+    return 'pending'
+  }
+  console.error('Unable to convert finalApproval', finalApproval)
+  throw Error('Unable to convert finalApproval. See console.')
+}
+
+const sorting = ref<SortingState>([])
+
+const table = useVueTable({
+  get data() {
+    return finalApprovalsList.value
+  },
+  columns,
+  initialState: {
+    globalFilter: () => true, // a truthy value is needed to trigger globalFilterFn below
+  },
+  enableFilters: true,
+  globalFilterFn: (row) => {
+    return true
+  },
+  getCoreRowModel: getCoreRowModel(),
+  getFilteredRowModel: getFilteredRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  state: {
+    get sorting() {
+      return sorting.value
+    },
+  },
+  onSortingChange: updaterOrValue => {
+    sorting.value =
+      typeof updaterOrValue === 'function'
+        ? updaterOrValue(sorting.value) : updaterOrValue
+  }
+})
+
+const overlayModal = inject(overlayModalKey)
+
+const openApproveModal = (finalApproval: FinalApproval) => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: DocumentFinalReviewsModal,
+    componentProps: {
+      finalApproval,
+      name: props.name,
+      onSuccess: props.onSuccess
+    },
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
+
+</script>

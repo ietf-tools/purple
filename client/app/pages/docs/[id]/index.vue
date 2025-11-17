@@ -127,10 +127,7 @@
         </div>
 
         <div class="lg:col-span-full">
-          <h3 class="text-base font-semibold leading-7">Final Review</h3>
-          <div class="w-full">
-            <FinalReview :name="draftName" :heading-level="4" />
-          </div>
+          <DocumentFinalReviews :heading-level="4" :name="draftName" />
         </div>
 
         <!-- History -->
