@@ -56,8 +56,7 @@
         "mutantdino.resourcemonitor",
         "oderwat.indent-rainbow",
         "redhat.vscode-yaml",
-        "spmeesseman.vscode-taskexplorer",
-        "visualstudioexptteam.vscodeintellicode"
+        "spmeesseman.vscode-taskexplorer"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
