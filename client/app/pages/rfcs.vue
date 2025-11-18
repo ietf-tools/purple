@@ -1,12 +1,17 @@
 <template>
   <div class="container mx-auto p-6">
-    <div class="mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-        Unusable RFC Numbers
-      </h1>
-      <p class="mt-2 text-gray-600 dark:text-gray-400">
-        RFC numbers that have been reserved or are otherwise unavailable for assignment.
-      </p>
+    <div class="mb-6 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          Unusable RFC Numbers
+        </h1>
+        <p class="mt-2 text-gray-600 dark:text-gray-400">
+          RFC numbers that have been reserved or are otherwise unavailable for assignment.
+        </p>
+      </div>
+      <BaseButton @click="openAddNumberModal" class="ml-4">
+        Add Number
+      </BaseButton>
     </div>
 
     <div v-if="pending" class="flex justify-center py-8">
@@ -31,6 +36,7 @@
           <!-- Header -->
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
+              <th class="px-6 py-3 w-12"></th>
               <th
                 v-for="header in table.getHeaderGroups()[0]?.headers"
                 :key="header.id"
@@ -75,8 +81,17 @@
             <tr
               v-for="row in table.getRowModel().rows"
               :key="row.id"
-              class="hover:bg-gray-50 dark:hover:bg-gray-700"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700 group"
             >
+              <td class="px-6 py-4 w-12">
+                <button
+                  @click="openDeleteConfirmModal(row.original.number)"
+                  class="text-red-400 hover:text-red-600 opacity-50 group-hover:opacity-100 transition-opacity"
+                  title="Delete RFC number"
+                >
+                  <Icon name="heroicons:x-mark" class="h-4 w-4" />
+                </button>
+              </td>
               <td
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
@@ -123,8 +138,12 @@ import {
   useVueTable,
   type SortingState,
 } from '@tanstack/vue-table'
+import { overlayModalKey } from '~/providers/providerKeys'
+import { snackbarForErrors } from "~/utils/snackbar"
+import { BaseButton, Icon } from '#components'
 
 const api = useApi()
+const snackbar = useSnackbar()
 
 const {
   data: unusableRfcs,
@@ -144,6 +163,258 @@ const {
 const formatDate = (dateString: string | undefined) => {
   if (!dateString) return 'Unknown'
   return new Date(dateString).toLocaleDateString()
+}
+
+const overlayModal = inject(overlayModalKey)
+
+// Delete confirmation component
+const DeleteConfirmModal = defineComponent({
+  props: {
+    rfcNumber: {
+      type: Number,
+      required: true
+    }
+  },
+  emits: ['success', 'close'],
+  setup(props, { emit }) {
+    const isDeleting = ref(false)
+
+    const deleteRfcNumber = async () => {
+      try {
+        isDeleting.value = true
+
+        await api.unusableRfcNumbersDestroy({
+          number: props.rfcNumber
+        })
+
+        snackbar.add({
+          type: 'success',
+          title: `RFC ${props.rfcNumber} removed from unusable numbers`,
+          text: ''
+        })
+
+        emit('success')
+        emit('close')
+
+      } catch (e: unknown) {
+        snackbarForErrors({
+          snackbar,
+          defaultTitle: 'Unable to delete RFC number',
+          error: e
+        })
+      } finally {
+        isDeleting.value = false
+      }
+    }
+
+    return () => h('div', { class: 'flex flex-col h-full bg-white dark:bg-gray-800' }, [
+      // Header
+      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
+        h('div', { class: 'flex items-start justify-between space-x-3' }, [
+          h('div', { class: 'space-y-1' }, [
+            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' }, 'Delete RFC Number'),
+            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' }, `Are you sure you want to delete RFC ${props.rfcNumber} from the unusable numbers list?`)
+          ])
+        ])
+      ]),
+
+      // Content
+      h('div', { class: 'flex-1 px-4 sm:px-6' }, [
+        h('div', { class: 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-md p-4' }, [
+          h('div', { class: 'flex' }, [
+            h('div', { class: 'flex-shrink-0' }, [
+              h(Icon, { name: 'heroicons:exclamation-triangle', class: 'h-5 w-5 text-yellow-400' })
+            ]),
+            h('div', { class: 'ml-3' }, [
+              h('h3', { class: 'text-sm font-medium text-yellow-800 dark:text-yellow-200' }, 'Warning'),
+              h('div', { class: 'mt-2 text-sm text-yellow-700 dark:text-yellow-300' }, [
+                h('p', `This will permanently remove RFC ${props.rfcNumber} from the unusable numbers list. The RFC number will become available for assignment again.`)
+              ])
+            ])
+          ])
+        ])
+      ]),
+
+      // Buttons
+      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
+        h('div', { class: 'flex justify-end space-x-3' }, [
+          h(BaseButton, {
+            type: 'button',
+            variant: 'secondary',
+            onClick: () => emit('close')
+          }, 'Cancel'),
+          h(BaseButton, {
+            type: 'button',
+            variant: 'danger',
+            disabled: isDeleting.value,
+            onClick: deleteRfcNumber
+          }, isDeleting.value ? 'Deleting...' : 'Delete RFC Number')
+        ])
+      ])
+    ])
+  }
+})
+
+// Form component defined inline
+const AddNumberForm = defineComponent({
+  emits: ['success', 'close'],
+  setup(_, { emit }) {
+    const newRfcNumber = ref<number | null>(null)
+    const newComment = ref('')
+    const isSubmitting = ref(false)
+
+    const addUnusableRfcNumber = async () => {
+      if (!newRfcNumber.value) return
+
+      try {
+        isSubmitting.value = true
+
+        await api.unusableRfcNumbersCreate({
+          unusableRfcNumberRequest : {
+            number: newRfcNumber.value,
+            comment: newComment.value || ''
+          }
+        })
+
+        snackbar.add({
+          type: 'success',
+          title: `RFC ${newRfcNumber.value} added to unusable numbers`,
+          text: ''
+        })
+
+        emit('success')
+        emit('close')
+
+      } catch (e: unknown) {
+        snackbarForErrors({
+          snackbar,
+          defaultTitle: 'Unable to add RFC number',
+          error: e
+        })
+        console.error(e)
+      } finally {
+        isSubmitting.value = false
+      }
+    }
+
+    return () => h('form', {
+      onSubmit: (e: Event) => {
+        e.preventDefault()
+        addUnusableRfcNumber()
+      },
+      class: 'space-y-6'
+    }, [
+      h('div', [
+        h('label', {
+          for: 'rfc-number',
+          class: 'block text-sm font-medium text-gray-700 dark:text-gray-300'
+        }, 'RFC Number *'),
+        h('input', {
+          id: 'rfc-number',
+          type: 'number',
+          required: true,
+          min: 1,
+          value: newRfcNumber.value,
+          onInput: (e: Event) => {
+            const target = e.target as HTMLInputElement
+            newRfcNumber.value = target.value ? parseInt(target.value) : null
+          },
+          placeholder: 'Enter RFC number',
+          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+        })
+      ]),
+
+      h('div', [
+        h('label', {
+          for: 'comment',
+          class: 'block text-sm font-medium text-gray-700 dark:text-gray-300'
+        }, 'Comment'),
+        h('textarea', {
+          id: 'comment',
+          rows: 4,
+          value: newComment.value,
+          onInput: (e: Event) => {
+            const target = e.target as HTMLTextAreaElement
+            newComment.value = target.value
+          },
+          placeholder: 'Enter reason for making this RFC number unusable...',
+          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+        })
+      ]),
+
+      h('div', { class: 'flex justify-end space-x-3 pt-6' }, [
+        h(BaseButton, {
+          type: 'button',
+          variant: 'secondary',
+          onClick: () => emit('close')
+        }, 'Cancel'),
+        h(BaseButton, {
+          type: 'submit',
+          disabled: isSubmitting.value || !newRfcNumber.value
+        }, isSubmitting.value ? 'Adding...' : 'Add Number')
+      ])
+    ])
+  }
+})
+
+const openDeleteConfirmModal = (rfcNumber: number) => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: h(DeleteConfirmModal, {
+      rfcNumber: rfcNumber,
+      onSuccess: () => refresh(),
+      onClose: () => overlayModal.closeOverlayModal()
+    }),
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
+
+const openAddNumberModal = () => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: h('div', { class: 'flex flex-col h-full bg-white dark:bg-gray-800' }, [
+      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
+        h('div', { class: 'flex items-start justify-between space-x-3' }, [
+          h('div', { class: 'space-y-1' }, [
+            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' }, 'Add Unusable RFC Number'),
+            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' }, 'Reserve an RFC number to make it unavailable for assignment.')
+          ])
+        ])
+      ]),
+
+      h('div', { class: 'flex-1 px-4 sm:px-6' }, [
+        h(AddNumberForm, {
+          onSuccess: () => refresh(),
+          onClose: () => overlayModal.closeOverlayModal()
+        })
+      ])
+    ]),
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
 }
 
 // Table setup
@@ -203,12 +474,10 @@ const table = useVueTable({
   },
 })
 
-// Set page metadata
 useHead({
   title: 'Unusable RFC Numbers',
   meta: [
-    { name: 'description', content: 'List of RFC numbers that are reserved or ' +
-    'unavailable for assignment' }
+    { name: 'description', content: 'List of RFC numbers that are reserved or unavailable for assignment' }
   ]
 })
 </script>
