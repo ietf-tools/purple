@@ -25,33 +25,74 @@
         No unusable RFC numbers found.
       </div>
 
-      <ul v-else class="divide-y divide-gray-200 dark:divide-gray-700">
-        <li
-          v-for="unusableRfc in unusableRfcs"
-          :key="unusableRfc.number"
-          class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700"
-        >
-          <div class="flex items-start justify-between gap-4">
-            <div class="flex items-start gap-4 min-w-0 flex-1">
-              <div class="flex-shrink-0">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
-                  RFC {{ unusableRfc.number }}
-                </span>
-              </div>
-              <div class="min-w-0 flex-1 max-w-2xl">
-                <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ unusableRfc.comment || 'No comment provided' }}
+      <div v-else>
+        <!-- Table -->
+        <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <!-- Header -->
+          <thead class="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                v-for="header in table.getHeaderGroups()[0]?.headers"
+                :key="header.id"
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                <div
+                  v-if="header.column.getCanSort()"
+                  class="flex items-center cursor-pointer hover:text-gray-700 dark:hover:text-gray-200"
+                  @click="header.column.getToggleSortingHandler()?.($event)"
+                >
+                  <FlexRender
+                    :render="header.column.columnDef.header"
+                    :props="header.getContext()"
+                  />
+                  <Icon
+                    v-if="header.column.getIsSorted() === 'asc'"
+                    name="heroicons:chevron-up"
+                    class="ml-1 h-3 w-3"
+                  />
+                  <Icon
+                    v-else-if="header.column.getIsSorted() === 'desc'"
+                    name="heroicons:chevron-down"
+                    class="ml-1 h-3 w-3"
+                  />
+                  <Icon
+                    v-else
+                    name="heroicons:chevron-up-down"
+                    class="ml-1 h-3 w-3 opacity-50"
+                  />
                 </div>
-              </div>
-            </div>
-            <div class="flex-shrink-0 text-sm text-gray-500 dark:text-gray-400">
-              Reserved on {{ formatDate(unusableRfc.createdAt) }}
-            </div>
-          </div>
-        </li>
-      </ul>
+                <FlexRender
+                  v-else
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()"
+                />
+              </th>
+            </tr>
+          </thead>
 
-      <div v-if="unusableRfcs.length > 0" class="bg-gray-50 dark:bg-gray-700 px-6 py-3">
+          <!-- Body -->
+          <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tr
+              v-for="row in table.getRowModel().rows"
+              :key="row.id"
+              class="hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
+              <td
+                v-for="cell in row.getVisibleCells()"
+                :key="cell.id"
+                class="px-6 py-4 align-top"
+              >
+                <FlexRender
+                  :render="cell.column.columnDef.cell"
+                  :props="cell.getContext()"
+                />
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div v-if="unusableRfcs.length > 0" class="bg-gray-50 dark:bg-gray-700 px-6 py-3 border-t border-gray-200 dark:border-gray-600">
         <div class="text-sm text-gray-600 dark:text-gray-300">
           Total: {{ unusableRfcs.length }} unusable RFC number{{ unusableRfcs.length !== 1 ? 's' : '' }}
         </div>
@@ -74,6 +115,14 @@
 
 <script setup lang="ts">
 import type { UnusableRfcNumber } from '~/purple_client'
+import {
+  createColumnHelper,
+  FlexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useVueTable,
+  type SortingState,
+} from '@tanstack/vue-table'
 
 const api = useApi()
 
@@ -97,11 +146,69 @@ const formatDate = (dateString: string | undefined) => {
   return new Date(dateString).toLocaleDateString()
 }
 
+// Table setup
+const columnHelper = createColumnHelper<UnusableRfcNumber>()
+
+const columns = [
+  columnHelper.accessor('number', {
+    header: 'RFC Number',
+    cell: data => h('span', {
+      class: 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ' +
+      'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+    }, `RFC ${data.getValue()}`),
+    sortingFn: (rowA, rowB, columnId) => {
+      const a = Number(rowA.getValue(columnId))
+      const b = Number(rowB.getValue(columnId))
+      return a - b
+    },
+  }),
+  columnHelper.accessor('comment', {
+    header: 'Comment',
+    cell: data => h('div', {
+      class: 'text-sm text-gray-900 dark:text-white max-w-md break-words'
+    }, data.getValue() || 'No comment provided'),
+    enableSorting: false,
+  }),
+  columnHelper.accessor('createdAt', {
+    header: 'Created At',
+    cell: data => h('div', {
+      class: 'text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap'
+    }, `Reserved on ${formatDate(data.getValue())}`),
+    sortingFn: (rowA, rowB, columnId) => {
+      const a = new Date(rowA.getValue(columnId) || 0)
+      const b = new Date(rowB.getValue(columnId) || 0)
+      return a.getTime() - b.getTime()
+    },
+  }),
+]
+
+const sorting = ref<SortingState>([{ id: 'number', desc: false }])
+
+const table = useVueTable({
+  get data() {
+    return unusableRfcs.value || []
+  },
+  columns,
+  getCoreRowModel: getCoreRowModel(),
+  getSortedRowModel: getSortedRowModel(),
+  state: {
+    get sorting() {
+      return sorting.value
+    },
+  },
+  onSortingChange: updaterOrValue => {
+    sorting.value = typeof updaterOrValue === 'function'
+      ? updaterOrValue(sorting.value)
+      : updaterOrValue
+  },
+})
+
 // Set page metadata
 useHead({
   title: 'Unusable RFC Numbers',
   meta: [
-    { name: 'description', content: 'List of RFC numbers that are reserved or unavailable for assignment' }
+    { name: 'description', content: 'List of RFC numbers that are reserved or ' +
+    'unavailable for assignment' }
   ]
 })
 </script>
