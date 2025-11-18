@@ -69,6 +69,21 @@
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" />
+        <DescriptionListItem term="RFC Number">
+          <DescriptionListDetails>
+            <div class="flex items-center gap-2">
+              <input
+                v-model="rfcNumberInput"
+                type="text"
+                placeholder="Enter RFC number"
+                class="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                :disabled="isUpdating"
+                @blur="updateRfcNumber"
+              />
+              <span v-if="isUpdating" class="text-sm text-gray-500">Updating...</span>
+            </div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Consensus">
           <DescriptionListDetails>
             <span
@@ -101,7 +116,70 @@ import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   rfcToBe: RfcToBe | null | undefined
+  draftName: string
 }
 
-defineProps<Props>()
+const props = defineProps<Props>()
+const emit = defineEmits<{
+  update: [rfcToBe: RfcToBe]
+  refresh: []
+}>()
+
+const api = useApi()
+const snackbar = useSnackbar()
+const rfcNumberInput = ref('')
+const isUpdating = ref(false)
+
+watch(() => props.rfcToBe?.rfcNumber, (newValue) => {
+  rfcNumberInput.value = newValue?.toString() || ''
+}, { immediate: true })
+
+const updateRfcNumber = async () => {
+  if (isUpdating.value) return
+
+  const newValue = rfcNumberInput.value.trim()
+
+  // Validate that input is a valid number or empty
+  if (newValue && !/^\d+$/.test(newValue)) {
+    snackbar.add({
+      type: 'error',
+      title: 'Invalid RFC number',
+      text: 'RFC number must be a valid number'
+    })
+    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
+    return
+  }
+
+  const rfcNumber = newValue ? parseInt(newValue) : null
+
+  if (rfcNumber === props.rfcToBe?.rfcNumber) return
+
+  try {
+    isUpdating.value = true
+
+    await api.documentsPartialUpdate({
+      draftName: props.draftName,
+      patchedRfcToBeRequest: { rfcNumber: rfcNumber }
+    })
+
+    snackbar.add({
+      type: 'success',
+      title: `Updated RFC number for "${props.draftName}"`,
+      text: ''
+    })
+
+  } catch (e: unknown) {
+    snackbarForErrors({
+      snackbar,
+      defaultTitle: `Unable to update RFC number for "${props.draftName}"`,
+      error: e
+    })
+
+    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
+  } finally {
+    isUpdating.value = false
+    // Refresh the parent component
+    emit('refresh')
+  }
+}
 </script>
