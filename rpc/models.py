@@ -326,6 +326,8 @@ class UnusableRfcNumber(models.Model):
     def __str__(self):
         return str(self.number)
 
+    history = HistoricalRecords()
+
 
 class RpcRole(models.Model):
     slug = models.CharField(max_length=32, primary_key=True)
