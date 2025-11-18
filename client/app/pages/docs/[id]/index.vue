@@ -127,7 +127,7 @@
         </div>
 
         <div class="lg:col-span-full">
-          <DocumentFinalReviews :heading-level="4" :name="draftName" />
+          <DocumentFinalReviews :heading-level="4" :name="draftName" :on-success="() => commentsReload()" />
         </div>
 
         <!-- History -->

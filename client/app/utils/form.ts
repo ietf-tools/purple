@@ -1,5 +1,5 @@
 
-import { Duration } from 'luxon'
+import { DateTime, Duration } from 'luxon'
 import type { DurationLike  } from 'luxon'
 
 export const durationStringToHours = (durationString: string | undefined): number => {
@@ -23,3 +23,8 @@ export const hoursToDurationString = (hours: number): string => {
   const duration = Duration.fromMillis(hours * HOURS_TO_MILLISECONDS_RATIO)
   return duration.toFormat('d hh:mm:ss')
 }
+
+export const jsDateToInputTypeDate = (date: Date): string => DateTime.fromJSDate(date).toISODate() ?? ''
+
+export const inputTypeDateToDateTime = (isoDateString: string): DateTime => DateTime.fromISO(isoDateString, { zone: 'utc' })
+

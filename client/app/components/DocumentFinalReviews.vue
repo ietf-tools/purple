@@ -35,23 +35,21 @@
     </RpcTbody>
     <RpcTfoot>
       <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
-        <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-          <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
-            :props="header.getContext()" />
+        <RpcTh :colSpan="1">
+          <BaseButton @click="openAddModal()">Add final review</BaseButton>
         </RpcTh>
       </tr>
     </RpcTfoot>
   </RpcTable>
-
 </template>
 
 <script setup lang="ts">
-import { Anchor, Icon, BaseButton } from '#components'
+import { Icon, BaseButton } from '#components'
 import { createColumnHelper, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useVueTable, FlexRender } from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
 import type { SortingState } from '@tanstack/vue-table'
-import type { FinalApproval } from '~/purple_client'
-import DocumentFinalReviewsModal from './DocumentFinalReviewsModal.vue'
+import type { BaseDatatrackerPerson, FinalApproval } from '~/purple_client'
+import DocumentFinalReviewModal from './DocumentFinalReviewModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 type Props = {
@@ -80,14 +78,43 @@ const {
   }
 )
 
+const reloadEverything = () => {
+  refresh()
+  props.onSuccess?.()
+}
+
 const columnHelper = createColumnHelper<FinalApproval>()
 
 const columns = [
   columnHelper.accessor('approver.name', {
     header: 'Approver Name',
     cell: data => {
-      return h(Anchor, { href: `/team/${data.row.original.approver?.personId}`, 'class': ANCHOR_STYLE }, () => [
-        data.getValue(),
+      const rowOriginal = data.row.original
+      const { approver } = rowOriginal
+      if (!approver) {
+        return h('i', '(no approver)')
+      }
+      const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
+        return h('span', [
+          h('a', { href: author.email ? datatrackerPersonLink(author.email) : undefined, class: ANCHOR_STYLE }, [
+            `${author.name}`,
+            h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, ` #${author.personId}`)
+          ]),
+        ])
+      }
+
+      const approverVNode = formatAuthor(approver)
+      if (!rowOriginal.overridingApprover) {
+        return h('span', [
+          'Approved by ',
+          approverVNode,
+        ])
+      }
+      return h('span', [
+        'Approved by ',
+        formatAuthor(rowOriginal.overridingApprover),
+        ' on behalf of ',
+        approverVNode
       ])
     },
     sortingFn: 'alphanumeric',
@@ -114,7 +141,7 @@ const columns = [
       const status = finalApprovalToStatus(data.row.original)
       switch (status) {
         case 'approved':
-          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "duo-icons:approved", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }), 'Approved'])
+          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "duo-icons:approved", size: "1.25em", class: "text-green-400 dark:text-neutral-500 mr-2" }), 'Approved'])
         case 'pending':
           return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "emojione:hourglass-not-done", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }), 'Pending'])
       }
@@ -145,7 +172,7 @@ const columns = [
         case 'approved':
           return h('i', 'Complete')
         case 'pending':
-          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openApproveModal(data.row.original) }, () => 'Approve')
+          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openEditModal(data.row.original) }, () => 'Approve')
       }
     }
   }),
@@ -195,18 +222,41 @@ const table = useVueTable({
 
 const overlayModal = inject(overlayModalKey)
 
-const openApproveModal = (finalApproval: FinalApproval) => {
+const openEditModal = (finalApproval: FinalApproval) => {
   if (!overlayModal) {
     throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
   }
   const { openOverlayModal } = overlayModal
 
   openOverlayModal({
-    component: DocumentFinalReviewsModal,
+    component: DocumentFinalReviewModal,
     componentProps: {
       finalApproval,
       name: props.name,
-      onSuccess: props.onSuccess
+      onSuccess: reloadEverything
+    },
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
+
+const openAddModal = () => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: DocumentFinalReviewModal,
+    componentProps: {
+      name: props.name,
+      onSuccess: reloadEverything
     },
     mode: 'side',
   }).catch(e => {

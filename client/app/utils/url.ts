@@ -32,3 +32,5 @@ const oidcRegex = /^\/oidc/
 export const isOidcLink = (href?: string): boolean => {
   return oidcRegex.test(href ?? '')
 }
+
+export const datatrackerPersonLink = (email: string ) => `https://datatracker.ietf.org/person/${encodeURIComponent(email)}`
