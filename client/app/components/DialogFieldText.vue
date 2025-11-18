@@ -1,5 +1,5 @@
 <template>
-  <fieldset class="mb-2 flex items-center gap-5">
+  <fieldset class="mb-2 flex items-center gap-5 mr-1">
     <label class="text-gray-900 w-[160px] text-right text-sm font-bold" :for="props.id"> {{ props.label }}:</label>
     <input
       v-if="!props.isMultiline"
