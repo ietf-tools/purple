@@ -28,26 +28,23 @@
       <ul v-else class="divide-y divide-gray-200 dark:divide-gray-700">
         <li
           v-for="unusableRfc in unusableRfcs"
-          :key="unusableRfc.id"
+          :key="unusableRfc.number"
           class="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700"
         >
-          <div class="flex items-center justify-between">
-            <div class="flex items-center">
+          <div class="flex items-start justify-between gap-4">
+            <div class="flex items-start gap-4 min-w-0 flex-1">
               <div class="flex-shrink-0">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                   RFC {{ unusableRfc.number }}
                 </span>
               </div>
-              <div class="ml-4">
+              <div class="min-w-0 flex-1 max-w-2xl">
                 <div class="text-sm font-medium text-gray-900 dark:text-white">
-                  {{ unusableRfc.reason || 'No reason specified' }}
-                </div>
-                <div v-if="unusableRfc.comment" class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                  {{ unusableRfc.comment }}
+                  {{ unusableRfc.comment || 'No comment provided' }}
                 </div>
               </div>
             </div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
+            <div class="flex-shrink-0 text-sm text-gray-500 dark:text-gray-400">
               Reserved on {{ formatDate(unusableRfc.createdAt) }}
             </div>
           </div>

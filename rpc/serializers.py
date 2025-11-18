@@ -902,15 +902,16 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
 
 class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     """Serialize an Unusable Rfc Number"""
+
     createdAt = serializers.SerializerMethodField()
 
     class Meta:
         model = UnusableRfcNumber
-        fields = ['number', 'comment', 'createdAt']
+        fields = ["number", "comment", "createdAt"]
 
     def get_createdAt(self, obj):
         # Get the creation date from history
-        first_history = obj.history.filter(history_type='+').first()
+        first_history = obj.history.filter(history_type="+").first()
         return first_history.history_date if first_history else None
 
 
