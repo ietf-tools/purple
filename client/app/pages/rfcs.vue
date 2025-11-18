@@ -6,7 +6,8 @@
           Unusable RFC Numbers
         </h1>
         <p class="mt-2 text-gray-600 dark:text-gray-400">
-          RFC numbers that have been reserved or are otherwise unavailable for assignment.
+          RFC numbers that have been reserved or are otherwise unavailable for
+          assignment.
         </p>
       </div>
       <BaseButton @click="openAddNumberModal" class="ml-4">
@@ -31,9 +32,7 @@
       </div>
 
       <div v-else>
-        <!-- Table -->
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <!-- Header -->
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th class="px-6 py-3 w-12"></th>
@@ -76,7 +75,6 @@
             </tr>
           </thead>
 
-          <!-- Body -->
           <tbody class="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             <tr
               v-for="row in table.getRowModel().rows"
@@ -208,34 +206,18 @@ const DeleteConfirmModal = defineComponent({
     }
 
     return () => h('div', { class: 'flex flex-col h-full bg-white dark:bg-gray-800' }, [
-      // Header
       h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
         h('div', { class: 'flex items-start justify-between space-x-3' }, [
           h('div', { class: 'space-y-1' }, [
-            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' }, 'Delete RFC Number'),
-            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' }, `Are you sure you want to delete RFC ${props.rfcNumber} from the unusable numbers list?`)
+            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' },
+            'Delete RFC Number'),
+            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' },
+            `Are you sure you want to delete RFC ${props.rfcNumber} from the unusable ` +
+            `numbers list?`)
           ])
         ])
       ]),
 
-      // Content
-      h('div', { class: 'flex-1 px-4 sm:px-6' }, [
-        h('div', { class: 'bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-md p-4' }, [
-          h('div', { class: 'flex' }, [
-            h('div', { class: 'flex-shrink-0' }, [
-              h(Icon, { name: 'heroicons:exclamation-triangle', class: 'h-5 w-5 text-yellow-400' })
-            ]),
-            h('div', { class: 'ml-3' }, [
-              h('h3', { class: 'text-sm font-medium text-yellow-800 dark:text-yellow-200' }, 'Warning'),
-              h('div', { class: 'mt-2 text-sm text-yellow-700 dark:text-yellow-300' }, [
-                h('p', `This will permanently remove RFC ${props.rfcNumber} from the unusable numbers list. The RFC number will become available for assignment again.`)
-              ])
-            ])
-          ])
-        ])
-      ]),
-
-      // Buttons
       h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
         h('div', { class: 'flex justify-end space-x-3' }, [
           h(BaseButton, {
@@ -255,7 +237,6 @@ const DeleteConfirmModal = defineComponent({
   }
 })
 
-// Form component defined inline
 const AddNumberForm = defineComponent({
   emits: ['success', 'close'],
   setup(_, { emit }) {
@@ -320,7 +301,10 @@ const AddNumberForm = defineComponent({
             newRfcNumber.value = target.value ? parseInt(target.value) : null
           },
           placeholder: 'Enter RFC number',
-          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 ' +
+          'dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 ' +
+          'focus:outline-none focus:ring-blue-500 focus:border-blue-500 ' +
+          'dark:bg-gray-700 dark:text-white'
         })
       ]),
 
@@ -338,7 +322,10 @@ const AddNumberForm = defineComponent({
             newComment.value = target.value
           },
           placeholder: 'Enter reason for making this RFC number unusable...',
-          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-white'
+          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 ' +
+          'dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 ' +
+          'focus:outline-none focus:ring-blue-500 focus:border-blue-500 ' +
+          'dark:bg-gray-700 dark:text-white'
         })
       ]),
 
@@ -393,8 +380,10 @@ const openAddNumberModal = () => {
       h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
         h('div', { class: 'flex items-start justify-between space-x-3' }, [
           h('div', { class: 'space-y-1' }, [
-            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' }, 'Add Unusable RFC Number'),
-            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' }, 'Reserve an RFC number to make it unavailable for assignment.')
+            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' },
+            'Add Unusable RFC Number'),
+            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' },
+            'Reserve an RFC number to make it unavailable for assignment.')
           ])
         ])
       ]),
@@ -477,7 +466,8 @@ const table = useVueTable({
 useHead({
   title: 'Unusable RFC Numbers',
   meta: [
-    { name: 'description', content: 'List of RFC numbers that are reserved or unavailable for assignment' }
+    { name: 'description', content: 'List of RFC numbers that are reserved or ' +
+    'unavailable for assignment' }
   ]
 })
 </script>
