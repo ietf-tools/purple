@@ -36,12 +36,12 @@
             <div class="flex flex-row">
               <span class="w-[160px] mr-1"></span>
               <div>
-                <RpcCheckbox id="override-approval" label="Has approval override?" :checked="hasApprovalOverride"
+                <RpcCheckbox id="override-approval" label="Set a proxy approver, approving on behalf of the original approver?" :checked="hasApprovalOverride"
                   @change="handleOverrideChange" :disabled="isFinalReviewApiSuccess" />
               </div>
             </div>
             <div v-if="hasApprovalOverride">
-              <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Overriding approvder"
+              <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Proxy Approver"
                 :disabled="isFinalReviewApiSuccess" />
             </div>
           </div>
@@ -203,13 +203,17 @@ const clickFinalApprovalHandler = async () => {
     }
     try {
       const approved = approvedDateTime ? approvedDateTime.toJSDate() : undefined
+      const approverPersonId = approver.value?.personId
+      const overridingApproverPersonId = hasApprovalOverride.value ?
+        overridingApprover?.value?.personId : undefined
       const result = await api.documentsFinalApprovalsPartialUpdate({
         draftName,
         id,
         patchedFinalApprovalRequest: {
           approved,
           body: bodyText,
-          // FIXME: patch `overridingApproverPersonId`
+          approverPersonId,
+          overridingApproverPersonId
         }
       })
       if (approved === undefined && result.approved) {

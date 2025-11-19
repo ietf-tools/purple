@@ -324,11 +324,38 @@ class FinalApprovalSerializer(serializers.Serializer):
     overriding_approver = BaseDatatrackerPersonSerializer(
         allow_null=True, read_only=True
     )
+    approver_person_id = serializers.IntegerField(
+        write_only=True, required=False
+    )
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False
+    )
 
     def update(self, instance, validated_data):
-        # Only 'approved', 'body' field shall be updated, for other fields we consider
-        # it a different item
-        FinalApproval.objects.filter(pk=instance.pk).update(**validated_data)
+        approver_person_id = validated_data.pop(
+            "approver_person_id", None
+        )
+        approver_dt_person = None
+        if approver_person_id:
+            approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=approver_person_id
+            )
+
+
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        FinalApproval.objects.filter(pk=instance.pk).update(
+            overriding_approver=overriding_approver_dt_person,
+            approver=approver_dt_person,
+            **validated_data,
+        )
         return FinalApproval.objects.get(pk=instance.pk)
 
 
