@@ -324,23 +324,18 @@ class FinalApprovalSerializer(serializers.Serializer):
     overriding_approver = BaseDatatrackerPersonSerializer(
         allow_null=True, read_only=True
     )
-    approver_person_id = serializers.IntegerField(
-        write_only=True, required=False
-    )
+    approver_person_id = serializers.IntegerField(write_only=True, required=False)
     overriding_approver_person_id = serializers.IntegerField(
         write_only=True, required=False
     )
 
     def update(self, instance, validated_data):
-        approver_person_id = validated_data.pop(
-            "approver_person_id", None
-        )
+        approver_person_id = validated_data.pop("approver_person_id", None)
         approver_dt_person = None
         if approver_person_id:
             approver_dt_person = DatatrackerPerson.objects.get(
                 datatracker_id=approver_person_id
             )
-
 
         overriding_approver_person_id = validated_data.pop(
             "overriding_approver_person_id", None
