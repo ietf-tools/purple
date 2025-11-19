@@ -148,3 +148,17 @@ CACHES = {
 # email
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 DEFAULT_FROM_EMAIL = os.getenv("PURPLE_DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+
+# Crossref / DOI
+CROSSREF_API = "https://test.crossref.org/servlet/deposit"
+CROSSREF_USER = "user"
+CROSSREF_PASSWORD = "friend"
+CROSSREF_VERSION = "5.4.0"
+DOI_REGISTRANT = "RFC Editor"
+DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
+DOI_PREFIX = "10.17487"
+DOI_EMAIL = "webmaster@rfc-editor.org"
+DOI_URL = "https://www.rfc-editor.org/info/"
+AUTHOR_ORGS = [
+    "IAB",
+]
