@@ -154,13 +154,13 @@ def _generate_crossref_xml(rfc_number):
     doi_data = ElementTree.SubElement(report_paper_metadata, "doi_data")
 
     # body → report-paper → report-paper_metadata → doi_data → doi
-    ElementTree.SubElement(doi_data, "doi").text = (
-        f"{settings.DOI_PREFIX}/{rfc.doc_id.lower()}"
-    )
+    ElementTree.SubElement(
+        doi_data, "doi"
+    ).text = f"{settings.DOI_PREFIX}/{rfc.doc_id.lower()}"
 
     # body → report-paper → report-paper_metadata → resource_data → resource
-    ElementTree.SubElement(doi_data, "resource").text = (
-        f"{settings.DOI_URL}/{rfc.doc_id.lower()}"
-    )
+    ElementTree.SubElement(
+        doi_data, "resource"
+    ).text = f"{settings.DOI_URL}/{rfc.doc_id.lower()}"
 
     return root
