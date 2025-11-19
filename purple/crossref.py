@@ -76,7 +76,10 @@ def _generate_crossref_xml(rfc_number):
             "version": settings.CROSSREF_VERSION,
             "xmlns": f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION}",
             "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
-            "xsi:schemaLocation": f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION} http://www.crossref.org/schema/deposit/crossref{settings.CROSSREF_VERSION}.xsd",
+            "xsi:schemaLocation": (
+                f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION} "
+                "http://www.crossref.org/schema/deposit/crossref{settings.CROSSREF_VERSION}.xsd"
+            ),
         },
     )
 
@@ -114,7 +117,8 @@ def _generate_crossref_xml(rfc_number):
     contributors = ElementTree.SubElement(report_paper_metadata, "contributors")
     sequence = "first"
 
-    # body → report-paper → report-paper_metadata → contributors → person_name | organization
+    # body → report-paper → report-paper_metadata →
+    #   contributors → person_name | organization
     for author in rfc.authors():
         contributors.append(_get_contributors(author, sequence))
         # change sequence
