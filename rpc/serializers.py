@@ -909,6 +909,7 @@ class UnusableRfcNumberSerializer(serializers.ModelSerializer):
         model = UnusableRfcNumber
         fields = ["number", "comment", "createdAt"]
 
+    @extend_schema_field(serializers.DateField())
     def get_createdAt(self, obj):
         # Get the creation date from history
         first_history = obj.history.filter(history_type="+").first()

@@ -137,8 +137,10 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import { overlayModalKey } from '~/providers/providerKeys'
-import { snackbarForErrors } from "~/utils/snackbar"
 import { BaseButton, Icon } from '#components'
+import AddConfirmModal from '~/components/UnusableRfcNumberAdd.vue'
+import DeleteConfirmModal from '~/components/UnusableRfcNumberDelete.vue'
+import type { DateTime } from 'luxon'
 
 const api = useApi()
 const snackbar = useSnackbar()
@@ -158,197 +160,17 @@ const {
   }
 )
 
-const formatDate = (dateString: string | undefined) => {
+const formatDate = (dateString: DateTime | undefined) => {
   if (!dateString) return 'Unknown'
-  return new Date(dateString).toLocaleDateString()
+  return dateString.toLocaleString()
 }
 
 const overlayModal = inject(overlayModalKey)
-
-// Delete confirmation component
-const DeleteConfirmModal = defineComponent({
-  props: {
-    rfcNumber: {
-      type: Number,
-      required: true
-    }
-  },
-  emits: ['success', 'close'],
-  setup(props, { emit }) {
-    const isDeleting = ref(false)
-
-    const deleteRfcNumber = async () => {
-      try {
-        isDeleting.value = true
-
-        await api.unusableRfcNumbersDestroy({
-          number: props.rfcNumber
-        })
-
-        snackbar.add({
-          type: 'success',
-          title: `RFC ${props.rfcNumber} removed from unusable numbers`,
-          text: ''
-        })
-
-        emit('success')
-        emit('close')
-
-      } catch (e: unknown) {
-        snackbarForErrors({
-          snackbar,
-          defaultTitle: 'Unable to delete RFC number',
-          error: e
-        })
-      } finally {
-        isDeleting.value = false
-      }
-    }
-
-    return () => h('div', { class: 'flex flex-col h-full bg-white dark:bg-gray-800' }, [
-      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
-        h('div', { class: 'flex items-start justify-between space-x-3' }, [
-          h('div', { class: 'space-y-1' }, [
-            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' },
-            'Delete RFC Number'),
-            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' },
-            `Are you sure you want to delete RFC ${props.rfcNumber} from the unusable ` +
-            `numbers list?`)
-          ])
-        ])
-      ]),
-
-      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
-        h('div', { class: 'flex justify-end space-x-3' }, [
-          h(BaseButton, {
-            type: 'button',
-            variant: 'secondary',
-            onClick: () => emit('close')
-          }, 'Cancel'),
-          h(BaseButton, {
-            type: 'button',
-            variant: 'danger',
-            disabled: isDeleting.value,
-            onClick: deleteRfcNumber
-          }, isDeleting.value ? 'Deleting...' : 'Delete RFC Number')
-        ])
-      ])
-    ])
+  if (!overlayModal) {
+    throw Error('Expected injection of overlayModalKey')
   }
-})
-
-const AddNumberForm = defineComponent({
-  emits: ['success', 'close'],
-  setup(_, { emit }) {
-    const newRfcNumber = ref<number | null>(null)
-    const newComment = ref('')
-    const isSubmitting = ref(false)
-
-    const addUnusableRfcNumber = async () => {
-      if (!newRfcNumber.value) return
-
-      try {
-        isSubmitting.value = true
-
-        await api.unusableRfcNumbersCreate({
-          unusableRfcNumberRequest : {
-            number: newRfcNumber.value,
-            comment: newComment.value || ''
-          }
-        })
-
-        snackbar.add({
-          type: 'success',
-          title: `RFC ${newRfcNumber.value} added to unusable numbers`,
-          text: ''
-        })
-
-        emit('success')
-        emit('close')
-
-      } catch (e: unknown) {
-        snackbarForErrors({
-          snackbar,
-          defaultTitle: 'Unable to add RFC number',
-          error: e
-        })
-        console.error(e)
-      } finally {
-        isSubmitting.value = false
-      }
-    }
-
-    return () => h('form', {
-      onSubmit: (e: Event) => {
-        e.preventDefault()
-        addUnusableRfcNumber()
-      },
-      class: 'space-y-6'
-    }, [
-      h('div', [
-        h('label', {
-          for: 'rfc-number',
-          class: 'block text-sm font-medium text-gray-700 dark:text-gray-300'
-        }, 'RFC Number *'),
-        h('input', {
-          id: 'rfc-number',
-          type: 'number',
-          required: true,
-          min: 1,
-          value: newRfcNumber.value,
-          onInput: (e: Event) => {
-            const target = e.target as HTMLInputElement
-            newRfcNumber.value = target.value ? parseInt(target.value) : null
-          },
-          placeholder: 'Enter RFC number',
-          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 ' +
-          'dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 ' +
-          'focus:outline-none focus:ring-blue-500 focus:border-blue-500 ' +
-          'dark:bg-gray-700 dark:text-white'
-        })
-      ]),
-
-      h('div', [
-        h('label', {
-          for: 'comment',
-          class: 'block text-sm font-medium text-gray-700 dark:text-gray-300'
-        }, 'Comment'),
-        h('textarea', {
-          id: 'comment',
-          rows: 4,
-          value: newComment.value,
-          onInput: (e: Event) => {
-            const target = e.target as HTMLTextAreaElement
-            newComment.value = target.value
-          },
-          placeholder: 'Enter reason for making this RFC number unusable...',
-          class: 'mt-1 block w-full px-3 py-2 border border-gray-300 ' +
-          'dark:border-gray-600 rounded-md shadow-sm placeholder-gray-400 ' +
-          'focus:outline-none focus:ring-blue-500 focus:border-blue-500 ' +
-          'dark:bg-gray-700 dark:text-white'
-        })
-      ]),
-
-      h('div', { class: 'flex justify-end space-x-3 pt-6' }, [
-        h(BaseButton, {
-          type: 'button',
-          variant: 'secondary',
-          onClick: () => emit('close')
-        }, 'Cancel'),
-        h(BaseButton, {
-          type: 'submit',
-          disabled: isSubmitting.value || !newRfcNumber.value
-        }, isSubmitting.value ? 'Adding...' : 'Add Number')
-      ])
-    ])
-  }
-})
 
 const openDeleteConfirmModal = (rfcNumber: number) => {
-  if (!overlayModal) {
-    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
-  }
-
   const { openOverlayModal } = overlayModal
 
   openOverlayModal({
@@ -369,32 +191,13 @@ const openDeleteConfirmModal = (rfcNumber: number) => {
 }
 
 const openAddNumberModal = () => {
-  if (!overlayModal) {
-    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
-  }
-
   const { openOverlayModal } = overlayModal
 
   openOverlayModal({
-    component: h('div', { class: 'flex flex-col h-full bg-white dark:bg-gray-800' }, [
-      h('div', { class: 'flex-shrink-0 px-4 py-6 sm:px-6' }, [
-        h('div', { class: 'flex items-start justify-between space-x-3' }, [
-          h('div', { class: 'space-y-1' }, [
-            h('h2', { class: 'text-lg font-medium text-gray-900 dark:text-white' },
-            'Add Unusable RFC Number'),
-            h('p', { class: 'text-sm text-gray-500 dark:text-gray-400' },
-            'Reserve an RFC number to make it unavailable for assignment.')
-          ])
-        ])
-      ]),
-
-      h('div', { class: 'flex-1 px-4 sm:px-6' }, [
-        h(AddNumberForm, {
-          onSuccess: () => refresh(),
-          onClose: () => overlayModal.closeOverlayModal()
-        })
-      ])
-    ]),
+    component: h(AddConfirmModal, {
+        onSuccess: () => refresh(),
+        onClose: () => overlayModal.closeOverlayModal()
+    }),
     mode: 'side',
   }).catch(e => {
     if (e === undefined) {

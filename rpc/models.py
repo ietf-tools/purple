@@ -319,14 +319,13 @@ class Cluster(models.Model):
 class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["number"]
 
     def __str__(self):
         return str(self.number)
-
-    history = HistoricalRecords()
 
 
 class RpcRole(models.Model):
