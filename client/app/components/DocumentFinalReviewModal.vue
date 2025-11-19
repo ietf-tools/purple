@@ -205,7 +205,7 @@ const clickFinalApprovalHandler = async () => {
       const approved = approvedDateTime ? approvedDateTime.toJSDate() : undefined
       const approverPersonId = approver.value?.personId
       const overridingApproverPersonId = hasApprovalOverride.value ?
-        overridingApprover?.value?.personId : undefined
+        overridingApprover.value?.personId : undefined
       const result = await api.documentsFinalApprovalsPartialUpdate({
         draftName,
         id,
