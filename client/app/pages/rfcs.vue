@@ -138,9 +138,8 @@ import {
 } from '@tanstack/vue-table'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { BaseButton, Icon } from '#components'
-import AddConfirmModal from '~/components/UnusableRfcNumberAdd.vue'
-import DeleteConfirmModal from '~/components/UnusableRfcNumberDelete.vue'
-import type { DateTime } from 'luxon'
+import UnusableRfcNumberAddModal from '~/components/UnusableRfcNumberAddModal.vue'
+import UnusableRfcNumberDeleteModal from '~/components/UnusableRfcNumberDeleteModal.vue'
 
 const api = useApi()
 const snackbar = useSnackbar()
@@ -159,12 +158,6 @@ const {
     default: () => [] as UnusableRfcNumber[],
   }
 )
-
-const formatDate = (dateString: DateTime | undefined) => {
-  if (!dateString) return 'Unknown'
-  return dateString.toLocaleString()
-}
-
 const overlayModal = inject(overlayModalKey)
   if (!overlayModal) {
     throw Error('Expected injection of overlayModalKey')
@@ -174,11 +167,12 @@ const openDeleteConfirmModal = (rfcNumber: number) => {
   const { openOverlayModal } = overlayModal
 
   openOverlayModal({
-    component: h(DeleteConfirmModal, {
+    component: UnusableRfcNumberDeleteModal,
+    componentProps: {
       rfcNumber: rfcNumber,
       onSuccess: () => refresh(),
       onClose: () => overlayModal.closeOverlayModal()
-    }),
+    },
     mode: 'side',
   }).catch(e => {
     if (e === undefined) {
@@ -194,10 +188,11 @@ const openAddNumberModal = () => {
   const { openOverlayModal } = overlayModal
 
   openOverlayModal({
-    component: h(AddConfirmModal, {
-        onSuccess: () => refresh(),
-        onClose: () => overlayModal.closeOverlayModal()
-    }),
+    component: UnusableRfcNumberAddModal,
+    componentProps: {
+      onSuccess: () => refresh(),
+      onClose: () => overlayModal.closeOverlayModal()
+    },
     mode: 'side',
   }).catch(e => {
     if (e === undefined) {
@@ -236,7 +231,7 @@ const columns = [
     header: 'Created At',
     cell: data => h('div', {
       class: 'text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap'
-    }, `Reserved on ${formatDate(data.getValue())}`),
+    }, `Reserved on ${data.getValue()?.toLocaleString()}`),
     sortingFn: (rowA, rowB, columnId) => {
       const a = new Date(rowA.getValue(columnId) || 0)
       const b = new Date(rowB.getValue(columnId) || 0)
