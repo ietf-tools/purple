@@ -1,5 +1,5 @@
 <template>
-  <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
+  <div class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8" :id="STICKY_DOM_ID">
     <button type="button" class="-m-2.5 p-2.5 text-gray-700 lg:hidden" @click="siteStore.sidebarIsOpen = true">
       <span class="sr-only">Open sidebar</span>
       <Icon name="uil:bars" class="h-6 w-6" aria-hidden="true" />
@@ -122,6 +122,7 @@
 <script setup lang="ts">
 import { useSiteStore } from '@/stores/site'
 import { useUserStore } from '@/stores/user'
+import { STICKY_DOM_ID } from '~/utils/scroll'
 
 const api = useApi()
 const csrf = useCookie('csrftoken', { sameSite: 'strict' })

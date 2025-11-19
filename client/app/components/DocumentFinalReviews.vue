@@ -3,7 +3,7 @@
     {{ error }}
   </ErrorAlert>
 
-  <Heading :heading-level="props.headingLevel" class="mt-5">
+  <Heading :heading-level="props.headingLevel" class="mt-5" id="final-review">
     Final Reviews {{ status === 'success' ? `(${table.getRowCount()})` : '' }}
   </Heading>
 
@@ -36,7 +36,7 @@
     <RpcTfoot>
       <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
         <RpcTh :colSpan="1">
-          <BaseButton @click="openAddModal()">Add final review</BaseButton>
+          <BaseButton @click="openAddModal()">Add approver</BaseButton>
         </RpcTh>
       </tr>
     </RpcTfoot>
@@ -57,6 +57,8 @@ type Props = {
   headingLevel?: HeadingLevel
   onSuccess?: () => Promise<void>
 }
+
+onMounted(() => onMountedScrollToHash())
 
 const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
@@ -106,12 +108,10 @@ const columns = [
       const approverVNode = formatAuthor(approver)
       if (!rowOriginal.overridingApprover) {
         return h('span', [
-          'Approved by ',
           approverVNode,
         ])
       }
       return h('span', [
-        'Approved by ',
         formatAuthor(rowOriginal.overridingApprover),
         ' on behalf of ',
         approverVNode
@@ -172,7 +172,7 @@ const columns = [
         case 'approved':
           return h('i', 'Complete')
         case 'pending':
-          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openEditModal(data.row.original) }, () => 'Approve')
+          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openEditModal(data.row.original) }, () => 'Edit or Comment')
       }
     }
   }),

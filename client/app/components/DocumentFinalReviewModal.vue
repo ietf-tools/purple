@@ -1,66 +1,94 @@
 <template>
   <div
-    class="h-full bg-gray-100 text-black dark:bg-gray-800 dark:text-black flex flex-col justify-between gap-5 px-2 pt-5 pb-2">
-    <BaseButton btnType="cancel" class="absolute right-1 top-1 z-50" @click="closeOverlayModal">
+    class="h-full bg-gray-100 text-black dark:bg-gray-800 dark:text-black flex flex-col justify-between gap-5 px-2 pt-10 pb-2">
+    <BaseButton btnType="outline" class="absolute right-1 top-1 z-50" @click="closeOverlayModal">
       <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
     </BaseButton>
-    <div class="border rounded-md border-gray-500 bg-white dark:bg-black">
+    <form novalidate class="border rounded-md border-gray-500 bg-white dark:bg-black">
       <Heading :heading-level="3" class="p-5">
-        {{ props.finalApproval ? 'Edit Final Review' : 'Add Final Review' }}
+        {{ props.finalApproval ? 'Edit Approver' : 'Add Approver' }}
       </Heading>
       <div class="flex flex-col gap-3 justify-between">
         <div class="flex flex-col gap-3">
-          <DialogFieldPickAuthor v-model="approver" id="approver" label="Approver" :disabled="isFinalReviewApiSuccess" />
-          <DialogFieldDate v-model="approvedDateString" id="approvedDate" label="Date of approval?" :disabled="isFinalReviewApiSuccess" />
+          <div class="flex flex-row gap-3">
+            <span class="w-[160px] text-sm font-bold text-right mr-1">
+              Approver type: {{ approverType }}
+            </span>
+            <div class="gap-1">
+              <label v-for="approverTypesListItem in approverTypeList" :key="approverTypesListItem.id"
+                class="text-sm cursor-pointer mr-1">
+                <input :id="approverTypesListItem.id" type="radio" v-model="approverType"
+                  :value="approverTypesListItem.id" />
+                {{ approverTypesListItem.label }}
+              </label>
+            </div>
+          </div>
 
-          <div v-if="!props.finalApproval" class="flex flex-row">
-            <span class="w-[160px]"></span>
-            <div>
-              <RpcCheckbox id="override-approval" label="Has approval override?" :checked="hasApprovalOverride"
-                @change="handleOverrideChange" :disabled="isFinalReviewApiSuccess" />
-              <div v-if="hasApprovalOverride" class="flex flex-col gap-3">
-                <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover"
-                  label="Overriding approvder" :disabled="isFinalReviewApiSuccess" />
+          <DialogFieldPickAuthor v-if="approverType === 'person'" v-model="approver" id="approver" label="Approver"
+            :disabled="isFinalReviewApiSuccess" />
+          <DialogFieldText v-else v-model="body" id="body" label="Organisation name" placeholder="E.g. IANA"
+            :disabled="isFinalReviewApiSuccess" />
+
+          <DialogFieldDate v-model="approvedDateString" id="approvedDate" label="Date of approval"
+            :disabled="isFinalReviewApiSuccess" />
+
+          <div v-if="approverType === APPROVER_TYPE_PERSON" class="flex flex-col gap-1">
+            <div class="flex flex-row">
+              <span class="w-[160px] mr-1"></span>
+              <div>
+                <RpcCheckbox id="override-approval" label="Has approval override?" :checked="hasApprovalOverride"
+                  @change="handleOverrideChange" :disabled="isFinalReviewApiSuccess" />
               </div>
-              <div v-else>
-                <i>(No override)</i>
-              </div>
+            </div>
+            <div v-if="hasApprovalOverride">
+              <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Overriding approvder"
+                :disabled="isFinalReviewApiSuccess" />
             </div>
           </div>
         </div>
-        <div class="flex flex-row items-center p-5 border-t-2 border-gray-500 bg-gray-300 dark:bg-gray-800">
-          <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :disabled="isFinalReviewApiSuccess">
+        <div
+          class="flex flex-row items-center justify-end px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
+          <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess">
             {{ props.finalApproval ?
-              'Edit Final Review' :
-              'Add Final Review' }}
+              'Edit Approver' :
+              'Add Approver' }}
           </BaseButton>
-          <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3">
-            Done
+          <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
+            {{ props.finalApproval ?
+              'Approver Edited' :
+              'Approver Added' }}
           </b>
         </div>
       </div>
-    </div>
-    <div class="border rounded-md border-gray-500 bg-white dark:bg-black">
-      <Heading :heading-level="3" class="p-5">
-        Add Comment
+    </form>
+    <form novalidate class="border rounded-md border-gray-500 bg-white dark:bg-black">
+      <Heading :heading-level="3" class="px-5 pt-4">
+        Comment on <span class="font-mono font-bold">{{ props.name }}</span>
       </Heading>
-      <DialogFieldText id="comment" v-model="comment" label="Comment" is-multiline :disabled="isCommentApiSuccess" />
-      <div class="flex flex-row items-center p-5 border-t-2 border-gray-500 bg-gray-300 dark:bg-gray-800">
-        <BaseButton btn-type="default" @click="clickCommentHandler" :disabled="isCommentApiSuccess">
+      <p class="px-5 mb-1 pt-1 text-xs font-italic">
+        Eg. add a draft commment about this approver
+      </p>
+      <div class="flex flex-col py-4">
+        <DialogFieldText id="comment" v-model="comment" label="Comment" is-multiline :disabled="isCommentApiSuccess" />
+      </div>
+      <div
+        class="flex flex-row items-center justify-end px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
+        <BaseButton btn-type="default" @click="clickCommentHandler" :hidden="isCommentApiSuccess">
           Add comment
         </BaseButton>
-        <b v-if="isCommentApiSuccess" class="text-green-800 font-bold ml-3">
-          Done
+        <b v-if="isCommentApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
+          Comment added
         </b>
       </div>
-    </div>
+    </form>
   </div>
 </template>
 
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 import type { DatatrackerPerson, FinalApproval } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
-import { jsDateToInputTypeDate, inputTypeDateToDateTime } from '../utils/form'
+import { inputTypeDateToDateTime } from '../utils/form'
 
 type Props = {
   /** if finalApproval is provided the modal will be in 'edit' mode.
@@ -77,8 +105,20 @@ const props = defineProps<Props>()
 
 const api = useApi()
 
+const APPROVER_TYPE_PERSON = 'person' as const
+const APPROVER_TYPE_ORGANISATION = 'organisation' as const
+type APPROVER_TYPE = typeof APPROVER_TYPE_PERSON | typeof APPROVER_TYPE_ORGANISATION
+
+const approverTypeList = [
+  { id: APPROVER_TYPE_PERSON, label: 'person' },
+  { id: APPROVER_TYPE_ORGANISATION, label: 'organisation' },
+]
+
+const approverType = ref<APPROVER_TYPE>(props.finalApproval?.body?.trim() ? APPROVER_TYPE_ORGANISATION : APPROVER_TYPE_PERSON)
+
 const approver = ref<DatatrackerPerson | undefined>(props.finalApproval?.approver ?? undefined)
-const approvedDateString = ref<string>(jsDateToInputTypeDate(new Date()))
+const body = ref<string>(props.finalApproval?.body ?? '')
+const approvedDateString = ref<string | undefined>()
 
 const hasApprovalOverride = ref(Boolean(props.finalApproval?.overridingApprover))
 const overridingApprover = ref<DatatrackerPerson | undefined>(props.finalApproval?.overridingApprover ?? undefined)
@@ -109,88 +149,120 @@ const { closeOverlayModal } = overlayModalKeyInjection
 
 const clickFinalApprovalHandler = async () => {
   let overridingApproverPersonId
+  let approvedDateTime: undefined | DateTime = undefined
+  let approverPersonId: undefined | number = undefined
+  let bodyText: string | undefined = undefined
 
-  const approverValue = approver.value
-  const approverPersonId = approver.value?.personId
-  if (!approverValue || approverPersonId === undefined) {
+  const validationError = (title: string) => {
     snackbar.add({
       type: "error",
-      title: "An approver is required",
+      title,
       text: ""
     })
     return
   }
 
-  const approvedDateTime = inputTypeDateToDateTime(approvedDateString.value)
-  if (!approvedDateTime.isValid) {
-    snackbar.add({
-      type: "error",
-      title: "An approver date is required",
-      text: ""
-    })
-    return
-  }
-  if (hasApprovalOverride.value) {
-    if (!overridingApprover.value) {
-      snackbar.add({
-        type: "error",
-        title: "An overriding approver is required",
-        text: ""
-      })
-      return
+  if (approverType.value === APPROVER_TYPE_PERSON) {
+    const approverValue = approver.value
+    approverPersonId = approver.value?.personId
+    if (!approverValue || approverPersonId === undefined) {
+      return validationError("An approver is required")
     }
-    overridingApproverPersonId = overridingApprover.value.personId
+    if (hasApprovalOverride.value) {
+      if (!overridingApprover.value) {
+        return validationError("An overriding approver is required")
+      }
+      overridingApproverPersonId = overridingApprover.value.personId
+    }
+  } else if (approverType.value === APPROVER_TYPE_ORGANISATION) {
+    bodyText = body.value
+    if (bodyText.trim().length === 0) {
+      return validationError("An organisation name is required")
+    }
   }
+
+  if (approvedDateString.value) {
+    approvedDateTime = inputTypeDateToDateTime(approvedDateString.value)
+    if (!approvedDateTime.isValid) {
+      return validationError("An approver date is required")
+    }
+  }
+
+  const approved = approvedDateTime ? approvedDateTime.toJSDate() : null
 
   const { name: draftName } = props
 
   if (draftName.trim().length === 0) {
-    snackbar.add({
-      type: "error",
-      title: "A draft name is required",
-      text: ""
-    })
+    return validationError("A draft name is required",)
   }
 
-  try {
-    if (props.finalApproval) {
-      const { id } = props.finalApproval
-      if (id === undefined) {
-        snackbar.add({
-          type: "error",
-          title: "Could not edit final approval as it lacked an id",
-          text: ""
-        })
-        return
-      }
-      await api.documentsFinalApprovalsPartialUpdate({
+  if (props.finalApproval) {
+    const { id } = props.finalApproval
+    if (id === undefined) {
+      return validationError("Could not edit final review as it lacked an id")
+    }
+    try {
+      const approved = approvedDateTime ? approvedDateTime.toJSDate() : undefined
+      const result = await api.documentsFinalApprovalsPartialUpdate({
         draftName,
         id,
         patchedFinalApprovalRequest: {
-          approved: approvedDateTime.toJSDate(),
+          approved,
+          // FIXME: patch `overridingApproverPersonId`
         }
       })
-    } else {
-      await api.documentsFinalApprovalsCreate({
+      if (approved === undefined && result.approved) {
+        return validationError(`Server rejected final review edit. Approved was undefined but received ${result.approved}`)
+      } else if (approved) {
+        if (!result.approved) {
+          return validationError(`Server rejected final review edit. Approved was ${approved.toString()} but received undefined`)
+        } else if (approvedDateTime && DateTime.fromJSDate(result.approved).equals(approvedDateTime)) {
+          return validationError(`Server rejected final review edit. Approved was ${approved.toString()} but received ${result.approved.toString()}`)
+        }
+      }
+    } catch (e) {
+      snackbarForErrors({ snackbar, defaultTitle: 'Problem updating Final Review', error: e })
+      return
+    }
+  } else {
+    try {
+      if (approverPersonId === undefined) {
+        return validationError('An approver is required',)
+      }
+      const result = await api.documentsFinalApprovalsCreate({
         draftName,
         createFinalApprovalRequest: {
           approverPersonId,
-          approved: approvedDateTime.toJSDate(),
+          approved,
           overridingApproverPersonId,
         }
       })
-    }
 
-    await props.onSuccess()
-    isFinalReviewApiSuccess.value = true
-    snackbar.add({
+      if (approverPersonId && result.approver?.personId !== approverPersonId) {
+        return validationError(`Server rejected final review edit. Approver id requested was ${approverPersonId} but received ${result.approver?.personId}`)
+      }
+      if (approved === undefined && result.approved) {
+        return validationError(`Server rejected final review edit. Approved was undefined but received ${result.approved}`)
+      } else if (approved) {
+        if (!result.approved) {
+          return validationError(`Server rejected final review edit. Approved was ${approved.toString()} but received undefined`)
+        } else if (approvedDateTime && DateTime.fromJSDate(result.approved).equals(approvedDateTime)) {
+          return validationError(`Server rejected final review edit. Approved was ${approved.toString()} but received ${result.approved.toString()}`)
+        }
+      }
+    } catch (e) {
+      snackbarForErrors({ snackbar, defaultTitle: 'Problem creating Final Review', error: e })
+      return
+    }
+  }
+
+  await props.onSuccess()
+  isFinalReviewApiSuccess.value = true
+  snackbar.add({
     type: "success",
     title: props.finalApproval ? "Final Review edited" : "Final Review created",
     text: ""
   })
-  } catch (e) {
-    snackbarForErrors({ snackbar, defaultTitle: 'Problem creating Final Review', error: e })
-  }
 }
 
 const clickCommentHandler = async () => {

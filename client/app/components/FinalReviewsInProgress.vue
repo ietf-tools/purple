@@ -96,7 +96,7 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
-      return h(Anchor, { href: documentPathBuilder(data.row.original), 'class': ANCHOR_STYLE }, () => [
+      return h(Anchor, { href: `${documentPathBuilder(data.row.original)}#final-review`, 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
       ])
     },
