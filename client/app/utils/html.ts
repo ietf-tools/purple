@@ -12,3 +12,5 @@ export const TARGET_NEW_WINDOW = '_blank'
 export const EXTERNAL_LINK_REL = 'noopener'
 
 export const ANCHOR_STYLE = 'text-violet-600 dark:text-violet-500 font-semibold no-underline hover:underline focus:underline'
+
+export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6

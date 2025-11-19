@@ -126,7 +126,7 @@ const handleUpdateComment = async () => {
     await api.documentsCommentsUpdate({
       draftName: props.draftName,
       id: props.comment.id!,
-      documentComment: {
+      documentCommentRequest: {
         comment: editComment.value
       }
     })

@@ -518,6 +518,8 @@ class FinalApproval(models.Model):
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True, blank=True)
 
+    history = HistoricalRecords()
+
     def __str__(self):
         if self.approved:
             if self.overriding_approver:

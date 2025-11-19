@@ -1,57 +1,50 @@
 <template>
   <div>
-    <h2 class="font-bold text-lg mt-5">Done</h2>
+    <Heading :heading-level="props.headingLevel" class="mt-5">
+      Done {{ props.status === 'success' ? `(${props.queueItems.length})` : '' }}
+    </Heading>
 
-    <ErrorAlert v-if="error">
-      {{ error }}
-    </ErrorAlert>
-
-      <RpcTable>
-        <RpcThead>
-          <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()"
-              :sort-direction="header.column.getIsSorted()"
-              @click="header.column.getToggleSortingHandler()?.($event)"
-            >
-              <div class="flex items-center gap-2">
-                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                  :props="header.getContext()" />
-                <Transition name="sort-indicator">
-                  <Icon
-                    v-if="header.column.getCanSort()"
-                    name="heroicons:arrows-up-down"
-                    class="text-gray-400 opacity-60 hover:opacity-100"
-                  />
-                </Transition>
-              </div>
-            </RpcTh>
-          </tr>
-        </RpcThead>
-        <RpcTbody>
-          <RpcRowMessage :status="status" :column-count="table.getAllColumns().length" :row-count="table.getRowModel().rows.length" />
-          <tr v-for="row in table.getRowModel().rows" :key="row.id">
-            <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
-              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-            </RpcTd>
-          </tr>
-        </RpcTbody>
-        <RpcTfoot>
-          <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
-            <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+    <RpcTable>
+      <RpcThead>
+        <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+            @click="header.column.getToggleSortingHandler()?.($event)">
+            <div class="flex items-center gap-2">
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
-            </RpcTh>
-          </tr>
-        </RpcTfoot>
-      </RpcTable>
-    </div>
+              <Transition name="sort-indicator">
+                <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                  class="text-gray-400 opacity-60 hover:opacity-100" />
+              </Transition>
+            </div>
+          </RpcTh>
+        </tr>
+      </RpcThead>
+      <RpcTbody>
+        <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+          :row-count="table.getRowModel().rows.length" />
+        <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+          </RpcTd>
+        </tr>
+      </RpcTbody>
+      <RpcTfoot>
+        <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
+          <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+              :props="header.getContext()" />
+          </RpcTh>
+        </tr>
+      </RpcTfoot>
+    </RpcTable>
+  </div>
 </template>
 
 <script setup lang="ts">
+import type { AsyncDataRequestStatus } from '#app'
+import type { NuxtError } from '#app'
 import { Anchor, Icon } from '#components'
 import {
   FlexRender,
@@ -64,24 +57,16 @@ import {
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
+import type { HeadingLevel } from '~/utils/html'
 
-const api = useApi()
+type Props = {
+  queueItems: QueueItem[]
+  error?: NuxtError<unknown>
+  status: AsyncDataRequestStatus
+  headingLevel?: HeadingLevel
+}
 
-const {
-  data,
-  pending,
-  status,
-  refresh,
-  error,
-} = await useAsyncData(
-  'final-review-done',
-  () => api.queueList(),
-  {
-    server: false,
-    lazy: true,
-    default: () => [] as QueueItem[],
-  }
-)
+const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
 const columnHelper = createColumnHelper<QueueItem>()
 
@@ -94,7 +79,7 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
-      return h(Anchor, { href: `/docs/${data.row.original.name}/enqueue`, 'class': ANCHOR_STYLE }, () => [
+      return h(Anchor, { href: documentPathBuilder(data.row.original), 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
       ])
     },
@@ -118,7 +103,7 @@ const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return data.value
+    return props.queueItems
   },
   columns,
   initialState: {
@@ -126,7 +111,7 @@ const table = useVueTable({
   },
   enableFilters: true,
   globalFilterFn: (row) => {
-    return row.original.disposition === 'created'
+    return true
   },
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
