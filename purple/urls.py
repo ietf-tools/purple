@@ -74,6 +74,11 @@ router.register(
     rpc_api.FinalApprovalViewSet,
     basename="documents-final-approvals",
 )
+router.register(
+    r"documents/(?P<draft_name>[^/.]+)/approval_logs",
+    rpc_api.ApprovalLogMessageViewSet,
+    basename="documents-approval-log-messages",
+)
 router.register(r"labels", rpc_api.LabelViewSet)
 router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
@@ -93,7 +98,6 @@ router.register(
 router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
 router.register(r"subseries_members", rpc_api.SubseriesMemberViewSet)
 router.register(r"subseries", rpc_api.SubseriesViewSet, basename="subseries")
-
 
 urlpatterns = [
     path("health/", lambda _: HttpResponse(status=204)),  # no content

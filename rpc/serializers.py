@@ -18,6 +18,7 @@ from datatracker.utils import build_datatracker_url
 
 from .models import (
     ActionHolder,
+    ApprovalLogMessage,
     Assignment,
     Capability,
     Cluster,
@@ -999,3 +1000,24 @@ class MailTemplateSerializer(serializers.Serializer):
 class MailResponseSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["success", "error"])
     message = serializers.CharField()
+
+
+class ApprovalLogMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    by = DatatrackerPersonSerializer(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    log_message = serializers.CharField()
+    time = serializers.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        # Set the 'by' field to the current user
+        request = self.context.get("request")
+        validated_data["by"] = request.user.datatracker_person()
+
+        return ApprovalLogMessage.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
+            **validated_data,
+        )
+        return ApprovalLogMessage.objects.get(pk=instance.pk)

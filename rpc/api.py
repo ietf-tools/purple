@@ -47,6 +47,7 @@ from datatracker.rpcapi import with_rpcapi
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
+    ApprovalLogMessage,
     Assignment,
     Capability,
     Cluster,
@@ -68,6 +69,7 @@ from .models import (
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
+    ApprovalLogMessageSerializer,
     AssignmentSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
@@ -1159,6 +1161,25 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return CreateFinalApprovalSerializer
         return FinalApprovalSerializer
+
+
+@extend_schema_with_draft_name()
+class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
+    queryset = ApprovalLogMessage.objects.all()
+    serializer_class = ApprovalLogMessageSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    ordering = ["-time"]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+        )
+
+    def perform_create(self, serializer):
+        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
+        serializer.save(rfc_to_be=rfc_to_be)
 
 
 class Mail(views.APIView):
