@@ -1,8 +1,8 @@
 <template>
   <fieldset :class="[
     'flex mr-1',
-    !props.isMultiline && 'items-start',
-    props.isMultiline && 'items-center'
+    props.isMultiline && 'items-start',
+    !props.isMultiline && 'items-center'
   ]">
     <label class="text-gray-900 w-[160px] text-right text-sm font-bold mr-1" :for="props.id"> {{ props.label }}:</label>
     <input

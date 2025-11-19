@@ -8,18 +8,19 @@
         <DescriptionListItem term="Title" :details="rfcToBe.title" />
         <DescriptionListItem term="Authors">
           <DescriptionListDetails>
-            <div class="mx-4 text-sm font-medium">
+            <div class="mx-0 text-sm font-medium">
               <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else>
                 <div
                   v-for="author of rfcToBe.authors"
                   :key="author.id"
-                  class="py-1 grid grid-cols-2"
+                  class="py-1"
                 >
-                  <div>
-                    {{ author.titlepageName }}
+                  <a :href="author.email ? datatrackerPersonLink(author.email) : undefined" :class="ANCHOR_STYLE">
+                    <span class="font-bold">{{ author.titlepageName }}</span>
+                    <span class="font-normal" v-if="author.id">{{ SPACE }}{{ ` #${author.id}` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
-                  </div>
+                  </a>
                 </div>
               </div>
             </div>

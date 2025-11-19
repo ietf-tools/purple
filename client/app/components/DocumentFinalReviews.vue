@@ -96,6 +96,11 @@ const columns = [
       if (!approver) {
         return h('i', '(no approver)')
       }
+
+      if(rowOriginal.body?.trim()) {
+        return h('span', { class: 'font-bold'}, rowOriginal.body)
+      }
+
       const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
         return h('span', [
           h('a', { href: author.email ? datatrackerPersonLink(author.email) : undefined, class: ANCHOR_STYLE }, [

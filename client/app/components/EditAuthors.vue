@@ -8,7 +8,7 @@
       <ul ref="parent" class="block min-w-[200px]">
         <li class="flex items-center justify-between pl-2 cursor-ns-resize pr-1 py-1 mt-1 border rounded-md border-gray-400" v-for="(author, index) in draft.authors" :index="index" :key="author.id">
           <Icon name="fluent:re-order-dots-vertical-24-regular" class="mr-2" />
-          <input type="text" v-model="author.titlepageName" class="flex-1 min-w-0 cursor-text border border-gray-400 rounded py-1 mr-2"/>
+          <input type="text" v-model="author.titlepageName" :title="`${author.titlepageName} #${author.id}`" class="flex-1 min-w-0 cursor-text border border-gray-400 rounded py-1 mr-2"/>
           <label class="border flex gap-2 items-center cursor-pointer border-gray-400 inline-block px-2 py-1 rounded text-sm mr-4">
             editor?
             <input type="checkbox" class="" v-model="author.isEditor"/>

@@ -12,13 +12,13 @@
         <div class="flex flex-col gap-3">
           <div class="flex flex-row gap-3">
             <span class="w-[160px] text-sm font-bold text-right mr-1">
-              Approver type: {{ approverType }}
+              Approver type:
             </span>
-            <div class="gap-1">
+            <div class="flex flex-row gap-1">
               <label v-for="approverTypesListItem in approverTypeList" :key="approverTypesListItem.id"
                 class="text-sm cursor-pointer mr-1">
                 <input :id="approverTypesListItem.id" type="radio" v-model="approverType"
-                  :value="approverTypesListItem.id" />
+                  :value="approverTypesListItem.id" :disabled="isFinalReviewApiSuccess" />
                 {{ approverTypesListItem.label }}
               </label>
             </div>
@@ -32,7 +32,7 @@
           <DialogFieldDate v-model="approvedDateString" id="approvedDate" label="Date of approval"
             :disabled="isFinalReviewApiSuccess" />
 
-          <div v-if="approverType === APPROVER_TYPE_PERSON" class="flex flex-col gap-1">
+          <div v-if="props.finalApproval && approverType === APPROVER_TYPE_PERSON" class="flex flex-col gap-1">
             <div class="flex flex-row">
               <span class="w-[160px] mr-1"></span>
               <div>
@@ -208,6 +208,7 @@ const clickFinalApprovalHandler = async () => {
         id,
         patchedFinalApprovalRequest: {
           approved,
+          body: bodyText,
           // FIXME: patch `overridingApproverPersonId`
         }
       })
