@@ -1,3 +1,12 @@
+/**
+ * Typically we can't use conventional internal links because the browser
+ * gives up scrolling before the SPA has loaded.
+ *
+ * So this reimplements native browser functionality of scrolling to an #id
+ * when the page loads.
+ *
+ * Usage: onMounted(() => onMountedScrollToHash())
+ */
 export const onMountedScrollToHash = () => {
   if (!document.location.hash) {
     return

@@ -58,8 +58,6 @@ type Props = {
   onSuccess?: () => Promise<void>
 }
 
-onMounted(() => onMountedScrollToHash())
-
 const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
 const api = useApi()

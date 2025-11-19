@@ -24,6 +24,8 @@ import type { OverlayModal } from '../providers/providerKeys'
 
 useDefaultHead()
 
+onMounted(() => onMountedScrollToHash())
+
 // OVERLAY MODAL
 
 type OverlayModalState = {
