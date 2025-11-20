@@ -137,9 +137,12 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import { overlayModalKey } from '~/providers/providerKeys'
-import { BaseButton, Icon } from '#components'
-import UnusableRfcNumberAddModal from '~/components/UnusableRfcNumberAddModal.vue'
-import UnusableRfcNumberDeleteModal from '~/components/UnusableRfcNumberDeleteModal.vue'
+import {
+  BaseButton,
+  Icon,
+  UnusableRfcNumberAddModal,
+  UnusableRfcNumberDeleteModal
+} from '#components'
 
 const api = useApi()
 const snackbar = useSnackbar()
