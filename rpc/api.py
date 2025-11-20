@@ -1141,7 +1141,7 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
     queryset = FinalApproval.objects.all()
     serializer_class = FinalApprovalSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id", "body"]
+    filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id"]
     ordering = ["-requested"]
 
     def get_queryset(self):

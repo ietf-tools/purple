@@ -501,7 +501,6 @@ class FinalApproval(models.Model):
     objects = FinalApprovalQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    body = models.CharField(max_length=64, blank=True, default="")
     approver = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         on_delete=models.PROTECT,
@@ -532,8 +531,8 @@ class FinalApproval(models.Model):
                 return f"final approval from {self.approver}"
         else:
             return (
-                "request for final approval from "
-                f"{self.approver if self.approver else self.body}"
+                f"request for final approval from "
+                f"{self.approver if self.approver else '(no approver set)'}"
             )
 
     class Meta:
@@ -552,11 +551,6 @@ class FinalApproval(models.Model):
                 ),
                 name="finalapproval_approval_override_requires_approver",
                 violation_error_message="approval override requires an approver be set",
-            ),
-            models.CheckConstraint(
-                check=(models.Q(body="") | models.Q(overriding_approver__isnull=True)),
-                name="finalapproval_body_approval_no_override",
-                violation_error_message="body approval cant be overridden",
             ),
         ]
 
