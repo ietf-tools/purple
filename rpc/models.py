@@ -824,6 +824,7 @@ class ApprovalLogMessage(models.Model):
         related_name="approvallogmessage_by",
     )
     time = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     def __str__(self):
         return "ApprovalLogMessage for {} by {} on {}".format(
