@@ -36,7 +36,7 @@
     <RpcTfoot>
       <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
         <RpcTh :colSpan="1">
-          <BaseButton @click="openAddModal()">Add approver</BaseButton>
+          <BaseButton @click="openAddModal()" title="Add Final Review approver">Add</BaseButton>
         </RpcTh>
       </tr>
     </RpcTfoot>
@@ -93,10 +93,6 @@ const columns = [
       const { approver } = rowOriginal
       if (!approver) {
         return h('i', '(no approver)')
-      }
-
-      if(rowOriginal.body?.trim()) {
-        return h('span', { class: 'font-bold'}, rowOriginal.body)
       }
 
       const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
@@ -170,13 +166,7 @@ const columns = [
     id: 'action',
     header: 'Action',
     cell: (data) => {
-      const status = finalApprovalToStatus(data.row.original)
-      switch (status) {
-        case 'approved':
-          return h('i', 'Complete')
-        case 'pending':
-          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openEditModal(data.row.original) }, () => 'Edit or Comment')
-      }
+      return h(BaseButton, { btnType: 'default', size: 'xs', title: `Edit Final Review approver`, 'onClick': () => openEditModal(data.row.original) }, () => 'Edit')
     }
   }),
 ]

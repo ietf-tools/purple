@@ -4,7 +4,7 @@
     <div class="flex flex-row gap-1 border border-gray-700 rounded-md">
       <span v-if="selectedDateString"
         class="flex flex-row bg-gray-100 text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
-        <b>{{ selectedDateString }}</b>
+        <b>{{ DateTime.fromISO(selectedDateString).toLocaleString() }}</b>
         <button type="button"
           class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none"
           @click="handleClearSelectedDateString"
@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 const selectedDateString = defineModel<string | undefined>()
 
 const tempDateString = ref<string | undefined>(undefined)
