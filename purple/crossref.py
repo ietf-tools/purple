@@ -37,7 +37,7 @@ def _get_name_parts(name):
 def _get_contributors(author, sequence):
     """Return person_name or organization elements for author"""
     # collapse spaces
-    name = [n for n in author.titlepage_name.split(" ") if len(n) > 0]
+    name = " ".join([n for n in author.titlepage_name.split(" ") if len(n) > 0])
     role = "editor" if author.is_editor else "author"
 
     if name not in settings.AUTHOR_ORGS:
@@ -58,9 +58,11 @@ def _get_contributors(author, sequence):
         return person_name
     else:
         # organization
-        return ElementTree.Element(
+        organization = ElementTree.Element(
             "organization", sequence=sequence, contributor_role=role
         )
+        organization.text = name
+        return organization
 
 
 def _generate_crossref_xml(rfc_number):
