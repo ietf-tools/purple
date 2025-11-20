@@ -695,7 +695,6 @@ class Migration(migrations.Migration):
                 (
                     "approver",
                     models.ForeignKey(
-                        null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="approver_set",
                         to="datatracker.datatrackerperson",
