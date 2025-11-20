@@ -1162,25 +1162,9 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="finalapproval",
             constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("approved__isnull", True),
-                    ("approver__isnull", False),
-                    _connector="OR",
-                ),
-                name="finalapproval_approval_requires_approver",
-                violation_error_message="approval requires an approver",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="finalapproval",
-            constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("overriding_approver__isnull", True),
-                    ("approver__isnull", False),
-                    _connector="OR",
-                ),
-                name="finalapproval_approval_override_requires_approver",
-                violation_error_message="approval override requires an approver be set",
+                condition=models.Q(("approver__isnull", False)),
+                name="finalapproval_approver_required",
+                violation_error_message="approver is required",
             ),
         ),
         migrations.AddConstraint(

@@ -15,6 +15,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name="finalapproval",
+            name="approver",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="approver_set",
+                to="datatracker.datatrackerperson",
+            ),
+        ),
         migrations.CreateModel(
             name="HistoricalFinalApproval",
             fields=[

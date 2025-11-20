@@ -504,8 +504,6 @@ class FinalApproval(models.Model):
     approver = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="approver_set",
     )
     overriding_approver = models.ForeignKey(
@@ -530,27 +528,14 @@ class FinalApproval(models.Model):
             else:
                 return f"final approval from {self.approver}"
         else:
-            return (
-                f"request for final approval from "
-                f"{self.approver if self.approver else '(no approver set)'}"
-            )
+            return f"request for final approval from {self.approver}"
 
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
-                    models.Q(approved__isnull=True) | models.Q(approver__isnull=False)
-                ),
-                name="finalapproval_approval_requires_approver",
-                violation_error_message="approval requires an approver",
-            ),
-            models.CheckConstraint(
-                check=(
-                    models.Q(overriding_approver__isnull=True)
-                    | models.Q(approver__isnull=False)
-                ),
-                name="finalapproval_approval_override_requires_approver",
-                violation_error_message="approval override requires an approver be set",
+                check=models.Q(approver__isnull=False),
+                name="finalapproval_approver_required",
+                violation_error_message="approver is required",
             ),
         ]
 
