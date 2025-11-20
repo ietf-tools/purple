@@ -11,8 +11,8 @@
       <div class="flex flex-col gap-3 justify-between">
         <div class="flex flex-col gap-3">
           <DialogFieldPickAuthor v-model="approver" id="approver" label="Approver"
-            :disabled="isFinalReviewApiSuccess" />
-          <DialogFieldDate v-model="approvedDateString" id="approvedDate" label="Date of approval"
+            :disabled="isFinalReviewApiSuccess" person-term="approver" />
+          <DialogFieldDate v-if="props.finalApproval" v-model="approvedDateString" id="approvedDate" label="Date of approval"
             :disabled="isFinalReviewApiSuccess" />
 
           <div v-if="props.finalApproval" class="flex flex-col gap-1">
@@ -26,7 +26,7 @@
             </div>
             <div v-if="hasApprovalOverride">
               <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Proxy Approver"
-                :disabled="isFinalReviewApiSuccess" />
+                :disabled="isFinalReviewApiSuccess" person-term="approver" />
             </div>
           </div>
         </div>

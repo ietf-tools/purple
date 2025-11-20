@@ -10,7 +10,7 @@
           <span>{{ ` #${selectedAuthor.personId}` }}</span>
           <button type="button" :disabled="props.disabled" class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none" @click="handleClearSelectedAuthor" :label="`Unselect author ${selectedAuthor.name} #${selectedAuthor.personId}`">&times;</button>
         </span>
-        <ComboboxInput v-model="inputRef" :id="props.id" :disabled="props.disabled" class="outline-none text-sm py-1 border-none h-full placeholder-gray-400" :placeholder=" selectedAuthor?.personId ? `Change author...` : 'Search author'" />
+        <ComboboxInput v-model="inputRef" :id="props.id" :disabled="props.disabled" class="outline-none text-sm py-1 border-none h-full placeholder-gray-400" :placeholder=" selectedAuthor?.personId ? `Change ${personTerm}...` : `Search ${personTerm}`" />
       </ComboboxAnchor>
 
       <ComboboxContent
@@ -56,9 +56,10 @@ type Props = {
   id: string
   label: string
   disabled?: boolean
+  personTerm?: string
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { personTerm: 'author'})
 
 const selectedAuthor = defineModel<BaseDatatrackerPerson | undefined>()
 
