@@ -215,7 +215,7 @@ async function importSubmission () {
   try {
     imported = await api.submissionsImport({
       documentId: submission.value.id,
-      createRfcToBe: {
+      createRfcToBeRequest: {
         submittedBoilerplate: state.boilerplate.slug,
         submittedFormat: state.sourceFormat.slug,
         submittedStdLevel: state.stdLevel.slug,

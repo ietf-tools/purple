@@ -69,6 +69,11 @@ router.register(
     rpc_api.RpcRelatedDocumentViewSet,
     basename="documents-references",
 )
+router.register(
+    r"documents/(?P<draft_name>[^/.]+)/final_approvals",
+    rpc_api.FinalApprovalViewSet,
+    basename="documents-final-approvals",
+)
 router.register(r"labels", rpc_api.LabelViewSet)
 router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
@@ -102,6 +107,11 @@ urlpatterns = [
     path(
         "api/rpc/profile/<int:rpc_person_id>", rpc_api.profile_as_person
     ),  # for demo only
+    path("api/rpc/mail", rpc_api.Mail.as_view()),
+    path(
+        "api/rpc/mailtemplate/<int:rfctobe_id>/",
+        rpc_api.RfcMailTemplatesList.as_view(),
+    ),
     path("api/rpc/stats/label/", rpc_api.StatsLabels.as_view()),
     path("api/rpc/submissions/", rpc_api.submissions),
     path("api/rpc/submissions/<int:document_id>/", rpc_api.submission),

@@ -2,55 +2,34 @@
   <div>
     <TitleBlock title="Cluster Management">
       <template #right>
-        <RefreshButton :pending="pending" class="mr-3" @refresh="refresh"/>
-        <button
-          type="button" class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        <RefreshButton :pending="pending" class="mr-3" @refresh="refresh" />
+        <button type="button"
+          class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
           @click="state.createDialogShown = true">
-          <Icon name="uil:plus" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true"/>
+          <Icon name="uil:plus" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true" />
           New Cluster
         </button>
       </template>
     </TitleBlock>
 
-    <div class="mt-8 flow-root">
-      <label for="cluster-select">Cluster: </label>
-      <select id="cluster-select" v-model="state.selectedClusterNumber">
-        <option disabled value="">Select</option>
-        <option v-for="cluster in clusters" :key="cluster.number">{{ cluster?.number }}</option>
-      </select>
-    </div>
-    <div class="mt-8 flow-root">
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div v-if="selectedCluster" class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <h2 class="font-bold mb-4">
-            Cluster
-            #{{ state.selectedClusterNumber }}
-            &nbsp;
-            ({{ selectedCluster.documents.length }}
-            <span v-if="selectedCluster.documents.length === 1">doc)</span><span v-else>docs)</span>
-            <BaseButton btn-type="default" class="ml-4" @click="showDocumentDependencies">
-              <Icon name="mynaui:bounding-box" size="1.4em"></Icon>
-              Show document dependencies
-            </BaseButton>
-          </h2>
-          <DocumentCards
-            :documents="selectedCluster.documents || []"
-            :editors="[]" />
-        </div>
-      </div>
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            Add an editor
-          </div>
-        </div>
-      </div>
-      <div class="-mx-4 -my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-        <div class="inline-block min-w-full py-2 align-middle sm:px-6 lg:px-8">
-          <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 sm:rounded-lg">
-            Document list
-          </div>
-        </div>
+    <form class="flex flex-row items-center w-[200px] pt-5">
+      <label class="text-gray-900 text-sm font-bold mr-1" for="filterInput">Filter:</label>
+      <input type="text" inputmode="numeric" pattern="[0-9]*" id="filterInput" v-model="filterValueString"
+        class="focus:shadow-gray-300 inline-flex w-full flex-1 items-center justify-center rounded-lg px-3 text-sm leading-none outline-none border-gray-500 text-gray-900"
+        placeholder="E.g. 20" />
+    </form>
+
+    <div class="flex flex-col gap-3 mt-5 mb-10">
+      <div v-for="cluster in filteredClusters" :key="cluster.number"
+        class="flex flex-row items-start border border-gray-300 shadow-md rounded-md px-2 py-1">
+        <h2 class="flex flex-row items-start text-lg whitespace-nowrap grow-0 shrink-0 w-[7em] px-2">
+          <a :href="`/clusters/${cluster.number}/`" :class="ANCHOR_STYLE">
+            Cluster {{ cluster.number }}
+          </a>
+        </h2>
+        <ul class="flex flex-wrap pt-1 gap-y-1 gap-x-3 text-xs leading-[1]">
+          <DocumentCardMini v-for="document in cluster.documents" :document="document" />
+        </ul>
       </div>
     </div>
 
@@ -59,26 +38,11 @@
 </template>
 
 <script setup lang="ts">
-import type { ResolvedQueueItem } from '~/components/AssignmentsTypes'
 import RefreshButton from '~/components/RefreshButton.vue'
-import { overlayModalKey } from '../../providers/providerKeys'
-import { DocumentDependenciesGraph } from '#components'
-import { error } from 'console'
 
 useHead({
   title: 'Manage Clusters'
 })
-
-const snackbar = useSnackbar()
-
-// COMPUTED
-const selectedCluster = computed(() => {
-  if (clusters && clusters.value && Array.isArray(clusters.value) && state.selectedClusterNumber) {
-    return clusters.value.find(cluster => String(cluster.number) === state.selectedClusterNumber)
-  }
-  return null
-})
-// DATA
 
 const state = reactive({
   selectedClusterNumber: '',
@@ -87,46 +51,17 @@ const state = reactive({
   notifDialogMessage: ''
 })
 
-// METHODS
+const filterValueString = ref('')
 
-type Cluster = {
-  number: number
-  documents: ResolvedQueueItem[]
-}
+const api = useApi()
 
-const { data: clusters, pending, refresh } = await useFetch<Cluster[]>('/api/rpc/clusters/', {
-  baseURL: '/',
-  server: false,
-  onRequestError ({ error }) {
-    snackbar.add({
-      type: 'error',
-      title: 'Fetch Failed',
-      text: String(error)
-    })
-  },
-  onResponseError ({ response, error }) {
-    snackbar.add({
-      type: 'error',
-      title: 'Server Error',
-      text: response.statusText ?? error
-    })
-  }
-})
+const { data: clusters, pending, refresh } = await useAsyncData(
+  'all-clusters',
+  () => api.clustersList(),
+  {}
+)
 
-const overlayModal = inject(overlayModalKey)
-
-if(!overlayModal) {
-  throw Error('Expected overlay modal to be available')
-}
-
-const { openOverlayModal, closeOverlayModal } = overlayModal
-
-const showDocumentDependencies = () => {
-  openOverlayModal({
-    component: DocumentDependenciesGraph,
-    componentProps: {
-      cluster: selectedCluster.value
-    }
-  })
-}
+const filteredClusters = computed(() => clusters.value?.filter(
+  cluster => cluster.number.toString().includes(filterValueString.value.trim())
+) ?? [])
 </script>

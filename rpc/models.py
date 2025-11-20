@@ -319,6 +319,7 @@ class Cluster(models.Model):
 class UnusableRfcNumber(models.Model):
     number = models.PositiveIntegerField(primary_key=True)
     comment = models.TextField(blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         ordering = ["number"]
@@ -517,6 +518,8 @@ class FinalApproval(models.Model):
     )
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True, blank=True)
+
+    history = HistoricalRecords()
 
     def __str__(self):
         if self.approved:

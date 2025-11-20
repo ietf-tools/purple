@@ -89,7 +89,7 @@ const handleSubmit = async () => {
     isSubmitting.value = true
     await api.documentsCommentsCreate({
       draftName: props.draftName,
-      documentComment: {
+      documentCommentRequest: {
         comment: commentValue.value
       }
     })

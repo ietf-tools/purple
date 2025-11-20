@@ -125,9 +125,9 @@ const label = reactive<Label>(
 async function save() {
   try {
     if (label.id === undefined) {
-      await api.labelsCreate({ label })
+      await api.labelsCreate({ labelRequest: label })
     } else {
-      await api.labelsUpdate({ id: label.id, label })
+      await api.labelsUpdate({ id: label.id, labelRequest: label })
     }
   } catch {
     snackbar.add({

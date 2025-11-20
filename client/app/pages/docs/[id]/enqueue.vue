@@ -109,7 +109,7 @@ watch(
   selectedLabelIds,
   async () => api.documentsPartialUpdate({
     draftName: id.value,
-    patchedRfcToBe: {
+    patchedRfcToBeRequest: {
       labels: selectedLabelIds.value,
     }
   }),
@@ -136,7 +136,7 @@ const addToQueue = async () => {
   try {
     const rfcToBe = await api.documentsPartialUpdate({
       draftName: id.value,
-      patchedRfcToBe: {
+      patchedRfcToBeRequest: {
         disposition: IN_PROGRESS
       }
     })

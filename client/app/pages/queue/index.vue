@@ -2,7 +2,7 @@
 definePageMeta({
   middleware: [
     function () {
-      return navigateTo('/queue/submissions')
+      return navigateTo('/queue/queue')
     }
   ]
 })

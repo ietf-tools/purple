@@ -23,6 +23,7 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
+    FinalApproval,
     Label,
     RfcAuthor,
     RfcToBe,
@@ -305,6 +306,54 @@ class SimpleClusterSerializer(serializers.ModelSerializer):
         fields = ["number"]
 
 
+class MinimalRfcToBeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RfcToBe
+        fields = ["name", "rfc_number"]
+
+
+class FinalApprovalSerializer(serializers.Serializer):
+    """Serialize final approval information for an RfcToBe"""
+
+    id = serializers.IntegerField(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    body = serializers.CharField(required=False, allow_blank=True)
+    requested = serializers.DateTimeField(read_only=True)
+    approver = BaseDatatrackerPersonSerializer(read_only=True)
+    approved = serializers.DateTimeField(required=False, allow_null=True)
+    overriding_approver = BaseDatatrackerPersonSerializer(
+        allow_null=True, read_only=True
+    )
+    approver_person_id = serializers.IntegerField(write_only=True, required=False)
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False
+    )
+
+    def update(self, instance, validated_data):
+        approver_person_id = validated_data.pop("approver_person_id", None)
+        approver_dt_person = None
+        if approver_person_id:
+            approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=approver_person_id
+            )
+
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        FinalApproval.objects.filter(pk=instance.pk).update(
+            overriding_approver=overriding_approver_dt_person,
+            approver=approver_dt_person,
+            **validated_data,
+        )
+        return FinalApproval.objects.get(pk=instance.pk)
+
+
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
@@ -319,6 +368,9 @@ class QueueItemSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     enqueued_at = serializers.SerializerMethodField()
+    final_approval = FinalApprovalSerializer(
+        source="finalapproval_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -337,6 +389,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "rfc_number",
             "pages",
             "enqueued_at",
+            "final_approval",
         ]
 
     @extend_schema_field(serializers.DateField())
@@ -375,12 +428,6 @@ class SubseriesMemberSerializer(serializers.ModelSerializer):
         if not obj:
             return None
         return f"{obj.type.slug.lower()}{obj.number}"
-
-
-class MinimalRfcToBeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RfcToBe
-        fields = ["name", "rfc_number"]
 
 
 @dataclass
@@ -562,7 +609,9 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
         if obj.target_document is not None:
             return obj.target_document.name
-        return obj.target_rfctobe.draft.name
+        if obj.target_rfctobe is not None and obj.target_rfctobe.draft is not None:
+            return obj.target_rfctobe.draft.name
+        return None
 
     @extend_schema_field(serializers.CharField())
     def get_draft_name(self, obj: RpcRelatedDocument) -> str:
@@ -598,7 +647,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     def get_target_draft_name_output(self, obj):
         if obj.target_document is not None:
             return obj.target_document.name
-        if obj.target_rfctobe is not None:
+        if obj.target_rfctobe is not None and obj.target_rfctobe.draft is not None:
             return obj.target_rfctobe.draft.name
         return None
 
@@ -876,6 +925,77 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
 class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     """Serialize an Unusable Rfc Number"""
 
+    created_at = serializers.SerializerMethodField()
+
     class Meta:
         model = UnusableRfcNumber
-        fields = ["number", "comment"]
+        fields = ["number", "comment", "created_at"]
+
+    @extend_schema_field(serializers.DateTimeField())
+    def get_created_at(self, obj):
+        # Get the creation date from history
+        first_history = obj.history.filter(history_type="+").first()
+        return first_history.history_date if first_history else None
+
+
+class CreateFinalApprovalSerializer(FinalApprovalSerializer):
+    """Serializer for creating FinalApproval instances"""
+
+    approver_person_id = serializers.IntegerField(write_only=True, required=True)
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False, allow_null=True
+    )
+
+    def create(self, validated_data):
+        approver_person_id = validated_data.pop("approver_person_id")
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+
+        approver_dt_person = DatatrackerPerson.objects.get(
+            datatracker_id=approver_person_id
+        )
+
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        return FinalApproval.objects.create(
+            approver=approver_dt_person,
+            overriding_approver=overriding_approver_dt_person,
+            **validated_data,
+        )
+
+
+class MailAttachmentSerializer(serializers.Serializer):
+    name = serializers.CharField()
+    content = serializers.FileField(
+        allow_empty_file=False,
+        use_url=False,
+    )
+
+
+class MailMessageSerializer(serializers.Serializer):
+    """Mail message serializer
+
+    Because of the FileField, this cannot be used with a JSONParser.
+    """
+
+    msgtype = serializers.CharField(help_text="slug that identifies message type ")
+    to = serializers.CharField(allow_blank=False)
+    cc = serializers.CharField(default="", allow_blank=True)
+    subject = serializers.CharField(allow_blank=False)
+    body = serializers.CharField(allow_blank=False)
+    attachments = MailAttachmentSerializer(many=True, required=False)
+
+
+class MailTemplateSerializer(serializers.Serializer):
+    label = serializers.CharField(help_text="human readable text for UI")
+    template = MailMessageSerializer()
+
+
+class MailResponseSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=["success", "error"])
+    message = serializers.CharField()

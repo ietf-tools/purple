@@ -1,9 +1,6 @@
 <template>
   <div>
     <TitleBlock title="Queue" summary="Where the magic happens.">
-      <template #right>
-        <QueueTitleRight />
-      </template>
     </TitleBlock>
 
     <QueueTabs :current-tab="currentTab" />
