@@ -6,7 +6,7 @@
           Unusable RFC Numbers
         </h1>
         <p class="mt-2 text-gray-600 dark:text-gray-400">
-          RFC numbers that have been reserved or are otherwise unavailable for
+          RFC numbers that were never issued or are otherwise unavailable for
           assignment.
         </p>
       </div>
@@ -35,7 +35,6 @@
         <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
           <thead class="bg-gray-50 dark:bg-gray-700">
             <tr>
-              <th class="px-6 py-3 w-12"></th>
               <th
                 v-for="header in table.getHeaderGroups()[0]?.headers"
                 :key="header.id"
@@ -81,15 +80,6 @@
               :key="row.id"
               class="hover:bg-gray-50 dark:hover:bg-gray-700 group"
             >
-              <td class="px-6 py-4 w-12">
-                <button
-                  @click="openDeleteConfirmModal(row.original.number)"
-                  class="text-red-400 hover:text-red-600 opacity-50 group-hover:opacity-100 transition-opacity"
-                  title="Delete RFC number"
-                >
-                  <Icon name="heroicons:x-mark" class="h-4 w-4" />
-                </button>
-              </td>
               <td
                 v-for="cell in row.getVisibleCells()"
                 :key="cell.id"
@@ -141,7 +131,6 @@ import {
   BaseButton,
   Icon,
   UnusableRfcNumberAddModal,
-  UnusableRfcNumberDeleteModal
 } from '#components'
 
 const api = useApi()
@@ -165,27 +154,6 @@ const overlayModal = inject(overlayModalKey)
   if (!overlayModal) {
     throw Error('Expected injection of overlayModalKey')
   }
-
-const openDeleteConfirmModal = (rfcNumber: number) => {
-  const { openOverlayModal } = overlayModal
-
-  openOverlayModal({
-    component: UnusableRfcNumberDeleteModal,
-    componentProps: {
-      rfcNumber: rfcNumber,
-      onSuccess: () => refresh(),
-      onClose: () => overlayModal.closeOverlayModal()
-    },
-    mode: 'side',
-  }).catch(e => {
-    if (e === undefined) {
-
-    } else {
-      console.error(e)
-      throw e
-    }
-  })
-}
 
 const openAddNumberModal = () => {
   const { openOverlayModal } = overlayModal
@@ -234,7 +202,7 @@ const columns = [
     header: 'Created At',
     cell: data => h('div', {
       class: 'text-sm text-gray-500 dark:text-gray-400 whitespace-nowrap'
-    }, `Reserved on ${data.getValue()?.toLocaleString()}`),
+    }, data.getValue()?.toLocaleString()),
     sortingFn: (rowA, rowB, columnId) => {
       const a = new Date(rowA.getValue(columnId) || 0)
       const b = new Date(rowB.getValue(columnId) || 0)
