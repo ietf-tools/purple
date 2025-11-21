@@ -150,6 +150,7 @@ CACHES = {
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 DEFAULT_FROM_EMAIL = os.getenv("PURPLE_DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
 
+ADMINS = [("Some Admin", "admin@example.org")]
 
 # Celery
 CELERY_TIMEZONE = "UTC"
