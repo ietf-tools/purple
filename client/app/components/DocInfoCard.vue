@@ -77,10 +77,8 @@
                 type="text"
                 placeholder="Enter RFC number"
                 class="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                :disabled="isUpdating"
                 @blur="updateRfcNumber"
               />
-              <span v-if="isUpdating" class="text-sm text-gray-500">Updating...</span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -128,15 +126,12 @@ const emit = defineEmits<{
 const api = useApi()
 const snackbar = useSnackbar()
 const rfcNumberInput = ref('')
-const isUpdating = ref(false)
 
 watch(() => props.rfcToBe?.rfcNumber, (newValue) => {
   rfcNumberInput.value = newValue?.toString() || ''
 }, { immediate: true })
 
 const updateRfcNumber = async () => {
-  if (isUpdating.value) return
-
   const newValue = rfcNumberInput.value.trim()
 
   // Validate that input is a valid number or empty
@@ -155,8 +150,6 @@ const updateRfcNumber = async () => {
   if (rfcNumber === props.rfcToBe?.rfcNumber) return
 
   try {
-    isUpdating.value = true
-
     await api.documentsPartialUpdate({
       draftName: props.draftName,
       patchedRfcToBeRequest: { rfcNumber: rfcNumber }
@@ -177,8 +170,6 @@ const updateRfcNumber = async () => {
 
     rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
   } finally {
-    isUpdating.value = false
-    // Refresh the parent component
     emit('refresh')
   }
 }
