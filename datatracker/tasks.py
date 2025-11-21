@@ -1,8 +1,13 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from email.utils import formataddr
+from textwrap import dedent
+
 from celery import Task, shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
 
 from datatracker.utils.publication import publish_rfc
+from purple.mail import send_mail
 from rpc.models import RfcToBe
 
 logger = get_task_logger(__name__)
@@ -36,8 +41,25 @@ class DatatrackerNotificationTask(Task):
 
     def on_failure(self, exc, task_id, args, kwargs, einfo):
         logger.error(
-            f"Email admins to report failure: {self.name} "
-            f"with args={args} and kwargs={kwargs}"
+            f"Emailing admins to report failure: {self.name}[{task_id}] "
+            f"with args={args} and kwargs={kwargs}. Giving up after "
+            f"{self.request.retries} retries."
+        )
+        send_mail(
+            to=[formataddr(admin) for admin in settings.ADMINS],
+            subject=f"Purple task failed: {self.name}[{task_id}]",
+            msg=dedent(f"""\
+                Purple datatracker notification task {self.name} failed!
+
+                Giving up after {self.request.retries} attempts.
+
+                Task name: {self.name}
+                Task id: {task_id}
+                Task args: {args}
+                Task kwargs: {kwargs}
+
+            """)
+            + str(einfo),
         )
 
 
@@ -46,7 +68,7 @@ class DatatrackerNotificationTask(Task):
     base=DatatrackerNotificationTask,
     throws=(RfcToBe.DoesNotExist,),
     autoretry_for=(Exception,),
-    retry_kwargs={"max_retries": 2},
+    dont_autoretry_for=(RfcToBe.DoesNotExist,),
 )
 def notify_rfc_published_task(self, rfctobe_id):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
