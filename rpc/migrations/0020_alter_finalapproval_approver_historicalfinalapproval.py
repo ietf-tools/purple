@@ -15,6 +15,15 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterField(
+            model_name="finalapproval",
+            name="approver",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="approver_set",
+                to="datatracker.datatrackerperson",
+            ),
+        ),
         migrations.CreateModel(
             name="HistoricalFinalApproval",
             fields=[
@@ -24,7 +33,6 @@ class Migration(migrations.Migration):
                         auto_created=True, blank=True, db_index=True, verbose_name="ID"
                     ),
                 ),
-                ("body", models.CharField(blank=True, default="", max_length=64)),
                 ("requested", models.DateTimeField(default=django.utils.timezone.now)),
                 ("approved", models.DateTimeField(blank=True, null=True)),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),

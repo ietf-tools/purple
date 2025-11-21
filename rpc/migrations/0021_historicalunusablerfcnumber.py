@@ -8,7 +8,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0020_historicalfinalapproval"),
+        ("rpc", "0020_alter_finalapproval_approver_historicalfinalapproval"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
