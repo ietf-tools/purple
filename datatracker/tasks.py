@@ -1,6 +1,4 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-import datetime
-
 from celery import Task, shared_task
 from celery.utils.log import get_task_logger
 
