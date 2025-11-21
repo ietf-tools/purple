@@ -6,4 +6,4 @@ class RpcConfig(AppConfig):
     name = "rpc"
 
     def ready(self):
-        from . import signals  # noqa: F401
+        from rpc import signals  # noqa: F401

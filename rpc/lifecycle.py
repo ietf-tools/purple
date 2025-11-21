@@ -3,7 +3,7 @@
 
 from collections.abc import Iterable
 
-from .models import Assignment
+from rpc.models import Assignment
 
 
 class Activity:

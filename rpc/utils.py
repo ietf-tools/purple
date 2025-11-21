@@ -3,8 +3,8 @@ from django.db.models import Max
 
 from datatracker.models import Document
 
-from .models import DumpInfo, RfcToBe, UnusableRfcNumber
-from .serializers import CreateRpcRelatedDocumentSerializer
+from rpc.models import DumpInfo, RfcToBe, UnusableRfcNumber
+from rpc.serializers import CreateRpcRelatedDocumentSerializer
 
 
 class VersionInfo:

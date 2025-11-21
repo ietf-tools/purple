@@ -12,13 +12,13 @@ from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
-from .dt_v1_api_utils import (
+from rpc.dt_v1_api_utils import (
     DatatrackerFetchFailure,
     NoSuchSlug,
     datatracker_stdlevelname,
     datatracker_streamname,
 )
-from .rules import is_comment_author, is_rpc_person
+from rpc.rules import is_comment_author, is_rpc_person
 
 logger = logging.getLogger(__name__)
 
@@ -189,14 +189,14 @@ class RfcToBe(models.Model):
         return intervals
 
     def incomplete_activities(self):
-        from .lifecycle import incomplete_activities
+        from rpc.lifecycle import incomplete_activities
 
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in incomplete_activities(self)]
         )
 
     def pending_activities(self):
-        from .lifecycle import pending_activities
+        from rpc.lifecycle import pending_activities
 
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in pending_activities(self)]

@@ -44,7 +44,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
-from .models import (
+from rpc.models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
     Assignment,
@@ -66,8 +66,8 @@ from .models import (
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
-from .pagination import DefaultLimitOffsetPagination
-from .serializers import (
+from rpc.pagination import DefaultLimitOffsetPagination
+from rpc.serializers import (
     AssignmentSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
@@ -102,7 +102,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+from rpc.utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)

@@ -5,7 +5,7 @@ import datetime
 import factory
 from django.db.models import Max
 
-from .models import (
+from rpc.models import (
     ActionHolder,
     Assignment,
     Capability,

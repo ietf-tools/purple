@@ -2,8 +2,8 @@
 
 from django.test import TestCase
 
-from .factories import RfcToBeFactory, UnusableRfcNumberFactory
-from .utils import next_rfc_number
+from rpc.factories import RfcToBeFactory, UnusableRfcNumberFactory
+from rpc.utils import next_rfc_number
 
 
 class UtilsTests(TestCase):

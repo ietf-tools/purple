@@ -4,11 +4,12 @@ from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from .blocked_assignments import apply_blocked_assignment_for_rfc
-from .models import (
+from rpc.blocked_assignments import apply_blocked_assignment_for_rfc
+from rpc.models import (
     ActionHolder,
     Assignment,
     ClusterMember,
+    DumpInfo,
     RfcToBe,
     RfcToBeLabel,
     RpcRelatedDocument,
