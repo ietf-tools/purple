@@ -36,12 +36,12 @@ logconfig_dict = {
     },
     "formatters": {
         "json": {
-            "class": "utils.jsonlogger.JsonFormatter",
+            "class": "utils.log.JsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
         },
         "access_json": {
-            "class": "utils.jsonlogger.GunicornRequestJsonFormatter",
+            "class": "utils.log.GunicornRequestJsonFormatter",
             "style": "{",
             "format": "{asctime}{levelname}{message}{name}{process}",
         },
