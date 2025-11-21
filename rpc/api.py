@@ -102,7 +102,11 @@ from rpc.serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from rpc.utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+from rpc.utils import (
+    VersionInfo,
+    create_rpc_related_document,
+    get_or_create_draft_by_name,
+)
 
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)

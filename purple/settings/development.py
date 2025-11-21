@@ -54,7 +54,7 @@ DATABASES = {
         "PORT": 5432,
         "TEST": {
             "NAME": os.environ.get("POSTGRES_TEST_DB"),
-        }
+        },
     }
 }
 
