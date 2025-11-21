@@ -103,7 +103,11 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" />
+        <DocInfoCard
+          :rfc-to-be="rawRfcToBe"
+          :draft-name="draftName"
+          @refresh="historyRefresh()"
+        />
 
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
 
