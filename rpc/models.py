@@ -158,6 +158,22 @@ class RfcToBe(models.Model):
     def cluster(self) -> "Cluster | None":
         return self.draft.cluster_set.first() if self.draft else None
 
+    @property
+    def obsoletes(self) -> models.QuerySet["RfcToBe"]:
+        """RfcToBes that this RfcToBe obsoletes"""
+        return RfcToBe.objects.filter(
+            rpcrelateddocument_target_set__source=self,
+            rpcrelateddocument_target_set__relationship_id="obs",
+        )
+
+    @property
+    def updates(self) -> models.QuerySet["RfcToBe"]:
+        """RfcToBes that this RfcToBe obsoletes"""
+        return RfcToBe.objects.filter(
+            rpcrelateddocument_target_set__source=self,
+            rpcrelateddocument_target_set__relationship_id="updates",
+        )
+
     @dataclass
     class Interval:
         start: datetime.datetime
