@@ -43,7 +43,6 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-
 from rpc.models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,

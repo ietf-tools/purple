@@ -15,7 +15,6 @@ from simple_history.utils import update_change_reason
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.utils import build_datatracker_url
-
 from rpc.models import (
     ActionHolder,
     Assignment,

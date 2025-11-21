@@ -9,7 +9,6 @@ from rpc.models import (
     ActionHolder,
     Assignment,
     ClusterMember,
-    DumpInfo,
     RfcToBe,
     RfcToBeLabel,
     RpcRelatedDocument,

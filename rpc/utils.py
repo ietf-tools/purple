@@ -2,7 +2,6 @@
 from django.db.models import Max
 
 from datatracker.models import Document
-
 from rpc.models import DumpInfo, RfcToBe, UnusableRfcNumber
 from rpc.serializers import CreateRpcRelatedDocumentSerializer
 
