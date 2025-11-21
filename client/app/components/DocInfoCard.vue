@@ -127,6 +127,16 @@ const api = useApi()
 const snackbar = useSnackbar()
 const rfcNumberInput = ref('')
 
+// Fetch unusable RFC numbers (numbers that are blocked)
+const { data: unusableRfcNumbers } = await useAsyncData(
+  'unusable-rfc-numbers',
+  () => api.unusableRfcNumbersList(),
+  {
+    server: false,
+    default: () => []
+  }
+)
+
 watch(() => props.rfcToBe?.rfcNumber, (newValue) => {
   rfcNumberInput.value = newValue?.toString() || ''
 }, { immediate: true })
@@ -148,6 +158,21 @@ const updateRfcNumber = async () => {
   const rfcNumber = newValue ? parseInt(newValue) : null
 
   if (rfcNumber === props.rfcToBe?.rfcNumber) return
+
+    // Check against unusable RFC numbers list
+  const isUnusable = unusableRfcNumbers.value?.some(
+    unusable => unusable.number === rfcNumber
+  )
+
+  if (isUnusable) {
+    snackbar.add({
+      type: 'error',
+      title: 'Invalid RFC number',
+      text: `RFC number ${rfcNumber} is in the list of unusable RFC numbers`
+    })
+    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
+    return
+  }
 
   try {
     await api.documentsPartialUpdate({
