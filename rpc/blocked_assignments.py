@@ -3,7 +3,7 @@ import logging
 from django.db import transaction
 from rest_framework.exceptions import NotFound
 
-from .models import Assignment, RfcToBe, RpcRole
+from rpc.models import Assignment, RfcToBe, RpcRole
 
 logger = logging.getLogger(__name__)
 

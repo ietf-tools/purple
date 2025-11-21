@@ -2,7 +2,7 @@
 
 from django.test import TestCase
 
-from .factories import (
+from rpc.factories import (
     AprilFirstRfcToBeFactory,
     AssignmentFactory,
     CapabilityFactory,
@@ -32,7 +32,7 @@ class BasicRpcFactoryTests(TestCase):
         ClusterFactory()
         UnusableRfcNumberFactory()
         AssignmentFactory()
-        RfcAuthorFactory()
+        RfcAuthorFactory.build(titlepage_name="A. Undómiel")
         FinalApprovalFactory()
 
 

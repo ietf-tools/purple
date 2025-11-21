@@ -4,8 +4,14 @@ set -e -x -o pipefail
 echo "Drop DB if it exists..."
 dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_DB"
 
+echo "Drop test DB if it exists..."
+dropdb -U "$POSTGRES_USER" --if-exists "$POSTGRES_TEST_DB"
+
 echo "Create empty DB..."
 createdb -U "$POSTGRES_USER" -T template0 "$POSTGRES_DB"
+
+echo "Create empty test DB..."
+createdb -U "$POSTGRES_USER" -T template0 "$POSTGRES_TEST_DB"
 
 if [ -z "$DUMPFILE" ]; then
     echo "DUMPFILE not set, starting with an empty database."

@@ -12,6 +12,7 @@ services:
       - POSTGRES_PASSWORD=abcd1234
       - POSTGRES_HOST_AUTH_METHOD=trust
       - DUMPFILE=/workspace/purple.dump
+      - POSTGRES_TEST_DB=rpctools_test
 
   app:
     build:
@@ -25,6 +26,7 @@ services:
     environment:
       - PURPLE_DEPLOYMENT_MODE=development
       - POSTGRES_DB=rpctools
+      - POSTGRES_TEST_DB=rpctools_test
       - POSTGRES_USER=rpc
       - POSTGRES_PASSWORD=abcd1234
       - PURPLE_RPC_API_TOKEN=devtoken
