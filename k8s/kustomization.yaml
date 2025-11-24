@@ -14,3 +14,4 @@ resources:
   - mailpit.yaml
   - memcached.yaml
   - purple.yaml
+  - rabbitmq.yaml

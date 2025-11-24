@@ -1,0 +1,47 @@
+apiVersion: rabbitmq.com/v1beta1
+kind: RabbitmqCluster
+metadata:
+  name: rabbitmq-purple
+  labels:
+    dedicated: database
+spec:
+  replicas: 3
+
+  # Storage
+  persistence:
+    storageClassName: managed-csi-premium # or "managed-csi" for standard SSD
+    storage: 10Gi # set to 0 to disable persistence completely
+
+  # Set base and maximum CPU / RAM
+  resources:
+    requests:
+      cpu: 100m
+      memory: 300Mi # 256 Mi is minimum required by RabbitMQ
+    limits:
+      cpu: 1000m
+      memory: 1Gi
+
+  # Place on dedicated node pool
+  tolerations:
+    - key: "dedicated"
+      operator: "Equal"
+      value: "database"
+      effect: "NoSchedule"
+
+  # Scrape metrics endpoint
+  service:
+    annotations:
+      k8s.grafana.com/scrape: "true"  # this is not a bool
+      k8s.grafana.com/metrics.portName: "prometheus"
+
+# Ensure we always have at least 1 pod at all times (e.g. during upgrades)
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: pdb-rabbitmq-purple
+spec:
+  maxUnavailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: rabbitmq-purple
