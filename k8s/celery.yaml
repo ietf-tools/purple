@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: celery
+  labels:
+    deleteBeforeUpgrade: yes
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      app: celery
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: celery
+    spec:
+      securityContext:
+        runAsNonRoot: true
+      containers:
+        # -----------------------------------------------------
+        # Celery Container
+        # -----------------------------------------------------
+        - name: celery
+          image: "ghcr.io/ietf-tools/purple-backend:$APP_IMAGE_TAG"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: celery-tmp
+              mountPath: /tmp
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "celery"
+            # ensures the pod gets recreated on every deploy
+            - name: "DEPLOY_UID"
+              value: "$DEPLOY_UID"
+          envFrom:
+            - secretRef:
+                name: purple-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+      volumes:
+        - name: celery-tmp
+          emptyDir:
+            sizeLimit: "2Gi"
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 600
