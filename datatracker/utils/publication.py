@@ -65,6 +65,7 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
             f"{subseries.type.slug}{subseries.number}"
             for subseries in rfctobe.subseriesmember_set.all()
         ],
+        # todo changes_status_of (needs datatracker support, too)
     )
     if rfctobe.draft is not None:
         rfc_pub_req.draft_name = rfctobe.draft.name
