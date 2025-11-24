@@ -1159,14 +1159,6 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddConstraint(
-            model_name="finalapproval",
-            constraint=models.CheckConstraint(
-                condition=models.Q(("approver__isnull", False)),
-                name="finalapproval_approver_required",
-                violation_error_message="approver is required",
-            ),
-        ),
-        migrations.AddConstraint(
             model_name="actionholder",
             constraint=models.CheckConstraint(
                 condition=models.Q(

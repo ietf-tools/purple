@@ -530,15 +530,6 @@ class FinalApproval(models.Model):
         else:
             return f"request for final approval from {self.approver}"
 
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=models.Q(approver__isnull=False),
-                name="finalapproval_approver_required",
-                violation_error_message="approver is required",
-            ),
-        ]
-
 
 class ActionHolderQuerySet(models.QuerySet):
     def active(self):
