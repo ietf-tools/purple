@@ -154,6 +154,19 @@ ADMINS = [("Some Admin", "admin@example.org")]
 
 # Celery
 CELERY_TIMEZONE = "UTC"
-CELERY_BROKER_URL = "amqp://mq/"
+CELERY_BROKER_URL = "amqp://{credential}@{host}/{queue}".format(
+    credential=":".join(
+        [
+            token
+            for token in [
+                os.environ.get("PURPLE_BROKER_USER"),
+                os.environ.get("PURPLE_BROKER_PASS"),
+            ]
+            if token is not None
+        ]
+    ),
+    host=os.environ.get("PURPLE_BROKER_HOST", "mq"),
+    queue=os.environ.get("PURPLE_BROKER_QUEUE", ""),
+)
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
