@@ -4,7 +4,7 @@
 #
 
 # specify celery location
-CELERY=/home/dev/.local/bin/celery
+CELERY=/usr/local/bin/celery
 
 echo "Starting Purple celery container..."
 
