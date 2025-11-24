@@ -6,15 +6,7 @@
     {{ error }}
   </div>
   <div v-else-if="status === 'success' && cluster">
-    Cluster {{ cluster.number }}
-
-    {{ JSON.stringify(cluster) }}
-    <ol>
-      <li v-for="(document, index) in cluster.documents" :key="`${index}${document.name}`">
-        {{ document.name }}
-      </li>
-    </ol>
-
+    <h1>Cluster {{ cluster.number }}</h1>
     <DocumentDependenciesGraph :cluster="cluster" />
   </div>
   <div v-else>
@@ -31,29 +23,18 @@ definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number?.toStr
 const clusterNumber = computed(() => route.params.number ? parseInt(route.params.number.toString(), 10) : undefined)
 
 useHead({
-  title: `Manage Cluster ${clusterNumber}`
+  title: `Manage Cluster ${clusterNumber.value}`
 })
 
 const api = useApi()
 
-// DATA
-
-const state = reactive({
-  createDialogShown: false,
-  notifDialogShown: false,
-  notifDialogMessage: ''
-})
-
-// METHODS
-
 const { data: cluster, error, status, refresh } = await useAsyncData(
   () => `cluster-${clusterNumber.value}`,
-  () => {
-    if(clusterNumber.value === undefined) {
-      return Promise.resolve(null)
+  async () => {
+    if (clusterNumber.value === undefined) {
+      return null
     }
     return api.clustersRetrieve({ number: clusterNumber.value })
   }
 )
-
 </script>

@@ -1,12 +1,14 @@
 <template>
-  <h2 class="flex flex-row items-center text-md font-bold pl-1">
-    Document dependencies
-  </h2>
+  <ErrorAlert v-if="rfcsToBeStatus === 'error' || documentsReferencesByRfcsStatus === 'error'"
+    title="Loading error. Reload page.">
+    {{ rfcToBesError }}
+    {{ documentsReferencesByRfcsError }}
+  </ErrorAlert>
 
-  <div ref="container" class="overflow-hidden h-full">
+  <div ref="container" class="overflow-hidden h-[80vh] border border-gray-700 rounded-md bg-white inset-shadow-sm">
   </div>
 
-  <div class="flex gap-2 justify-between border-t border-gray-400 p-2">
+  <div class="flex gap-2 justify-between py-2 px-1.5">
     <span class="flex flex-row items-center text-sm pl-1">
       Pan and zoom the dependency graph after the layout settles.
     </span>
@@ -28,9 +30,9 @@
 </template>
 
 <script setup lang="ts">
-import type { Cluster, RfcToBe } from '~/purple_client'
+import type { Cluster, RfcToBe, RpcRelatedDocument } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
-import { legendData, test_data2 } from '~/utils/document_relations-utils'
+import { legendData, test_data2, type Rel } from '~/utils/document_relations-utils'
 // import type { DataParam, NodeParam, LinkParam } from '~/utils/document_relations-utils';
 import { downloadTextFile } from '~/utils/download';
 import { assert } from '~/utils/typescript';
@@ -43,11 +45,13 @@ const props = defineProps<Props>()
 
 const api = useApi()
 
+const snackbar = useSnackbar()
+
 const containerRef = useTemplateRef('container')
 
 const showLegend = ref(false)
 
-const { data: documentsReferencesByRfcs, error: documentsReferencesByRfcsError } = await useAsyncData(
+const { data: documentsReferencesByRfcs, status: documentsReferencesByRfcsStatus, error: documentsReferencesByRfcsError } = await useAsyncData(
   async () => {
     const documentsReferencesArray = await Promise.all(
       props.cluster.documents.map(
@@ -71,7 +75,7 @@ const { data: documentsReferencesByRfcs, error: documentsReferencesByRfcsError }
   }
 )
 
-const { data: rfcToBes, error: rfcToBesError } = await useAsyncData(
+const { data: rfcToBes, status: rfcsToBeStatus, error: rfcToBesError } = await useAsyncData(
   async () =>
     Promise.all(
       documentsReferencesByRfcs.value?.flatMap(
@@ -94,84 +98,122 @@ const { data: rfcToBes, error: rfcToBesError } = await useAsyncData(
 
 const canDownload = computed(() => Boolean(rfcToBes.value))
 
-// const data = computed((): DataParam => {
-//   return {
-//     links: [
-//       ...documentsReferencesByRfcs.value?.map((documentsReferencesByRfc): LinkParam => {
-//         const { rfcNumber, draftName } = documentsReferencesByRfc
+type SnackbarType = NonNullable<Parameters<(typeof snackbar)["add"]>[0]["type"]>
 
-//         assert(rfcNumber)
-//         assert(draftName)
+const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
+  snackbar.add({
+    type,
+    title,
+    text: ''
+  })
+}
 
-//         return {
-//           source: `rfc${rfcNumber}`,
-//           rel: 'relinfo', //
-//           target: draftName,
-//         }
-//       }) ?? [],
+const hasMounted = ref(false)
 
-//       ...documentsReferencesByRfcs.value?.flatMap((documentsReferencesByRfc): LinkParam[] => {
-//         const { rfcNumber, draftName, documentsReferences } = documentsReferencesByRfc
-
-//         return documentsReferences.map((documentsReference): LinkParam => {
-//           const {
-//             draftName: source,
-//             targetDraftName: target
-//           } = documentsReference
-
-//           assert(source)
-//           assert(target)
-
-//           return {
-//             source,
-//             rel: 'refnorm',
-//             target,
-//           }
-//         })
-//       }) ?? []
-//     ],
-//     nodes: [
-//       ...rfcToBes.value?.map((rfcToBe): NodeParam => {
-//         const {
-//           name: id,
-//           intendedStdLevel: level,
-//         } = rfcToBe
-
-//         assert(id)
-//         assert(level)
-
-//         return {
-//           id,
-//           url: `/doc/${id}/`,
-//           rfc: true,
-//           "post-wg": undefined,
-//           expired: undefined,
-//           replaced: undefined,
-//           group: undefined,
-//           level: undefined,
-//         }
-//       }) ?? []
-//     ]
-//   }
-// })
-
-onMounted(() => {
+const attemptToRenderGraph = () => {
   const { value: container } = containerRef
 
   if (!container) {
-    console.error('container ref not found')
+    if (
+      // only bother reporting error if DOM ref was expected to be found, ie after mounting
+      hasMounted.value === true) {
+      console.error('container ref not found')
+    }
+    return
+  }
+  if (rfcsToBeStatus.value !== 'success') {
+    console.error(`RFCs ${rfcsToBeStatus.value}, trying again soon`)
+    return
+  }
+  if (documentsReferencesByRfcsStatus.value !== 'success' || !documentsReferencesByRfcs.value) {
+    console.error(`RFC references ${documentsReferencesByRfcsStatus.value}, trying again soon`)
     return
   }
 
-  console.log("container ref found")
+  type DrawGraphParametersLink = DrawGraphParameters[0]["links"][number]
+  const isLink = (data: unknown): data is DrawGraphParametersLink => {
+    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
+  }
 
-  const args: DrawGraphParameters = showLegend.value ? [legendData, "this group"] : [test_data2, "stir"]
+  type DrawGraphParametersNode = DrawGraphParameters[0]["nodes"][number]
+  const isNode = (data: unknown): data is DrawGraphParametersNode => {
+    return Boolean((data && typeof data === 'object' && 'id' in data && 'rfc' in data))
+  }
+
+  const rfcsToBesWithStreams = rfcToBes.value.filter(rfcToBe => rfcToBe.intendedStream)
+  const stream = rfcsToBesWithStreams[0]?.intendedStream!
+
+  const data: DrawGraphParameters[0] = {
+    links: [
+      ...rfcToBes.value.map((rfcToBe): DrawGraphParametersLink | null => {
+        if (typeof rfcToBe.rfcNumber !== 'number' || !rfcToBe.name) {
+          return null
+        }
+        return {
+          source: `rfc${rfcToBe.rfcNumber}`,
+          target: rfcToBe.name,
+          rel: "refqueue" as Rel,
+        }
+      }).filter(isLink),
+      ...documentsReferencesByRfcs.value.flatMap((documentsReferencesByRfc): (DrawGraphParametersLink | null)[] => {
+        return documentsReferencesByRfc.documentsReferences.map((documentReference): DrawGraphParametersLink | null => {
+          const { draftName, targetDraftName } = documentReference
+          if (!draftName || !targetDraftName) {
+            return null
+          }
+          return {
+            source: draftName,
+            target: targetDraftName,
+            rel: documentReference.relationship as Rel
+          }
+        })
+      }).filter(isLink)
+    ],
+    nodes: [
+      ...rfcToBes.value.map((rfcToBe): DrawGraphParametersNode | null => {
+        if (typeof rfcToBe.rfcNumber !== 'number' || !rfcToBe.name) {
+          return null
+        }
+
+        return {
+          id: `rfc${rfcToBe.rfcNumber}`,
+          rfc: true,
+          "post-wg": true,
+          expired: false,
+          replaced: false,
+          group: rfcToBe.intendedStream,
+          url: undefined,
+          level: parseLevel(rfcToBe.intendedStdLevel),
+        }
+      }).filter(isNode),
+      ...documentsReferencesByRfcs.value.flatMap((documentsReferencesByRfc): (DrawGraphParametersNode | null)[] => {
+        return documentsReferencesByRfc.documentsReferences.flatMap((documentReference): DrawGraphParametersNode | null => {
+          const { draftName, targetDraftName } = documentReference
+          if (!draftName || !targetDraftName) {
+            return null
+          }
+          return {
+            id: draftName,
+            rfc: false,
+            "post-wg": true,
+            expired: false,
+            replaced: false,
+            url: undefined,
+          }
+        })
+      }).filter(isNode)
+    ]
+  }
+
+  const args: DrawGraphParameters = showLegend.value ? [legendData, "this group"] : [data, stream]
+
+  console.log({ args })
 
   let [leg_el, leg_sim] = draw_graph(...args);
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
-    console.error('Received unexpected response from draw_graph', { leg_el, leg_sim })
-    return
+    console.error({ leg_el, leg_sim })
+    return snackbarMessage(`Received unexpected response from draw_graph. See dev console.`)
   }
 
   while (container.firstChild) {
@@ -181,22 +223,27 @@ onMounted(() => {
   container.appendChild(leg_el)
 
   if (leg_sim instanceof SVGSVGElement) {
-    console.log({ leg_sim })
-    throw Error('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See console.')
+    console.error({ leg_sim })
+    return snackbarMessage('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See dev console.')
   } else {
     leg_sim.restart();
   }
+}
+
+onMounted(() => {
+  hasMounted.value === true
+  attemptToRenderGraph()
 })
+
+watch([rfcToBes, documentsReferencesByRfcs], attemptToRenderGraph)
 
 const handleDownload = () => {
   if (!canDownload.value) {
-    alert('Not ready to download')
-    return
+    return snackbarMessage('Still preparing download. Try again soon')
   }
   const { value: container } = containerRef
   if (!container) {
-    console.error('container ref not found')
-    return
+    return snackbarMessage('container ref not found')
   }
   const svgString = container.outerHTML
   downloadTextFile(`cluster-${props.cluster.number}.svg`, 'text/svg', svgString)
