@@ -8,7 +8,6 @@ on:
 
 jobs:
   python-tests:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -28,3 +27,87 @@ jobs:
     - name: Check code style and linting
       run: |
         ruff check .
+
+  django-tests:
+    runs-on: ubuntu-latest
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: abcd1234
+      PURPLE_DEPLOYMENT_MODE: development
+      PURPLE_RPC_API_TOKEN: foobar
+      PURPLE_OIDC_RP_CLIENT_ID: 12345
+      PURPLE_OIDC_RP_CLIENT_SECRET: invalid-secret
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: abcd1234
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+        fetch-tags: false
+        path: purple
+
+    - name: Checkout Datatracker
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 1
+        fetch-tags: false
+        repository: ietf-tools/datatracker
+        ref: feat/rpc-api
+        path: datatracker
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Generate Datatracker API spec
+      working-directory: ./datatracker
+      run: |
+        cat > doit.bash <<EOF
+        echo "Creating and activating virtual environment..."
+        python -mvenv venv
+        source venv/bin/activate
+        echo "Installing requirements..."
+        pip install -r requirements.txt
+        echo "Generating OpenAPI spec..."
+        touch ietf/settings_local.py
+        ietf/manage.py spectacular --skip-checks --file rpcapi.yaml
+        EOF
+        docker run --rm --volume .:/workspace ghcr.io/ietf-tools/datatracker-app-base:latest /bin/bash -e doit.bash
+        mv rpcapi.yaml ..
+
+    - name: Generate Datatracker API client
+      working-directory: ./purple
+      run: |
+        cp ../rpcapi.yaml .
+        npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
+        tar cfz ../rpcapi_client.tgz -C openapi rpcapi_client
+
+    - uses: actions/setup-python@v6
+      with:
+        python-version: "3.14"
+
+    - name: Install dependencies
+      working-directory: ./purple
+      run: pip install -r requirements.txt
+
+    - name: Run django tests
+      working-directory: ./purple
+      run: python manage.py test
