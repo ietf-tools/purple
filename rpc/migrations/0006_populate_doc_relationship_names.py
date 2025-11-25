@@ -9,7 +9,7 @@ def forward(apps, schema_editor):
     DocRelationshipName.objects.create(
         slug="not-received",
         name="Not Received",
-        desc="Normative reference to a document that is still in draft state",
+        desc="Normative reference to a document that is not in the queue",
         used=True,
     )
 
@@ -38,6 +38,22 @@ def forward(apps, schema_editor):
         slug="updates",
         name="Updates",
         desc="Reference to a document that is being updated",
+        used=True,
+    )
+
+    DocRelationshipName.objects.create(
+        slug="not-received-2g",
+        name="Not Received in 2nd Generation",
+        desc="Normative reference in 2nd generation to a document that is not in the "
+        "queue",
+        used=True,
+    )
+
+    DocRelationshipName.objects.create(
+        slug="not-received-3g",
+        name="Not Received in 3rd Generation",
+        desc="Normative reference in 3rd generation to a document that is not in the "
+        "queue",
         used=True,
     )
 
