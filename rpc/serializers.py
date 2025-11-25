@@ -47,6 +47,15 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
+class NameSerializer(serializers.Serializer):
+    """Serialize any Name subclass"""
+
+    slug = serializers.CharField(max_length=32)
+    name = serializers.CharField(max_length=255)
+    desc = serializers.CharField(allow_blank=True)
+    used = serializers.BooleanField(default=True)
+
+
 class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize a minimal DatatrackerPerson
 
@@ -354,11 +363,8 @@ class FinalApprovalSerializer(serializers.Serializer):
         return FinalApproval.objects.get(pk=instance.pk)
 
 
-class IanaStatusSerializer(serializers.Serializer):
+class IanaStatusSerializer(NameSerializer):
     """Serialize IANA status with slug and display text"""
-
-    slug = serializers.CharField()
-    desc = serializers.CharField()
 
     def to_representation(self, instance):
         """Convert the stored slug value to an object with slug and desc"""
@@ -826,15 +832,6 @@ class ClusterSerializer(serializers.ModelSerializer):
             "number",
             "documents",
         ]
-
-
-class NameSerializer(serializers.Serializer):
-    """Serialize any Name subclass"""
-
-    slug = serializers.CharField(max_length=32)
-    name = serializers.CharField(max_length=255)
-    desc = serializers.CharField(allow_blank=True)
-    used = serializers.BooleanField(default=True)
 
 
 @dataclass
