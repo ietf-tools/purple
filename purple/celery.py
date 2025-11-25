@@ -26,11 +26,12 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
 
-@app.task(bind=True, ignore_result=True)
-def debug_task(self):
+@app.task(ignore_result=True)
+def debug_task():
     import datetime
+    from sys import stdout
 
-    print(
-        f"At {datetime.datetime.now(tz=datetime.UTC).isoformat()}, "
-        f"request: {self.request!r}"
+    stdout.write(
+        f"debug_task executed at {datetime.datetime.now(tz=datetime.UTC).isoformat()}\n"
     )
+    stdout.flush()
