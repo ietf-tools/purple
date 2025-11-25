@@ -220,7 +220,7 @@ const handleDownload = () => {
   if (!container) {
     return snackbarMessage('container ref not found')
   }
-  const svgString = container.outerHTML
+  const svgString = container.innerHTML
   downloadTextFile(`cluster-${props.cluster.number}.svg`, 'text/svg', svgString)
 }
 </script>
