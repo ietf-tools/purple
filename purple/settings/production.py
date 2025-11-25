@@ -7,6 +7,10 @@ from email.utils import parseaddr
 from hashlib import sha384
 
 from .base import *
+from .logging.production import LOGGING as _logging
+
+# Logging config
+LOGGING = _logging
 
 
 def _multiline_to_list(s):
