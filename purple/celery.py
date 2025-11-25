@@ -34,6 +34,7 @@ def debug_task():
     stdout.write(
         f"debug_task executed at {datetime.datetime.now(tz=datetime.UTC).isoformat()}\n"
     )
+    stdout.flush()
 
 
 @app.task(ignore_result=True)
