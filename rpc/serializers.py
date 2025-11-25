@@ -354,6 +354,18 @@ class FinalApprovalSerializer(serializers.Serializer):
         return FinalApproval.objects.get(pk=instance.pk)
 
 
+class IanaStatusSerializer(serializers.Serializer):
+    """Serialize IANA status with slug and display text"""
+
+    slug = serializers.CharField()
+    desc = serializers.CharField()
+
+    def to_representation(self, instance):
+        """Convert the stored slug value to an object with slug and desc"""
+        choices_dict = dict(RfcToBe._IanaStatus.choices)
+        return {"slug": instance, "desc": choices_dict.get(instance, instance)}
+
+
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
@@ -371,6 +383,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     final_approval = FinalApprovalSerializer(
         source="finalapproval_set", many=True, read_only=True
     )
+    iana_status = IanaStatusSerializer(read_only=True)
 
     class Meta:
         model = RfcToBe
@@ -390,6 +403,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "pages",
             "enqueued_at",
             "final_approval",
+            "iana_status",
         ]
 
     @extend_schema_field(serializers.DateField())
@@ -487,6 +501,15 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     subseries = SubseriesMemberSerializer(
         source="subseriesmember_set", many=True, read_only=True
     )
+    iana_status = IanaStatusSerializer(read_only=True)
+
+    iana_status_slug = serializers.ChoiceField(
+        source="iana_status",
+        choices=RfcToBe._IanaStatus.choices,
+        write_only=True,
+        required=False,
+        help_text=("Set the IANA status by providing the slug identifier."),
+    )
 
     class Meta:
         model = RfcToBe
@@ -515,6 +538,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "published_at",
             "consensus",
             "subseries",
+            "iana_status",
+            "iana_status_slug",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
