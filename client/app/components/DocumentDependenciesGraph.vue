@@ -1,11 +1,11 @@
 <template>
-  <ErrorAlert v-if="rfcsToBeStatus === 'error' || documentsReferencesByRfcsStatus === 'error'"
+  <ErrorAlert v-if="rfcToBesStatus === 'error' || clusterDocumentsReferencesListStatus === 'error'"
     title="Loading error. Reload page.">
     {{ rfcToBesError }}
-    {{ documentsReferencesByRfcsError }}
+    {{ clusterDocumentsReferencesListError }}
   </ErrorAlert>
 
-  <div ref="container" class="overflow-hidden h-[80vh] border border-gray-700 rounded-md bg-white inset-shadow-sm">
+  <div ref="container" class="overflow-hidden h-[75vh] border border-gray-700 rounded-md bg-white inset-shadow-sm">
   </div>
 
   <div class="flex gap-2 justify-between py-2 px-1.5">
@@ -13,8 +13,8 @@
       Pan and zoom the dependency graph after the layout settles.
     </span>
     <span class="flex flex-row items-center gap-2">
-      <RpcCheckbox label="Show legend" :value="true" :checked="showLegend" @change="showLegend = !showLegend"
-        size='medium' class="mr-3" />
+      <RpcCheckbox label="Show legend" value="" :checked="showLegend" @change="showLegend = !showLegend" size='medium'
+        class="mr-3" />
       <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
         <span v-if="canDownload">
           <Icon name="el:download-alt" size="1.1em" class="mr-2" />
@@ -30,12 +30,11 @@
 </template>
 
 <script setup lang="ts">
-import type { Cluster, RfcToBe, RpcRelatedDocument } from '~/purple_client'
+import { uniqBy } from 'lodash-es';
+import type { Cluster } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
-import { legendData, test_data2, type Rel } from '~/utils/document_relations-utils'
-// import type { DataParam, NodeParam, LinkParam } from '~/utils/document_relations-utils';
+import { legendData, type DataParam, type LinkParam, type NodeParam, type Rel } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
-import { assert } from '~/utils/typescript';
 
 type Props = {
   cluster: Cluster
@@ -51,52 +50,29 @@ const containerRef = useTemplateRef('container')
 
 const showLegend = ref(false)
 
-const { data: documentsReferencesByRfcs, status: documentsReferencesByRfcsStatus, error: documentsReferencesByRfcsError } = await useAsyncData(
-  async () => {
-    const documentsReferencesArray = await Promise.all(
+const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
+  async () =>
+    Promise.all(
       props.cluster.documents.map(
         (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
       ))
-    return documentsReferencesArray.map((documentsReferences, index) => {
-      const clusterDocument = props.cluster.documents[index]
-      if (!clusterDocument) {
-        return undefined
-      }
-      const { rfcNumber, name: draftName } = clusterDocument
-      assert(rfcNumber)
-      return ({
-        rfcNumber,
-        draftName,
-        documentsReferences
-      })
-    }).filter(item => {
-      return (item !== undefined)
-    })
-  }
 )
 
-const { data: rfcToBes, status: rfcsToBeStatus, error: rfcToBesError } = await useAsyncData(
-  async () =>
-    Promise.all(
-      documentsReferencesByRfcs.value?.flatMap(
-        (documentsReferencesByRfc) => {
-          const { documentsReferences } = documentsReferencesByRfc
+const { data: rfcToBes, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
+  async () => {
+    const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
+    const names: string[] = (clusterDocumentsReferencesList.value ?? []).flatMap(
+      (relatedDocuments): string[] => [
+        ...relatedDocuments.map((relatedDocument) => relatedDocument.draftName).filter(filterIsString),
+        ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString)
+      ])
+    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", names)
+    return Promise.all(
+      names.map(name => api.documentsRetrieve({ draftName: name }))
+    )
+  })
 
-          return documentsReferences.map(documentReference => {
-            const { draftName } = documentReference
-            assert(draftName)
-            return api.documentsRetrieve({ draftName })
-          })
-        }
-      ) ?? []),
-  {
-    lazy: true,
-    server: false,
-    default: () => [] as RfcToBe[]
-  }
-)
-
-const canDownload = computed(() => Boolean(rfcToBes.value))
+const canDownload = ref(false)
 
 type SnackbarType = NonNullable<Parameters<(typeof snackbar)["add"]>[0]["type"]>
 
@@ -110,6 +86,81 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
 
 const hasMounted = ref(false)
 
+const data = computed(() => {
+  const newData: DataParam = {
+    links: [],
+    nodes: []
+  }
+
+  const isNode = (data: unknown): data is NodeParam => {
+    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+    return isANode
+  }
+
+  const isLink = (data: unknown): data is LinkParam => {
+    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
+  }
+
+  if (rfcToBes.value) {
+    newData.nodes.push(
+      ...rfcToBes.value.map((rfcToBe): NodeParam | null => {
+        const { name } = rfcToBe
+        if (!name) return null
+        return { id: name, rfc: Boolean(rfcToBe.rfcNumber), url: `/docs/${name}`, level: parseLevel(rfcToBe.submittedStdLevel) }
+      }).filter(isNode)
+    )
+  }
+
+  if (clusterDocumentsReferencesList.value) {
+    clusterDocumentsReferencesList.value.forEach(documentsReferencesList => {
+      documentsReferencesList.forEach(reference => {
+        const { draftName, targetDraftName, relationship } = reference;
+        if (!draftName || !targetDraftName) {
+          return
+        }
+        newData.nodes.push(
+          { id: draftName },
+          { id: targetDraftName }
+        )
+        newData.links.push(
+          { source: draftName, target: targetDraftName, rel: relationship as Rel }
+        )
+      })
+    })
+  }
+
+  if (props.cluster.documents) {
+    newData.nodes.push(...props.cluster.documents.map((document): NodeParam | null => {
+      const { name } = document
+      if (!name) return null
+      return {
+        id: name
+      }
+    }).filter(isNode))
+
+    newData.links.push(...props.cluster.documents.flatMap((document, index): LinkParam[] | null => {
+      const { name } = document
+      if (!name || !clusterDocumentsReferencesList.value) return null
+      const clusterDocumentReferences = clusterDocumentsReferencesList.value[index]
+      if (!clusterDocumentReferences) return null
+      return clusterDocumentReferences.map((clusterDocumentReference): LinkParam | null => {
+        const { draftName } = clusterDocumentReference
+        if (!draftName) return null
+        return {
+          source: name,
+          target: draftName,
+          rel: 'relinfo',
+        }
+      }).filter(isLink)
+    }).filter(isLink))
+  }
+
+  newData.nodes = uniqBy(newData.nodes, (node) => node.id)
+  newData.links = uniqBy(newData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
+
+  return newData
+})
+
 const attemptToRenderGraph = () => {
   const { value: container } = containerRef
 
@@ -121,93 +172,15 @@ const attemptToRenderGraph = () => {
     }
     return
   }
-  if (rfcsToBeStatus.value !== 'success') {
-    console.error(`RFCs ${rfcsToBeStatus.value}, trying again soon`)
-    return
-  }
-  if (documentsReferencesByRfcsStatus.value !== 'success' || !documentsReferencesByRfcs.value) {
-    console.error(`RFC references ${documentsReferencesByRfcsStatus.value}, trying again soon`)
-    return
-  }
 
-  type DrawGraphParametersLink = DrawGraphParameters[0]["links"][number]
-  const isLink = (data: unknown): data is DrawGraphParametersLink => {
-    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
-  }
+  const graphData = structuredClone(
+    // the D3 code will mutate arg data so we'll make a copy
+    data.value
+  )
 
-  type DrawGraphParametersNode = DrawGraphParameters[0]["nodes"][number]
-  const isNode = (data: unknown): data is DrawGraphParametersNode => {
-    return Boolean((data && typeof data === 'object' && 'id' in data && 'rfc' in data))
-  }
-
-  const rfcsToBesWithStreams = rfcToBes.value.filter(rfcToBe => rfcToBe.intendedStream)
-  const stream = rfcsToBesWithStreams[0]?.intendedStream!
-
-  const data: DrawGraphParameters[0] = {
-    links: [
-      ...rfcToBes.value.map((rfcToBe): DrawGraphParametersLink | null => {
-        if (typeof rfcToBe.rfcNumber !== 'number' || !rfcToBe.name) {
-          return null
-        }
-        return {
-          source: `rfc${rfcToBe.rfcNumber}`,
-          target: rfcToBe.name,
-          rel: "refqueue" as Rel,
-        }
-      }).filter(isLink),
-      ...documentsReferencesByRfcs.value.flatMap((documentsReferencesByRfc): (DrawGraphParametersLink | null)[] => {
-        return documentsReferencesByRfc.documentsReferences.map((documentReference): DrawGraphParametersLink | null => {
-          const { draftName, targetDraftName } = documentReference
-          if (!draftName || !targetDraftName) {
-            return null
-          }
-          return {
-            source: draftName,
-            target: targetDraftName,
-            rel: documentReference.relationship as Rel
-          }
-        })
-      }).filter(isLink)
-    ],
-    nodes: [
-      ...rfcToBes.value.map((rfcToBe): DrawGraphParametersNode | null => {
-        if (typeof rfcToBe.rfcNumber !== 'number' || !rfcToBe.name) {
-          return null
-        }
-
-        return {
-          id: `rfc${rfcToBe.rfcNumber}`,
-          rfc: true,
-          "post-wg": true,
-          expired: false,
-          replaced: false,
-          group: rfcToBe.intendedStream,
-          url: undefined,
-          level: parseLevel(rfcToBe.intendedStdLevel),
-        }
-      }).filter(isNode),
-      ...documentsReferencesByRfcs.value.flatMap((documentsReferencesByRfc): (DrawGraphParametersNode | null)[] => {
-        return documentsReferencesByRfc.documentsReferences.flatMap((documentReference): DrawGraphParametersNode | null => {
-          const { draftName, targetDraftName } = documentReference
-          if (!draftName || !targetDraftName) {
-            return null
-          }
-          return {
-            id: draftName,
-            rfc: false,
-            "post-wg": true,
-            expired: false,
-            replaced: false,
-            url: undefined,
-          }
-        })
-      }).filter(isNode)
-    ]
-  }
-
-  const args: DrawGraphParameters = showLegend.value ? [legendData, "this group"] : [data, stream]
-
-  console.log({ args })
+  const args: DrawGraphParameters = showLegend.value
+    ? [legendData]
+    : [graphData]
 
   let [leg_el, leg_sim] = draw_graph(...args);
 
@@ -228,6 +201,8 @@ const attemptToRenderGraph = () => {
   } else {
     leg_sim.restart();
   }
+
+  canDownload.value = true // now that we've rendered the SVG we can offer it for download
 }
 
 onMounted(() => {
@@ -235,7 +210,7 @@ onMounted(() => {
   attemptToRenderGraph()
 })
 
-watch([rfcToBes, documentsReferencesByRfcs], attemptToRenderGraph)
+watch([data, showLegend], attemptToRenderGraph)
 
 const handleDownload = () => {
   if (!canDownload.value) {

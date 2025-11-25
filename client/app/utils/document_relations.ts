@@ -109,7 +109,7 @@ function text_radius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof draw_graph>
 
-export function draw_graph(data: DataParam, group: string) {
+export function draw_graph(data: DataParam) {
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
@@ -224,9 +224,6 @@ export function draw_graph(data: DataParam, group: string) {
       }
       if (d["post-wg"]) {
         return teal
-      }
-      if (d.group == group || d.group == "this group") {
-        return yellow
       }
       if (d.group == "") {
         return white

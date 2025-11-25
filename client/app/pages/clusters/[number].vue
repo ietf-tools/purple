@@ -6,7 +6,7 @@
     {{ error }}
   </div>
   <div v-else-if="status === 'success' && cluster">
-    <h1>Cluster {{ cluster.number }}</h1>
+    <h1 class="text-gray-500 dark:text-neutral-300 text-2xl font-bold leading-7 sm:truncate sm:text-3xl sm:tracking-tight">Cluster {{ cluster.number }}</h1>
     <DocumentDependenciesGraph :cluster="cluster" />
   </div>
   <div v-else>

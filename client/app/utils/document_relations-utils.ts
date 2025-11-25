@@ -1,3 +1,5 @@
+import { uniqBy } from "lodash-es";
+
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
  * so they've been hardcoded to ensure same rendering
@@ -44,7 +46,7 @@ export type Level =
   | "Draft Standard";
 
 export const parseLevel = (maybeLevel: string): Level => {
-  switch(maybeLevel) {
+  switch (maybeLevel) {
     case "":
       return ""
     case "Informational":
@@ -58,6 +60,7 @@ export const parseLevel = (maybeLevel: string): Level => {
     case "Proposed Standard":
       return "Proposed Standard"
   }
+  console.warn("Unable to parse level: ", maybeLevel)
   return ""
 }
 
