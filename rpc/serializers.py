@@ -369,7 +369,11 @@ class IanaStatusSerializer(NameSerializer):
     def to_representation(self, instance):
         """Convert the stored slug value to an object with slug and desc"""
         choices_dict = dict(RfcToBe._IanaStatus.choices)
-        return {"slug": instance, "desc": choices_dict.get(instance, instance)}
+        return {
+            "slug": instance,
+            "name": instance,
+            "desc": choices_dict.get(instance, instance),
+        }
 
 
 class QueueItemSerializer(serializers.ModelSerializer):
