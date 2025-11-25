@@ -1,3 +1,5 @@
+import { uniqBy } from "lodash-es";
+
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
  * so they've been hardcoded to ensure same rendering
@@ -42,6 +44,25 @@ export type Level =
   | "Proposed Standard"
   | "Best Current Practice"
   | "Draft Standard";
+
+export const parseLevel = (maybeLevel: string): Level => {
+  switch (maybeLevel) {
+    case "":
+      return ""
+    case "Informational":
+      return "Informational"
+    case "Best Current Practice":
+      return "Best Current Practice"
+    case "Draft Standard":
+      return "Draft Standard"
+    case "Experimental":
+      return "Experimental"
+    case "Proposed Standard":
+      return "Proposed Standard"
+  }
+  console.warn("Unable to parse level: ", maybeLevel)
+  return ""
+}
 
 export type Line = {
   text: string;
@@ -303,7 +324,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-threats/",
+      url: "/docs/draft-ietf-stir-threats/",
       level: "Informational",
     },
     {
@@ -313,7 +334,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-cooper-iab-secure-origin/",
+      url: "/docs/draft-cooper-iab-secure-origin/",
       level: "",
     },
     {
@@ -323,7 +344,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-oob/",
+      url: "/docs/draft-ietf-stir-oob/",
       level: "Informational",
     },
     {
@@ -333,7 +354,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "pkix",
-      url: "/doc/rfc5912/",
+      url: undefined,
       level: "Informational",
     },
     {
@@ -343,7 +364,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "",
-      url: "/doc/draft-wendt-stir-certificate-transparency/",
+      url: "/docs/draft-wendt-stir-certificate-transparency/",
       level: "",
     },
     {
@@ -353,7 +374,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-servprovider-oob/",
+      url: "/docs/draft-ietf-stir-servprovider-oob/",
       level: "Proposed Standard",
     },
     {
@@ -363,7 +384,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-rosen-stir-emergency-calls/",
+      url: "/docs/draft-rosen-stir-emergency-calls/",
       level: "",
     },
     {
@@ -373,7 +394,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-rosenberg-sip-rfc4474-concerns/",
+      url: "/docs/draft-rosenberg-sip-rfc4474-concerns/",
       level: "",
     },
     {
@@ -383,7 +404,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-certificates-shortlived/",
+      url: "/docs/draft-ietf-stir-certificates-shortlived/",
       level: "",
     },
     {
@@ -393,7 +414,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "",
-      url: "/doc/draft-wendt-stir-vesper/",
+      url: "/docs/draft-wendt-stir-vesper/",
       level: "",
     },
     {
@@ -403,7 +424,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/rfc8816/",
+      url: undefined,
       level: "Informational",
     },
     {
@@ -413,7 +434,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-ietf-iri-comparison/",
+      url: "/docs/draft-ietf-iri-comparison/",
       level: "Proposed Standard",
     },
     {
@@ -423,7 +444,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-rph-emergency-services/",
+      url: "/docs/draft-ietf-stir-rph-emergency-services/",
       level: "Proposed Standard",
     },
     {
@@ -433,7 +454,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-messaging/",
+      url: "/docs/draft-ietf-stir-messaging/",
       level: "Proposed Standard",
     },
     {
@@ -443,7 +464,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-privacy-pass/",
+      url: "/docs/draft-privacy-pass/",
       level: "",
     },
     {
@@ -453,7 +474,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "",
-      url: "/doc/draft-wendt-acme-authority-token-jwtclaimcon/",
+      url: "/docs/draft-wendt-acme-authority-token-jwtclaimcon/",
       level: "",
     },
     {
@@ -463,7 +484,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: true,
       group: "",
-      url: "/doc/draft-peterson-stir-rfc4916-update/",
+      url: "/docs/draft-peterson-stir-rfc4916-update/",
       level: "",
     },
     {
@@ -473,7 +494,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "modern",
-      url: "/doc/draft-ietf-modern-teri/",
+      url: "/docs/draft-ietf-modern-teri/",
       level: "",
     },
     {
@@ -483,7 +504,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-rfc4916-update/",
+      url: "/docs/draft-ietf-stir-rfc4916-update/",
       level: "Proposed Standard",
     },
     {
@@ -493,7 +514,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-jennings-vipr-overview/",
+      url: "/docs/draft-jennings-vipr-overview/",
       level: "",
     },
     {
@@ -503,7 +524,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "tls",
-      url: "/doc/draft-ietf-tls-rfc8446bis/",
+      url: "/docs/draft-ietf-tls-rfc8446bis/",
       level: "Proposed Standard",
     },
     {
@@ -513,7 +534,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-rfc4474bis/",
+      url: "/docs/draft-ietf-stir-rfc4474bis/",
       level: "Proposed Standard",
     },
     {
@@ -523,7 +544,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "sip",
-      url: "/doc/rfc3325/",
+      url: undefined,
       level: "Informational",
     },
     {
@@ -533,7 +554,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-problem-statement/",
+      url: "/docs/draft-ietf-stir-problem-statement/",
       level: "Informational",
     },
     {
@@ -543,7 +564,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-kaplan-stir-cider/",
+      url: "/docs/draft-kaplan-stir-cider/",
       level: "",
     },
     {
@@ -553,7 +574,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "",
-      url: "/doc/draft-wendt-stir-vesper-use-cases/",
+      url: "/docs/draft-wendt-stir-vesper-use-cases/",
       level: "",
     },
     {
@@ -563,7 +584,7 @@ export const test_data2: DataParam = {
       expired: true,
       replaced: false,
       group: "",
-      url: "/doc/draft-peterson-sipping-retarget/",
+      url: "/docs/draft-peterson-sipping-retarget/",
       level: "",
     },
     {
@@ -573,7 +594,7 @@ export const test_data2: DataParam = {
       expired: false,
       replaced: false,
       group: "stir",
-      url: "/doc/draft-ietf-stir-certificates-ocsp/",
+      url: "/docs/draft-ietf-stir-certificates-ocsp/",
       level: "Proposed Standard",
     },
   ],

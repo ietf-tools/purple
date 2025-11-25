@@ -318,7 +318,6 @@ class FinalApprovalSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(read_only=True)
     rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
-    body = serializers.CharField(required=False, allow_blank=True)
     requested = serializers.DateTimeField(read_only=True)
     approver = BaseDatatrackerPersonSerializer(read_only=True)
     approved = serializers.DateTimeField(required=False, allow_null=True)

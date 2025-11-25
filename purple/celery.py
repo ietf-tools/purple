@@ -26,6 +26,24 @@ app.config_from_object("django.conf:settings", namespace="CELERY")
 app.autodiscover_tasks()
 
 
-@app.task(bind=True, ignore_result=True)
-def debug_task(self):
-    print(f"Request: {self.request!r}")
+@app.task(ignore_result=True)
+def debug_task():
+    import datetime
+    from sys import stdout
+
+    stdout.write(
+        f"debug_task executed at {datetime.datetime.now(tz=datetime.UTC).isoformat()}\n"
+    )
+    stdout.flush()
+
+
+@app.task(ignore_result=True)
+def debug_log_task():
+    import datetime
+
+    from celery.utils.log import get_task_logger
+
+    get_task_logger(__name__).info(
+        "debug_log_task executed at "
+        + datetime.datetime.now(tz=datetime.UTC).isoformat()
+    )

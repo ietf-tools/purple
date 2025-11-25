@@ -1,11 +1,13 @@
 <template>
-  <div v-if="cluster">
-    Cluster {{ cluster.number }}
-    <ol>
-      <li v-for="(document, index) in cluster.documents" :key="`${index}${document.name}`">
-        {{ document.name }}
-      </li>
-    </ol>
+  <i v-if="status === 'pending'">
+    Loading...
+  </i>
+  <div v-else-if="status === 'error'">
+    {{ error }}
+  </div>
+  <div v-else-if="status === 'success' && cluster">
+    <h1 class="text-gray-500 dark:text-neutral-300 text-2xl font-bold leading-7 sm:truncate sm:text-3xl sm:tracking-tight">Cluster {{ cluster.number }}</h1>
+    <DocumentDependenciesGraph :cluster="cluster" />
   </div>
   <div v-else>
     Unknown cluster
@@ -18,37 +20,21 @@ const route = useRoute()
 // Only allow numbers as route parameter, rejecting leading zeros
 definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number?.toString() ?? '') })
 
-const clusterNumber = route.params.number
+const clusterNumber = computed(() => route.params.number ? parseInt(route.params.number.toString(), 10) : undefined)
 
 useHead({
-  title: `Manage Cluster ${clusterNumber}`
+  title: `Manage Cluster ${clusterNumber.value}`
 })
 
-// DATA
+const api = useApi()
 
-const state = reactive({
-  createDialogShown: false,
-  notifDialogShown: false,
-  notifDialogMessage: ''
-})
-
-// METHODS
-
-type Cluster = {
-  number: number
-  documents: { name: string }[]
-}
-
-const { data: cluster, pending, refresh } = await useFetch<Cluster>(`/api/rpc/clusters/${clusterNumber}`, {
-  baseURL: '/',
-  server: false,
-  onRequestError ({ error }) {
-    state.notifDialogMessage = error.toString()
-    state.notifDialogShown = true
-  },
-  onResponseError ({ response, error }) {
-    state.notifDialogMessage = response.statusText ?? error
-    state.notifDialogShown = true
+const { data: cluster, error, status, refresh } = await useAsyncData(
+  () => `cluster-${clusterNumber.value}`,
+  async () => {
+    if (clusterNumber.value === undefined) {
+      return null
+    }
+    return api.clustersRetrieve({ number: clusterNumber.value })
   }
-})
+)
 </script>

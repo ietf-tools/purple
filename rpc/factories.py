@@ -188,6 +188,7 @@ class RfcAuthorFactory(factory.django.DjangoModelFactory):
         "datatracker.factories.DatatrackerPersonFactory"
     )
     rfc_to_be = factory.SubFactory(RfcToBeFactory)
+    order = factory.Sequence(lambda n: n + 1)
 
 
 class FinalApprovalFactory(factory.django.DjangoModelFactory):

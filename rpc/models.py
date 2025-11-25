@@ -517,12 +517,9 @@ class FinalApproval(models.Model):
     objects = FinalApprovalQuerySet.as_manager()
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
-    body = models.CharField(max_length=64, blank=True, default="")
     approver = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="approver_set",
     )
     overriding_approver = models.ForeignKey(
@@ -547,34 +544,7 @@ class FinalApproval(models.Model):
             else:
                 return f"final approval from {self.approver}"
         else:
-            return (
-                "request for final approval from "
-                f"{self.approver if self.approver else self.body}"
-            )
-
-    class Meta:
-        constraints = [
-            models.CheckConstraint(
-                check=(
-                    models.Q(approved__isnull=True) | models.Q(approver__isnull=False)
-                ),
-                name="finalapproval_approval_requires_approver",
-                violation_error_message="approval requires an approver",
-            ),
-            models.CheckConstraint(
-                check=(
-                    models.Q(overriding_approver__isnull=True)
-                    | models.Q(approver__isnull=False)
-                ),
-                name="finalapproval_approval_override_requires_approver",
-                violation_error_message="approval override requires an approver be set",
-            ),
-            models.CheckConstraint(
-                check=(models.Q(body="") | models.Q(overriding_approver__isnull=True)),
-                name="finalapproval_body_approval_no_override",
-                violation_error_message="body approval cant be overridden",
-            ),
-        ]
+            return f"request for final approval from {self.approver}"
 
 
 class ActionHolderQuerySet(models.QuerySet):
