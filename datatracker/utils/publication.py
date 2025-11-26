@@ -1,8 +1,10 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 import datetime
+import json
+from json import JSONDecodeError
 
 import rpcapi_client
-from rpcapi_client import AuthorRequest, RfcPubRequest
+from rpcapi_client import AuthorRequest, RfcPubRequest, ApiException
 
 from datatracker.rpcapi import with_rpcapi
 
@@ -13,7 +15,19 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     #  - missing rfc_number
     #  - state of rfctobe
     # todo error handling
-    publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
+    try:
+        publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
+    except ApiException as api_error:
+        try:
+            data = json.loads(api_error.body)
+        except JSONDecodeError:
+            raise PublicationError("unable to parse error body") from api_error
+        # Sort out what's going on via error code
+        error_codes = {err["code"] for err in data.get("errors", [])}
+        if "invalid-draft" in error_codes:
+            raise InvalidDraftError from api_error
+        elif "already-published-draft" in error_codes:
+            raise AlreadyPublishedDraftError from api_error
     upload_rfc_contents(rfctobe, rpcapi=rpcapi)
 
 
@@ -76,3 +90,15 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
 @with_rpcapi
 def upload_rfc_contents(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     """todo implement"""
+
+
+class PublicationError(Exception):
+    """Base class for publication exceptions"""
+
+
+class AlreadyPublishedDraftError(PublicationError):
+    """already-published-draft"""
+
+
+class InvalidDraftError(PublicationError):
+    """invalid-draft"""

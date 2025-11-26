@@ -6,7 +6,7 @@ from celery import Task, shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 
-from datatracker.utils.publication import publish_rfc
+from datatracker.utils.publication import publish_rfc, PublicationError
 from purple.mail import send_mail
 from rpc.models import RfcToBe
 
@@ -57,6 +57,7 @@ class DatatrackerNotificationTask(Task):
                 Task id: {task_id}
                 Task args: {args}
                 Task kwargs: {kwargs}
+                Exception: {repr(exc)}
 
             """)
             + str(einfo),
@@ -66,9 +67,9 @@ class DatatrackerNotificationTask(Task):
 @shared_task(
     bind=True,
     base=DatatrackerNotificationTask,
-    throws=(RfcToBe.DoesNotExist,),
+    throws=(RfcToBe.DoesNotExist, PublicationError),
     autoretry_for=(Exception,),
-    dont_autoretry_for=(RfcToBe.DoesNotExist,),
+    dont_autoretry_for=(RfcToBe.DoesNotExist, PublicationError),
 )
 def notify_rfc_published_task(self, rfctobe_id):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
