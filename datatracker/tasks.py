@@ -6,7 +6,7 @@ from celery import Task, shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 
-from datatracker.utils.publication import publish_rfc, PublicationError
+from datatracker.utils.publication import PublicationError, publish_rfc
 from purple.mail import send_mail
 from rpc.models import RfcToBe
 

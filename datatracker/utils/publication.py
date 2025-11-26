@@ -4,7 +4,7 @@ import json
 from json import JSONDecodeError
 
 import rpcapi_client
-from rpcapi_client import AuthorRequest, RfcPubRequest, ApiException
+from rpcapi_client import ApiException, AuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
 
