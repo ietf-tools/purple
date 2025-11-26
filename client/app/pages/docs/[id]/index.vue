@@ -127,7 +127,7 @@
         </div>
 
         <div class="lg:col-span-full">
-          <DocumentFinalReviews :heading-level="4" :name="draftName" :on-success="() => commentsReload()" />
+          <DocumentFinalReviews :heading-level="4" :name="draftName" />
         </div>
 
         <!-- History -->
@@ -174,16 +174,28 @@
           </div>
         </BaseCard>
 
-        <!-- Comments -->
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <template #header>
-            <CardHeader title="Comments" />
+            <CardHeader title="Comments (private)" />
           </template>
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
             <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload"
               class="w-4/5 min-w-100" />
             <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
               :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
+              class="w-3/5 min-w-100" />
+          </div>
+        </BaseCard>
+
+        <BaseCard class="lg:col-span-full grid place-items-stretch">
+          <template #header>
+            <CardHeader title="Approval Logs (public)" />
+          </template>
+          <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
+            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="approvalLogsListReload"
+              class="w-4/5 min-w-100" />
+            <DocumentApprovalLogs :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="approvalLogsListPending"
+              :error="approvalLogsListError" :comment-list="approvalLogsList" :reload-comments="approvalLogsListReload"
               class="w-3/5 min-w-100" />
           </div>
         </BaseCard>
@@ -216,6 +228,17 @@ const {
   error: commentsError,
   refresh: commentsReload
 } = await useCommentsForDraft(draftName.value)
+
+const {
+  data: approvalLogsList,
+  pending: approvalLogsListPending,
+  error: approvalLogsListError,
+  refresh: approvalLogsListReload
+} = await useAsyncData(
+    `comments-${draftName}`,
+    () => api.documentsApprovalLogsList({ draftName: draftName.value }),
+    { server: false }
+  )
 
 const {
   data: history,
