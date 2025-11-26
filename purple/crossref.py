@@ -155,15 +155,13 @@ def _generate_crossref_xml(rfc_number):
     publisher_item = ElementTree.SubElement(report_paper_metadata, "publisher_item")
 
     # body → report-paper → report-paper_metadata → publisher_item → item_number
-    ElementTree.SubElement(publisher_item, "item_number").text = doc_id.lower()
+    ElementTree.SubElement(publisher_item, "item_number").text = doc_id
 
     # body → report-paper → report-paper_metadata → doi_data
     doi_data = ElementTree.SubElement(report_paper_metadata, "doi_data")
 
     # body → report-paper → report-paper_metadata → doi_data → doi
-    ElementTree.SubElement(
-        doi_data, "doi"
-    ).text = f"{settings.DOI_PREFIX}/{doc_id.lower()}"
+    ElementTree.SubElement(doi_data, "doi").text = f"{settings.DOI_PREFIX}/{doc_id}"
 
     # body → report-paper → report-paper_metadata → resource_data → resource
     ElementTree.SubElement(

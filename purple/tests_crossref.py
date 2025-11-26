@@ -121,8 +121,8 @@ class CrossrefTests(TestCase):
         self.assertIn(f"<title>{rfc.draft.title}</title>", xml_str)
         self.assertIn(f"<month>{PUBLISHED.month}</month>", xml_str)
         self.assertIn(f"<year>{PUBLISHED.year}</year>", xml_str)
-        self.assertIn(f"<item_number>rfc{RFC}</item_number>", xml_str)
-        self.assertIn(f"<doi>{settings.DOI_PREFIX}/rfc{RFC}</doi>", xml_str)
+        self.assertIn(f"<item_number>RFC{RFC}</item_number>", xml_str)
+        self.assertIn(f"<doi>{settings.DOI_PREFIX}/RFC{RFC}</doi>", xml_str)
         self.assertIn(f"<resource>{settings.DOI_URL}rfc{RFC}</resource>", xml_str)
 
     @override_settings(
