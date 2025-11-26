@@ -595,6 +595,15 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
 
+    iana_status_slug = serializers.ChoiceField(
+        source="iana_status",
+        choices=RfcToBe._IanaStatus.choices,
+        write_only=True,
+        required=False,
+        help_text="Set the IANA status by providing the slug identifier. "
+        "Defaults to 'not_completed' if not provided.",
+    )
+
     class Meta:
         model = RfcToBe
         fields = [
@@ -605,6 +614,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "external_deadline",
             "labels",
             "draft",
+            "iana_status_slug",
         ]
 
     def create(self, validated_data):
