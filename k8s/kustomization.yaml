@@ -10,6 +10,7 @@ configMapGenerator:
       - nginx-datatracker.conf
       - nginx-logging.conf
 resources:
+  - celery.yaml
   - datatracker.yaml
   - mailpit.yaml
   - memcached.yaml

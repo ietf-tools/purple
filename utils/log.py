@@ -1,8 +1,11 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 """JSON Logger Utilities"""
 
+import logging
 import time
 
+from celery import current_task
+from celery.app.log import TaskFormatter
 from pythonjsonlogger import jsonlogger
 
 
@@ -39,3 +42,29 @@ class GunicornRequestJsonFormatter(JsonFormatter):
             "cf_connecting_ipv6", record.args["{cf-connecting-ipv6}i"]
         )
         log_record.setdefault("cf_ray", record.args["{cf-ray}i"])
+
+
+class SimpleFormatter(logging.Formatter):
+    converter = time.gmtime  # use UTC
+    default_msec_format = "%s.%03d"  # "." instead of ","
+
+
+class CeleryTaskFormatter(TaskFormatter):
+    converter = time.gmtime  # use UTC
+    default_msec_format = "%s.%03d"  # "." instead of ","
+
+
+class CeleryTaskJsonFormatter(JsonFormatter):
+    """JsonFormatter for tasks, adding the task name and id
+
+    Based on celery.app.log.TaskFormatter
+    """
+
+    def format(self, record):
+        task = current_task
+        if task and task.request:
+            record.__dict__.update(task_id=task.request.id, task_name=task.name)
+        else:
+            record.__dict__.setdefault("task_name", "???")
+            record.__dict__.setdefault("task_id", "???")
+        return super().format(record)

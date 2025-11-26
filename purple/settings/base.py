@@ -150,6 +150,14 @@ CACHES = {
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 DEFAULT_FROM_EMAIL = os.getenv("PURPLE_DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
 
+ADMINS = [("Some Admin", "admin@example.org")]
+
+# Celery
+CELERY_TIMEZONE = "UTC"
+CELERY_BROKER_URL = os.environ.get("PURPLE_BROKER_URL", "amqp://mq/")
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
+CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
+
 # Crossref / DOI
 CROSSREF_API = "https://test.crossref.org/servlet/deposit"
 CROSSREF_USER = "user"

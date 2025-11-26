@@ -1,49 +1,40 @@
 <template>
-  <div class="h-full flex flex-col">
-    <div class="flex gap-2 justify-between p-2 border-b border-gray-400">
-      <span class="flex flex-row items-center text-md font-bold pl-1">
-        Document dependencies
-      </span>
-      <span class="flex flex-row gap-2">
-        <BaseButton btn-type="cancel" @click="closeOverlayModal" aria-label="Close modal">
-          &times;
-        </BaseButton>
-      </span>
-    </div>
-    <div ref="container" class="flex-1 overflow-hidden"></div>
-    <div class="flex gap-2 justify-between border-t border-gray-400 p-2">
-      <span class="flex flex-row items-center text-sm pl-1">
-        Pan and zoom the dependency graph after the layout settles.
-      </span>
-      <span class="flex flex-row items-center gap-2">
-        <RpcCheckbox label="Show legend" :value="true" :checked="showLegend" @change="showLegend = !showLegend"
-          size='medium' class="mr-3" />
-        <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
-          <span v-if="canDownload">
-            <Icon name="el:download-alt" size="1.1em" class="mr-2" />
-            Download
-          </span>
-          <span v-else>
-            <Icon name="ei:spinner-3" size="1.5em" class="animate-spin mr-2" />
-            Loading...
-          </span>
-        </BaseButton>
-        <BaseButton btn-type="cancel" @click="closeOverlayModal" aria-label="Close modal">
-          Cancel
-        </BaseButton>
-      </span>
-    </div>
+  <ErrorAlert v-if="rfcToBesStatus === 'error' || clusterDocumentsReferencesListStatus === 'error'"
+    title="Loading error. Reload page.">
+    {{ rfcToBesError }}
+    {{ clusterDocumentsReferencesListError }}
+  </ErrorAlert>
+
+  <div ref="container" class="overflow-hidden h-[75vh] border border-gray-700 rounded-md bg-white inset-shadow-sm">
+  </div>
+
+  <div class="flex gap-2 justify-between py-2 px-1.5">
+    <span class="flex flex-row items-center text-sm pl-1">
+      Pan and zoom the dependency graph after the layout settles.
+    </span>
+    <span class="flex flex-row items-center gap-2">
+      <RpcCheckbox label="Show legend" value="" :checked="showLegend" @change="showLegend = !showLegend" size='medium'
+        class="mr-3" />
+      <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
+        <span v-if="canDownload">
+          <Icon name="el:download-alt" size="1.1em" class="mr-2" />
+          Download
+        </span>
+        <span v-else>
+          <Icon name="ei:spinner-3" size="1.5em" class="animate-spin mr-2" />
+          Loading...
+        </span>
+      </BaseButton>
+    </span>
   </div>
 </template>
 
 <script setup lang="ts">
-import { overlayModalKey } from '~/providers/providerKeys';
+import { uniqBy } from 'lodash-es';
 import type { Cluster } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
-import { legendData, test_data2 } from '~/utils/document_relations-utils'
-import type { DataParam, NodeParam, LinkParam } from '~/utils/document_relations-utils';
+import { legendData, type DataParam, type LinkParam, type NodeParam, type Rel } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
-import { assert } from '~/utils/typescript';
 
 type Props = {
   cluster: Cluster
@@ -51,138 +42,151 @@ type Props = {
 
 const props = defineProps<Props>()
 
-const overlayModalKeyInjection = inject(overlayModalKey)
-
-if (!overlayModalKeyInjection) {
-  throw Error('Expected injection of overlayModalKey')
-}
-
-const { closeOverlayModal } = overlayModalKeyInjection
-
 const api = useApi()
+
+const snackbar = useSnackbar()
 
 const containerRef = useTemplateRef('container')
 
 const showLegend = ref(false)
 
-const { data: documentsReferencesByRfcs, error: documentsReferencesByRfcsError } = await useAsyncData(
-  async () => {
-    const documentsReferencesArray = await Promise.all(
+const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
+  async () =>
+    Promise.all(
       props.cluster.documents.map(
         (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
       ))
-    return documentsReferencesArray.map((documentsReferences, index) => {
-      const clusterDocument = props.cluster.documents[index]
-      if (!clusterDocument) {
-        return undefined
-      }
-      const { rfcNumber, name: draftName } = clusterDocument
-      assert(rfcNumber)
-      return ({
-        rfcNumber,
-        draftName,
-        documentsReferences
+)
+
+const { data: rfcToBes, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
+  async () => {
+    const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
+    const names: string[] = (clusterDocumentsReferencesList.value ?? []).flatMap(
+      (relatedDocuments): string[] => [
+        ...relatedDocuments.map((relatedDocument) => relatedDocument.draftName).filter(filterIsString),
+        ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString)
+      ])
+    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", names)
+    return Promise.all(
+      names.map(name => api.documentsRetrieve({ draftName: name }))
+    )
+  })
+
+const canDownload = ref(false)
+
+type SnackbarType = NonNullable<Parameters<(typeof snackbar)["add"]>[0]["type"]>
+
+const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
+  snackbar.add({
+    type,
+    title,
+    text: ''
+  })
+}
+
+const hasMounted = ref(false)
+
+const data = computed(() => {
+  const newData: DataParam = {
+    links: [],
+    nodes: []
+  }
+
+  const isNode = (data: unknown): data is NodeParam => {
+    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+    return isANode
+  }
+
+  const isLink = (data: unknown): data is LinkParam => {
+    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
+  }
+
+  if (rfcToBes.value) {
+    newData.nodes.push(
+      ...rfcToBes.value.map((rfcToBe): NodeParam | null => {
+        const { name } = rfcToBe
+        if (!name) return null
+        return { id: name, rfc: Boolean(rfcToBe.rfcNumber), url: `/docs/${name}`, level: parseLevel(rfcToBe.submittedStdLevel) }
+      }).filter(isNode)
+    )
+  }
+
+  if (clusterDocumentsReferencesList.value) {
+    clusterDocumentsReferencesList.value.forEach(documentsReferencesList => {
+      documentsReferencesList.forEach(reference => {
+        const { draftName, targetDraftName, relationship } = reference;
+        if (!draftName || !targetDraftName) {
+          return
+        }
+        newData.nodes.push(
+          { id: draftName },
+          { id: targetDraftName }
+        )
+        newData.links.push(
+          { source: draftName, target: targetDraftName, rel: relationship as Rel }
+        )
       })
-    }).filter(item => {
-      return (item !== undefined)
     })
   }
-)
 
-const { data: rfcToBes, error: rfcToBesError } = await useAsyncData(
-  async () =>
-    Promise.all(
-      documentsReferencesByRfcs.value?.flatMap(
-        (documentsReferencesByRfc) => {
-          const { documentsReferences } = documentsReferencesByRfc
+  if (props.cluster.documents) {
+    newData.nodes.push(...props.cluster.documents.map((document): NodeParam | null => {
+      const { name } = document
+      if (!name) return null
+      return {
+        id: name
+      }
+    }).filter(isNode))
 
-          return documentsReferences.map(documentReference => {
-            const { draftName } = documentReference
-            assert(draftName)
-            return api.documentsRetrieve({ draftName })
-          })
-        }
-      ) ?? [])
-)
-
-const canDownload = computed(() => Boolean(rfcToBes.value))
-
-const data = computed((): DataParam => {
-  return {
-    links: [
-      ...documentsReferencesByRfcs.value?.map((documentsReferencesByRfc): LinkParam => {
-        const { rfcNumber, draftName } = documentsReferencesByRfc
-
-        assert(rfcNumber)
-        assert(draftName)
-
+    newData.links.push(...props.cluster.documents.flatMap((document, index): LinkParam[] | null => {
+      const { name } = document
+      if (!name || !clusterDocumentsReferencesList.value) return null
+      const clusterDocumentReferences = clusterDocumentsReferencesList.value[index]
+      if (!clusterDocumentReferences) return null
+      return clusterDocumentReferences.map((clusterDocumentReference): LinkParam | null => {
+        const { draftName } = clusterDocumentReference
+        if (!draftName) return null
         return {
-          source: `rfc${rfcNumber}`,
-          rel: 'relinfo', //
+          source: name,
           target: draftName,
+          rel: 'relinfo',
         }
-      }) ?? [],
-
-      ...documentsReferencesByRfcs.value?.flatMap((documentsReferencesByRfc): LinkParam[] => {
-        const { rfcNumber, draftName, documentsReferences } = documentsReferencesByRfc
-
-        return documentsReferences.map((documentsReference): LinkParam => {
-          const {
-            draftName: source,
-            targetDraftName: target
-          } = documentsReference
-
-          assert(source)
-          assert(target)
-
-          return {
-            source,
-            rel: 'refnorm',
-            target,
-          }
-        })
-      }) ?? []
-    ],
-    nodes: [
-      ...rfcToBes.value?.map((rfcToBe): NodeParam => {
-        const {
-          name: id,
-          intendedStdLevel: level,
-        } = rfcToBe
-
-        assert(id)
-        assert(level)
-
-        return {
-          id,
-          url: `/doc/${id}/`,
-          rfc: true,
-          "post-wg": undefined,
-          expired: undefined,
-          replaced: undefined,
-          group: undefined,
-          level: undefined,
-        }
-      }) ?? []
-    ]
+      }).filter(isLink)
+    }).filter(isLink))
   }
+
+  newData.nodes = uniqBy(newData.nodes, (node) => node.id)
+  newData.links = uniqBy(newData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
+
+  return newData
 })
 
-watchEffect(() => {
+const attemptToRenderGraph = () => {
   const { value: container } = containerRef
 
   if (!container) {
-    console.error('container ref not found')
+    if (
+      // only bother reporting error if DOM ref was expected to be found, ie after mounting
+      hasMounted.value === true) {
+      console.error('container ref not found')
+    }
     return
   }
 
-  const args: DrawGraphParameters = showLegend.value ? [legendData, "this group"] : [test_data2, "stir"]
+  const graphData = structuredClone(
+    // the D3 code will mutate arg data so we'll make a copy
+    data.value
+  )
+
+  const args: DrawGraphParameters = showLegend.value
+    ? [legendData]
+    : [graphData]
 
   let [leg_el, leg_sim] = draw_graph(...args);
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
-    console.error('Received unexpected response from draw_graph', { leg_el, leg_sim })
-    return
+    console.error({ leg_el, leg_sim })
+    return snackbarMessage(`Received unexpected response from draw_graph. See dev console.`)
   }
 
   while (container.firstChild) {
@@ -192,24 +196,31 @@ watchEffect(() => {
   container.appendChild(leg_el)
 
   if (leg_sim instanceof SVGSVGElement) {
-    console.log({ leg_sim })
-    throw Error('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See console.')
+    console.error({ leg_sim })
+    return snackbarMessage('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See dev console.')
   } else {
     leg_sim.restart();
   }
+
+  canDownload.value = true // now that we've rendered the SVG we can offer it for download
+}
+
+onMounted(() => {
+  hasMounted.value === true
+  attemptToRenderGraph()
 })
+
+watch([data, showLegend], attemptToRenderGraph)
 
 const handleDownload = () => {
   if (!canDownload.value) {
-    alert('Not ready to download')
-    return
+    return snackbarMessage('Still preparing download. Try again soon')
   }
   const { value: container } = containerRef
   if (!container) {
-    console.error('container ref not found')
-    return
+    return snackbarMessage('container ref not found')
   }
-  const svgString = container.outerHTML
+  const svgString = container.innerHTML
   downloadTextFile(`cluster-${props.cluster.number}.svg`, 'text/svg', svgString)
 }
 </script>

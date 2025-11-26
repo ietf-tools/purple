@@ -1,6 +1,6 @@
 <template>
   <fieldset class="mb-2 flex items-center gap-5">
-    <label class="text-gray-900 w-[160px] text-right text-sm font-bold" :for="props.id"> {{ props.label }}:</label>
+    <label class="text-gray-900 w-[160px] text-right text-sm font-bold mr-1" :for="props.id"> {{ props.label }}:</label>
     <div>
       <SelectRoot :id="props.id" v-model="model">
         <SelectTrigger class="block flex justify-between gap-2 text-sm border border-gray-700 px-2 py-1.5 rounded-lg">

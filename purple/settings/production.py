@@ -3,9 +3,14 @@
 
 import json
 import os
+from email.utils import parseaddr
 from hashlib import sha384
 
 from .base import *
+from .logging.production import LOGGING as _logging
+
+# Logging config
+LOGGING = _logging
 
 
 def _multiline_to_list(s):
@@ -136,3 +141,10 @@ if _email_host is not None:
     EMAIL_HOST = _email_host
     if _email_port is not None:
         EMAIL_PORT = _email_port
+
+
+_admins_str = os.environ.get("PURPLE_ADMINS", None)
+if _admins_str is not None:
+    ADMINS = [parseaddr(admin) for admin in _multiline_to_list(_admins_str)]
+else:
+    raise RuntimeError("PURPLE_ADMINS must be set")

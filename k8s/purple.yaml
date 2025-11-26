@@ -123,10 +123,10 @@ spec:
           volumeMounts:
             - name: nginx-tmp
               mountPath: /tmp
-            - name: dt-cfg
+            - name: purple-cfg
               mountPath: /etc/nginx/conf.d/00logging.conf
               subPath: nginx-logging.conf
-            - name: dt-cfg
+            - name: purple-cfg
               mountPath: /etc/nginx/conf.d/default.conf
               subPath: nginx-purple.conf
       initContainers:
@@ -157,7 +157,7 @@ spec:
         - name: frontend-tmp
           emptyDir:
             sizeLimit: "500Mi"
-        - name: dt-cfg
+        - name: purple-cfg
           configMap:
             name: purple-files-cfgmap
         - name: nginx-tmp

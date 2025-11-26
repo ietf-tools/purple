@@ -74,6 +74,15 @@ MIDDLEWARE += [
     "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
+
+# Logging
+_debug_prod_logging = False
+if _debug_prod_logging:
+    from .logging.production import LOGGING as _logging
+else:
+    from .logging.development import LOGGING as _logging
+LOGGING = _logging
+
 # Add debug toolbar configuration
 # set IPs where debug toolbar should be shown, might need to add local IPs for docker
 # or comment out to disable toolbar

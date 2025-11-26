@@ -26,8 +26,11 @@
           :value="searchResult"
           class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
         >
-          <span>
+          <span class="font-bold">
             {{ searchResult.name }}
+          </span>
+          <span class="font-normal ml-1" v-if="searchResult.personId">
+            {{ SPACE }}{{ ` #${searchResult.personId}` }}
           </span>
         </ComboboxItem>
       </ComboboxViewport>

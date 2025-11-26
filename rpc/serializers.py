@@ -18,6 +18,7 @@ from datatracker.utils import build_datatracker_url
 
 from .models import (
     ActionHolder,
+    ApprovalLogMessage,
     Assignment,
     Capability,
     Cluster,
@@ -317,18 +318,39 @@ class FinalApprovalSerializer(serializers.Serializer):
 
     id = serializers.IntegerField(read_only=True)
     rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
-    body = serializers.CharField(required=False, allow_blank=True)
     requested = serializers.DateTimeField(read_only=True)
     approver = BaseDatatrackerPersonSerializer(read_only=True)
     approved = serializers.DateTimeField(required=False, allow_null=True)
     overriding_approver = BaseDatatrackerPersonSerializer(
         allow_null=True, read_only=True
     )
+    approver_person_id = serializers.IntegerField(write_only=True, required=False)
+    overriding_approver_person_id = serializers.IntegerField(
+        write_only=True, required=False
+    )
 
     def update(self, instance, validated_data):
-        # Only 'approved', 'body' field shall be updated, for other fields we consider
-        # it a different item
-        FinalApproval.objects.filter(pk=instance.pk).update(**validated_data)
+        approver_person_id = validated_data.pop("approver_person_id", None)
+        approver_dt_person = None
+        if approver_person_id:
+            approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=approver_person_id
+            )
+
+        overriding_approver_person_id = validated_data.pop(
+            "overriding_approver_person_id", None
+        )
+        overriding_approver_dt_person = None
+        if overriding_approver_person_id:
+            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+                datatracker_id=overriding_approver_person_id
+            )
+
+        FinalApproval.objects.filter(pk=instance.pk).update(
+            overriding_approver=overriding_approver_dt_person,
+            approver=approver_dt_person,
+            **validated_data,
+        )
         return FinalApproval.objects.get(pk=instance.pk)
 
 
@@ -903,9 +925,17 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
 class UnusableRfcNumberSerializer(serializers.ModelSerializer):
     """Serialize an Unusable Rfc Number"""
 
+    created_at = serializers.SerializerMethodField()
+
     class Meta:
         model = UnusableRfcNumber
-        fields = ["number", "comment"]
+        fields = ["number", "comment", "created_at"]
+
+    @extend_schema_field(serializers.DateTimeField())
+    def get_created_at(self, obj):
+        # Get the creation date from history
+        first_history = obj.history.filter(history_type="+").first()
+        return first_history.history_date if first_history else None
 
 
 class CreateFinalApprovalSerializer(FinalApprovalSerializer):
@@ -969,3 +999,24 @@ class MailTemplateSerializer(serializers.Serializer):
 class MailResponseSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["success", "error"])
     message = serializers.CharField()
+
+
+class ApprovalLogMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    by = DatatrackerPersonSerializer(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    log_message = serializers.CharField()
+    time = serializers.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        # Set the 'by' field to the current user
+        request = self.context.get("request")
+        validated_data["by"] = request.user.datatracker_person()
+
+        return ApprovalLogMessage.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
+            **validated_data,
+        )
+        return ApprovalLogMessage.objects.get(pk=instance.pk)

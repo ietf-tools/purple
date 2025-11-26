@@ -1,6 +1,8 @@
+./openapi/rpcapi_client
+celery>=5.5.3
 Django>=5.2
+django-debug-toolbar>=4.0.0
 django-filter>=25.1
-rules>=3.5
 django-simple-history>=3.4
 django-stubs>=5.2
 djangorestframework>=3.14
@@ -11,5 +13,4 @@ mozilla-django-oidc>=4.0.0
 psycopg2>=2.9.7
 pymemcache>=4.0.0
 python-json-logger>=2.0.7
-django-debug-toolbar>=4.0.0
-./openapi/rpcapi_client
+rules>=3.5

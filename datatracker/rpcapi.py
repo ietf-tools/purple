@@ -1,5 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
-
+# Copyright The IETF Trust 2023-2025, All Rights Reserved
 from functools import wraps
 from urllib.parse import urlparse
 
@@ -32,6 +31,10 @@ class ApiClient(rpcapi_client.ApiClient):
                 )
 
 
+def get_rpcapi_client():
+    return rpcapi_client.PurpleApi(ApiClient())
+
+
 def with_rpcapi(f):
     @wraps(f)
     def wrapper(*args, **kwargs):
@@ -40,8 +43,7 @@ def with_rpcapi(f):
             return f(*args, **kwargs)
 
         # Create our own api instance and pass it to the wrapped function
-        with ApiClient() as client:
-            kwargs["rpcapi"] = rpcapi_client.PurpleApi(client)
-            return f(*args, **kwargs)
+        kwargs["rpcapi"] = get_rpcapi_client()
+        return f(*args, **kwargs)
 
     return wrapper

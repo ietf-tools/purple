@@ -1,10 +1,10 @@
 <template>
-  <FinalReviewInProgress :name="props.name" :heading-level="4" />
+  <FinalReviewsInProgress :name="props.name" :heading-level="4" />
   <ErrorAlert v-if="error" title="API Error for Done / PUB">
     {{ error }}
   </ErrorAlert>
-  <FinalReviewDone :queue-items="queueItemsFilterDone" :error="error" :status="status" :heading-level="4" />
-  <FinalReviewForPublication :queue-items="queueItemsFilterPublisher" :error="error" :status="status"
+  <FinalReviewsDone :queue-items="queueItemsFilterDone" :error="error" :status="status" :heading-level="4" />
+  <FinalReviewsForPublication :queue-items="queueItemsFilterPublisher" :error="error" :status="status"
     :heading-level="4" />
 </template>
 

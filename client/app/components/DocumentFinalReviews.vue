@@ -3,7 +3,7 @@
     {{ error }}
   </ErrorAlert>
 
-  <Heading :heading-level="props.headingLevel" class="mt-5">
+  <Heading :heading-level="props.headingLevel" class="mt-5" id="final-review">
     Final Reviews {{ status === 'success' ? `(${table.getRowCount()})` : '' }}
   </Heading>
 
@@ -36,7 +36,7 @@
     <RpcTfoot>
       <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
         <RpcTh :colSpan="1">
-          <BaseButton @click="openAddModal()">Add final review</BaseButton>
+          <BaseButton @click="openAddModal()" title="Add Final Review approver">Add</BaseButton>
         </RpcTh>
       </tr>
     </RpcTfoot>
@@ -94,6 +94,7 @@ const columns = [
       if (!approver) {
         return h('i', '(no approver)')
       }
+
       const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
         return h('span', [
           h('a', { href: author.email ? datatrackerPersonLink(author.email) : undefined, class: ANCHOR_STYLE }, [
@@ -106,12 +107,10 @@ const columns = [
       const approverVNode = formatAuthor(approver)
       if (!rowOriginal.overridingApprover) {
         return h('span', [
-          'Approved by ',
           approverVNode,
         ])
       }
       return h('span', [
-        'Approved by ',
         formatAuthor(rowOriginal.overridingApprover),
         ' on behalf of ',
         approverVNode
@@ -167,13 +166,7 @@ const columns = [
     id: 'action',
     header: 'Action',
     cell: (data) => {
-      const status = finalApprovalToStatus(data.row.original)
-      switch (status) {
-        case 'approved':
-          return h('i', 'Complete')
-        case 'pending':
-          return h(BaseButton, { btnType: 'default', size: 'xs', 'onClick': () => openEditModal(data.row.original) }, () => 'Approve')
-      }
+      return h(BaseButton, { btnType: 'default', size: 'xs', title: `Edit Final Review approver`, 'onClick': () => openEditModal(data.row.original) }, () => 'Edit')
     }
   }),
 ]

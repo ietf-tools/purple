@@ -9,6 +9,7 @@ RUN groupadd -g 1000 rpc && \
 COPY . .
 COPY ./dev/build/start.sh ./start.sh
 COPY ./dev/build/backend-start.sh ./backend-start.sh
+COPY ./dev/build/celery-start.sh ./celery-start.sh
 COPY ./dev/build/migration-start.sh ./migration-start.sh
 COPY ./dev/build/gunicorn.conf.py ./gunicorn.conf.py
 
@@ -19,6 +20,7 @@ RUN PURPLE_DEPLOYMENT_MODE=build ./manage.py spectacular --file purple_api.yaml 
 
 RUN chmod +x start.sh && \
     chmod +x backend-start.sh && \
+    chmod +x celery-start.sh && \
     chmod +x migration-start.sh
 
 CMD ["./start.sh"]

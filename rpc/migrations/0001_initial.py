@@ -690,13 +690,11 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("body", models.CharField(blank=True, default="", max_length=64)),
                 ("requested", models.DateTimeField(default=django.utils.timezone.now)),
                 ("approved", models.DateTimeField(null=True)),
                 (
                     "approver",
                     models.ForeignKey(
-                        null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="approver_set",
                         to="datatracker.datatrackerperson",
@@ -1158,40 +1156,6 @@ class Migration(migrations.Migration):
                 violation_error_message=(
                     "each author order must be unique per document"
                 ),
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="finalapproval",
-            constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("approved__isnull", True),
-                    ("approver__isnull", False),
-                    _connector="OR",
-                ),
-                name="finalapproval_approval_requires_approver",
-                violation_error_message="approval requires an approver",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="finalapproval",
-            constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("overriding_approver__isnull", True),
-                    ("approver__isnull", False),
-                    _connector="OR",
-                ),
-                name="finalapproval_approval_override_requires_approver",
-                violation_error_message="approval override requires an approver be set",
-            ),
-        ),
-        migrations.AddConstraint(
-            model_name="finalapproval",
-            constraint=models.CheckConstraint(
-                condition=models.Q(
-                    ("body", ""), ("overriding_approver__isnull", True), _connector="OR"
-                ),
-                name="finalapproval_body_approval_no_override",
-                violation_error_message="body approval cant be overridden",
             ),
         ),
         migrations.AddConstraint(
