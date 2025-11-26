@@ -110,6 +110,10 @@
               </div>
             </div>
           </div>
+          <fieldset>
+            <legend class="block text-sm font-medium leading-6 text-gray-900">IANA Actions</legend>
+            <IANAActions v-model="state.ianaAction" />
+          </fieldset>
           <!-- Comments -->
           <div v-if="!backendPending" class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-4 space-y-4">
@@ -145,6 +149,7 @@ import { DateTime } from 'luxon'
 import humanizeDuration from 'humanize-duration'
 import type { PaginatedDocumentCommentList, Name } from '~/purple_client'
 import { computed } from 'vue'
+import { type IANAActionsEnum } from '../../utils/iana'
 
 const route = useRoute()
 const api = useApi()
@@ -154,12 +159,13 @@ const currentTime = useCurrentTime()
 const today = computed(() => currentTime.value.startOf('day'))
 
 type State = {
-  boilerplate: Name | null,
-  sourceFormat: Name | null,
-  stdLevel: Name | null,
-  stream: Name | null,
-  deadline: string | null,
+  boilerplate: Name | null
+  sourceFormat: Name | null
+  stdLevel: Name | null
+  stream: Name | null
+  deadline: string | null
   labels: number[]
+  ianaAction: IANAActionsEnum
 }
 
 const state = reactive<State>({
@@ -168,7 +174,8 @@ const state = reactive<State>({
   stdLevel: null,
   stream: null,
   deadline: today.value.plus({ weeks: 6 }).toISODate(),
-  labels: []
+  labels: [],
+  ianaAction: 'iana-no-actions'
 })
 
 // COMPUTED

@@ -126,6 +126,11 @@
           </DocumentDependencies>
         </div>
 
+        <BaseCard class="lg:col-span-full grid place-items-stretch">
+          <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" iana-action="iana-no-actions"
+            :on-success="rfcToBeReload" :name="rawRfcToBe.name" />
+        </BaseCard>
+
         <div class="lg:col-span-full">
           <DocumentFinalReviews :heading-level="4" :name="draftName" :on-success="() => commentsReload()" />
         </div>
@@ -224,7 +229,7 @@ const {
   refresh: historyRefresh
 } = await useHistoryForDraft(draftName.value)
 
-const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus } = await useAsyncData(
+const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeReload } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
