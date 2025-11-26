@@ -1,10 +1,10 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-from datetime import UTC, datetime
 from uuid import uuid4
 from xml.etree import ElementTree
 
 from django.conf import settings
+from django.utils import timezone
 
 from rpc.models import RfcToBe
 
@@ -70,6 +70,7 @@ def _generate_crossref_xml(rfc_number):
 
     # get RFC data
     rfc = RfcToBe.objects.get(rfc_number=rfc_number)
+    doc_id = f"RFC{rfc.rfc_number}"
 
     # construct XML
     root = ElementTree.Element(
@@ -88,7 +89,7 @@ def _generate_crossref_xml(rfc_number):
     # head
     head = ElementTree.SubElement(root, "head")
     ElementTree.SubElement(head, "doi_batch_id").text = str(uuid4())
-    ElementTree.SubElement(head, "timestamp").text = datetime.now(UTC).strftime(
+    ElementTree.SubElement(head, "timestamp").text = timezone.now().strftime(
         DATETIME_FMT
     )
 
@@ -107,7 +108,7 @@ def _generate_crossref_xml(rfc_number):
     # body → report-paper
     report_paper = ElementTree.SubElement(body, "report-paper")
     report_paper.append(
-        ElementTree.Comment(f"Translation of {rfc.doc_id} {rfc.stream}")
+        ElementTree.Comment(f"Translation of {doc_id} {rfc.intended_stream.name}")
     )
 
     # body → report-paper → report-paper_metadata
@@ -121,7 +122,7 @@ def _generate_crossref_xml(rfc_number):
 
     # body → report-paper → report-paper_metadata →
     #   contributors → person_name | organization
-    for author in rfc.authors():
+    for author in rfc.authors.all():
         contributors.append(_get_contributors(author, sequence))
         # change sequence
         if sequence == "first":
@@ -139,10 +140,10 @@ def _generate_crossref_xml(rfc_number):
     )
 
     # body → report-paper → report-paper_metadata → publication_date → month
-    ElementTree.SubElement(pub_date, "month").text = rfc.published_at.month
+    ElementTree.SubElement(pub_date, "month").text = str(rfc.published_at.month)
 
     # body → report-paper → report-paper_metadata → publication_date → year
-    ElementTree.SubElement(pub_date, "year").text = rfc.published_at.year
+    ElementTree.SubElement(pub_date, "year").text = str(rfc.published_at.year)
 
     # body → report-paper → report-paper_metadata → publisher
     publisher = ElementTree.SubElement(report_paper_metadata, "publisher")
@@ -154,7 +155,7 @@ def _generate_crossref_xml(rfc_number):
     publisher_item = ElementTree.SubElement(report_paper_metadata, "publisher_item")
 
     # body → report-paper → report-paper_metadata → publisher_item → item_number
-    ElementTree.SubElement(publisher_item, "item_number").text = rfc.doc_id.lower()
+    ElementTree.SubElement(publisher_item, "item_number").text = doc_id.lower()
 
     # body → report-paper → report-paper_metadata → doi_data
     doi_data = ElementTree.SubElement(report_paper_metadata, "doi_data")
@@ -162,11 +163,11 @@ def _generate_crossref_xml(rfc_number):
     # body → report-paper → report-paper_metadata → doi_data → doi
     ElementTree.SubElement(
         doi_data, "doi"
-    ).text = f"{settings.DOI_PREFIX}/{rfc.doc_id.lower()}"
+    ).text = f"{settings.DOI_PREFIX}/{doc_id.lower()}"
 
     # body → report-paper → report-paper_metadata → resource_data → resource
     ElementTree.SubElement(
         doi_data, "resource"
-    ).text = f"{settings.DOI_URL}/{rfc.doc_id.lower()}"
+    ).text = f"{settings.DOI_URL}/{doc_id.lower()}"
 
     return root
