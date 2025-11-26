@@ -97,9 +97,7 @@ class CrossrefTests(TestCase):
         xml_str = tostring(xml, encoding="unicode")
 
         # registrant
-        self.assertIn(
-            f"<registrant_name>{settings.DOI_REGISTRANT}</registrant_name>", xml_str
-        )
+        self.assertIn(f"<registrant>{settings.DOI_REGISTRANT}</registrant>", xml_str)
 
         # depositor
         self.assertIn(
@@ -125,7 +123,7 @@ class CrossrefTests(TestCase):
         self.assertIn(f"<year>{PUBLISHED.year}</year>", xml_str)
         self.assertIn(f"<item_number>rfc{RFC}</item_number>", xml_str)
         self.assertIn(f"<doi>{settings.DOI_PREFIX}/rfc{RFC}</doi>", xml_str)
-        self.assertIn(f"<resource>{settings.DOI_URL}/rfc{RFC}</resource>", xml_str)
+        self.assertIn(f"<resource>{settings.DOI_URL}rfc{RFC}</resource>", xml_str)
 
     @override_settings(
         CROSSREF_API="https://test.crossref.org/servlet/deposit",

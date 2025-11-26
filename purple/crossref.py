@@ -1,6 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-from tempfile import NamedTemporaryFile
 from uuid import uuid4
 from xml.etree import ElementTree
 
@@ -83,7 +82,7 @@ def _generate_crossref_xml(rfc_number):
             "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
             "xsi:schemaLocation": (
                 f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION} "
-                "http://www.crossref.org/schema/deposit/crossref{settings.CROSSREF_VERSION}.xsd"
+                f"http://www.crossref.org/schema/deposit/crossref{settings.CROSSREF_VERSION}.xsd"
             ),
         },
     )
@@ -101,8 +100,7 @@ def _generate_crossref_xml(rfc_number):
     ElementTree.SubElement(depositor, "email_address").text = settings.DOI_EMAIL
 
     # head → registrant
-    registrant = ElementTree.SubElement(head, "registrant")
-    ElementTree.SubElement(registrant, "registrant_name").text = settings.DOI_REGISTRANT
+    ElementTree.SubElement(head, "registrant").text = settings.DOI_REGISTRANT
 
     # body
     body = ElementTree.SubElement(root, "body")
@@ -170,7 +168,7 @@ def _generate_crossref_xml(rfc_number):
     # body → report-paper → report-paper_metadata → resource_data → resource
     ElementTree.SubElement(
         doi_data, "resource"
-    ).text = f"{settings.DOI_URL}/{doc_id.lower()}"
+    ).text = f"{settings.DOI_URL}{doc_id.lower()}"
 
     return root
 
@@ -178,18 +176,20 @@ def _generate_crossref_xml(rfc_number):
 def submit(rfc_number):
     """Post DOI data to crossref"""
 
-    xml = ElementTree.ElementTree(_generate_crossref_xml(rfc_number))
+    xml = _generate_crossref_xml(rfc_number)
     data = {
-        "operation": "doQueryUpload",
+        "operation": "doMDUpload",
         "login_id": settings.CROSSREF_USER,
         "login_passwd": settings.CROSSREF_PASSWORD,
     }
 
-    with NamedTemporaryFile(mode="w+b") as file:
-        xml.write(file, encoding="utf-8")
-        file.flush()
+    files = {
+        "fname": (
+            f"rfc{rfc_number}.xml",
+            ElementTree.tostring(xml, encoding="unicode"),
+            "application/xml",
+        )
+    }
 
-        files = {"fname": file.name}
-
-        response = post(settings.CROSSREF_API, data=data, files=files)
-        response.raise_for_status()
+    response = post(settings.CROSSREF_API, data=data, files=files)
+    response.raise_for_status()
