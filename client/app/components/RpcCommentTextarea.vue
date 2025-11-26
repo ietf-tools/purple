@@ -41,7 +41,7 @@
               size="1.1em"
               class="animate-spin mr-1"
             />
-            Post
+            Add comment (private)
           </button>
         </div>
       </form>

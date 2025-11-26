@@ -23,6 +23,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         </span>
       </h1>
       <button
+        type="button"
         @click="props.reloadComments"
         class="border ml-3 border-gray-200 px-2 py-1"
       >

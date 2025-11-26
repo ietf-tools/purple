@@ -114,7 +114,7 @@
           <div v-if="!backendPending" class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-4 space-y-4">
             <label for="comments" class="block text-sm font-medium leading-6 text-gray-900">Comments</label>
-            <RpcTextarea v-if="submission?.name"
+            <RpcCommentTextarea v-if="submission?.name"
               :draft-name="submission?.name"
               :reload-comments="comments.reload"
               class="w-4/5 min-w-100"

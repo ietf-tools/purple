@@ -37,7 +37,7 @@
           <CardHeader title="Comments" />
         </template>
         <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-          <RpcTextarea v-if="rfcToBe" :draft-name="id" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
+          <RpcCommentTextarea v-if="rfcToBe" :draft-name="id" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
           <DocumentComments :draft-name="id" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
             :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
             class="w-3/5 min-w-100" />

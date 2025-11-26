@@ -179,7 +179,7 @@
             <CardHeader title="Comments (private)" />
           </template>
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload"
+            <RpcCommentTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload"
               class="w-4/5 min-w-100" />
             <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
               :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
@@ -192,10 +192,10 @@
             <CardHeader title="Approval Logs (public)" />
           </template>
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-            <RpcTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="approvalLogsListReload"
+            <RpcApprovalLogTextarea v-if="rfcToBe" :draft-name="draftName" :reload="approvalLogsListReload"
               class="w-4/5 min-w-100" />
             <DocumentApprovalLogs :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="approvalLogsListPending"
-              :error="approvalLogsListError" :comment-list="approvalLogsList" :reload-comments="approvalLogsListReload"
+              :error="approvalLogsListError" :comment-list="approvalLogsList" :reload="approvalLogsListReload"
               class="w-3/5 min-w-100" />
           </div>
         </BaseCard>
@@ -235,9 +235,9 @@ const {
   error: approvalLogsListError,
   refresh: approvalLogsListReload
 } = await useAsyncData(
-    `comments-${draftName}`,
+    `approval-log-${draftName.value}`,
     () => api.documentsApprovalLogsList({ draftName: draftName.value }),
-    { server: false }
+    { server: false, lazy: true }
   )
 
 const {
@@ -265,7 +265,7 @@ const appliedLabels = computed(() => labels.value.filter((lbl) => {
 // todo retrieve assignments for a single draft more efficiently
 const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   () => api.assignmentsList(),
-  { server: false, default: () => [] as Assignment[] }
+  { server: false, lazy: true, default: () => [] as Assignment[] }
 )
 
 const rfcToBeAssignments = computed(() =>
@@ -345,7 +345,7 @@ watch(
 
 const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
-  { server: false, default: () => [] }
+  { server: false, lazy: true, default: () => [] }
 )
 
 const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
@@ -485,7 +485,5 @@ const openEmailModal = async () => {
       throw e
     }
   })
-
 }
-
 </script>

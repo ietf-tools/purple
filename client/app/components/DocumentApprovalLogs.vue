@@ -23,7 +23,8 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         </span>
       </h1>
       <button
-        @click="props.reloadComments"
+        type="button"
+        @click="props.reload"
         class="border ml-3 border-gray-200 px-2 py-1"
       >
         Try again
@@ -32,21 +33,20 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
     <div v-if="props.isLoading" class="text-center">
       <Icon name="ei:spinner-3" size="3.5em" class="animate-spin mb-3" />
     </div>
-    <div v-if="props.commentList?.count === 0" class="text-center text-sm mt-4 mb-2">
-      <p class="italic text-gray-500">no comments</p>
-
+    <div v-if="props.commentList && props.commentList.length === 0" class="text-center text-sm mt-4 mb-2">
+      <p class="italic text-gray-500">no approval logs</p>
     </div>
     <ul role="list" class="space-y-6">
       <li
-        v-for="(comment, commentIndex) in cookedComments"
-        :key="comment.id"
+        v-for="(approvalLogMessage, commentIndex) in cookedApprovalLogMessages"
+        :key="approvalLogMessage.id"
         class="relative flex gap-x-4"
       >
-        <DocumentComment
+        <DocumentApprovalLog
           :draft-name="props.draftName"
-          :comment="comment"
-          :is-last-comment="commentIndex === cookedComments.length"
-          :reload-comments="reloadComments"
+          :approvalLogMessage="approvalLogMessage"
+          :is-last="commentIndex === cookedApprovalLogMessages.length"
+          :reload="props.reload"
         />
       </li>
     </ul>
@@ -63,12 +63,12 @@ type Props = {
   isLoading: boolean
   error?: NuxtError | null
   commentList?: ApprovalLogMessage[] | null | undefined
-  reloadComments: () => Promise<void>
+  reload: () => Promise<void>
 }
 
 const props = defineProps<Props>()
 
-const cookedComments = computed(() => {
+const cookedApprovalLogMessages = computed(() => {
   return (
     props.commentList?.map((comment) => ({
       ...comment,
