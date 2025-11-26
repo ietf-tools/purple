@@ -1,10 +1,12 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
+from tempfile import NamedTemporaryFile
 from uuid import uuid4
 from xml.etree import ElementTree
 
 from django.conf import settings
 from django.utils import timezone
+from requests import post
 
 from rpc.models import RfcToBe
 
@@ -171,3 +173,23 @@ def _generate_crossref_xml(rfc_number):
     ).text = f"{settings.DOI_URL}/{doc_id.lower()}"
 
     return root
+
+
+def submit(rfc_number):
+    """Post DOI data to crossref"""
+
+    xml = ElementTree.ElementTree(_generate_crossref_xml(rfc_number))
+    data = {
+        "operation": "doQueryUpload",
+        "login_id": settings.CROSSREF_USER,
+        "login_passwd": settings.CROSSREF_PASSWORD,
+    }
+
+    with NamedTemporaryFile(mode="w+b") as file:
+        xml.write(file, encoding="utf-8")
+        file.flush()
+
+        files = {"fname": file.name}
+
+        response = post(settings.CROSSREF_API, data=data, files=files)
+        response.raise_for_status()

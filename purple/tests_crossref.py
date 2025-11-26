@@ -2,11 +2,18 @@
 
 from xml.etree.ElementTree import tostring
 
+import responses
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.utils import timezone
+from requests.exceptions import HTTPError
 
-from purple.crossref import _generate_crossref_xml, _get_contributors, _get_name_parts
+from purple.crossref import (
+    _generate_crossref_xml,
+    _get_contributors,
+    _get_name_parts,
+    submit,
+)
 from rpc.factories import RfcAuthorFactory, RfcToBeFactory, StreamNameFactory
 
 
@@ -119,3 +126,58 @@ class CrossrefTests(TestCase):
         self.assertIn(f"<item_number>rfc{RFC}</item_number>", xml_str)
         self.assertIn(f"<doi>{settings.DOI_PREFIX}/rfc{RFC}</doi>", xml_str)
         self.assertIn(f"<resource>{settings.DOI_URL}/rfc{RFC}</resource>", xml_str)
+
+    @override_settings(
+        CROSSREF_API="https://test.crossref.org/servlet/deposit",
+        CROSSREF_USER="sauron",
+        CROSSREF_PASSWORD="mordor",
+    )
+    @responses.activate
+    def test_submit(self):
+        responses.add(responses.POST, settings.CROSSREF_API, status=200)
+
+        RFC = 12345
+        PUBLISHED = timezone.now()
+        stream = StreamNameFactory.create(slug="ietf", name="IETF")
+        rfc = RfcToBeFactory.create(
+            rfc_number=RFC, published_at=PUBLISHED, submitted_stream=stream
+        )
+        rfc.draft.title = "The Book of Mazarbul"
+        rfc.draft.save()
+        rfc_author_1 = RfcAuthorFactory.create(
+            titlepage_name="A. Undómiel", is_editor=True
+        )
+        rfc_author_2 = RfcAuthorFactory.create(
+            titlepage_name="L. Greenleaf", is_editor=False
+        )
+        rfc.authors.set([rfc_author_1, rfc_author_2])
+
+        submit(RFC)
+
+    @override_settings(
+        CROSSREF_API="https://test.crossref.org/servlet/deposit",
+        CROSSREF_USER="sauron",
+        CROSSREF_PASSWORD="mordor",
+    )
+    @responses.activate
+    def test_submit_error(self):
+        responses.add(responses.POST, settings.CROSSREF_API, status=400)
+
+        RFC = 12345
+        PUBLISHED = timezone.now()
+        stream = StreamNameFactory.create(slug="ietf", name="IETF")
+        rfc = RfcToBeFactory.create(
+            rfc_number=RFC, published_at=PUBLISHED, submitted_stream=stream
+        )
+        rfc.draft.title = "The Book of Mazarbul"
+        rfc.draft.save()
+        rfc_author_1 = RfcAuthorFactory.create(
+            titlepage_name="A. Undómiel", is_editor=True
+        )
+        rfc_author_2 = RfcAuthorFactory.create(
+            titlepage_name="L. Greenleaf", is_editor=False
+        )
+        rfc.authors.set([rfc_author_1, rfc_author_2])
+
+        with self.assertRaises(HTTPError):
+            submit(RFC)
