@@ -30,27 +30,33 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
     """
     if rfctobe.disposition_id != "in_progress":
         raise serializers.ValidationError(
-            "disposition is not 'in_progress'"
+            "disposition is not 'in_progress'",
+            code="rfctobe-bad-disposition",
         )
     if rfctobe.assignment_set.active().exclude(role_id="publisher").exists():
         raise serializers.ValidationError(
-            "document has open assignments other than publisher"
+            "document has open assignments other than publisher",
+            code="rfctobe-open-assignments",
         )
     if not rfctobe.assignment_set.active().filter(role_id="publisher").exists():
         raise serializers.ValidationError(
-            "document is not assigned a publisher"
+            "document is not assigned a publisher",
+            code="rfctobe-no-publisher",
         )
     if rfctobe.finalapproval_set.count() == 0:
         raise serializers.ValidationError(
-            "no final approvals have been completed"
+            "no final approvals have been completed",
+            code="rfctobe-no-final-approvals",
         )
     if rfctobe.finalapproval_set.active().exists():
         raise serializers.ValidationError(
-            "final approvals are pending"
+            "final approvals are pending",
+            code="rfctobe-pending-final-approvals",
         )
     if rfctobe.rfc_number is None:
         raise serializers.ValidationError(
-            "no RFC number is assigned"
+            "no RFC number is assigned",
+            code="rfctobe-no-rfc-number",
         )
 
 
