@@ -43,7 +43,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from datatracker.tasks import notify_rfc_published_task
+from .lifecycle.publication import publish_rfctobe, can_publish, is_ready_to_publish
 
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
@@ -595,10 +595,12 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=["post"])
     def publish(self, request, draft__name=None):
         rfctobe = self.get_object()
-        # todo check that user has publisher assignment
-        # todo check that rfc is in appropriate state (whatever that means)
-        notify_rfc_published_task.delay(rfctobe_id=rfctobe.pk)
-        return Response()
+        if not can_publish(rfctobe, request.user):
+            raise PermissionDenied("User is not permitted to publish this RFC")
+        if not is_ready_to_publish(rfctobe):
+            raise serializers.ValidationError("RFC not ready for publication")
+        publish_rfctobe(rfctobe)
+        return Response()  # todo return value
 
 
 @extend_schema_with_draft_name()
