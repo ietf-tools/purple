@@ -4,7 +4,7 @@ from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from .blocked_assignments import apply_blocked_assignment_for_rfc
+from .lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from .models import (
     ActionHolder,
     Assignment,

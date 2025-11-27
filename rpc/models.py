@@ -222,14 +222,14 @@ class RfcToBe(models.Model):
         return intervals
 
     def incomplete_activities(self):
-        from .lifecycle import incomplete_activities
+        from .lifecycle.activities import incomplete_activities
 
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in incomplete_activities(self)]
         )
 
     def pending_activities(self):
-        from .lifecycle import pending_activities
+        from .lifecycle.activities import pending_activities
 
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in pending_activities(self)]

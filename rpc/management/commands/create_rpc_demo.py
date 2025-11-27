@@ -7,7 +7,7 @@ from django.core.management.base import BaseCommand
 from django.db.utils import IntegrityError
 
 from datatracker.rpcapi import with_rpcapi
-from rpc.blocked_assignments import update_blocked_assignments_for_in_progress_rfcs
+from rpc.lifecycle.blocked_assignments import update_blocked_assignments_for_in_progress_rfcs
 from rpc.signals import SignalsManager
 
 from ...factories import (

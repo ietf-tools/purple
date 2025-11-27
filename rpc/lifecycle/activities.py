@@ -1,9 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-"""RfcToBe lifecycle modeling"""
+"""RfcToBe lifecycle activity modeling"""
 
 from collections.abc import Iterable
 
-from .models import Assignment
+from ..models import Assignment
 
 
 class Activity:
