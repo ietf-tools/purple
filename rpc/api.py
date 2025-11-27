@@ -603,13 +603,14 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
         return Response(serializer.data)
 
-    @extend_schema(operation_id="documents_publish")
+    @extend_schema(operation_id="documents_publish", request=None, responses=None)
     @action(detail=True, methods=["post"])
-    def publish(self, request):
+    def publish(self, request, draft__name=None):
         rfctobe = self.get_object()
         # todo check that user has publisher assignment
         # todo check that rfc is in appropriate state (whatever that means)
         notify_rfc_published_task.delay(rfctobe_id=rfctobe.pk)
+        return Response()
 
 
 @extend_schema_with_draft_name()
