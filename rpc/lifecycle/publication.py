@@ -6,6 +6,8 @@ calls. Note that there is a similarly named module in the datatracker app
 (datatracker.utils.publication) that contains logic for making the publish API call
 to datatracker.
 """
+import datetime
+
 from rest_framework import serializers
 
 from rpcauth.models import User
@@ -68,4 +70,7 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
 
 
 def publish_rfctobe(rfctobe: RfcToBe):
+    rfctobe.disposition_id = "published"
+    rfctobe.published_at = datetime.datetime.now(tz=datetime.UTC)
+    rfctobe.save()
     notify_rfc_published_task.delay(rfctobe_id=rfctobe.pk)
