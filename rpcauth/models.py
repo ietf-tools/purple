@@ -1,9 +1,11 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 
 from datatracker.models import DatatrackerPerson
+from rpc.models import RpcPerson
 
 
 class User(AbstractUser):
@@ -23,7 +25,7 @@ class User(AbstractUser):
 
     avatar = models.URLField(blank=True)
 
-    def datatracker_person(self):
+    def datatracker_person(self) -> DatatrackerPerson | None:
         try:
             dt_person, _ = DatatrackerPerson.objects.first_or_create_by_subject_id(
                 self.datatracker_subject_id
@@ -31,3 +33,13 @@ class User(AbstractUser):
         except DatatrackerPerson.DoesNotExist:
             dt_person = None
         return dt_person
+
+    def rpcperson(self) -> RpcPerson | None:
+        datatracker_person = self.datatracker_person()
+        if datatracker_person is None:
+            return None
+        try:
+            rpcperson = datatracker_person.rpcperson
+        except ObjectDoesNotExist:
+            return None
+        return rpcperson

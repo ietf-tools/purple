@@ -135,9 +135,7 @@ def profile(request):
     user = request.user
     if not user.is_authenticated:
         return JsonResponse({"authenticated": False})
-    dt_person = user.datatracker_person()
-    # hasattr() test also handles None case
-    rpcperson = dt_person.rpcperson if hasattr(dt_person, "rpcperson") else None
+    rpcperson = user.rpcperson()
     # grant manager permissions to managers and superusers
     if user.is_superuser:
         is_manager = True
@@ -232,8 +230,6 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     """Assignments for a specific RPC Person
 
     URL router must provide the `person_id` kwarg
-
-    TODO: permissions
     """
 
     queryset = Assignment.objects.exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
@@ -255,14 +251,8 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
             return queryset
 
         # Non-superusers/managers should only see their own assignments
-        dt_person = (
-            user.datatracker_person() if hasattr(user, "datatracker_person") else None
-        )
-        if (
-            dt_person is None
-            or not hasattr(dt_person, "rpcperson")
-            or dt_person.rpcperson.id != req_person_id
-        ):
+        rpcperson = user.rpcperson() if hasattr(user, "rpcperson") else None
+        if rpcperson is None or rpcperson.id != req_person_id:
             raise PermissionDenied("Unauthorized request")
 
         return queryset
@@ -544,14 +534,12 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
         # Non-superusers/managers should only see their own assignments
         # more granular permission to be added later
-        dt_person = (
-            user.datatracker_person() if hasattr(user, "datatracker_person") else None
-        )
-        if dt_person is None or not hasattr(dt_person, "rpcperson"):
+        rpcperson = user.rpcperson() if hasattr(user, "rpcperson") else None
+        if rpcperson is None:
             raise PermissionDenied("Unauthorized request")
 
         # Filter assignments for the logged-in RpcPerson
-        return base_queryset.filter(person=dt_person.rpcperson)
+        return base_queryset.filter(person=rpcperson)
 
 
 class RfcToBeQueryParamsForm(forms.Form):

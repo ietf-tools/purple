@@ -932,9 +932,7 @@ class SubmissionListItemSerializer(serializers.Serializer):
 
 
 def check_user_has_role(user, role) -> bool:
-    rpc_person = RpcPerson.objects.filter(
-        datatracker_person=user.datatracker_person()
-    ).first()
+    rpc_person = user.rpcperson() if hasattr(user, "rpcperson") else None
     if rpc_person:
         return rpc_person.can_hold_role.filter(slug=role).exists()
     return False
