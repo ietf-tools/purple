@@ -43,7 +43,11 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from .lifecycle.publication import publish_rfctobe, can_publish, is_ready_to_publish
+from .lifecycle.publication import (
+    can_publish,
+    publish_rfctobe,
+    validate_ready_to_publish,
+)
 
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
@@ -597,8 +601,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         rfctobe = self.get_object()
         if not can_publish(rfctobe, request.user):
             raise PermissionDenied("User is not permitted to publish this RFC")
-        if not is_ready_to_publish(rfctobe):
-            raise serializers.ValidationError("RFC not ready for publication")
+        validate_ready_to_publish(rfctobe)  # raises ValidationError
         publish_rfctobe(rfctobe)
         return Response()  # todo return value
 
