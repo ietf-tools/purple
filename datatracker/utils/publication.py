@@ -1,4 +1,11 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+"""Datatracker RFC publication
+
+This module is for logic involved with notifying datatracker that an RFC has been
+published and uploading the file contents. Note that there is a similarly named module
+in the rpc app (rpc.lifecycle.publication) that contains logic related to the API the
+purple front-end uses to trigger RFC publication.
+"""
 import datetime
 import json
 from json import JSONDecodeError

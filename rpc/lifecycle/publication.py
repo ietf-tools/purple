@@ -1,5 +1,11 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
-"""RFC publication support"""
+"""RFC publication support
+
+This module is for rpc app logic related to the publish_rfc API that the front-end
+calls. Note that there is a similarly named module in the datatracker app
+(datatracker.utils.publication) that contains logic for making the publish API call
+to datatracker.
+"""
 from rest_framework import serializers
 
 from rpcauth.models import User
