@@ -66,7 +66,7 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
             "no RFC number is assigned",
             code="rfctobe-no-rfc-number",
         )
-
+    # todo IANA check, what else?
 
 
 def publish_rfctobe(rfctobe: RfcToBe):
