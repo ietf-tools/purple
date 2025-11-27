@@ -43,6 +43,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
+from datatracker.tasks import notify_rfc_published_task
 
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
@@ -601,6 +602,14 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         rfc_to_be = self.get_object()
         serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
         return Response(serializer.data)
+
+    @extend_schema(operation_id="documents_publish")
+    @action(detail=True, methods=["post"])
+    def publish(self, request):
+        rfctobe = self.get_object()
+        # todo check that user has publisher assignment
+        # todo check that rfc is in appropriate state (whatever that means)
+        notify_rfc_published_task.delay(rfctobe_id=rfctobe.pk)
 
 
 @extend_schema_with_draft_name()
