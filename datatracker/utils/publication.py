@@ -6,7 +6,7 @@ published and uploading the file contents. Note that there is a similarly named 
 in the rpc app (rpc.lifecycle.publication) that contains logic related to the API the
 purple front-end uses to trigger RFC publication.
 """
-import datetime
+
 import json
 from json import JSONDecodeError
 

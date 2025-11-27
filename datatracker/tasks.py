@@ -74,7 +74,11 @@ class DatatrackerNotificationTask(Task):
     base=DatatrackerNotificationTask,
     throws=(RfcToBe.DoesNotExist, PublicationError),
     autoretry_for=(Exception,),
-    dont_autoretry_for=(RfcToBe.DoesNotExist, PublicationError, pydantic.ValidationError),
+    dont_autoretry_for=(
+        RfcToBe.DoesNotExist,
+        PublicationError,
+        pydantic.ValidationError,
+    ),
 )
 def notify_rfc_published_task(self, rfctobe_id):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
