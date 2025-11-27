@@ -56,3 +56,5 @@ class Command(BaseCommand):
             Document.objects.all().delete()
             Label.objects.all().delete()
             Cluster.objects.all().delete()
+
+        self.stdout.write(self.style.SUCCESS("Data truncated successfully!"))
