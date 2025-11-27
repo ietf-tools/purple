@@ -557,16 +557,18 @@ class RfcToBeQueryParamsForm(forms.Form):
     published_within_days = forms.IntegerField(required=False, min_value=0)
 
 
-@extend_schema(
-    parameters=[
-        OpenApiParameter(
-            name="published_within_days",
-            type=OpenApiTypes.INT,
-            location=OpenApiParameter.QUERY,
-            required=False,
-            description="Show only RFCs published within the last N days.",
-        ),
-    ]
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="published_within_days",
+                type=OpenApiTypes.INT,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Show only RFCs published within the last N days.",
+            ),
+        ]
+    ),
 )
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
@@ -594,7 +596,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return queryset
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
-    @action(detail=True, pagination_class=None)
+    @action(detail=True, pagination_class=None, filter_backends=[])
     def history(self, request, draft__name=None):
         rfc_to_be = self.get_object()
         serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
