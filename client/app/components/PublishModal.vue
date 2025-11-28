@@ -3,10 +3,15 @@
     <div class="flex flex-row justify-between border-b border-gray-300">
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
         Publish
-        <span class="mt-1 text-xl font-semibold leading-6">
-          {{ props.rfcToBe.name }}
+        <span class="text-2xl mx-1 font-mono whitespace-nowrap">
+          <span class="font-bold">RFC</span> {{ props.rfcToBe.rfcNumber }}
         </span>?
+        <span class="text-sm text-gray-700 dark:text-gray-300">
+          <br />
+          (<span class="font-mono">{{ props.rfcToBe.name }}</span>)
+        </span>
       </h1>
+
       <BaseButton btnType="cancel" class="m-2 flex items-center" @click="closeOverlayModal">
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
       </BaseButton>
@@ -41,7 +46,8 @@
           </template>
           <ul>
             <li v-for="clearedExceptionsItem of clearedExceptionsItems">
-              <RpcCheckbox :label="clearedExceptionsItem.label" :id="clearedExceptionsItem.id" :checked="clearedExceptionsItem.isChecked" />
+              <RpcCheckbox :label="clearedExceptionsItem.label" :id="clearedExceptionsItem.id"
+                :checked="clearedExceptionsItem.isChecked" />
             </li>
           </ul>
         </BaseCard>
