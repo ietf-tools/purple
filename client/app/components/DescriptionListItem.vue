@@ -3,7 +3,6 @@
     'sm:grid sm:grid-cols-3',
     props.spacing === 'large' && 'px-4 py-3 sm:gap-4 sm:px-0',
     props.spacing === 'small' && 'px-1 py-0.5 sm:gap-0.5 sm:px-0',
-
   ]">
     <DescriptionListTerm v-if="term">
       {{ term }}
