@@ -24,6 +24,7 @@
           <div class="flex flex-row gap-5">
             <BaseButton @click="openEmailModal">New Email</BaseButton>
             <BaseButton @click="openAssignmentFinishedModal">Finish assignments</BaseButton>
+            <BaseButton @click="openPublishModal">Publish</BaseButton>
           </div>
         </div>
       </div>
@@ -221,6 +222,7 @@ import type { Assignment } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys';
 import AssignmentFinishedModal from '../../../components/AssignmentFinishedModal.vue'
 import EmailModal from '../../../components/EmailModal.vue'
+import PublishModal from '../../../components/PublishModal.vue'
 
 const route = useRoute()
 const api = useApi()
@@ -486,6 +488,31 @@ const openEmailModal = async () => {
       }
     },
     mode: 'overlay',
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
+
+const openPublishModal = () => {
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: PublishModal,
+    componentProps: {
+      rfcToBe: rfcToBe.value,
+      onSuccess: () => {
+        historyRefresh()
+      }
+    },
   }).catch(e => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed

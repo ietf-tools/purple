@@ -1,9 +1,14 @@
 <template>
-  <div class="px-4 py-3 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
+  <div :class="[
+    'sm:grid sm:grid-cols-3',
+    props.spacing === 'large' && 'px-4 py-3 sm:gap-4 sm:px-0',
+    props.spacing === 'small' && 'px-1 py-0.5 sm:gap-0.5 sm:px-0',
+
+  ]">
     <DescriptionListTerm v-if="term">
       {{ term }}
     </DescriptionListTerm>
-    <slot/>
+    <slot />
     <DescriptionListDetails v-if="details">
       {{ details }}
     </DescriptionListDetails>
@@ -11,8 +16,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+type Props = {
   term?: string,
   details?: string
-}>()
+  spacing?: 'large' | 'small'
+}
+
+const props = withDefaults(defineProps<Props>(), { spacing: "large" })
 </script>
