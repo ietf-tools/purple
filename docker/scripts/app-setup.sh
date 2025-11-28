@@ -10,7 +10,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Install sudo
 apt-get update
-apt-get -y install --no-install-recommends nginx openjdk-17-jre tmux sudo 2>&1
+apt-get -y install --no-install-recommends nginx openjdk-25-jre tmux sudo 2>&1
 apt-get autoremove -y
 
 # Create or update a non-root user to match UID/GID.
