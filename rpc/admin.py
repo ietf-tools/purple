@@ -35,7 +35,7 @@ from .models import (
 
 @admin.register(DumpInfo)
 class DumpInfoAdmin(admin.ModelAdmin):
-    list_display = ['timestamp']
+    list_display = ["timestamp"]
 
 
 @admin.register(RpcPerson)
