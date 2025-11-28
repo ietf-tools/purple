@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  python-tests:
+  lint-checks:
     runs-on: ubuntu-latest
 
     steps:
