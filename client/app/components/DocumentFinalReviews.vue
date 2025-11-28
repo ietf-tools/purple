@@ -3,44 +3,43 @@
     {{ error }}
   </ErrorAlert>
 
-  <Heading :heading-level="props.headingLevel" class="mt-5" id="final-review">
-    Final Reviews {{ status === 'success' ? `(${table.getRowCount()})` : '' }}
-  </Heading>
-
-  <RpcTable>
-    <RpcThead>
-      <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-        <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-          :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-          @click="header.column.getToggleSortingHandler()?.($event)">
-          <div class="flex items-center gap-2">
-            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-              :props="header.getContext()" />
-            <Transition name="sort-indicator">
-              <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
-                class="text-gray-400 opacity-60 hover:opacity-100" />
-            </Transition>
-          </div>
-        </RpcTh>
-      </tr>
-    </RpcThead>
-    <RpcTbody>
-      <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
-        :row-count="table.getRowModel().rows.length" />
-      <tr v-for="row in table.getRowModel().rows" :key="row.id">
-        <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
-          <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-        </RpcTd>
-      </tr>
-    </RpcTbody>
-    <RpcTfoot>
-      <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
-        <RpcTh :colSpan="1">
+  <BaseCard>
+    <template #header>
+      <CardHeader title="Final Reviews">
+        <template #actions>
           <BaseButton @click="openAddModal()" title="Add Final Review approver">Add</BaseButton>
-        </RpcTh>
-      </tr>
-    </RpcTfoot>
-  </RpcTable>
+        </template>
+      </CardHeader>
+    </template>
+
+    <RpcTable>
+      <RpcThead>
+        <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+            @click="header.column.getToggleSortingHandler()?.($event)">
+            <div class="flex items-center gap-2">
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                :props="header.getContext()" />
+              <Transition name="sort-indicator">
+                <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
+                  class="text-gray-400 opacity-60 hover:opacity-100" />
+              </Transition>
+            </div>
+          </RpcTh>
+        </tr>
+      </RpcThead>
+      <RpcTbody>
+        <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+          :row-count="table.getRowModel().rows.length" />
+        <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+          </RpcTd>
+        </tr>
+      </RpcTbody>
+    </RpcTable>
+  </BaseCard>
 </template>
 
 <script setup lang="ts">
