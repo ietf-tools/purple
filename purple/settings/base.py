@@ -157,3 +157,17 @@ CELERY_TIMEZONE = "UTC"
 CELERY_BROKER_URL = os.environ.get("PURPLE_BROKER_URL", "amqp://mq/")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
+
+# Crossref / DOI
+CROSSREF_API = "https://test.crossref.org/servlet/deposit"
+CROSSREF_USER = "user"
+CROSSREF_PASSWORD = "friend"
+CROSSREF_VERSION = "4.4.2"
+DOI_REGISTRANT = "RFC Editor"
+DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
+DOI_PREFIX = "10.17487"
+DOI_EMAIL = "webmaster@rfc-editor.org"
+DOI_URL = "https://www.rfc-editor.org/info/"
+AUTHOR_ORGS = [
+    "IAB",
+]
