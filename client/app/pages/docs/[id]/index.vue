@@ -104,11 +104,7 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard
-          :rfc-to-be="rawRfcToBe"
-          :draft-name="draftName"
-          @refresh="historyRefresh()"
-        />
+        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" @refresh="historyRefresh()" />
 
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
 
@@ -204,9 +200,9 @@
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
             <RpcApprovalLogTextarea v-if="rfcToBe" :draft-name="draftName" :reload="approvalLogsListReload"
               class="w-4/5 min-w-100" />
-            <DocumentApprovalLogs :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="approvalLogsListPending"
-              :error="approvalLogsListError" :comment-list="approvalLogsList" :reload="approvalLogsListReload"
-              class="w-3/5 min-w-100" />
+            <DocumentApprovalLogs :draft-name="draftName" :rfc-to-be-id="rfcToBe.id"
+              :is-loading="approvalLogsListPending" :error="approvalLogsListError" :comment-list="approvalLogsList"
+              :reload="approvalLogsListReload" class="w-3/5 min-w-100" />
           </div>
         </BaseCard>
       </div>
@@ -246,10 +242,10 @@ const {
   error: approvalLogsListError,
   refresh: approvalLogsListReload
 } = await useAsyncData(
-    `approval-log-${draftName.value}`,
-    () => api.documentsApprovalLogsList({ draftName: draftName.value }),
-    { server: false, lazy: true }
-  )
+  `approval-log-${draftName.value}`,
+  () => api.documentsApprovalLogsList({ draftName: draftName.value }),
+  { server: false, lazy: true }
+)
 
 const {
   data: history,
@@ -303,7 +299,7 @@ const rfcToBe = computed((): CookedDraft | null => {
 
 // DATA
 
-const { data: labels } = await useLabels()
+const { data: labels, status: labelsStatus } = await useLabels()
 
 const labels1 = computed(() =>
   labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
@@ -502,6 +498,10 @@ const openPublishModal = () => {
   if (!overlayModal) {
     throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
   }
+  if (labelsStatus.value !== 'success') {
+    snackbar.add({ type: "warning", title: "Still loading labels", text: "Try again soon" })
+    return
+  }
 
   const { openOverlayModal } = overlayModal
 
@@ -509,6 +509,7 @@ const openPublishModal = () => {
     component: PublishModal,
     componentProps: {
       rfcToBe: rfcToBe.value,
+      labels: labels.value,
       onSuccess: () => {
         historyRefresh()
       }

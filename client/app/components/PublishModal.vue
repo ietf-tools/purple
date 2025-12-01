@@ -20,13 +20,14 @@
       <div>
         <BaseCard>
           <template #header>
-            <CardHeader title="Complexity Indicators (mocked)" />
+            <CardHeader :title="`Complexity Indicators (${complexityItems.length})`" />
           </template>
           <ul class="list-disc flex flex-col gap-1 ml-4">
             <li v-for="complexityItem in complexityItems" class="pl-1 text-sm">
-              {{ complexityItem.label }}
+              <RpcLabel :label="complexityItem" />
             </li>
           </ul>
+          <p v-if="complexityItems.length === 0" class="italic">(none)</p>
         </BaseCard>
 
         <BaseCard>
@@ -74,10 +75,11 @@
 <script setup lang="ts">
 import { BaseButton } from '#components'
 import { overlayModalKey } from '~/providers/providerKeys';
-import type { RfcToBe } from '~/purple_client';
+import type { Label, RfcToBe } from '~/purple_client';
 
 type Props = {
   rfcToBe: RfcToBe
+  labels: Label[]
   onSuccess: () => void
 }
 
@@ -89,12 +91,15 @@ if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
 }
 
-const complexityItems = computed(() => [
-  { label: 'XML code components' },
-  { label: 'IANA Considerations - Large' },
-  { label: 'Converted to V3' },
-  { label: 'Expedited' },
-])
+const complexityItems = computed(() => {
+  return props.labels.filter(label => {
+    const { id } = label
+    if (typeof id !== 'number') {
+      throw Error('Expected label id to be a number')
+    }
+    return props.rfcToBe.labels.includes(id) && label.isComplexity
+  })
+})
 
 const finalChecksItems = computed(() => [
   { isChecked: false, label: "Version control", id: 'version-controls' },
