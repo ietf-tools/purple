@@ -67,7 +67,7 @@
     </div>
     <div class="border-t-1 border-gray-800 flex justify-end items-center">
       <BaseButton btnType="default" class="m-2 flex items-center" @click="handlePublish">
-        Publish (mocked)
+        Publish
       </BaseButton>
     </div>
   </div>
@@ -122,10 +122,32 @@ const clearedExceptionsItems = computed(() => [
   { isChecked: false, label: "Conversion to V3 XML failed", id: 'conversion-to-v3-xml-failed' },
 ])
 
+const snackbar = useSnackbar()
+
+const api = useApi()
+
 const { closeOverlayModal } = overlayModalKeyInjection
 
-const handlePublish = () => {
-  alert("this doesn't work yet")
-  closeOverlayModal()
+const handlePublish = async () => {
+  const { name } = props.rfcToBe
+
+  if (name === undefined) {
+    snackbar.add({
+      type: "error",
+      title: "Can't publish without draft name",
+      text: "(internal error)"
+    })
+    return
+  }
+  try {
+    await api.documentsPublish({
+      draftName: name
+    })
+
+    props.onSuccess()
+    closeOverlayModal()
+  } catch (error) {
+    snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't publish" })
+  }
 }
 </script>
