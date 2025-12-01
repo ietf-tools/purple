@@ -80,10 +80,7 @@ watch(() => draft.value?.authors, async () => {
       }
     })
   ))
-
 },
   { deep: true }
 )
-
-
 </script>
