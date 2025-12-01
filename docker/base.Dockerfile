@@ -1,4 +1,4 @@
-FROM python:3.13
+FROM python:3.14
 LABEL maintainer="IETF Tools Team <tools-discuss@ietf.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
