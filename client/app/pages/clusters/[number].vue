@@ -8,11 +8,19 @@
   <div v-else-if="status === 'success' && cluster">
     <TitleBlock :title="`Cluster ${cluster.number}`" class="mb-5">
       <template #right>
-        <button @click="openReorderModal" type="button"
-          class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
-          <Icon name="tabler:reorder" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true" />
-          Reorder
-        </button>
+        <div class="flex gap-3">
+          <button @click="openReorderModal" type="button"
+            class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            <Icon name="tabler:reorder" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true" />
+            Reorder
+          </button>
+
+          <button @click="openAddModal" type="button"
+            class="flex items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+            <Icon name="uil:plus" class="-ml-1 h-5 w-5 mr-2" aria-hidden="true" />
+            Add document
+          </button>
+        </div>
       </template>
     </TitleBlock>
 
@@ -25,6 +33,7 @@
 
 <script setup lang="ts">
 import ClusterReorderModal from '../../components/ClusterReorderModal.vue'
+import ClusterAddDocumentModal from '../../components/ClusterAddDocumentModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const route = useRoute()
@@ -86,4 +95,35 @@ const openReorderModal = () => {
   })
 }
 
+const openAddModal = () => {
+  if (!cluster.value) {
+    snackbar.add({
+      type: 'warning',
+      title: 'Still loading cluster...',
+      text: 'Try again soon'
+    })
+    return
+  }
+
+  if (!overlayModal) {
+    throw Error(`Expected modal provider ${JSON.stringify({ overlayModalKey })}`)
+  }
+  const { openOverlayModal } = overlayModal
+
+  openOverlayModal({
+    component: ClusterAddDocumentModal,
+    componentProps: {
+      cluster: cluster.value,
+      onSuccess: refresh
+    },
+    mode: 'side',
+  }).catch(e => {
+    if (e === undefined) {
+      // ignore... it's just signalling that the modal has closed
+    } else {
+      console.error(e)
+      throw e
+    }
+  })
+}
 </script>
