@@ -54,7 +54,7 @@ import {
   getSortedRowModel,
   type SortingState,
 } from '@tanstack/vue-table'
-import type { QueueItem } from '~/purple_client'
+import type { QueueItem, RpcPerson } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
 import type { HeadingLevel } from '~/utils/html'
 
@@ -63,6 +63,7 @@ type Props = {
   error?: NuxtError<unknown>
   status: AsyncDataRequestStatus
   headingLevel?: HeadingLevel
+  people: RpcPerson[]
 }
 
 const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
@@ -95,7 +96,33 @@ const columns = [
     header: 'Pages',
     cell: data => data.getValue(),
     sortingFn: 'alphanumeric',
-  })
+  }),
+  columnHelper.accessor(
+    'cluster', {
+    header: 'Cluster',
+    cell: data => {
+      const clusterNumber = data.getValue()?.number
+      return columnFormatterCluster(clusterNumber)
+    },
+    sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor(
+    'assignmentSet',
+    {
+      header: 'Assignees',
+      cell: (data) => {
+        const assignments = data.getValue()
+        return columnFormatterAssignments({
+          assignments,
+          rfcToBeId: data.row.original.id,
+          people: props.people,
+          queueItemsIsPending: props.status === 'pending',
+          rowForDebug: data.row.original
+        })
+      },
+      enableSorting: false,
+    }
+  ),
 ]
 
 const sorting = ref<SortingState>([])

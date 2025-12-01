@@ -1,15 +1,15 @@
 <template>
-  <FinalReviewsInProgress :name="props.name" :heading-level="4" />
+  <FinalReviewsInProgress :name="props.name" :heading-level="4" :people="people" />
   <ErrorAlert v-if="error" title="API Error for Done / PUB">
     {{ error }}
   </ErrorAlert>
-  <FinalReviewsDone :queue-items="queueItemsFilterDone" :error="error" :status="status" :heading-level="4" />
-  <FinalReviewsForPublication :queue-items="queueItemsFilterPublisher" :error="error" :status="status"
+  <FinalReviewsDone :queue-items="queueItemsFilterDone" :error="error" :status="status" :heading-level="4" :people="people" />
+  <FinalReviewsForPublication :queue-items="queueItemsFilterPublisher" :error="error" :status="status" :people="people"
     :heading-level="4" />
 </template>
 
 <script setup lang="ts">
-import type { QueueItem } from '~/purple_client';
+import type { QueueItem, RpcPerson } from '~/purple_client';
 
 type Props = {
   name?: string
@@ -59,5 +59,11 @@ const queueItemsFilterDone = computed((): QueueItem[] => {
   return queueListWithFilters.value?.filter(
     queueItem => queueItemsFilterPublisher.value.every(queueItemPublisher => queueItemPublisher.id !== queueItem.id)
   ) ?? []
+})
+
+const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
+  server: false,
+  lazy: true,
+  default: () => [] as RpcPerson[]
 })
 </script>
