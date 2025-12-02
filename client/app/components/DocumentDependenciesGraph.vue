@@ -1,7 +1,5 @@
 <template>
-  <ErrorAlert v-if="rfcToBesStatus === 'error' || clusterDocumentsReferencesListStatus === 'error'"
-    title="Loading error. Reload page.">
-    {{ rfcToBesError }}
+  <ErrorAlert v-if="clusterDocumentsReferencesListStatus === 'error'" title="Loading error">
     {{ clusterDocumentsReferencesListError }}
   </ErrorAlert>
 
@@ -30,8 +28,8 @@
 </template>
 
 <script setup lang="ts">
-import { uniqBy } from 'lodash-es';
-import type { Cluster } from '~/purple_client'
+import { uniq, uniqBy } from 'lodash-es';
+import { type Cluster, type RfcToBe } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
 import { legendData, type DataParam, type LinkParam, type NodeParam, type Rel } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
@@ -51,14 +49,26 @@ const containerRef = useTemplateRef('container')
 const showLegend = ref(false)
 
 const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
+  () => props.cluster.documents.map(doc => doc.name).join(","),
   async () =>
     Promise.all(
       props.cluster.documents.map(
         (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
-      ))
+      )),
+  {
+    server: false,
+  }
 )
 
-const { data: rfcToBes, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
+type MaybeRfcToBeError = {
+  name: string
+  error: unknown
+}
+
+const isMaybeRfcToBeError = (obj: unknown): obj is MaybeRfcToBeError => Boolean(obj) && obj !== null && typeof obj === 'object' && 'name' in obj && 'error' in obj
+
+const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
+  () => `maybeRfcsToBe${props.cluster.documents.map(doc => doc.name).join(",")}`,
   async () => {
     const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
     const names: string[] = (clusterDocumentsReferencesList.value ?? []).flatMap(
@@ -66,11 +76,50 @@ const { data: rfcToBes, status: rfcToBesStatus, error: rfcToBesError } = await u
         ...relatedDocuments.map((relatedDocument) => relatedDocument.draftName).filter(filterIsString),
         ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString)
       ])
-    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", names)
-    return Promise.all(
-      names.map(name => api.documentsRetrieve({ draftName: name }))
+
+    const uniqueNames = uniq(names)
+    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", uniqueNames)
+
+    return await Promise.all(
+      uniqueNames.map(async name => {
+        try {
+          return await api.documentsRetrieve({ draftName: name })
+        } catch(error) {
+          return {
+            name,
+            error,
+          } satisfies MaybeRfcToBeError
+        }
+      })
     )
+  }, {
+    lazy: true,
+    server: false,
   })
+
+const rfcToBes = computed(() =>
+  maybeRfcsToBe.value ? maybeRfcsToBe.value.map((maybeRfcToBe): RfcToBe => {
+      if (isMaybeRfcToBeError(maybeRfcToBe)) {
+        // Generate a placeholder item
+        const errorRfcToBe: RfcToBe = {
+          name: maybeRfcToBe.name,
+          title: String(maybeRfcToBe.error),
+          disposition: '',
+          labels: [],
+          submittedFormat: '',
+          submittedBoilerplate: '',
+          submittedStdLevel: '',
+          submittedStream: '',
+          intendedBoilerplate: '',
+          intendedStdLevel: '',
+          intendedStream: '',
+          authors: [],
+        }
+        return errorRfcToBe
+      }
+      return maybeRfcToBe
+    }) : []
+)
 
 const canDownload = ref(false)
 
@@ -84,6 +133,19 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
   })
 }
 
+watch(maybeRfcsToBe, () => {
+  const errors = maybeRfcsToBe.value ?
+    maybeRfcsToBe.value.filter(isMaybeRfcToBeError).map(e => e.name) :
+    []
+  if(errors.length > 0) {
+    snackbar.add({
+      type: 'error',
+      title: `Error loading some references`,
+      text: errors.join(', ')
+    })
+  }
+})
+
 const hasMounted = ref(false)
 
 const data = computed(() => {
@@ -92,12 +154,12 @@ const data = computed(() => {
     nodes: []
   }
 
-  const isNode = (data: unknown): data is NodeParam => {
-    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+  const isNodeParam = (data: unknown): data is NodeParam => {
+    const isANode = Boolean((data && typeof data === 'object' && 'id' in data && 'url' in data))
     return isANode
   }
 
-  const isLink = (data: unknown): data is LinkParam => {
+  const isLinkParam = (data: unknown): data is LinkParam => {
     return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
   }
 
@@ -105,9 +167,17 @@ const data = computed(() => {
     newData.nodes.push(
       ...rfcToBes.value.map((rfcToBe): NodeParam | null => {
         const { name } = rfcToBe
-        if (!name) return null
-        return { id: name, rfc: Boolean(rfcToBe.rfcNumber), url: `/docs/${name}`, level: parseLevel(rfcToBe.submittedStdLevel) }
-      }).filter(isNode)
+        if (!name) {
+          return null
+        }
+        return {
+          id: name,
+          isRfc: Boolean(rfcToBe.rfcNumber),
+          rfcNumber: rfcToBe.rfcNumber ?? undefined,
+          url: `/docs/${name}`,
+          level: parseLevel(rfcToBe.submittedStdLevel)
+        }
+      }).filter(isNodeParam)
     )
   }
 
@@ -136,7 +206,7 @@ const data = computed(() => {
       return {
         id: name
       }
-    }).filter(isNode))
+    }).filter(isNodeParam))
 
     newData.links.push(...props.cluster.documents.flatMap((document, index): LinkParam[] | null => {
       const { name } = document
@@ -149,10 +219,10 @@ const data = computed(() => {
         return {
           source: name,
           target: draftName,
-          rel: 'relinfo',
+          rel: clusterDocumentReference.relationship as Rel,
         }
-      }).filter(isLink)
-    }).filter(isLink))
+      }).filter(isLinkParam)
+    }).filter(isLinkParam))
   }
 
   newData.nodes = uniqBy(newData.nodes, (node) => node.id)
@@ -210,7 +280,7 @@ onMounted(() => {
   attemptToRenderGraph()
 })
 
-watch([data, showLegend], attemptToRenderGraph)
+watch([data, rfcToBes, showLegend], attemptToRenderGraph)
 
 const handleDownload = () => {
   if (!canDownload.value) {

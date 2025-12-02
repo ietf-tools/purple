@@ -13,8 +13,13 @@ const link_color: Record<Rel, string> = {
   'relinfo': yellow
 } as const
 
-const get_link_color = (key: Rel) => {
-  return key in link_color ? link_color[key as keyof typeof link_color] : black
+const get_link_color = (rel: Rel) => {
+  const customColor: string | undefined = link_color[rel as keyof typeof link_color]
+  if(customColor !== undefined) {
+    return customColor
+  }
+  console.error(`Unable to find rel style ${JSON.stringify(rel)}`)
+  return black
 }
 
 const get_name = (sourceOrTarget: Link["source"] | LinkParam["source"]): string => {
@@ -170,9 +175,9 @@ export function draw_graph(data: DataParam) {
     .attr("href", (d) => d.url ?? null)
     .attr("title", (d) => {
       const nodePropsWeCareAbout: (keyof NodeParam)[] = [
-        "replaced",
-        "dead",
-        "expired",
+        "isReplaced",
+        "isDead",
+        "isExpired",
       ]
       let type = nodePropsWeCareAbout.filter((x) => d[x]).join(" ")
       if (type) {
@@ -183,19 +188,25 @@ export function draw_graph(data: DataParam) {
       }
       const typeZero = type[0] ?? ''
       if (d.group != undefined && d.group != "none" && d.group != "") {
-        const word = d.rfc ? "from" : "in"
+        const word = d.isRfc ? "from" : "in"
         type += `group document ${word} ${d.group.toUpperCase()}`
       } else {
         type += "individual document"
       }
-      const name = d.rfc ? d.id.toUpperCase() : d.id
+      const name = d.isRfc ? [d.rfcNumber, d.id.toUpperCase()].filter(Boolean).join(", ") : d.id
       return `${name} is a${"aeiou".includes(typeZero.toLowerCase()) ? "n" : ""} ${type}`
     })
 
   a.append("text")
-    .attr("fill", (d) => (d.rfc || d.replaced ? white : black))
+    .attr("fill", (d) => (d.isRfc || d.isReplaced ? white : black))
     .each((d) => {
-      (d as Node).lines = lines(d.id);
+      (d as Node).lines = lines([
+          d.rfcNumber ? `RFC${d.rfcNumber}` : undefined,
+          d.id
+        ]
+        .filter(Boolean)
+        .join(",")
+      );
       (d as Node).r = text_radius((d as Node).lines!)
       max_r = Math.max((d as Node).r, max_r)
     })
@@ -210,16 +221,16 @@ export function draw_graph(data: DataParam) {
     .attr("stroke", black)
     .lower()
     .attr("fill", (d) => {
-      if (d.rfc) {
+      if (d.isRfc) {
         return green
       }
-      if (d.replaced) {
+      if (d.isReplaced) {
         return orange
       }
-      if (d.dead) {
+      if (d.isDead) {
         return red
       }
-      if (d.expired) {
+      if (d.isExpired) {
         return gray400
       }
       if (d["post-wg"]) {
@@ -248,7 +259,7 @@ export function draw_graph(data: DataParam) {
       return dNode.stroke
     })
     .attr("stroke-dasharray", (d) => {
-      if (d.group != "" || d.rfc) {
+      if (d.group != "" || d.isRfc) {
         return 0
       }
       return 4

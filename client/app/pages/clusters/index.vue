@@ -23,12 +23,14 @@
       <div v-for="cluster in filteredClusters" :key="cluster.number"
         class="flex flex-row items-start border border-gray-300 shadow-md rounded-md px-2 py-1">
         <h2 class="flex flex-row items-start text-lg whitespace-nowrap grow-0 shrink-0 w-[7em] px-2">
-          <a :href="`/clusters/${cluster.number}/`" :class="ANCHOR_STYLE">
+          <Anchor :href="`/clusters/${cluster.number}/`" :class="ANCHOR_STYLE">
             Cluster {{ cluster.number }}
-          </a>
+          </Anchor>
         </h2>
         <ul class="flex flex-wrap pt-1 gap-y-1 gap-x-3 text-xs leading-[1]">
-          <DocumentCardMini v-for="document in cluster.documents" :document="document" />
+          <li class="whitespace-nowrap inline-block" v-for="(document, index) in cluster.documents" :key="index">
+            <DocumentCardMini :document="document" />
+          </li>
         </ul>
       </div>
     </div>
