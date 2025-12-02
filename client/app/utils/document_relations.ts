@@ -4,6 +4,7 @@
 
 import * as d3 from "d3"
 import { black, blue, cyan, font, get_ref_type, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Rel } from "./document_relations-utils"
+import { getAncestors } from './dom'
 
 const link_color: Record<Rel, string> = {
   "refqueue": green,
@@ -114,7 +115,7 @@ function text_radius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof draw_graph>
 
-export function draw_graph(data: DataParam) {
+export function draw_graph(data: DataParam, pushRouter: (path: string) => void) {
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
@@ -195,6 +196,25 @@ export function draw_graph(data: DataParam) {
       }
       const name = d.isRfc ? [d.rfcNumber, d.id.toUpperCase()].filter(Boolean).join(", ") : d.id
       return `${name} is a${"aeiou".includes(typeZero.toLowerCase()) ? "n" : ""} ${type}`
+    }).on('click', (e) => {
+      e.preventDefault()
+      const { target } = e
+      if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
+        console.error("Expected element but received ", target)
+        return
+      }
+      const anchor = target.closest('a')
+      if (!anchor) {
+        console.error("Couldn't find parent of ", target, { parents: getAncestors(target)})
+        return
+      }
+      const href = anchor.getAttribute('href')
+      if (!href) {
+        console.error("Closest <a> didn't have `href` attribute.", { parents: getAncestors(target)})
+        return
+      }
+      console.log("SPA navigating to ", href)
+      pushRouter(href)
     })
 
   a.append("text")

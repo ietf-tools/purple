@@ -44,6 +44,8 @@ const api = useApi()
 
 const snackbar = useSnackbar()
 
+const router = useRouter()
+
 const containerRef = useTemplateRef('container')
 
 const showLegend = ref(false)
@@ -248,11 +250,11 @@ const attemptToRenderGraph = () => {
     data.value
   )
 
-  const args: DrawGraphParameters = showLegend.value
-    ? [legendData]
-    : [graphData]
+  const chosenGraphData: DrawGraphParameters[0] = showLegend.value
+    ? legendData
+    : graphData
 
-  let [leg_el, leg_sim] = draw_graph(...args);
+  let [leg_el, leg_sim] = draw_graph(chosenGraphData, router.push);
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
     console.error({ leg_el, leg_sim })
