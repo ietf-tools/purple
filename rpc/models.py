@@ -301,6 +301,7 @@ class ClusterMember(models.Model):
     cluster = models.ForeignKey("rpc.Cluster", on_delete=models.CASCADE)
     doc = models.ForeignKey("datatracker.Document", on_delete=models.CASCADE)
     order = models.IntegerField(null=False, blank=False)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
@@ -344,6 +345,7 @@ class Cluster(models.Model):
     objects = ClusterQuerySet.as_manager()
     number = models.PositiveIntegerField(unique=True)
     docs = models.ManyToManyField("datatracker.Document", through=ClusterMember)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"cluster {self.number} ({self.docs.count()} documents)"

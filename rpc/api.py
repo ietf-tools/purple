@@ -509,8 +509,7 @@ class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CapabilitySerializer
 
 
-class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
-    # todo: handle create/update operations and change to viewsets.ModelViewSet
+class ClusterViewSet(viewsets.ModelViewSet):
     queryset = Cluster.objects.all()
     serializer_class = ClusterSerializer
     lookup_field = "number"
