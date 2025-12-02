@@ -11,7 +11,7 @@ import json
 from json import JSONDecodeError
 
 import rpcapi_client
-from rpcapi_client import ApiException, AuthorRequest, RfcPubRequest
+from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
 
@@ -46,7 +46,7 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
         rfc_number=rfctobe.rfc_number,
         title=rfctobe.title,
         authors=[
-            AuthorRequest(
+            RfcAuthorRequest(
                 titlepage_name=author.titlepage_name,
                 is_editor=author.is_editor,
                 person=(
