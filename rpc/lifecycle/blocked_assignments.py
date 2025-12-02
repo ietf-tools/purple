@@ -34,7 +34,9 @@ def is_blocked(rfc: RfcToBe) -> bool:
         if blocking_label_qs.exists():
             return True
         # any related documents not received
-        not_received_qs = rfc.rpcrelateddocument_set.filter(relationship="not-received")
+        not_received_qs = rfc.rpcrelateddocument_set.filter(
+            relationship__in=["not-received", "not-received-2g", "not-received-3g"]
+        )
         if not_received_qs.exists():
             return True
 
