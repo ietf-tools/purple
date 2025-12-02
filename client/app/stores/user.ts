@@ -26,6 +26,19 @@ const getCurrentRelativePath = (): string => {
   return relativePath
 }
 
+type Timer = ReturnType<typeof setTimeout>
+let reloadTimer: Timer | null = null
+const stopPageReloadSoon = () => reloadTimer && clearTimeout(reloadTimer)
+const reloadPageSoon = (profileData?: ProfileData | void): void => {
+  stopPageReloadSoon()
+  if (profileData) {
+    console.log("Reloading page soon due to profileData", profileData)
+  } else {
+    console.log("Reloading page soon due to missing profileData", profileData)
+  }
+  reloadTimer = setTimeout(() => window.location.reload(), 10_000)
+}
+
 export const useUserStore = defineStore('user', {
   state: () => {
     const defaultState: State = {
@@ -53,28 +66,34 @@ export const useUserStore = defineStore('user', {
 
       const isLoginRoute = testIsAuthRoute(location.pathname)
       if (!isLoginRoute && (!profileData || profileData.authenticated === false)) {
+        stopPageReloadSoon()
         const redirectPath = `${AUTH_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`
+        console.log("No session so redirecting to", redirectPath)
         window.location.assign(redirectPath)
         return
       }
 
       if (!profileData) {
-        return
+        return reloadPageSoon(profileData)
       }
 
-      this.authenticated = profileData.authenticated
       if (profileData.authenticated === true) {
+        stopPageReloadSoon()
+        console.log("User authenticated so displaying app", profileData.name, `#${profileData.id}`, )
+        this.authenticated = profileData.authenticated
         this.id = profileData.id
         this.name = profileData.name
         this.email = profileData.email
         this.avatar = profileData.avatar
         this.rpcPersonId = profileData.rpcPersonId
         this.isManager = profileData.isManager
+      } else {
+        return reloadPageSoon(profileData)
       }
     },
-    async pretendToBe (rpcPersonId: number | null) {
+    pretendToBe (rpcPersonId: number | null): Promise<void> {
       this.pretendingToBe = rpcPersonId
-      return await this.refreshAuth()
+      return this.refreshAuth()
     }
   }
 })
