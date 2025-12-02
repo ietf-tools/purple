@@ -33,7 +33,7 @@ def is_blocked(rfc: RfcToBe) -> bool:
         blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold", "ExtRef Hold"])
         if blocking_label_qs.exists():
             return True
-        # any related documents not received
+        # any related documents not received (incl. 2g/3g)
         not_received_qs = rfc.rpcrelateddocument_set.filter(
             relationship__in=["not-received", "not-received-2g", "not-received-3g"]
         )
