@@ -1,7 +1,7 @@
 <template>
   <div :class="{
     'transition-opacity duration-700': true,
-    'opacity-0': userStore.authenticated !== true,
+    'opacity-0 pointer-events-none': userStore.authenticated !== true,
     'opacity-100': userStore.authenticated === true
   }">
     <SidebarNav />
