@@ -1,5 +1,9 @@
 <template>
-  <div>
+  <div :class="{
+    'transition-opacity duration-700': true,
+    'opacity-0': userStore.authenticated !== true,
+    'opacity-100': userStore.authenticated === true
+  }">
     <SidebarNav />
     <main class="lg:pl-72">
       <HeaderNav />
@@ -18,9 +22,12 @@
 </template>
 
 <script setup lang="ts">
+import { useUserStore } from '@/stores/user'
 import { useDefaultHead } from '~/utils/head'
 import { overlayModalKey } from '../providers/providerKeys'
 import type { OverlayModal } from '../providers/providerKeys'
+
+const userStore = useUserStore()
 
 useDefaultHead()
 

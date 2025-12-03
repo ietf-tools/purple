@@ -5,6 +5,7 @@
       size="3.5em"
       class="animate-spin"
     />
+    sdfsdsdsdfsdf
   </div>
   <NuxtLayout v-else>
     <NuxtPage />
@@ -13,10 +14,6 @@
 
 <script setup lang="ts">
 import { useUserStore } from '@/stores/user'
-import { testIsAuthRoute } from '~/utils/url'
 
-const route = useRoute()
 const userStore = useUserStore()
-
-const ifAuthRoute = computed(() => testIsAuthRoute(route.fullPath))
 </script>
