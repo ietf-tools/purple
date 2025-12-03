@@ -5,7 +5,6 @@
       size="3.5em"
       class="animate-spin"
     />
-    sdfsdsdsdfsdf
   </div>
   <NuxtLayout v-else>
     <NuxtPage />
