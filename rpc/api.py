@@ -56,6 +56,7 @@ from .models import (
     Assignment,
     Capability,
     Cluster,
+    ClusterMember,
     DocRelationshipName,
     FinalApproval,
     Label,
@@ -549,48 +550,42 @@ class ClusterViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get the RfcToBe by draft name
+        # Get the Document by draft name
         try:
-            rfc_to_be = RfcToBe.objects.get(draft__name=draft_name)
-        except RfcToBe.DoesNotExist:
+            doc = Document.objects.get(name=draft_name)
+        except Document.DoesNotExist:
             return Response(
                 {"error": f"Document with name '{draft_name}' not found"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Check if document is already in a cluster
-        if rfc_to_be.cluster is not None:
+        # Check if document is already in any cluster
+        existing_member = ClusterMember.objects.filter(doc=doc).first()
+        if existing_member:
             return Response(
-                {"error": f"Document is already in cluster {rfc_to_be.cluster.number}"},
+                {
+                    "error": (
+                        f"Document is already in cluster "
+                        f"{existing_member.cluster.number}"
+                    )
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Add document to cluster
-        rfc_to_be.cluster = cluster
-        rfc_to_be.save()
+        max_order = (
+            ClusterMember.objects.filter(cluster=cluster).aggregate(Max("order"))[
+                "order__max"
+            ]
+            or 1
+        )
+
+        ClusterMember.objects.create(cluster=cluster, doc=doc, order=max_order + 1)
+
+        cluster.refresh_from_db()
 
         serializer = self.get_serializer(cluster)
         return Response(serializer.data)
 
-    @extend_schema(
-        operation_id="clusters_remove_document",
-        request=inline_serializer(
-            name="ClusterRemoveDocument",
-            fields={
-                "draft_name": serializers.CharField(
-                    help_text="Name of the draft to remove from the cluster"
-                ),
-            },
-        ),
-        responses=ClusterSerializer,
-        examples=[
-            OpenApiExample(
-                "Remove Document from Cluster",
-                value={"draft_name": "draft-ietf-example-document"},
-                request_only=True,
-            ),
-        ],
-    )
     @action(detail=True, methods=["post"], url_path="remove-document")
     def remove_document(self, request, number=None):
         """Remove a document from a cluster"""
@@ -603,25 +598,19 @@ class ClusterViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get the RfcToBe by draft name
         try:
-            rfc_to_be = RfcToBe.objects.get(draft__name=draft_name)
-        except RfcToBe.DoesNotExist:
+            cluster_member = ClusterMember.objects.get(
+                cluster=cluster, doc__name=draft_name
+            )
+        except ClusterMember.DoesNotExist:
             return Response(
-                {"error": f"Document with name '{draft_name}' not found"},
+                {"error": f"Document '{draft_name}' not found in cluster"},
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Check if document is in this cluster
-        if rfc_to_be.cluster != cluster:
-            return Response(
-                {"error": f"Document is not in cluster {cluster.number}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        cluster_member.delete()
 
-        # Remove document from cluster
-        rfc_to_be.cluster = None
-        rfc_to_be.save()
+        cluster.refresh_from_db()
 
         serializer = self.get_serializer(cluster)
         return Response(serializer.data)
@@ -652,8 +641,8 @@ class ClusterViewSet(viewsets.ModelViewSet):
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="reorder-documents")
-    def reorder_documents(self, request, number=None):
+    @action(detail=True, methods=["post"], url_path="order")
+    def set_order(self, request, number=None):
         """Reorder documents in a cluster"""
         cluster = self.get_object()
         draft_names = request.data.get("draft_names", [])
@@ -664,32 +653,36 @@ class ClusterViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Get all documents in the cluster
-        cluster_docs = list(RfcToBe.objects.filter(cluster=cluster))
+        # Get all documents currently in the cluster
+        cluster_docs = list(ClusterMember.objects.filter(cluster=cluster))
 
         # Validate that the provided draft names match cluster documents
-        cluster_draft_names = {doc.draft.name for doc in cluster_docs}
+        cluster_draft_names = {cluster_doc.doc.name for cluster_doc in cluster_docs}
         provided_draft_names = set(draft_names)
 
         if cluster_draft_names != provided_draft_names:
             return Response(
                 {
-                    "error": "The provided draft names must exactly match all documents in the cluster",
+                    "error": (
+                        "The provided draft names must exactly match all "
+                        "documents in the cluster"
+                    ),
                     "cluster_documents": list(cluster_draft_names),
                     "provided_documents": list(provided_draft_names),
                 },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create a mapping of draft name to RfcToBe
-        doc_map = {doc.draft.name: doc for doc in cluster_docs}
+        doc_map = {cluster_doc.doc.name: cluster_doc for cluster_doc in cluster_docs}
 
         # Update cluster_order for each document
         with transaction.atomic():
             for idx, draft_name in enumerate(draft_names, start=1):
                 doc = doc_map[draft_name]
-                doc.cluster_order = idx
+                doc.order = idx
                 doc.save()
+
+        cluster.refresh_from_db()
 
         serializer = self.get_serializer(cluster)
         return Response(serializer.data)

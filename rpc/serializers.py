@@ -5,7 +5,7 @@ import warnings
 from dataclasses import dataclass
 from itertools import pairwise
 
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -809,6 +809,7 @@ class ClusterMemberListSerializer(serializers.ListSerializer):
 class ClusterMemberSerializer(serializers.Serializer):
     name = serializers.CharField(source="doc.name")
     rfc_number = serializers.SerializerMethodField()
+    order = serializers.IntegerField()
 
     class Meta:
         model = ClusterMember
@@ -838,14 +839,67 @@ class ClusterSerializer(serializers.ModelSerializer):
     want to respect the `order_by` setting of the `ClusterMember` class.
     """
 
-    documents = ClusterMemberSerializer(source="clustermember_set", many=True)
+    documents = ClusterMemberSerializer(
+        source="clustermember_set", many=True, read_only=True
+    )
+    draft_names = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True,
+        required=False,
+        help_text="List of draft names to add to the cluster",
+    )
 
     class Meta:
         model = Cluster
-        fields = [
-            "number",
-            "documents",
-        ]
+        fields = ["number", "documents", "draft_names"]
+
+    def create(self, validated_data):
+        draft_names = validated_data.pop("draft_names", [])
+        cluster = Cluster.objects.create(number=validated_data["number"])
+
+        if draft_names:
+            for draft_name in draft_names:
+                order = 1
+                with transaction.atomic():
+                    # validate if doc exists
+                    if not Document.objects.filter(name=draft_name).exists():
+                        raise serializers.ValidationError(
+                            f"Document with name '{draft_name}' not found"
+                        )
+                    doc = Document.objects.get(name=draft_name)
+                    ClusterMember.objects.create(cluster=cluster, doc=doc, order=order)
+                    order += 1
+
+        return cluster
+
+    def update(self, instance, validated_data):
+        if "number" in validated_data:
+            raise serializers.ValidationError("Cluster number cannot be updated")
+
+        draft_names = validated_data.pop("draft_names", [])
+        if draft_names:
+            with transaction.atomic():
+                ClusterMember.objects.filter(cluster=instance).delete()
+                order = 1
+                for draft_name in draft_names:
+                    # validate if doc exists
+                    if not Document.objects.filter(name=draft_name).exists():
+                        raise serializers.ValidationError(
+                            f"Document with name '{draft_name}' not found"
+                        )
+                    doc = Document.objects.get(name=draft_name)
+                    if ClusterMember.objects.filter(
+                        cluster__number=instance.number, doc=doc
+                    ).exists():
+                        raise serializers.ValidationError(
+                            f"Document '{draft_name}' is already in cluster "
+                            f"'{instance.number}'"
+                        )
+                    ClusterMember.objects.create(cluster=instance, doc=doc, order=order)
+                    order += 1
+
+        instance.refresh_from_db()
+        return instance
 
 
 @dataclass
