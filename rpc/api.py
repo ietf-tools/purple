@@ -514,6 +514,7 @@ class ClusterViewSet(viewsets.ModelViewSet):
     queryset = Cluster.objects.all()
     serializer_class = ClusterSerializer
     lookup_field = "number"
+    http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_queryset(self):
         """Get clusters with RFC number annotations"""
