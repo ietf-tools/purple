@@ -8,7 +8,6 @@ from itertools import pairwise
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import OuterRef, Prefetch, Subquery
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
