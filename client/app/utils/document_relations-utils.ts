@@ -1,11 +1,9 @@
-import { uniqBy } from "lodash-es";
-
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
  * so they've been hardcoded to ensure same rendering
  * If you change them please test a lot.
  */
-export const font_size = 16;
+export const font_size = 14;
 export const line_height = font_size + 2;
 export const font_family =
   '"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"';
@@ -67,6 +65,7 @@ export const parseLevel = (maybeLevel: string): Level => {
 export type Line = {
   text: string;
   width: number;
+  style?: string
 };
 
 export type Node = NodeParam & {

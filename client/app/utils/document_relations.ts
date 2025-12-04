@@ -53,15 +53,25 @@ function stroke(d: NodeParam) {
 // code partially adapted from
 // https://observablehq.com/@mbostock/fit-text-to-circle
 
-function lines(text: string): Line[] {
+
+type LinesProps= { id: string, rfcNumber?: number }
+function lines({ id, rfcNumber }: LinesProps): Line[] {
   let line_width_0 = Infinity
+  let text = id
   let line: Line = {
-    // TODO: setting a default value is a change when porting to TS. This might be wrong
     text,
     width: line_width_0,
   }
 
   const lines: Line[] = []
+  if(rfcNumber) {
+    const newRfcNumber = `RFC ${rfcNumber}`
+    lines.push({
+      text: newRfcNumber,
+      width: newRfcNumber.length * 10,
+      style: 'font-weight: bold'
+    })
+  }
   let sep = "-"
   let words = text.trim().split(/-/g)
   if (words.length == 1) {
@@ -220,13 +230,10 @@ export function draw_graph(data: DataParam, pushRouter: (path: string) => void) 
   a.append("text")
     .attr("fill", (d) => (d.isRfc || d.isReplaced ? white : black))
     .each((d) => {
-      (d as Node).lines = lines([
-          d.rfcNumber ? `RFC${d.rfcNumber}` : undefined,
-          d.id
-        ]
-        .filter(Boolean)
-        .join(",")
-      );
+      (d as Node).lines = lines({
+        rfcNumber: d.rfcNumber,
+        id: d.id,
+      });
       (d as Node).r = text_radius((d as Node).lines!)
       max_r = Math.max((d as Node).r, max_r)
     })
@@ -234,6 +241,7 @@ export function draw_graph(data: DataParam, pushRouter: (path: string) => void) 
     .data((d) => (d as Node).lines ?? [])
     .join("tspan")
     .attr("x", 0)
+    .attr("style", (d) => d.style ?? '')
     .attr("y", (d, i, x) => (i - x.length / 2 + 0.5) * line_height)
     .text((d) => d.text)
 

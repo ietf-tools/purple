@@ -25,6 +25,26 @@
       </BaseButton>
     </span>
   </div>
+
+  <details class="mt-10 float-right pb-10">
+    <summary class="font-bold cursor-pointer">Diagram data (for debug)</summary>
+
+    <div class="ml-4">
+      <h3 class="mt-4 font-bold">Cluster</h3>
+      <pre>{{ JSON.stringify(props.cluster, null, 2) }}</pre>
+
+      <h3 class="mt-4 font-bold">documentsReferencesList per cluster document</h3>
+      <pre>{{ JSON.stringify(clusterDocumentsReferencesList, null, 2) }}</pre>
+
+      <h3 class="mt-4 font-bold">Reference names (referenced draftName and targetDraftName)</h3>
+      <ul class="ml-8 list-disc">
+        <li v-for="uniqueName in uniqueNames">{{ uniqueName }}</li>
+      </ul>
+
+      <h3 class="mt-4">docRetrieve of these names</h3>
+      <pre>{{ JSON.stringify(maybeRfcsToBe, null, 2) }}</pre>
+    </div>
+  </details>
 </template>
 
 <script setup lang="ts">
@@ -67,6 +87,8 @@ type MaybeRfcToBeError = {
   error: unknown
 }
 
+const uniqueNames = ref<string[]>([])
+
 const isMaybeRfcToBeError = (obj: unknown): obj is MaybeRfcToBeError => Boolean(obj) && obj !== null && typeof obj === 'object' && 'name' in obj && 'error' in obj
 
 const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
@@ -79,14 +101,14 @@ const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = aw
         ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString)
       ])
 
-    const uniqueNames = uniq(names)
+    uniqueNames.value = uniq(names)
     console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", uniqueNames)
 
     return await Promise.all(
-      uniqueNames.map(async name => {
+      uniqueNames.value.map(async name => {
         try {
           return await api.documentsRetrieve({ draftName: name })
-        } catch(error) {
+        } catch (error) {
           return {
             name,
             error,
@@ -95,32 +117,32 @@ const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = aw
       })
     )
   }, {
-    lazy: true,
-    server: false,
-  })
+  lazy: true,
+  server: false,
+})
 
 const rfcToBes = computed(() =>
   maybeRfcsToBe.value ? maybeRfcsToBe.value.map((maybeRfcToBe): RfcToBe => {
-      if (isMaybeRfcToBeError(maybeRfcToBe)) {
-        // Generate a placeholder item
-        const errorRfcToBe: RfcToBe = {
-          name: maybeRfcToBe.name,
-          title: String(maybeRfcToBe.error),
-          disposition: '',
-          labels: [],
-          submittedFormat: '',
-          submittedBoilerplate: '',
-          submittedStdLevel: '',
-          submittedStream: '',
-          intendedBoilerplate: '',
-          intendedStdLevel: '',
-          intendedStream: '',
-          authors: [],
-        }
-        return errorRfcToBe
+    if (isMaybeRfcToBeError(maybeRfcToBe)) {
+      // Generate a placeholder item
+      const errorRfcToBe: RfcToBe = {
+        name: maybeRfcToBe.name,
+        title: String(maybeRfcToBe.error),
+        disposition: '',
+        labels: [],
+        submittedFormat: '',
+        submittedBoilerplate: '',
+        submittedStdLevel: '',
+        submittedStream: '',
+        intendedBoilerplate: '',
+        intendedStdLevel: '',
+        intendedStream: '',
+        authors: [],
       }
-      return maybeRfcToBe
-    }) : []
+      return errorRfcToBe
+    }
+    return maybeRfcToBe
+  }) : []
 )
 
 const canDownload = ref(false)
@@ -139,7 +161,7 @@ watch(maybeRfcsToBe, () => {
   const errors = maybeRfcsToBe.value ?
     maybeRfcsToBe.value.filter(isMaybeRfcToBeError).map(e => e.name) :
     []
-  if(errors.length > 0) {
+  if (errors.length > 0) {
     snackbar.add({
       type: 'error',
       title: `Error loading some references`,
