@@ -48,7 +48,7 @@ class CrossrefTests(TestCase):
                 self.assertIn(f"<suffix>{name_parts[2]}</suffix>", xml_str)
 
     @override_settings(
-        AUTHOR_ORGS=[
+        DOI_AUTHOR_ORGS=[
             "Rohan",
         ]
     )

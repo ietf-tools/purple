@@ -167,6 +167,6 @@ DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
 DOI_PREFIX = "10.17487"
 DOI_EMAIL = "webmaster@rfc-editor.org"
 DOI_URL = "https://www.rfc-editor.org/info/"
-AUTHOR_ORGS = [
+DOI_AUTHOR_ORGS = [
     "IAB",
 ]

@@ -42,7 +42,7 @@ def _get_contributors(author, sequence):
     name = " ".join([n for n in author.titlepage_name.split(" ") if len(n) > 0])
     role = "editor" if author.is_editor else "author"
 
-    if name not in settings.AUTHOR_ORGS:
+    if name not in settings.DOI_AUTHOR_ORGS:
         # person_name
         (first_name, last_name, suffix) = _get_name_parts(name)
         person_name = ElementTree.Element(
