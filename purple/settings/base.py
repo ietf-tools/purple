@@ -159,9 +159,11 @@ CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
 
 # Crossref / DOI
-CROSSREF_API = "https://test.crossref.org/servlet/deposit"
-CROSSREF_USER = "user"
-CROSSREF_PASSWORD = "friend"
+CROSSREF_API = os.environ.get(
+    "PURPLE_CROSSREF_API", "https://test.crossref.org/servlet/deposit"
+)
+CROSSREF_USER = os.environ.get("PURPLE_CROSSREF_USER", "user")
+CROSSREF_PASSWORD = os.environ.get("PURPLE_CROSSREF_PASSWORD", "friend")
 CROSSREF_TIMEOUT = 1  # in seconds
 DOI_REGISTRANT = "RFC Editor"
 DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
