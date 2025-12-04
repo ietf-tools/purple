@@ -164,7 +164,7 @@ CROSSREF_API = os.environ.get(
 )
 CROSSREF_USER = os.environ.get("PURPLE_CROSSREF_USER", "user")
 CROSSREF_PASSWORD = os.environ.get("PURPLE_CROSSREF_PASSWORD", "friend")
-CROSSREF_TIMEOUT = 1  # in seconds
+CROSSREF_TIMEOUT = 30  # in seconds
 DOI_REGISTRANT = "RFC Editor"
 DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
 DOI_PREFIX = "10.17487"
