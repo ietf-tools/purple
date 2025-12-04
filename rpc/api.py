@@ -538,7 +538,12 @@ class ClusterViewSet(
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="add-document", serializer_class=ClusterAddRemoveDocumentSerializer)
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="add-document",
+        serializer_class=ClusterAddRemoveDocumentSerializer,
+    )
     def add_document(self, request, number=None):
         """Add a document to a cluster"""
         cluster = self.get_object()
@@ -580,8 +585,8 @@ class ClusterViewSet(
 
         cluster.refresh_from_db()
 
-        serializer = self.get_serializer(cluster)
-        return Response(serializer.data)
+        response_serializer = ClusterSerializer(cluster)
+        return Response(response_serializer.data)
 
     @extend_schema(
         operation_id="clusters_remove_document",
@@ -595,12 +600,17 @@ class ClusterViewSet(
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="remove-document")
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="remove-document",
+        serializer_class=ClusterAddRemoveDocumentSerializer,
+    )
     def remove_document(self, request, number=None):
         """Remove a document from a cluster"""
         cluster = self.get_object()
 
-        serializer = ClusterAddRemoveDocumentSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         draft_name = serializer.validated_data["draft_name"]
 
@@ -622,8 +632,8 @@ class ClusterViewSet(
 
         cluster.refresh_from_db()
 
-        serializer = self.get_serializer(cluster)
-        return Response(serializer.data)
+        response_serializer = ClusterSerializer(cluster)
+        return Response(response_serializer.data)
 
     @extend_schema(
         operation_id="clusters_reorder_documents",
@@ -643,11 +653,12 @@ class ClusterViewSet(
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="order")
+    @action(detail=True, methods=["post"], url_path="order", serializer_class=ClusterReorderDocumentsSerializer)
     def set_order(self, request, number=None):
         """Reorder documents in a cluster"""
         cluster = self.get_object()
-        serializer = ClusterReorderDocumentsSerializer(data=request.data)
+
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         draft_names = serializer.validated_data["draft_names"]
 
@@ -682,8 +693,8 @@ class ClusterViewSet(
 
         cluster.refresh_from_db()
 
-        serializer = self.get_serializer(cluster)
-        return Response(serializer.data)
+        response_serializer = ClusterSerializer(cluster)
+        return Response(response_serializer.data)
 
 
 class AssignmentViewSet(viewsets.ModelViewSet):
