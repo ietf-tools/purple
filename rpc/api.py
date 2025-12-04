@@ -529,7 +529,6 @@ class ClusterViewSet(
 
     @extend_schema(
         operation_id="clusters_add_document",
-        request=ClusterAddRemoveDocumentSerializer,
         responses=ClusterSerializer,
         examples=[
             OpenApiExample(
@@ -539,12 +538,12 @@ class ClusterViewSet(
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="add-document")
+    @action(detail=True, methods=["post"], url_path="add-document", serializer_class=ClusterAddRemoveDocumentSerializer)
     def add_document(self, request, number=None):
         """Add a document to a cluster"""
         cluster = self.get_object()
 
-        serializer = ClusterAddRemoveDocumentSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         draft_name = serializer.validated_data["draft_name"]
 
