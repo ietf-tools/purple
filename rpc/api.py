@@ -662,10 +662,10 @@ class ClusterViewSet(
         if cluster_draft_names != provided_draft_names:
             raise serializers.ValidationError(
                 {
-                    "draft_names": [
+                    "draft_names": (
                         "The provided draft names must exactly match all documents "
                         "in the cluster"
-                    ],
+                    ),
                     "cluster_documents": list(cluster_draft_names),
                     "provided_documents": list(provided_draft_names),
                 },
