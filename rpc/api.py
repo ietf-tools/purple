@@ -80,6 +80,8 @@ from .serializers import (
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
+    ClusterAddRemoveDocumentSerializer,
+    ClusterReorderDocumentsSerializer,
     ClusterSerializer,
     CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
@@ -510,11 +512,16 @@ class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CapabilitySerializer
 
 
-class ClusterViewSet(viewsets.ModelViewSet):
+class ClusterViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = Cluster.objects.all()
     serializer_class = ClusterSerializer
     lookup_field = "number"
-    http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_queryset(self):
         """Get clusters with RFC number annotations"""
@@ -522,14 +529,7 @@ class ClusterViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         operation_id="clusters_add_document",
-        request=inline_serializer(
-            name="ClusterAddDocument",
-            fields={
-                "draft_name": serializers.CharField(
-                    help_text="Name of the draft to add to the cluster"
-                ),
-            },
-        ),
+        request=ClusterAddRemoveDocumentSerializer,
         responses=ClusterSerializer,
         examples=[
             OpenApiExample(
@@ -543,34 +543,31 @@ class ClusterViewSet(viewsets.ModelViewSet):
     def add_document(self, request, number=None):
         """Add a document to a cluster"""
         cluster = self.get_object()
-        draft_name = request.data.get("draft_name")
 
-        if not draft_name:
-            return Response(
-                {"error": "draft_name is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ClusterAddRemoveDocumentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        draft_name = serializer.validated_data["draft_name"]
 
         # Get the Document by draft name
         try:
             doc = Document.objects.get(name=draft_name)
         except Document.DoesNotExist:
-            return Response(
-                {"error": f"Document with name '{draft_name}' not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise serializers.ValidationError(
+                {"draft_name": [f"Document with name '{draft_name}' not found"]},
+                code="document_not_found",
+            ) from None
 
         # Check if document is already in any cluster
         existing_member = ClusterMember.objects.filter(doc=doc).first()
         if existing_member:
-            return Response(
+            raise serializers.ValidationError(
                 {
-                    "error": (
-                        f"Document is already in cluster "
+                    "draft_name": [
+                        f"Document {draft_name} is already in cluster "
                         f"{existing_member.cluster.number}"
-                    )
+                    ]
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                code="document_already_in_cluster",
             )
 
         max_order = (
@@ -587,27 +584,40 @@ class ClusterViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cluster)
         return Response(serializer.data)
 
+    @extend_schema(
+        operation_id="clusters_remove_document",
+        request=ClusterAddRemoveDocumentSerializer,
+        responses=ClusterSerializer,
+        examples=[
+            OpenApiExample(
+                "Remove Document from Cluster",
+                value={"draft_name": "draft-ietf-example-document"},
+                request_only=True,
+            ),
+        ],
+    )
     @action(detail=True, methods=["post"], url_path="remove-document")
     def remove_document(self, request, number=None):
         """Remove a document from a cluster"""
         cluster = self.get_object()
-        draft_name = request.data.get("draft_name")
 
-        if not draft_name:
-            return Response(
-                {"error": "draft_name is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ClusterAddRemoveDocumentSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        draft_name = serializer.validated_data["draft_name"]
 
         try:
             cluster_member = ClusterMember.objects.get(
                 cluster=cluster, doc__name=draft_name
             )
         except ClusterMember.DoesNotExist:
-            return Response(
-                {"error": f"Document '{draft_name}' not found in cluster"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+            raise serializers.ValidationError(
+                {
+                    "draft_name": [
+                        f"Document '{draft_name}' is not in cluster {cluster.number}"
+                    ]
+                },
+                code="document_not_found_in_cluster",
+            ) from None
 
         cluster_member.delete()
 
@@ -618,15 +628,7 @@ class ClusterViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         operation_id="clusters_reorder_documents",
-        request=inline_serializer(
-            name="ClusterReorderDocuments",
-            fields={
-                "draft_names": serializers.ListField(
-                    child=serializers.CharField(),
-                    help_text="Ordered list of draft names in the cluster",
-                ),
-            },
-        ),
+        request=ClusterReorderDocumentsSerializer,
         responses=ClusterSerializer,
         examples=[
             OpenApiExample(
@@ -646,13 +648,9 @@ class ClusterViewSet(viewsets.ModelViewSet):
     def set_order(self, request, number=None):
         """Reorder documents in a cluster"""
         cluster = self.get_object()
-        draft_names = request.data.get("draft_names", [])
-
-        if not draft_names:
-            return Response(
-                {"error": "draft_names is required and must not be empty"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+        serializer = ClusterReorderDocumentsSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        draft_names = serializer.validated_data["draft_names"]
 
         # Get all documents currently in the cluster
         cluster_docs = list(ClusterMember.objects.filter(cluster=cluster))
@@ -662,16 +660,16 @@ class ClusterViewSet(viewsets.ModelViewSet):
         provided_draft_names = set(draft_names)
 
         if cluster_draft_names != provided_draft_names:
-            return Response(
+            raise serializers.ValidationError(
                 {
-                    "error": (
-                        "The provided draft names must exactly match all "
-                        "documents in the cluster"
-                    ),
+                    "draft_names": [
+                        "The provided draft names must exactly match all documents "
+                        "in the cluster"
+                    ],
                     "cluster_documents": list(cluster_draft_names),
                     "provided_documents": list(provided_draft_names),
                 },
-                status=status.HTTP_400_BAD_REQUEST,
+                code="mismatched_documents",
             )
 
         doc_map = {cluster_doc.doc.name: cluster_doc for cluster_doc in cluster_docs}

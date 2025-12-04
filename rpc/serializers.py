@@ -316,6 +316,23 @@ class SimpleClusterSerializer(serializers.ModelSerializer):
         fields = ["number"]
 
 
+class ClusterAddRemoveDocumentSerializer(serializers.Serializer):
+    """Serializer for adding or removing a document in a cluster"""
+
+    draft_name = serializers.CharField(
+        help_text="Name of the draft to add/remove in the cluster"
+    )
+
+
+class ClusterReorderDocumentsSerializer(serializers.Serializer):
+    """Serializer for reordering documents in a cluster"""
+
+    draft_names = serializers.ListField(
+        child=serializers.CharField(),
+        help_text="List of draft names in the desired order",
+    )
+
+
 class MinimalRfcToBeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RfcToBe
@@ -858,13 +875,17 @@ class ClusterSerializer(serializers.ModelSerializer):
         cluster = Cluster.objects.create(number=validated_data["number"])
 
         if draft_names:
-            for draft_name in draft_names:
+            with transaction.atomic():
                 order = 1
-                with transaction.atomic():
+                for draft_name in draft_names:
                     # validate if doc exists
                     if not Document.objects.filter(name=draft_name).exists():
                         raise serializers.ValidationError(
-                            f"Document with name '{draft_name}' not found"
+                            {
+                                "draft_name": f"Document with name '{draft_name}' "
+                                "not found"
+                            },
+                            code="document_not_found",
                         )
                     doc = Document.objects.get(name=draft_name)
                     ClusterMember.objects.create(cluster=cluster, doc=doc, order=order)
@@ -885,15 +906,22 @@ class ClusterSerializer(serializers.ModelSerializer):
                     # validate if doc exists
                     if not Document.objects.filter(name=draft_name).exists():
                         raise serializers.ValidationError(
-                            f"Document with name '{draft_name}' not found"
+                            {
+                                "draft_name": f"Document with name '{draft_name}' "
+                                "not found"
+                            },
+                            code="document_not_found",
                         )
                     doc = Document.objects.get(name=draft_name)
                     if ClusterMember.objects.filter(
                         cluster__number=instance.number, doc=doc
                     ).exists():
                         raise serializers.ValidationError(
-                            f"Document '{draft_name}' is already in cluster "
-                            f"'{instance.number}'"
+                            {
+                                "draft_name": f"Document with name '{draft_name}' is "
+                                f"already in cluster '{instance.number}'"
+                            },
+                            code="document_already_in_cluster",
                         )
                     ClusterMember.objects.create(cluster=instance, doc=doc, order=order)
                     order += 1
