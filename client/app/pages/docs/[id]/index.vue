@@ -212,7 +212,6 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { difference } from 'lodash-es'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
 import type { Assignment } from '~/purple_client'
@@ -264,11 +263,6 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh
   }
 )
 
-const appliedLabels = computed(() => labels.value.filter((lbl) => {
-  if (lbl.id === undefined) return false
-  return rawRfcToBe.value?.labels.includes(lbl.id)
-}))
-
 // todo retrieve assignments for a single draft more efficiently
 const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   () => api.assignmentsList(),
@@ -279,7 +273,10 @@ const rfcToBeAssignments = computed(() =>
   assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
 )
 
-const initialSelectedLabelIds = computed(() => [...(rawRfcToBe.value?.labels ?? [])])
+const initialSelectedLabelIds = computed(() => {
+  console.log("recomputing initial selected label ids")
+  return [...(rawRfcToBe.value?.labels ?? [])]
+})
 
 const selectedLabelIds = ref([...initialSelectedLabelIds.value])
 
@@ -318,11 +315,20 @@ const labels3 = computed(
 watch(
   selectedLabelIds,
   async () => {
-    const differences = difference(initialSelectedLabelIds.value, selectedLabelIds.value)
-    if (!differences || differences.length === 0) {
-      console.log("No change in label ids. Not saving", differences)
+    // spreading to ensure ref proxy objects provide primitive number values and not a wrapped proxy thing that would confuse difference()
+    const initialValues = new Set([...initialSelectedLabelIds.value])
+    const selectedValues = new Set([...selectedLabelIds.value])
+
+    const areSetsSame = (a: Set<number>, b: Set<number>): boolean =>
+      a.size === b.size &&
+      [...a].every((x) => b.has(x));
+
+    if (areSetsSame(initialValues, selectedValues)) {
+      console.log("No change in label ids. Not saving. ", initialValues, ' vs ', selectedValues)
       return
     }
+
+    console.log("Changes found in label ids so saving: ",  initialValues, ' vs ', selectedValues)
 
     try {
       await api.documentsPartialUpdate({
