@@ -7,6 +7,7 @@ from itertools import pairwise
 
 from django.db import models
 from django.db.models import OuterRef, Prefetch, Subquery
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -48,6 +49,18 @@ class RpcPerson(models.Model):
         return str(self.datatracker_person)
 
 
+class UnusableRfcNumber(models.Model):
+    number = models.PositiveIntegerField(primary_key=True)
+    comment = models.TextField(blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        ordering = ["number"]
+
+    def __str__(self):
+        return str(self.number)
+
+
 class RfcToBeLabel(models.Model):
     """Through model for linking Label to RfcToBe
 
@@ -59,6 +72,15 @@ class RfcToBeLabel(models.Model):
 
     class Meta:
         verbose_name_plural = "RfcToBe labels"
+
+
+def validate_not_unusable_rfc_number(value):
+    """Validate that RFC number is not in UnusableRfcNumber table"""
+    if value is not None and UnusableRfcNumber.objects.filter(number=value).exists():
+        raise ValidationError(
+            f"RFC number {value} is marked as unusable",
+            code="unusable_rfc_number",
+        )
 
 
 class RfcToBe(models.Model):
@@ -79,7 +101,12 @@ class RfcToBe(models.Model):
     draft = models.ForeignKey(
         "datatracker.Document", null=True, blank=True, on_delete=models.PROTECT
     )
-    rfc_number = models.PositiveIntegerField(null=True, blank=True, unique=True)
+    rfc_number = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        unique=True,
+        validators=[validate_not_unusable_rfc_number],
+    )
 
     submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
     submitted_std_level = models.ForeignKey(
@@ -347,18 +374,6 @@ class Cluster(models.Model):
 
     def __str__(self):
         return f"cluster {self.number} ({self.docs.count()} documents)"
-
-
-class UnusableRfcNumber(models.Model):
-    number = models.PositiveIntegerField(primary_key=True)
-    comment = models.TextField(blank=True)
-    history = HistoricalRecords()
-
-    class Meta:
-        ordering = ["number"]
-
-    def __str__(self):
-        return str(self.number)
 
 
 class RpcRole(models.Model):
