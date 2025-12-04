@@ -162,6 +162,7 @@ CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
 CROSSREF_API = "https://test.crossref.org/servlet/deposit"
 CROSSREF_USER = "user"
 CROSSREF_PASSWORD = "friend"
+CROSSREF_TIMEOUT = 1  # in seconds
 DOI_REGISTRANT = "RFC Editor"
 DOI_DEPOSITOR = "RFC Production Center for the RFC Editor"
 DOI_PREFIX = "10.17487"

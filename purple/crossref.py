@@ -190,5 +190,7 @@ def submit(rfc_number):
         )
     }
 
-    response = post(settings.CROSSREF_API, data=data, files=files)
+    response = post(
+        settings.CROSSREF_API, data=data, files=files, timeout=settings.CROSSREF_TIMEOUT
+    )
     response.raise_for_status()
