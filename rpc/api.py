@@ -612,9 +612,9 @@ class ClusterViewSet(
         except ClusterMember.DoesNotExist:
             raise serializers.ValidationError(
                 {
-                    "draft_name": [
+                    "draft_name": (
                         f"Document '{draft_name}' is not in cluster {cluster.number}"
-                    ]
+                    )
                 },
                 code="document_not_found_in_cluster",
             ) from None
