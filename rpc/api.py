@@ -562,10 +562,10 @@ class ClusterViewSet(
         if existing_member:
             raise serializers.ValidationError(
                 {
-                    "draft_name": [
+                    "draft_name": (
                         f"Document {draft_name} is already in cluster "
                         f"{existing_member.cluster.number}"
-                    ]
+                    )
                 },
                 code="document_already_in_cluster",
             )
