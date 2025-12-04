@@ -10,6 +10,7 @@ from requests import post
 from rpc.models import RfcToBe
 
 DATETIME_FMT = "%Y%m%d%H%M%S"
+CROSSREF_VERSION = "4.4.2"
 
 
 def _get_name_parts(name):
@@ -77,12 +78,12 @@ def _generate_crossref_xml(rfc_number):
     root = ElementTree.Element(
         "doi_batch",
         attrib={
-            "version": settings.CROSSREF_VERSION,
-            "xmlns": f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION}",
+            "version": CROSSREF_VERSION,
+            "xmlns": f"http://www.crossref.org/schema/{CROSSREF_VERSION}",
             "xmlns:xsi": "http://www.w3.org/2001/XMLSchema-instance",
             "xsi:schemaLocation": (
-                f"http://www.crossref.org/schema/{settings.CROSSREF_VERSION} "
-                f"http://www.crossref.org/schema/deposit/crossref{settings.CROSSREF_VERSION}.xsd"
+                f"http://www.crossref.org/schema/{CROSSREF_VERSION} "
+                f"http://www.crossref.org/schema/deposit/crossref{CROSSREF_VERSION}.xsd"
             ),
         },
     )
