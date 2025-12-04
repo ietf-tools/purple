@@ -53,12 +53,10 @@
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
             <div v-if="!props.isReadOnly" class="flex items-center gap-2">
-              <input v-model="rfcNumberInput" type="text" placeholder="Enter RFC number"
-                class="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                @blur="updateRfcNumber" />
+              <EditRfcNumber :name="rfcToBe.name" :initial-rfc-number="rfcToBe.rfcNumber" :on-success="() => props.refresh()" />
             </div>
-            <div>
-              {{ rfcNumberInput || '(none)' }}
+            <div v-else class="font-mono">
+              {{ rfcToBe.rfcNumber || '(none)' }}
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -87,6 +85,7 @@ type Props = {
   rfcToBe: RfcToBe | null | undefined
   draftName: string
   isReadOnly?: boolean
+  refresh: () => void
 }
 
 const props = defineProps<Props>()
@@ -95,81 +94,5 @@ const emit = defineEmits<{
   refresh: []
 }>()
 
-const api = useApi()
-const snackbar = useSnackbar()
-const rfcNumberInput = ref(`${props.rfcToBe?.rfcNumber ?? ''}`)
-
 const spacing = computed(() => props.isReadOnly ? 'small' : 'large')
-
-// Fetch unusable RFC numbers (numbers that are blocked)
-const { data: unusableRfcNumbers } = await useAsyncData(
-  'unusable-rfc-numbers',
-  () => api.unusableRfcNumbersList(),
-  {
-    server: false,
-    default: () => []
-  }
-)
-
-watch(() => props.rfcToBe?.rfcNumber, (newValue) => {
-  rfcNumberInput.value = newValue?.toString() || ''
-}, { immediate: true })
-
-const updateRfcNumber = async () => {
-  const newValue = rfcNumberInput.value.trim()
-
-  // Validate that input is a valid number or empty
-  if (newValue && !/^\d+$/.test(newValue)) {
-    snackbar.add({
-      type: 'error',
-      title: 'Invalid RFC number',
-      text: 'RFC number must be a valid number'
-    })
-    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
-    return
-  }
-
-  const rfcNumber = newValue ? parseInt(newValue) : null
-
-  if (rfcNumber === props.rfcToBe?.rfcNumber) return
-
-  // Check against unusable RFC numbers list
-  const isUnusable = unusableRfcNumbers.value?.some(
-    unusable => unusable.number === rfcNumber
-  )
-
-  if (isUnusable) {
-    snackbar.add({
-      type: 'error',
-      title: 'Invalid RFC number',
-      text: `RFC number ${rfcNumber} is in the list of unusable RFC numbers`
-    })
-    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
-    return
-  }
-
-  try {
-    await api.documentsPartialUpdate({
-      draftName: props.draftName,
-      patchedRfcToBeRequest: { rfcNumber: rfcNumber }
-    })
-
-    snackbar.add({
-      type: 'success',
-      title: `Updated RFC number for "${props.draftName}"`,
-      text: ''
-    })
-
-  } catch (e: unknown) {
-    snackbarForErrors({
-      snackbar,
-      defaultTitle: `Unable to update RFC number for "${props.draftName}"`,
-      error: e
-    })
-
-    rfcNumberInput.value = props.rfcToBe?.rfcNumber?.toString() || ''
-  } finally {
-    emit('refresh')
-  }
-}
 </script>

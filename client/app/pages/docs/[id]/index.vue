@@ -104,7 +104,7 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" @refresh="historyRefresh()" />
+        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="() => rfcToBeRefresh()" />
 
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
 
@@ -129,7 +129,7 @@
 
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" iana-action="iana-no-actions"
-            :on-success="rfcToBeReload" :name="rawRfcToBe.name" />
+            :on-success="rfcToBeRefresh" :name="rawRfcToBe.name" />
         </BaseCard>
 
         <div class="lg:col-span-full">
@@ -223,7 +223,6 @@ import PublishModal from '../../../components/PublishModal.vue'
 const route = useRoute()
 const api = useApi()
 const snackbar = useSnackbar()
-const isInitialLoad = ref(true)
 
 // COMPUTED
 
@@ -254,7 +253,7 @@ const {
   refresh: historyRefresh
 } = await useHistoryForDraft(draftName.value)
 
-const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeReload } = await useAsyncData(
+const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
@@ -263,11 +262,6 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh
     deep: true // author editing relies on deep reactivity
   }
 )
-
-const appliedLabels = computed(() => labels.value.filter((lbl) => {
-  if (lbl.id === undefined) return false
-  return rawRfcToBe.value?.labels.includes(lbl.id)
-}))
 
 // todo retrieve assignments for a single draft more efficiently
 const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
@@ -279,7 +273,12 @@ const rfcToBeAssignments = computed(() =>
   assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
 )
 
-const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
+const initialSelectedLabelIds = computed(() => {
+  console.log("recomputing initial selected label ids")
+  return [...(rawRfcToBe.value?.labels ?? [])]
+})
+
+const selectedLabelIds = ref([...initialSelectedLabelIds.value])
 
 const rfcToBe = computed((): CookedDraft | null => {
   if (rawRfcToBe.value) {
@@ -316,10 +315,20 @@ const labels3 = computed(
 watch(
   selectedLabelIds,
   async () => {
-    if (isInitialLoad.value) {
-      isInitialLoad.value = false
+    // spreading to ensure ref proxy objects provide primitive number values and not a wrapped proxy thing that would confuse difference()
+    const initialValues = new Set([...initialSelectedLabelIds.value])
+    const selectedValues = new Set([...selectedLabelIds.value])
+
+    const areSetsSame = (a: Set<number>, b: Set<number>): boolean =>
+      a.size === b.size &&
+      [...a].every((x) => b.has(x));
+
+    if (areSetsSame(initialValues, selectedValues)) {
+      console.log("No change in label ids. Not saving. ", initialValues, ' vs ', selectedValues)
       return
     }
+
+    console.log("Changes found in label ids so saving: ",  initialValues, ' vs ', selectedValues)
 
     try {
       await api.documentsPartialUpdate({

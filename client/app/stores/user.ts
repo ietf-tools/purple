@@ -64,17 +64,16 @@ export const useUserStore = defineStore('user', {
         console.error('Error loading profile', e)
       })
 
-      const isLoginRoute = testIsAuthRoute(location.pathname)
-      if (!isLoginRoute && (!profileData || profileData.authenticated === false)) {
-        stopPageReloadSoon()
-        const redirectPath = `${AUTH_PATH}${!isLoginRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`
-        console.log("No session so redirecting to", redirectPath)
-        window.location.assign(redirectPath)
-        return
-      }
+      const isAuthRoute = testIsAuthRoute(location.pathname)
+      const authRedirectPath = `${AUTH_PATH}${!isAuthRoute ? `?next=${encodeURIComponent(getCurrentRelativePath())}` : ''}`
 
       if (!profileData) {
-        return reloadPageSoon(profileData)
+        stopPageReloadSoon()
+        if(!isAuthRoute) {
+          console.log("No session so redirecting to", authRedirectPath)
+          window.location.assign(authRedirectPath)
+        }
+        return
       }
 
       if (profileData.authenticated === true) {

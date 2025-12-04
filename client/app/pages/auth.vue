@@ -13,8 +13,6 @@
 </template>
 
 <script setup lang="ts">
-import { useDefaultHead } from '~/utils/head'
-
 const route = useRoute()
 
 // mozilla_django_oidc supports a url param `next` to return to the current path https://mozilla-django-oidc.readthedocs.io/en/stable/settings.html?highlight=next#OIDC_REDIRECT_FIELD_NAME
@@ -23,10 +21,11 @@ const nextParam = computed(() => {
   return typeof next === 'string' ? `?next=${encodeURIComponent(next)}` : ''
 })
 
-useDefaultHead()
-
 definePageMeta({
   layout: false,
 })
 
+useHead({
+  title: 'Login'
+})
 </script>
