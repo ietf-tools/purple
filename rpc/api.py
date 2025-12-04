@@ -590,7 +590,6 @@ class ClusterViewSet(
 
     @extend_schema(
         operation_id="clusters_remove_document",
-        request=ClusterAddRemoveDocumentSerializer,
         responses=ClusterSerializer,
         examples=[
             OpenApiExample(
@@ -637,7 +636,6 @@ class ClusterViewSet(
 
     @extend_schema(
         operation_id="clusters_reorder_documents",
-        request=ClusterReorderDocumentsSerializer,
         responses=ClusterSerializer,
         examples=[
             OpenApiExample(
@@ -653,7 +651,12 @@ class ClusterViewSet(
             ),
         ],
     )
-    @action(detail=True, methods=["post"], url_path="order", serializer_class=ClusterReorderDocumentsSerializer)
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="order",
+        serializer_class=ClusterReorderDocumentsSerializer,
+    )
     def set_order(self, request, number=None):
         """Reorder documents in a cluster"""
         cluster = self.get_object()
