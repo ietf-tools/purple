@@ -104,7 +104,7 @@
         </BaseCard>
 
         <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" @refresh="historyRefresh()" />
+        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="() => rfcToBeRefresh()" />
 
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
 
@@ -129,7 +129,7 @@
 
         <BaseCard class="lg:col-span-full grid place-items-stretch">
           <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" iana-action="iana-no-actions"
-            :on-success="rfcToBeReload" :name="rawRfcToBe.name" />
+            :on-success="rfcToBeRefresh" :name="rawRfcToBe.name" />
         </BaseCard>
 
         <div class="lg:col-span-full">
@@ -212,6 +212,7 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
+import { difference } from 'lodash-es'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
 import type { Assignment } from '~/purple_client'
@@ -223,7 +224,6 @@ import PublishModal from '../../../components/PublishModal.vue'
 const route = useRoute()
 const api = useApi()
 const snackbar = useSnackbar()
-const isInitialLoad = ref(true)
 
 // COMPUTED
 
@@ -254,7 +254,7 @@ const {
   refresh: historyRefresh
 } = await useHistoryForDraft(draftName.value)
 
-const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeReload } = await useAsyncData(
+const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
@@ -279,7 +279,9 @@ const rfcToBeAssignments = computed(() =>
   assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
 )
 
-const selectedLabelIds = ref(rawRfcToBe.value?.labels ?? [])
+const initialSelectedLabelIds = computed(() => [...(rawRfcToBe.value?.labels ?? [])])
+
+const selectedLabelIds = ref([...initialSelectedLabelIds.value])
 
 const rfcToBe = computed((): CookedDraft | null => {
   if (rawRfcToBe.value) {
@@ -316,8 +318,9 @@ const labels3 = computed(
 watch(
   selectedLabelIds,
   async () => {
-    if (isInitialLoad.value) {
-      isInitialLoad.value = false
+    const differences = difference(initialSelectedLabelIds.value, selectedLabelIds.value)
+    if (!differences || differences.length === 0) {
+      console.log("No change in label ids. Not saving", differences)
       return
     }
 

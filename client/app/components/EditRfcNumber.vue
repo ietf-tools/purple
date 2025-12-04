@@ -1,7 +1,8 @@
 <template>
-  <input v-model="rfcNumberInput" type="text" placeholder="Enter RFC number"
-    class="px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-    @blur="updateRfcNumber" />
+  <div class="flex gap-1">
+    <input v-model="rfcNumberInput" type="number" class="px-2f py-1 w-[6em] font-mono text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 input-number-no-spinners" />
+    <BaseButton @click="updateRfcNumber" btn-type="outline" size="xs">Save</BaseButton>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -19,7 +20,7 @@ const api = useApi()
 
 const snackbar = useSnackbar()
 
-const formatRfcNumberForInput = (rfcNumber: RfcToBe['rfcNumber']): string => `${props.initialRfcNumber ?? ''}`
+const formatRfcNumberForInput = (rfcNumber: RfcToBe['rfcNumber']): string => `${rfcNumber ?? ''}`
 
 const rfcNumberInput = ref(formatRfcNumberForInput(props.initialRfcNumber))
 
@@ -38,10 +39,10 @@ const updateRfcNumber = async () => {
     return
   }
 
-  const newValue = rfcNumberInput.value.trim()
+  const newValue = rfcNumberInput.value.toString().trim()
 
   // Validate that input is a valid number or empty
-  if (newValue.length === 0 || !/^\d+$/.test(newValue)) {
+  if (newValue.length > 1 && !/^\d+$/.test(newValue)) {
     snackbar.add({
       type: 'error',
       title: 'Invalid RFC number',
@@ -53,16 +54,12 @@ const updateRfcNumber = async () => {
   const newRfcNumber = newValue ? parseInt(newValue, 10) : null
 
   if (newRfcNumber === initialRfcNumber) {
-    console.info("No change to RFC number. Not updating.")
-    return
-  }
-
-  if (newRfcNumber === null) {
-    snackbar.add({
-      type: 'error',
-      title: "Can't update to invalid RFC number",
-      text: `${JSON.stringify(newValue)} is not a valid RFC number`
+      snackbar.add({
+      type: 'info',
+      title: 'No change to RFC number.',
+      text: `Not saving.`
     })
+    return
   }
 
   try {
@@ -71,11 +68,14 @@ const updateRfcNumber = async () => {
       patchedRfcToBeRequest: { rfcNumber: newRfcNumber }
     })
 
-    if (newRfcToBe.rfcNumber === newRfcNumber) {
+    // The server can respond with undefined so we need to coerce undefined to null to compare it
+    const serverRfcNumber = newRfcToBe.rfcNumber ?? null
+
+    if (serverRfcNumber === newRfcNumber) {
       snackbar.add({
         type: 'success',
-        title: `${JSON.stringify(name)}'s RFC number now ${newRfcNumber}'`,
-        text: ''
+        title: serverRfcNumber === null ? `RFC number removed` : `RFC number now ${newRfcNumber}`,
+        text: `${JSON.stringify(name)} updated`
       })
       props.onSuccess()
     } else {
@@ -89,9 +89,18 @@ const updateRfcNumber = async () => {
   } catch (e: unknown) {
     snackbarForErrors({
       snackbar,
-      defaultTitle: `Unable to update RFC number to ${JSON.stringify(newRfcNumber)} for "${JSON.stringify(name)}"`,
+      defaultTitle: `Failed to update RFC number to ${newRfcNumber}`,
       error: e
     })
   }
 }
 </script>
+
+<style>
+.input-number-no-spinners,
+.input-number-no-spinners::-webkit-inner-spin-button,
+.input-number-no-spinners::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>
