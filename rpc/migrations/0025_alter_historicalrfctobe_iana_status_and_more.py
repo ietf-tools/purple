@@ -63,14 +63,4 @@ class Migration(migrations.Migration):
                 null=True,
             ),
         ),
-        migrations.AlterField(
-            model_name="rfctobe",
-            name="rfc_number",
-            field=models.PositiveIntegerField(
-                blank=True,
-                null=True,
-                unique=True,
-                validators=[rpc.models.validate_not_unusable_rfc_number],
-            ),
-        ),
     ]
