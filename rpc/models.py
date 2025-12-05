@@ -86,10 +86,10 @@ def validate_not_unusable_rfc_number(value):
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""
 
-    class _IanaStatus(models.TextChoices):
+    class IanaStatus(models.TextChoices):
         NO_ACTIONS = "no_actions", "This document has no IANA actions"
         NOT_COMPLETED = "not_completed", "IANA has not completed actions in draft"
-        COMPLETED_IN_DRAFT = "completed", "IANA has completed actions in draft"
+        COMPLETED = "completed", "IANA has completed actions in draft"
         CHANGES_REQUIRED = (
             "changes_required",
             "Changes to registries are required due to RFC edits",
@@ -150,8 +150,8 @@ class RfcToBe(models.Model):
 
     iana_status = models.CharField(
         max_length=32,
-        choices=_IanaStatus.choices,
-        default=_IanaStatus.NOT_COMPLETED,
+        choices=IanaStatus.choices,
+        default=IanaStatus.NOT_COMPLETED,
         null=True,
         blank=True,
         help_text="Current status of IANA actions for this document",
