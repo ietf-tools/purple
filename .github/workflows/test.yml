@@ -108,6 +108,11 @@ jobs:
       working-directory: ./purple
       run: pip install -r requirements.txt
 
+    - name: Check for missing migrations
+      working-directory: ./purple
+      run: |
+        python manage.py makemigrations --check --dry-run --no-input
+
     - name: Run django tests
       working-directory: ./purple
       run: python manage.py test
