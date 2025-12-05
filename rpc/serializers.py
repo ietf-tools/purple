@@ -385,7 +385,7 @@ class IanaStatusSerializer(NameSerializer):
 
     def to_representation(self, instance):
         """Convert the stored slug value to an object with slug and desc"""
-        choices_dict = dict(RfcToBe._IanaStatus.choices)
+        choices_dict = dict(RfcToBe.IanaStatus.choices)
         return {
             "slug": instance,
             "name": instance,
