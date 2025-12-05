@@ -71,7 +71,7 @@ const containerRef = useTemplateRef('container')
 const showLegend = ref(false)
 
 const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
-  () => `cluster-documents-reference:${ props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
+  () => `cluster-documents-reference:${props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
   async () =>
     Promise.all(
       props.cluster.documents?.map(
@@ -121,29 +121,12 @@ const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = aw
   server: false,
 })
 
-const rfcToBes = computed(() =>
-  maybeRfcsToBe.value ? maybeRfcsToBe.value.map((maybeRfcToBe): RfcToBe => {
-    if (isMaybeRfcToBeError(maybeRfcToBe)) {
-      // Generate a placeholder item
-      const errorRfcToBe: RfcToBe = {
-        name: maybeRfcToBe.name,
-        title: String(maybeRfcToBe.error),
-        disposition: '',
-        labels: [],
-        submittedFormat: '',
-        submittedBoilerplate: '',
-        submittedStdLevel: '',
-        submittedStream: '',
-        intendedBoilerplate: '',
-        intendedStdLevel: '',
-        intendedStream: '',
-        authors: [],
-      }
-      return errorRfcToBe
-    }
-    return maybeRfcToBe
-  }) : []
-)
+const rfcToBes = computed(() => {
+  if (!maybeRfcsToBe.value) {
+    return []
+  }
+  return maybeRfcsToBe.value.filter((maybeRfcToBe): maybeRfcToBe is RfcToBe => !isMaybeRfcToBeError(maybeRfcToBe))
+})
 
 const canDownload = ref(false)
 
