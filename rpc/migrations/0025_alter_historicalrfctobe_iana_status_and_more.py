@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
-import rpc.models
 from django.db import migrations, models
+
+import rpc.models
 
 
 class Migration(migrations.Migration):
