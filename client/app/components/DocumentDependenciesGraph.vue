@@ -71,12 +71,12 @@ const containerRef = useTemplateRef('container')
 const showLegend = ref(false)
 
 const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
-  () => props.cluster.documents.map(doc => doc.name).join(","),
+  () => `cluster-documents-reference:${ props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
   async () =>
     Promise.all(
-      props.cluster.documents.map(
+      props.cluster.documents?.map(
         (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
-      )),
+      ) ?? []),
   {
     server: false,
   }
@@ -92,7 +92,7 @@ const uniqueNames = ref<string[]>([])
 const isMaybeRfcToBeError = (obj: unknown): obj is MaybeRfcToBeError => Boolean(obj) && obj !== null && typeof obj === 'object' && 'name' in obj && 'error' in obj
 
 const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
-  () => `maybeRfcsToBe${props.cluster.documents.map(doc => doc.name).join(",")}`,
+  () => `maybe-rfcs-to-be-${props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
   async () => {
     const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
     const names: string[] = (clusterDocumentsReferencesList.value ?? []).flatMap(
