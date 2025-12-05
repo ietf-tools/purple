@@ -9,11 +9,14 @@ purple front-end uses to trigger RFC publication.
 
 import json
 from json import JSONDecodeError
+from pathlib import Path
+from tempfile import TemporaryDirectory
 
 import rpcapi_client
 from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
+from rpc.models import RfcToBe
 
 
 @with_rpcapi
@@ -23,20 +26,40 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     #  - state of rfctobe
     #  - missing published_at
     # todo error handling
-    try:
-        publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
-    except ApiException as api_error:
+    with TemporaryDirectory() as tmpdirname:
+        # populate it with files from GH repo
+        # fake some files
+        tmppath = Path(tmpdirname)
+        content_stub = tmppath / "content"
+        filenames = []
+        with content_stub.with_suffix(".xml").open("w") as f:
+            f.write("I'm XML")
+            filenames.append(str(tmppath / f.name))
+        with content_stub.with_suffix(".txt").open("w") as f:
+            f.write("I'm TXT")
+            filenames.append(str(tmppath / f.name))
+        with content_stub.with_suffix(".html").open("w") as f:
+            f.write("I'm HTML")
+            filenames.append(str(tmppath / f.name))
+        with content_stub.with_suffix(".txt.pdf").open("w") as f:
+            f.write("I'm PDF")
+            filenames.append(str(tmppath / f.name))
+        # validate those against what was queued with the task (?)
+
         try:
-            data = json.loads(api_error.body)
-        except JSONDecodeError:
-            raise PublicationError("unable to parse error body") from api_error
-        # Sort out what's going on via error code
-        error_codes = {err["code"] for err in data.get("errors", [])}
-        if "invalid-draft" in error_codes:
-            raise InvalidDraftError from api_error
-        elif "already-published-draft" in error_codes:
-            raise AlreadyPublishedDraftError from api_error
-    upload_rfc_contents(rfctobe, rpcapi=rpcapi)
+            publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
+        except ApiException as api_error:
+            try:
+                data = json.loads(api_error.body)
+            except JSONDecodeError:
+                raise PublicationError("unable to parse error body") from api_error
+            # Sort out what's going on via error code
+            error_codes = {err["code"] for err in data.get("errors", [])}
+            if "invalid-draft" in error_codes:
+                raise InvalidDraftError from api_error
+            elif "already-published-draft" in error_codes:
+                raise AlreadyPublishedDraftError from api_error
+        upload_rfc_contents(rfctobe, filenames, rpcapi=rpcapi)
 
 
 @with_rpcapi
@@ -96,8 +119,14 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
 
 
 @with_rpcapi
-def upload_rfc_contents(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
-    """todo implement"""
+def upload_rfc_contents(
+    rfctobe: RfcToBe,
+    filenames: list[str],
+    *,
+    rpcapi: rpcapi_client.PurpleApi
+):
+    # set up and call API
+    rpcapi.upload_rfc_files(rfc=rfctobe.rfc_number, contents=filenames)
 
 
 class PublicationError(Exception):
