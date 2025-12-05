@@ -13,6 +13,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import rpcapi_client
+from github import Github
 from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
@@ -26,24 +27,32 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     #  - state of rfctobe
     #  - missing published_at
     # todo error handling
+    if rfctobe.repository.strip() == "":
+        raise PublicationError("Cannot publish without a repository")
+    # First pass at reading files from GH. Needs error handling / validation
+    #  - decide how files are actually identified
+    #  - expected files present
+    #  - dealing with missing files
+    #  - (maybe) dealing with filename conflicts (if file ID is suffix-based)
+    #  - be more careful about file paths (repo_file.name might have directories in it)
+    gh = Github()
+    repo = gh.get_repo(rfctobe.repository)
+    repo_contents = repo.get_contents(rfctobe.repository_path)
+    interesting_extensions = [".xml", ".txt", ".html", ".txt.pdf"]
+    filenames = []
     with TemporaryDirectory() as tmpdirname:
         # populate it with files from GH repo
-        # fake some files
         tmppath = Path(tmpdirname)
-        content_stub = tmppath / "content"
-        filenames = []
-        with content_stub.with_suffix(".xml").open("w") as f:
-            f.write("I'm XML")
-            filenames.append(str(tmppath / f.name))
-        with content_stub.with_suffix(".txt").open("w") as f:
-            f.write("I'm TXT")
-            filenames.append(str(tmppath / f.name))
-        with content_stub.with_suffix(".html").open("w") as f:
-            f.write("I'm HTML")
-            filenames.append(str(tmppath / f.name))
-        with content_stub.with_suffix(".txt.pdf").open("w") as f:
-            f.write("I'm PDF")
-            filenames.append(str(tmppath / f.name))
+        for repo_file in repo_contents:
+            if repo_file.type == "dir":
+                continue
+            repo_file_suffix = "".join(Path(repo_file.name).suffixes)
+            if repo_file_suffix not in interesting_extensions:
+                continue
+            output_path = tmppath / repo_file.name
+            with output_path.open("wb") as f:
+                f.write(repo_file.decoded_content)
+            filenames.append(str(output_path))
         # validate those against what was queued with the task (?)
 
         try:
