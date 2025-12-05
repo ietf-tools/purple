@@ -89,7 +89,7 @@ class RfcToBe(models.Model):
     class _IanaStatus(models.TextChoices):
         NO_ACTIONS = "no_actions", "This document has no IANA actions"
         NOT_COMPLETED = "not_completed", "IANA has not completed actions in draft"
-        COMPLETED_IN_DRAFT = "completed_in_draft", "IANA has completed actions in draft"
+        COMPLETED_IN_DRAFT = "completed", "IANA has completed actions in draft"
         CHANGES_REQUIRED = (
             "changes_required",
             "Changes to registries are required due to RFC edits",
@@ -152,6 +152,8 @@ class RfcToBe(models.Model):
         max_length=32,
         choices=_IanaStatus.choices,
         default=_IanaStatus.NOT_COMPLETED,
+        null=True,
+        blank=True,
         help_text="Current status of IANA actions for this document",
     )
 
