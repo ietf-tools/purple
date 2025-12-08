@@ -36,7 +36,7 @@
       <h3 class="mt-4 font-bold">documentsReferencesList per cluster document</h3>
       <pre>{{ JSON.stringify(clusterDocumentsReferencesList, null, 2) }}</pre>
 
-      <h3 class="mt-4 font-bold">Reference names (referenced draftName and targetDraftName)</h3>
+      <h3 class="mt-4 font-bold">Unique documents (cluster document names, or those involved in the references list)</h3>
       <ul class="ml-8 list-disc">
         <li v-for="uniqueName in uniqueNames">{{ uniqueName }}</li>
       </ul>
