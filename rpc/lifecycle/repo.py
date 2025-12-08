@@ -1,14 +1,15 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 """Document repository interfaces"""
-import os
-from typing import Iterator
+
+from collections.abc import Iterator
+from pathlib import PurePath
 
 import requests
 from django.conf import settings
 from django.core.files.base import File
 from github import Github
-from github.Auth import Auth as GithubAuth, Token as GithubAuthToken
-from pathlib import PurePath
+from github.Auth import Auth as GithubAuth
+from github.Auth import Token as GithubAuthToken
 
 REQUEST_TIMEOUT = 30  # seconds
 
@@ -47,21 +48,22 @@ class GithubRepositoryFile(RepositoryFile):
         return response
 
     def chunks(self, chunk_size=None):
-        for chunk in self._get().iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE):
-            yield chunk
+        yield from self._get().iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE)
 
 
 class Repository:
     """Base class for Repository"""
 
     def directory_contents(self, directory: PurePath | str) -> Iterator[RepositoryFile]:
-        raise NotImplemented
+        raise NotImplementedError
 
 
 class GithubRepository(Repository):
     """Github repository"""
 
-    def __init__(self, repo_id: str, ref: str | None = None, auth: GithubAuth | None = None):
+    def __init__(
+        self, repo_id: str, ref: str | None = None, auth: GithubAuth | None = None
+    ):
         if auth is None:
             auth_token = getattr(settings, "GITHUB_AUTH_TOKEN", None)
             if auth_token is not None:

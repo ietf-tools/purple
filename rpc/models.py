@@ -4,7 +4,6 @@ import datetime
 import logging
 from dataclasses import dataclass
 from itertools import pairwise
-from pathlib import Path
 
 from django.core.exceptions import ValidationError
 from django.db import models
