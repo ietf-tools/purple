@@ -173,3 +173,6 @@ DOI_URL = "https://www.rfc-editor.org/info/"
 DOI_AUTHOR_ORGS = [
     "IAB",
 ]
+
+# Github
+GITHUB_AUTH_TOKEN = os.environ.get("GITHUB_AUTH_TOKEN")

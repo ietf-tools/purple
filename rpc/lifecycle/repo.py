@@ -1,11 +1,13 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 """Document repository interfaces"""
-
+import os
 from typing import Iterator
 
 import requests
+from django.conf import settings
 from django.core.files.base import File
 from github import Github
+from github.Auth import Auth as GithubAuth, Token as GithubAuthToken
 from pathlib import PurePath
 
 REQUEST_TIMEOUT = 30  # seconds
@@ -59,8 +61,12 @@ class Repository:
 class GithubRepository(Repository):
     """Github repository"""
 
-    def __init__(self, repo_id: str, ref: str | None = None):
-        self.gh = Github()
+    def __init__(self, repo_id: str, ref: str | None = None, auth: GithubAuth | None = None):
+        if auth is None:
+            auth_token = getattr(settings, "GITHUB_AUTH_TOKEN", None)
+            if auth_token is not None:
+                auth = GithubAuthToken(auth_token)
+        self.gh = Github(auth=auth)
         self.repo = self.gh.get_repo(repo_id)
         self.ref = ref  # pin to a particular git ref
 
