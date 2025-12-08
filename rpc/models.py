@@ -181,7 +181,7 @@ class RfcToBe(models.Model):
                 fields=["repository", "repository_path"],
                 condition=~models.Q(repository=""),
                 name="unique_repository_and_repository_path",
-            )
+            ),
         ]
 
     def __str__(self):
