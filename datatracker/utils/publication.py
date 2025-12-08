@@ -13,10 +13,10 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import rpcapi_client
-from github import Github
 from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
+from rpc.lifecycle.repo import GithubRepository
 from rpc.models import RfcToBe
 
 
@@ -35,23 +35,20 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     #  - dealing with missing files
     #  - (maybe) dealing with filename conflicts (if file ID is suffix-based)
     #  - be more careful about file paths (repo_file.name might have directories in it)
-    gh = Github()
-    repo = gh.get_repo(rfctobe.repository)
-    repo_contents = repo.get_contents(rfctobe.repository_path)
+    repo = GithubRepository(rfctobe.repository)
     interesting_extensions = [".xml", ".txt", ".html", ".txt.pdf"]
     filenames = []
     with TemporaryDirectory() as tmpdirname:
         # populate it with files from GH repo
         tmppath = Path(tmpdirname)
-        for repo_file in repo_contents:
-            if repo_file.type == "dir":
-                continue
+        for repo_file in repo.directory_contents(rfctobe.repository_path):
             repo_file_suffix = "".join(Path(repo_file.name).suffixes)
             if repo_file_suffix not in interesting_extensions:
                 continue
             output_path = tmppath / repo_file.name
             with output_path.open("wb") as f:
-                f.write(repo_file.decoded_content)
+                for chunk in repo_file.chunks():
+                    f.write(chunk)
             filenames.append(str(output_path))
         # validate those against what was queued with the task (?)
 
@@ -129,10 +126,7 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
 
 @with_rpcapi
 def upload_rfc_contents(
-    rfctobe: RfcToBe,
-    filenames: list[str],
-    *,
-    rpcapi: rpcapi_client.PurpleApi
+    rfctobe: RfcToBe, filenames: list[str], *, rpcapi: rpcapi_client.PurpleApi
 ):
     # set up and call API
     rpcapi.upload_rfc_files(rfc=rfctobe.rfc_number, contents=filenames)
