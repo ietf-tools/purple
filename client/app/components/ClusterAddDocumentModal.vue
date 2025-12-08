@@ -9,10 +9,10 @@
       </BaseButton>
     </div>
     <div class="px-3">
-      <DocumentSearch v-model="selectedRfcToBe" />
+      <DocumentsSearch id="clusterDocument" label="Search for draft" v-model="selectedRfcToBe" />
     </div>
-    <div class="flex mx-3 py-3 justify-end border-t border-gray-300">
-      <BaseButton @click="handleAdd">Add to cluster</BaseButton>
+    <div class="flex mx-3 mt-3 py-3 justify-end border-t border-gray-300">
+      <BaseButton @click="handleAdd" :disabled="selectedRfcToBe === undefined">Add to cluster</BaseButton>
     </div>
   </div>
 </template>
@@ -43,9 +43,35 @@ if (!overlayModalKeyInjection) {
 
 const { closeOverlayModal } = overlayModalKeyInjection
 
-const handleAdd = () => {
-  snackbar.add({ type: 'error', title: 'Adding a document to a cluste is not yet done', text: 'Maybe tomorrow' })
-  props.onSuccess()
-  closeOverlayModal()
+const handleAdd = async () => {
+  const { value: newRfcToBe } = selectedRfcToBe
+  if (newRfcToBe === undefined) {
+    snackbar.add({ type: 'error', title: 'An RFC must be chosen', text: '' })
+    return
+  }
+  const { name: draftName } = newRfcToBe
+  if (!draftName) {
+    snackbar.add({ type: 'error', title: 'An RFC must have a draft name to be added', text: '' })
+    return
+  }
+  try {
+    const serverCluster = await api.clustersAddDocument({
+      number: props.cluster.number,
+      clusterAddRemoveDocumentRequest: {
+        draftName
+      }
+    })
+
+    if (serverCluster.documents?.some(rfcToBe => rfcToBe.name === draftName)) {
+      snackbar.add({ type: 'success', title: 'Cluster document added', text: '' })
+      props.onSuccess()
+      closeOverlayModal()
+    } else {
+      snackbar.add({ type: 'error', title: "Couldn't add cluster document", text: "The server didn't say why" })
+    }
+  } catch (error) {
+    snackbarForErrors({ snackbar, defaultTitle: "Couldn't add cluster document", error })
+  }
+
 }
 </script>

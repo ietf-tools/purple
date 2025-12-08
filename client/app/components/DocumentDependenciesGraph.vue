@@ -36,7 +36,7 @@
       <h3 class="mt-4 font-bold">documentsReferencesList per cluster document</h3>
       <pre>{{ JSON.stringify(clusterDocumentsReferencesList, null, 2) }}</pre>
 
-      <h3 class="mt-4 font-bold">Reference names (referenced draftName and targetDraftName)</h3>
+      <h3 class="mt-4 font-bold">Unique documents (cluster document names, or those involved in the references list)</h3>
       <ul class="ml-8 list-disc">
         <li v-for="uniqueName in uniqueNames">{{ uniqueName }}</li>
       </ul>
@@ -95,14 +95,16 @@ const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = aw
   () => `maybe-rfcs-to-be-${props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
   async () => {
     const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
-    const names: string[] = (clusterDocumentsReferencesList.value ?? []).flatMap(
+    const names: string[] = [
+    ...(props.cluster.documents   ?? []).flatMap(doc => doc.name),
+    ...(clusterDocumentsReferencesList.value ?? []).flatMap(
       (relatedDocuments): string[] => [
         ...relatedDocuments.map((relatedDocument) => relatedDocument.draftName).filter(filterIsString),
-        ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString)
-      ])
+        ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString),
+      ])]
 
     uniqueNames.value = uniq(names)
-    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", uniqueNames)
+    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", uniqueNames.value)
 
     return await Promise.all(
       uniqueNames.value.map(async name => {
