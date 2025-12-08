@@ -74,7 +74,7 @@ const api = useApi()
 const allDocuments = ref<RfcToBe[]>([])
 
 onMounted(async () => {
-  let limit: number | undefined = undefined
+  let limit = 50
   let offset = 0
 
   while (true) {
