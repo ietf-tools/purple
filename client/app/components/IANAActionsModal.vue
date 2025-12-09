@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { overlayModalKey } from '~/providers/providerKeys';
-import { IANAActionsEntries, parseSlug, type IANAActionsEnum } from '../utils/iana'
+import { IANAActionsEntries, parseIanaStatusSlug, type IANAActionsEnum } from '../utils/iana'
 import type { RfcToBe } from '~/purple_client';
 
 type Props = {
@@ -26,7 +26,7 @@ if (!defaultOption) {
   throw Error('Expected default IANA option')
 }
 
-const selectedIANAStatus = ref<IANAActionsEnum | undefined>(parseSlug(props.rfcToBe.ianaStatus?.slug))
+const selectedIANAStatus = ref<IANAActionsEnum | undefined>(parseIanaStatusSlug(props.rfcToBe.ianaStatus?.slug))
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
