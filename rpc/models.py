@@ -329,7 +329,15 @@ class StreamName(Name):
 
 
 class DocRelationshipName(Name):
-    pass
+    REFQUEUE_RELATIONSHIP_SLUG = "refqueue"
+    NOT_RECEIVED_RELATIONSHIP_SLUGS = [
+        "not-received",
+        "not-received-2g",
+        "not-received-3g",
+    ]
+    REFERENCE_RELATIONSHIP_SLUGS = NOT_RECEIVED_RELATIONSHIP_SLUGS + [
+        REFQUEUE_RELATIONSHIP_SLUG
+    ]
 
 
 class ClusterMember(models.Model):

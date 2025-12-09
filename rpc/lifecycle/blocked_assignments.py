@@ -3,7 +3,7 @@ import logging
 from django.db import transaction
 from rest_framework.exceptions import NotFound
 
-from ..models import Assignment, RfcToBe, RpcRole
+from ..models import Assignment, DocRelationshipName, RfcToBe, RpcRole
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def is_blocked(rfc: RfcToBe) -> bool:
             return True
         # any related documents not received (incl. 2g/3g)
         not_received_qs = rfc.rpcrelateddocument_set.filter(
-            relationship__in=["not-received", "not-received-2g", "not-received-3g"]
+            relationship__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
         )
         if not_received_qs.exists():
             return True

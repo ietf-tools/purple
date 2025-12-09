@@ -24,6 +24,7 @@ from .models import (
     Cluster,
     ClusterMember,
     DispositionName,
+    DocRelationshipName,
     FinalApproval,
     Label,
     RfcAuthor,
@@ -894,12 +895,7 @@ class ClusterMemberSerializer(serializers.Serializer):
         # Get all related documents for this RfcToBe
         related_docs = RpcRelatedDocument.objects.filter(
             source=rfctobe,
-            relationship__slug__in=[
-                "not-received",
-                "refqueue",
-                "not-received-2g",
-                "not-received-3g",
-            ],
+            relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
         )
 
         if not related_docs.exists():
