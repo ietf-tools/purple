@@ -942,7 +942,8 @@ class ClusterSerializer(serializers.ModelSerializer):
     def get_is_active(self, cluster) -> bool:
         """
         Active if NOT all documents in the cluster have disposition='published'.
-        An empty cluster is considered not active."""
+        An empty cluster is considered not active.
+        """
 
         # Use annotated value if available
         if hasattr(cluster, "is_active_annotated"):
@@ -954,16 +955,14 @@ class ClusterSerializer(serializers.ModelSerializer):
             )
         )
         if not member_doc_ids:
-            # empty cluster -> not active
             return False
 
-        published_draft_ids = set(
-            RfcToBe.objects.filter(
-                draft_id__in=member_doc_ids, disposition__slug="published"
-            ).values_list("draft_id", flat=True)
+        return (
+            # if any not published RFC exist in cluster, then active
+            RfcToBe.objects.filter(draft_id__in=member_doc_ids)
+            .exclude(disposition__slug="published")
+            .exists()
         )
-        # active when the number of published docs not equal total distinct docs
-        return len(published_draft_ids) != len(set(member_doc_ids))
 
     def create(self, validated_data):
         draft_names = validated_data.pop("draft_names", [])
