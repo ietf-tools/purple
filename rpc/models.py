@@ -8,13 +8,10 @@ from itertools import pairwise
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import (
-    Case,
     Exists,
     OuterRef,
     Prefetch,
     Subquery,
-    Value,
-    When,
 )
 from django.db.models.functions import JSONObject
 from django.utils import timezone
