@@ -391,7 +391,8 @@ class ClusterQuerySet(models.QuerySet):
 
     def with_is_active_annotated(self):
         """Annotate clusters with is_active status
-        A cluster is active if it is not empty and not all drafts are published.
+        A cluster is considered active if it is not empty and not all drafts are
+        published.
         """
         return self.annotate(
             is_active_annotated=Exists(

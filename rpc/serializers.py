@@ -936,9 +936,8 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """
-        Active if NOT all documents in the cluster have disposition='published'.
-        An empty cluster is considered not active.
+        """A cluster is considered active if it not empty and not all
+        drafts in the cluster are published.
         """
 
         # Use annotated value if available
