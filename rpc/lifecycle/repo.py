@@ -48,7 +48,16 @@ class GithubRepositoryFile(RepositoryFile):
         return response
 
     def chunks(self, chunk_size=None):
-        yield from self._get().iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE)
+        try:
+            response = self._get()
+        except Exception as err:
+            raise RepositoryError(
+                f"Error downloading {self.name} from Github"
+            ) from err
+        try:
+            yield from response.iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE)
+        except Exception as err:
+            raise RepositoryError(f"Error retrieving chunk of {self.name}") from err
 
 
 class Repository:
@@ -87,3 +96,7 @@ class GithubRepository(Repository):
                     download_url=rf.download_url,
                     size=rf.size,
                 )
+
+
+class RepositoryError(Exception):
+    """Base class for repository exceptions"""

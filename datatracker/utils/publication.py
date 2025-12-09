@@ -8,6 +8,7 @@ purple front-end uses to trigger RFC publication.
 """
 
 import json
+import logging
 from json import JSONDecodeError
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -16,8 +17,30 @@ import rpcapi_client
 from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
-from rpc.lifecycle.repo import GithubRepository
+from rpc.lifecycle.repo import GithubRepository, RepositoryError
 from rpc.models import RfcToBe
+
+logger = logging.getLogger(__name__)
+
+
+def choose_files(filenames):
+    interesting_extensions = [".xml", ".txt", ".html", ".txt.pdf"]
+    chosen = {ext: [] for ext in interesting_extensions}
+    for fname in filenames:
+        suffix = "".join(Path(fname).suffixes)
+        if suffix in chosen:
+            chosen[suffix].append(fname)
+    missing = [ext for ext in chosen if len(chosen[ext]) == 0]
+    if len(missing) > 0:
+        raise MissingFilesError(
+            f"Missing files: {", ".join(missing)}"
+        )
+    multiples = [ext for ext in chosen if len(chosen[ext]) > 1]
+    if len(multiples) > 0:
+        raise AmbiguousFilesError(
+            f"More than one of: {", ".join(multiples)}"
+        )
+    return [v[0] for v in chosen.values()]
 
 
 @with_rpcapi
@@ -29,29 +52,30 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     # todo error handling
     if rfctobe.repository.strip() == "":
         raise PublicationError("Cannot publish without a repository")
-    # First pass at reading files from GH. Needs error handling / validation
-    #  - decide how files are actually identified
-    #  - expected files present
-    #  - dealing with missing files
-    #  - (maybe) dealing with filename conflicts (if file ID is suffix-based)
-    #  - be more careful about file paths (repo_file.name might have directories in it)
     repo = GithubRepository(rfctobe.repository)
-    interesting_extensions = [".xml", ".txt", ".html", ".txt.pdf"]
-    filenames = []
+    # List the files in the directory
+    logger.debug(f"Using files in {rfctobe.repository}/{rfctobe.repository_path}")
+    try:
+        repo_files = {
+            Path(rf.name).name: rf
+            for rf in repo.directory_contents(rfctobe.repository_path)
+        }
+    except RepositoryError as err:
+        raise PublicationError from err
+    # Select the files by name (may raise exceptions, let those bubble up)
+    filenames = choose_files(repo_files.keys())
+    logger.debug(f"Chose: {filenames}")
+    # Download the selected files to a temp directory
     with TemporaryDirectory() as tmpdirname:
-        # populate it with files from GH repo
         tmppath = Path(tmpdirname)
-        for repo_file in repo.directory_contents(rfctobe.repository_path):
-            repo_file_suffix = "".join(Path(repo_file.name).suffixes)
-            if repo_file_suffix not in interesting_extensions:
-                continue
-            output_path = tmppath / repo_file.name
+        for fname in filenames:
+            output_path = tmppath / fname
+            logger.debug(f"Writing to {output_path}")
             with output_path.open("wb") as f:
-                for chunk in repo_file.chunks():
+                for chunk in repo_files[fname].chunks():
                     f.write(chunk)
-            filenames.append(str(output_path))
-        # validate those against what was queued with the task (?)
-
+        # Now publish!
+        logger.debug("Calling publish_rfc_metad")
         try:
             publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
         except ApiException as api_error:
@@ -142,3 +166,11 @@ class AlreadyPublishedDraftError(PublicationError):
 
 class InvalidDraftError(PublicationError):
     """invalid-draft"""
+
+
+class MissingFilesError(PublicationError):
+    """Could not find all files to upload"""
+
+
+class AmbiguousFilesError(PublicationError):
+    """Unable to identify the files to upload"""
