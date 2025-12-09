@@ -42,14 +42,13 @@ const { closeOverlayModal } = overlayModalKeyInjection
 
 const handleSave = async () => {
   try {
-    const serverRfcToBe = await api.documentsUpdate({
+    const serverRfcToBe = await api.documentsPartialUpdate({
       draftName: props.name,
-      rfcToBeRequest: {
-        ...props.rfcToBe,
+      patchedRfcToBeRequest: {
         ianaStatusSlug: selectedIANAStatus.value,
       }
     })
-    if (serverRfcToBe.ianaStatus === selectedIANAStatus.value) {
+    if (serverRfcToBe.ianaStatus?.slug === selectedIANAStatus.value) {
       await props.onSuccess() // trigger data reload
       closeOverlayModal()
     } else {
