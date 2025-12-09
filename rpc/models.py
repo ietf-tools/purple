@@ -386,21 +386,15 @@ class ClusterQuerySet(models.QuerySet):
 
     def with_is_active_annotated(self):
         """Annotate clusters with is_active status
-        A cluster is active if NOT all its documents have disposition='published'
+        A cluster is active if it is not empty and not all drafts are published.
         """
-        has_non_published = Exists(
-            ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
-                doc__rfctobe__disposition__slug="published"
+        return self.annotate(
+            is_active_annotated=Exists(
+                ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
+                    doc__rfctobe__disposition__slug="published"
+                )
             )
         )
-
-        return self.annotate(
-            is_active_annotated=Case(
-                When(clustermember__isnull=True, then=Value(False)),
-                default=has_non_published,
-                output_field=models.BooleanField(),
-            )
-        ).distinct()
 
 
 class Cluster(models.Model):
