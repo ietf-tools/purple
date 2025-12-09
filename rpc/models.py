@@ -7,7 +7,16 @@ from itertools import pairwise
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import OuterRef, Prefetch, Subquery
+from django.db.models import (
+    Case,
+    Exists,
+    OuterRef,
+    Prefetch,
+    Subquery,
+    Value,
+    When,
+)
+from django.db.models.functions import JSONObject
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -352,22 +361,46 @@ class ClusterMember(models.Model):
 
 
 class ClusterQuerySet(models.QuerySet):
-    def with_rfc_number_annotated(self):
-        """Annotate cluster members with RFC numbers"""
-        rfc_number_subquery = Subquery(
+    def with_data_annotated(self):
+        """Annotate cluster members with additional data to avoid n+1 queries"""
+
+        rfctobe_subquery = Subquery(
             RfcToBe.objects.filter(draft=OuterRef("doc"))
             .exclude(disposition__slug="withdrawn")
-            .values("rfc_number")[:1]
+            .annotate(
+                data=JSONObject(
+                    disposition_slug=models.F("disposition__slug"),
+                    rfc_number=models.F("rfc_number"),
+                    rfctobe_id=models.F("id"),
+                )
+            )
+            .values("data")[:1]
         )
 
-        return self.prefetch_related(
-            Prefetch(
-                "clustermember_set",
-                queryset=ClusterMember.objects.select_related("doc").annotate(
-                    rfc_number_annotated=rfc_number_subquery
-                ),
+        # Create the annotated queryset for ClusterMember
+        subquery = ClusterMember.objects.select_related("doc").annotate(
+            rfctobe_annotated=rfctobe_subquery,
+        )
+
+        return self.prefetch_related(Prefetch("clustermember_set", queryset=subquery))
+
+    def with_is_active_annotated(self):
+        """Annotate clusters with is_active status
+        A cluster is active if NOT all its documents have disposition='published'
+        """
+        has_non_published = Exists(
+            ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
+                doc__rfctobe__disposition__slug="published"
             )
         )
+
+        return self.annotate(
+            is_active_annotated=Case(
+                When(clustermember__isnull=True, then=Value(False)),
+                default=has_non_published,
+                output_field=models.BooleanField(),
+            )
+        ).distinct()
 
 
 class Cluster(models.Model):

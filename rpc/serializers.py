@@ -826,6 +826,9 @@ class ClusterMemberListSerializer(serializers.ListSerializer):
 class ClusterMemberSerializer(serializers.Serializer):
     name = serializers.CharField(source="doc.name")
     rfc_number = serializers.SerializerMethodField()
+    disposition = serializers.SerializerMethodField()
+    references = serializers.SerializerMethodField()
+    is_received = serializers.SerializerMethodField()
     order = serializers.IntegerField()
 
     class Meta:
@@ -834,8 +837,11 @@ class ClusterMemberSerializer(serializers.Serializer):
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
         # Use the annotated field if available
-        if hasattr(clustermember, "rfc_number_annotated"):
-            return clustermember.rfc_number_annotated
+        if (
+            hasattr(clustermember, "rfctobe_annotated")
+            and clustermember.rfctobe_annotated
+        ):
+            return clustermember.rfctobe_annotated.get("rfc_number")
 
         # Fallback to original logic
         rfctobe = (
@@ -846,6 +852,68 @@ class ClusterMemberSerializer(serializers.Serializer):
         )
 
         return rfctobe["rfc_number"] if rfctobe else None
+
+    def get_disposition(self, clustermember: ClusterMember) -> str | None:
+        """Get the disposition slug for this cluster member"""
+        if (
+            hasattr(clustermember, "rfctobe_annotated")
+            and clustermember.rfctobe_annotated
+        ):
+            # Use the annotated field if available
+            return clustermember.rfctobe_annotated.get("disposition_slug")
+
+        doc = clustermember.doc
+
+        rfctobe = getattr(doc, "rfctobe_set", None)
+        if rfctobe is not None:
+            rfctobe = rfctobe.exclude(disposition__slug="withdrawn").first()
+
+        if not rfctobe:
+            return None
+
+        return rfctobe.disposition.slug
+
+    def get_references(self, clustermember: ClusterMember) -> list[dict] | None:
+        """Get related documents for this cluster member"""
+        if (
+            hasattr(clustermember, "rfctobe_annotated")
+            and clustermember.rfctobe_annotated
+        ):
+            rfctobe = clustermember.rfctobe_annotated.get("rfctobe_id")
+        else:
+            # fallback to original logic
+            doc = clustermember.doc
+
+            rfctobe = getattr(doc, "rfctobe_set", None)
+            if rfctobe is not None:
+                rfctobe = rfctobe.exclude(disposition__slug="withdrawn").first()
+
+        if not rfctobe:
+            return None
+
+        # Get all related documents for this RfcToBe
+        related_docs = RpcRelatedDocument.objects.filter(
+            source=rfctobe,
+            relationship__slug__in=[
+                "not-received",
+                "refqueue",
+                "not-received-2g",
+                "not-received-3g",
+            ],
+        )
+
+        if not related_docs.exists():
+            return None
+
+        return RpcRelatedDocumentSerializer(related_docs, many=True).data
+
+    def get_is_received(self, clustermember: ClusterMember) -> bool | None:
+        """Determine if the document has been received based on related documents"""
+        if hasattr(clustermember, "rfctobe_annotated"):
+            return clustermember.rfctobe_annotated is not None
+
+        # fallback to original logic
+        return RfcToBe.objects.filter(draft=clustermember.doc).exists()
 
 
 class ClusterSerializer(serializers.ModelSerializer):
@@ -865,10 +933,37 @@ class ClusterSerializer(serializers.ModelSerializer):
         required=False,
         help_text="List of draft names to add to the cluster",
     )
+    is_active = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Cluster
-        fields = ["number", "documents", "draft_names"]
+        fields = ["number", "documents", "draft_names", "is_active"]
+
+    def get_is_active(self, cluster) -> bool:
+        """
+        Active if NOT all documents in the cluster have disposition='published'.
+        An empty cluster is considered not active."""
+
+        # Use annotated value if available
+        if hasattr(cluster, "is_active_annotated"):
+            return cluster.is_active_annotated
+
+        member_doc_ids = list(
+            ClusterMember.objects.filter(cluster=cluster).values_list(
+                "doc_id", flat=True
+            )
+        )
+        if not member_doc_ids:
+            # empty cluster -> not active
+            return False
+
+        published_draft_ids = set(
+            RfcToBe.objects.filter(
+                draft_id__in=member_doc_ids, disposition__slug="published"
+            ).values_list("draft_id", flat=True)
+        )
+        # active when the number of published docs not equal total distinct docs
+        return len(published_draft_ids) != len(set(member_doc_ids))
 
     def create(self, validated_data):
         draft_names = validated_data.pop("draft_names", [])

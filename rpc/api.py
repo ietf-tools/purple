@@ -512,6 +512,18 @@ class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = CapabilitySerializer
 
 
+class ClusterFilter(django_filters.FilterSet):
+    is_active = django_filters.BooleanFilter(
+        field_name="is_active_annotated",
+        help_text="Filter by active status. A cluster is considered active if it "
+        "contains at least one draft and all drafts are published.",
+    )
+
+    class Meta:
+        model = Cluster
+        fields = ["is_active"]
+
+
 class ClusterViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -521,11 +533,15 @@ class ClusterViewSet(
 ):
     queryset = Cluster.objects.all()
     serializer_class = ClusterSerializer
+    filterset_class = ClusterFilter
+    filter_backends = (filters.DjangoFilterBackend, drf_filters.OrderingFilter)
+    ordering_fields = ["number"]
+    ordering = ["number"]
     lookup_field = "number"
 
     def get_queryset(self):
         """Get clusters with RFC number annotations"""
-        return Cluster.objects.with_rfc_number_annotated()
+        return Cluster.objects.with_data_annotated().with_is_active_annotated()
 
     @extend_schema(
         operation_id="clusters_add_document",
