@@ -128,7 +128,7 @@
         </div>
 
         <BaseCard class="lg:col-span-full grid place-items-stretch">
-          <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" iana-action="iana-no-actions"
+          <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" :rfcToBe="rawRfcToBe"
             :on-success="rfcToBeRefresh" :name="rawRfcToBe.name" />
         </BaseCard>
 
