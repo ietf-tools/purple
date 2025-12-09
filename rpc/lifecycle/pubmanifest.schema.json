@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RFC Repository Manifest",
+  "type": "object",
+  "properties": {
+    "publications": {
+      "description": "List of publications in the repository",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "rfcNumber": {
+            "description": "RFC number, must be filled in before publishing",
+            "type": "integer",
+            "minimum": 1
+          },
+          "files": {
+            "description": "Files to be published",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "Type of file, only one of each type permitted",
+                  "type": "string",
+                  "enum": [
+                    "xml",
+                    "txt",
+                    "html",
+                    "pdf",
+                    "json",
+                    "notprepped"
+                  ]
+                },
+                "path": {
+                  "description": "Filename with path relative to repository root",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "type",
+                "path"
+              ],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": [
+          "files"
+        ],
+        "additionalProperties": false
+      },
+      "minItems": 1
+    }
+  },
+  "additionalProperties": false
+}
