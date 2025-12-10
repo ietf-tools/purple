@@ -70,12 +70,12 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     else:
         raise PublicationError(f"Manifest does not contain RFC {rfctobe.rfc_number}")
     # Choose files + validate that we have what we need / no ambiguities
-    chosen_files = choose_files(publication)
+    chosen_files = choose_files(publication["files"])
     downloaded_files = {}
     # Download the selected files to a temp directory
     with TemporaryDirectory() as tmpdirname:
         output_stem = Path(tmpdirname) / f"rfc{rfctobe.rfc_number}"
-        for type_, repo_path in chosen_files:
+        for type_, repo_path in chosen_files.items():
             output_path = output_stem.with_suffix(suffix_for_type(type_))
             logger.debug("Fetching %s", repo_path)
             repo_file = repo.get_file(repo_path)
