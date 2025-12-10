@@ -161,10 +161,6 @@ class RfcToBe(models.Model):
         blank=True,
         help_text="Repository name (e.g., ietf-tools/purple",
     )
-    repository_path = models.CharField(
-        blank=True,
-        help_text="Path from repo root to location of files (blank is root of repo)",
-    )
 
     history = HistoricalRecords(m2m_fields=[labels])
 
@@ -175,11 +171,6 @@ class RfcToBe(models.Model):
                 fields=["rfc_number"],
                 name="unique_non_null_rfc_number",
                 nulls_distinct=True,
-            ),
-            models.UniqueConstraint(
-                fields=["repository", "repository_path"],
-                condition=~models.Q(repository=""),
-                name="unique_repository_and_repository_path",
             ),
         ]
 
