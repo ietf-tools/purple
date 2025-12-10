@@ -17,7 +17,11 @@ import rpcapi_client
 from rpcapi_client import ApiException, RfcAuthorRequest, RfcPubRequest
 
 from datatracker.rpcapi import with_rpcapi
-from rpc.lifecycle.repo import GithubRepository, RepositoryError
+from rpc.lifecycle.repo import (
+    GithubRepository,
+    RepositoryError,
+    TemporaryRepositoryError,
+)
 from rpc.models import RfcToBe
 
 logger = logging.getLogger(__name__)
@@ -64,10 +68,10 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     repo = GithubRepository(rfctobe.repository)
     try:
         manifest = repo.get_manifest()
+    except TemporaryRepositoryError as err:
+        raise TemporaryPublicationError("Error retrieving manifest") from err
     except RepositoryError as err:
-        raise PublicationError(
-            "Invalid or missing manifest or retrieval error"
-        ) from err
+        raise PublicationError("Invalid or missing manifest") from err
     publications = manifest["publications"]
     for publication in publications:
         if rfctobe.rfc_number == publication["rfcNumber"]:
@@ -85,9 +89,12 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
             logger.debug("Fetching %s", repo_path)
             repo_file = repo.get_file(repo_path)
             logger.debug("Saving as %s", str(output_path))
-            with output_path.open("wb") as f:
-                for chunk in repo_file.chunks():
-                    f.write(chunk)
+            try:
+                with output_path.open("wb") as f:
+                    for chunk in repo_file.chunks():
+                        f.write(chunk)
+            except TemporaryRepositoryError as err:
+                raise TemporaryPublicationError from err
             downloaded_files[type_] = output_path
         # Now publish!
         logger.debug("Calling publish_rfc_metadata")
@@ -104,11 +111,21 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
                 raise InvalidDraftError from api_error
             elif "already-published-draft" in error_codes:
                 raise AlreadyPublishedDraftError from api_error
-        upload_rfc_contents(
-            rfctobe,
-            [str(fn) for fn in downloaded_files.values()],
-            rpcapi=rpcapi,
-        )
+        try:
+            upload_rfc_contents(
+                rfctobe,
+                [str(fn) for fn in downloaded_files.values()],
+                rpcapi=rpcapi,
+            )
+        except Exception as err:
+            # The RFC was already published, but the files were not accepted.
+            # This situation requires manual intervention until we make the
+            # publication notification idempotent.
+            raise PublicationError(
+                f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
+                f"was published, but uploading its files failed. Manual correction "
+                f"is required."
+            ) from err
 
 
 @with_rpcapi
@@ -177,6 +194,10 @@ def upload_rfc_contents(
 
 class PublicationError(Exception):
     """Base class for publication exceptions"""
+
+
+class TemporaryPublicationError(PublicationError):
+    """Publication exception that is likely temporary and worth retrying"""
 
 
 class AlreadyPublishedDraftError(PublicationError):

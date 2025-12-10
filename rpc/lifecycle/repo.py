@@ -9,9 +9,10 @@ import jsonschema
 import requests
 from django.conf import settings
 from django.core.files.base import File
-from github import Github
+from github import Github, GithubException
 from github.Auth import Auth as GithubAuth
 from github.Auth import Token as GithubAuthToken
+from requests import HTTPError
 
 logger = logging.getLogger(__name__)
 
@@ -55,12 +56,20 @@ class GithubRepositoryFile(RepositoryFile):
     def chunks(self, chunk_size=None):
         try:
             response = self._get()
-        except Exception as err:
+        except HTTPError as err:
+            if err.response.status_code // 100 == 5:  # 5xx
+                raise TemporaryRepositoryError(
+                    f"Server error ({err.response.status_code}) "
+                    f"downloading {self.name} from Github"
+                ) from err
             raise RepositoryError(f"Error downloading {self.name} from Github") from err
         try:
             yield from response.iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE)
         except Exception as err:
-            raise RepositoryError(f"Error retrieving chunk of {self.name}") from err
+            # initial request succeeded, so failure to read a chunk is temporary
+            raise TemporaryRepositoryError(
+                f"Error retrieving chunk of {self.name}"
+            ) from err
 
 
 class Repository:
@@ -79,7 +88,12 @@ class Repository:
 
 
 class GithubRepository(Repository):
-    """Github repository"""
+    """Github repository
+
+    Raises a RepositoryError if something goes wrong indicating a problem with
+    the repository contents. Raises GithubException if there is an issue with
+    Github itself.
+    """
 
     def __init__(self, repo_id: str, auth: GithubAuth | None = None):
         if auth is None:
@@ -93,8 +107,10 @@ class GithubRepository(Repository):
         logger.debug("Retrieving manifest from %s", self.repo.name)
         try:
             contents = self.repo.get_contents(self.MANIFEST_PATH)
-        except Exception as err:
-            raise RepositoryError from err
+        except GithubException as err:
+            if err.status // 100 == 5:  # 5xx
+                raise TemporaryRepositoryError from err
+            raise RepositoryError from err  # convert to RepositoryError otherwise
         if contents.type != "file":
             raise RepositoryError("Manifest is not a file (type is %s)", contents.type)
         try:
@@ -120,3 +136,7 @@ class GithubRepository(Repository):
 
 class RepositoryError(Exception):
     """Base class for repository exceptions"""
+
+
+class TemporaryRepositoryError(RepositoryError):
+    """Repository exception that is likely temporary and worth retrying"""

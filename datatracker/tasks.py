@@ -2,12 +2,15 @@
 from email.utils import formataddr
 from textwrap import dedent
 
-import pydantic
 from celery import Task, shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
 
-from datatracker.utils.publication import PublicationError, publish_rfc
+from datatracker.utils.publication import (
+    PublicationError,
+    TemporaryPublicationError,
+    publish_rfc,
+)
 from purple.mail import send_mail
 from rpc.models import RfcToBe
 
@@ -73,12 +76,7 @@ class DatatrackerNotificationTask(Task):
     bind=True,
     base=DatatrackerNotificationTask,
     throws=(RfcToBe.DoesNotExist, PublicationError),
-    autoretry_for=(Exception,),
-    dont_autoretry_for=(
-        RfcToBe.DoesNotExist,
-        PublicationError,
-        pydantic.ValidationError,
-    ),
+    autoretry_for=(TemporaryPublicationError,),
 )
 def notify_rfc_published_task(self, rfctobe_id):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
