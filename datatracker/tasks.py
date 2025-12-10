@@ -68,10 +68,6 @@ class DatatrackerNotificationTask(Task):
         )
 
 
-# todo reconsider retry conditions
-# When datatracker is down, gateway error -> PublicationError. That is a condition
-# where a retry should be made. Most validation errors, missing RfcToBe, or active
-# refusal of publication from datatracker should probably not retry.
 @shared_task(
     bind=True,
     base=DatatrackerNotificationTask,

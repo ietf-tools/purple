@@ -100,6 +100,9 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
         logger.debug("Calling publish_rfc_metadata")
         try:
             publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
+        except rpcapi_client.exceptions.ServiceException as err:
+            # a 5xx exception is probably a temporary datatracker server issue
+            raise TemporaryPublicationError(str(err)) from err
         except ApiException as api_error:
             try:
                 data = json.loads(api_error.body)
