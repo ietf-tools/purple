@@ -1,11 +1,19 @@
-export const IANAActionOptions = {
-  "iana-no-actions": 'This document has no IANA actions',
-  'iana-waiting-on': 'IANA has not completed actions in draft',
-  'iana-completed': 'IANA has completed actions in draft',
-  'iana-registry-changes-needed': 'Changes to registries are required due to RFC edits',
-  'iana-reconciled-changes': 'IANA has reconciled changes between draft and RFC'
-} as const
+import { IanaStatusSlugEnum } from '../purple_client/models/IanaStatusSlugEnum'
 
-export type IANAActionsEnum = keyof typeof IANAActionOptions
+export type IANAActionsEnum = IanaStatusSlugEnum
 
-export const IANAActionsEntries = Object.entries(IANAActionOptions) as [IANAActionsEnum, string][]
+export const IANAActionsEntries = Object.entries(IanaStatusSlugEnum) as [IANAActionsEnum, string][]
+
+export const parseIanaStatusSlug = (slug: string | undefined): IanaStatusSlugEnum | undefined => {
+  switch (slug) {
+    case "no_actions":
+      return "no_actions"
+    case "not_completed":
+      return "not_completed"
+    case "changes_required":
+      return "changes_required"
+    case "reconciled":
+      return "reconciled";
+  }
+  return undefined
+}

@@ -1,7 +1,7 @@
 <template>
   <div class="flex flex-row justify-between items-center">
     <span>
-      IANA Action: <span class="font-bold">{{ IANAActionOptions[props.ianaAction] }}</span>
+      IANA Action: <span class="font-bold">{{ props.rfcToBe.ianaStatus?.desc ?? '(none)' }}</span>
     </span>
     <BaseButton btn-type="default" @click="openModal">Edit</BaseButton>
   </div>
@@ -9,12 +9,12 @@
 
 <script setup lang="ts">
 import { overlayModalKey } from '~/providers/providerKeys';
-import { type IANAActionsEnum, IANAActionOptions } from '../utils/iana'
 import IANAActionsModal from './IANAActionsModal.vue'
+import type { RfcToBe } from '~/purple_client';
 
 type Props = {
   name: string
-  ianaAction: IANAActionsEnum
+  rfcToBe: RfcToBe
   onSuccess: () => Promise<void>
 }
 
@@ -33,7 +33,7 @@ const openModal = () => {
     component: IANAActionsModal,
     componentProps: {
       name: props.name,
-      ianaAction: props.ianaAction,
+      rfcToBe: props.rfcToBe,
       onSuccess: props.onSuccess
     },
     mode: 'side',

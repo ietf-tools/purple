@@ -58,5 +58,5 @@ const clusterSearch = computed(() => clusters.value ? clusters.value.map(cluster
 
 const filteredClusters = computed(() => clusters.value?.filter(
   (_cluster, index) => clusterSearch.value[index] ? clusterSearch.value[index].includes(filterValueString.value.trim()) : false
-) ?? [])
+).sort((a, b) => b.number - a.number) ?? [])
 </script>
