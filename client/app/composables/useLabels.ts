@@ -1,8 +1,7 @@
 export function useLabels() {
-  const api = useApi()
   return useAsyncData(
     `labels`,
-    () => api.labelsList(),
+    () => labelsListSingleton(),
     {
       default: () => [],
       server: false
