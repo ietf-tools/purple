@@ -837,63 +837,54 @@ class ClusterMemberSerializer(serializers.Serializer):
         list_serializer_class = ClusterMemberListSerializer
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
-        # Use the annotated field if available
-        if (
-            hasattr(clustermember, "rfctobe_annotated")
-            and clustermember.rfctobe_annotated
-        ):
-            return clustermember.rfctobe_annotated.get("rfc_number")
-
-        # Fallback to original logic
-        rfctobe = (
-            RfcToBe.objects.filter(draft=clustermember.doc)
-            .exclude(disposition__slug="withdrawn")
-            .values("rfc_number")
-            .first()
-        )
-
-        return rfctobe["rfc_number"] if rfctobe else None
-
-    def get_disposition(self, clustermember: ClusterMember) -> str | None:
-        """Get the disposition slug for this cluster member"""
-        if (
-            hasattr(clustermember, "rfctobe_annotated")
-            and clustermember.rfctobe_annotated
-        ):
-            # Use the annotated field if available
-            return clustermember.rfctobe_annotated.get("disposition_slug")
-
-        doc = clustermember.doc
-
-        rfctobe = getattr(doc, "rfctobe_set", None)
-        if rfctobe is not None:
-            rfctobe = rfctobe.exclude(disposition__slug="withdrawn").first()
-
-        if not rfctobe:
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            if rfctobes:
+                return rfctobes[0].rfc_number
             return None
 
-        return rfctobe.disposition.slug
+        # fallback to original logic
+        rfctobe = clustermember.doc.rfctobe_set.exclude(
+            disposition__slug="withdrawn"
+        ).first()
+        return rfctobe.rfc_number if rfctobe else None
+
+    def get_disposition(self, clustermember: ClusterMember) -> str | None:
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            if rfctobes:
+                return rfctobes[0].disposition.slug
+            return None
+
+        # fallback to original logic
+        rfctobe = clustermember.doc.rfctobe_set.exclude(
+            disposition__slug="withdrawn"
+        ).first()
+        if rfctobe and rfctobe.disposition:
+            return rfctobe.disposition.slug
+        return None
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, clustermember: ClusterMember) -> list[dict] | None:
         """Get related documents for this cluster member"""
-        if (
-            hasattr(clustermember, "rfctobe_annotated")
-            and clustermember.rfctobe_annotated
-        ):
-            rfctobe = clustermember.rfctobe_annotated.get("rfctobe_id")
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            rfctobe = rfctobes[0] if rfctobes else None
         else:
-            # fallback to original logic
-            doc = clustermember.doc
-
-            rfctobe = getattr(doc, "rfctobe_set", None)
-            if rfctobe is not None:
-                rfctobe = rfctobe.exclude(disposition__slug="withdrawn").first()
+            rfctobe = clustermember.doc.rfctobe_set.exclude(
+                disposition__slug="withdrawn"
+            ).first()
 
         if not rfctobe:
             return None
 
-        # Get all related documents for this RfcToBe
+        # Check if references are already prefetched
+        if hasattr(rfctobe, "references_annotated"):
+            related_docs = rfctobe.references_annotated
+            if not related_docs:
+                return None
+            return RpcRelatedDocumentSerializer(related_docs, many=True).data
+
         related_docs = RpcRelatedDocument.objects.filter(
             source=rfctobe,
             relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
@@ -906,8 +897,9 @@ class ClusterMemberSerializer(serializers.Serializer):
 
     def get_is_received(self, clustermember: ClusterMember) -> bool | None:
         """Determine if the document has been received based on related documents"""
-        if hasattr(clustermember, "rfctobe_annotated"):
-            return clustermember.rfctobe_annotated is not None
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobe_list = clustermember.doc.rfctobe_annotated
+            return bool(rfctobe_list)
 
         # fallback to original logic
         return RfcToBe.objects.filter(draft=clustermember.doc).exists()

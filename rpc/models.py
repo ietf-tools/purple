@@ -11,9 +11,7 @@ from django.db.models import (
     Exists,
     OuterRef,
     Prefetch,
-    Subquery,
 )
-from django.db.models.functions import JSONObject
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -367,27 +365,36 @@ class ClusterMember(models.Model):
 
 class ClusterQuerySet(models.QuerySet):
     def with_data_annotated(self):
-        """Annotate cluster members with additional data to avoid n+1 queries"""
+        """Prefetch cluster members with related data to avoid N+1 queries"""
 
-        rfctobe_subquery = Subquery(
-            RfcToBe.objects.filter(draft=OuterRef("doc"))
-            .exclude(disposition__slug="withdrawn")
-            .annotate(
-                data=JSONObject(
-                    disposition_slug=models.F("disposition__slug"),
-                    rfc_number=models.F("rfc_number"),
-                    rfctobe_id=models.F("id"),
-                )
+        return self.prefetch_related(
+            Prefetch(
+                "clustermember_set",
+                queryset=ClusterMember.objects.select_related("doc").prefetch_related(
+                    Prefetch(
+                        "doc__rfctobe_set",
+                        queryset=RfcToBe.objects.exclude(disposition__slug="withdrawn")
+                        .select_related("disposition")
+                        .prefetch_related(
+                            Prefetch(
+                                "rpcrelateddocument_set",
+                                queryset=RpcRelatedDocument.objects.filter(
+                                    relationship__slug__in=(
+                                        DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
+                                    )
+                                ).select_related(
+                                    "relationship",
+                                    "target_document",
+                                    "target_rfctobe__draft",
+                                ),
+                                to_attr="references_annotated",
+                            )
+                        ),
+                        to_attr="rfctobe_annotated",
+                    )
+                ),
             )
-            .values("data")[:1]
         )
-
-        # Create the annotated queryset for ClusterMember
-        subquery = ClusterMember.objects.select_related("doc").annotate(
-            rfctobe_annotated=rfctobe_subquery,
-        )
-
-        return self.prefetch_related(Prefetch("clustermember_set", queryset=subquery))
 
     def with_is_active_annotated(self):
         """Annotate clusters with is_active status
