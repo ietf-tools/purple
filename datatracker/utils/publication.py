@@ -23,59 +23,69 @@ from rpc.models import RfcToBe
 logger = logging.getLogger(__name__)
 
 
-def choose_files(filenames):
-    interesting_extensions = [".xml", ".txt", ".html", ".txt.pdf"]
-    chosen = {ext: [] for ext in interesting_extensions}
-    for fname in filenames:
-        suffix = "".join(Path(fname).suffixes)
-        if suffix in chosen:
-            chosen[suffix].append(fname)
-    missing = [ext for ext in chosen if len(chosen[ext]) == 0]
+def choose_files(publication_list):
+    required_types = ["xml", "txt", "html", "pdf", "json", "notprepped"]
+    chosen = {type_: [] for type_ in required_types}
+
+    for fileinfo in publication_list:
+        type_ = fileinfo["type"]
+        if type_ in chosen:
+            chosen[type_].append(fileinfo["path"])
+    missing = [type_ for type_ in chosen if len(chosen[type_]) == 0]
     if len(missing) > 0:
-        raise MissingFilesError(
-            f"Missing files: {", ".join(missing)}"
-        )
-    multiples = [ext for ext in chosen if len(chosen[ext]) > 1]
+        raise MissingFilesError(f"Missing files: {', '.join(missing)}")
+    multiples = [type_ for type_ in chosen if len(chosen[type_]) > 1]
     if len(multiples) > 0:
-        raise AmbiguousFilesError(
-            f"More than one of: {", ".join(multiples)}"
-        )
-    return [v[0] for v in chosen.values()]
+        raise AmbiguousFilesError(f"More than one of: {', '.join(multiples)}")
+    return {k: v[0] for k, v in chosen.items()}
+
+
+def suffix_for_type(type_):
+    if type_ == "notprepped":
+        return ".notprepped.xml"
+    return "." + type_
 
 
 @with_rpcapi
 def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     # todo add guards
-    #  - missing rfc_number
     #  - state of rfctobe
     #  - missing published_at
     # todo error handling
+    if rfctobe.rfc_number is None:
+        raise PublicationError("Cannot publish without an rfc_number")
     if rfctobe.repository.strip() == "":
         raise PublicationError("Cannot publish without a repository")
     repo = GithubRepository(rfctobe.repository)
-    # List the files in the directory
-    logger.debug(f"Using files in {rfctobe.repository}/{rfctobe.repository_path}")
     try:
-        repo_files = {
-            Path(rf.name).name: rf
-            for rf in repo.directory_contents(rfctobe.repository_path)
-        }
+        manifest = repo.get_manifest()
     except RepositoryError as err:
-        raise PublicationError from err
-    # Select the files by name (may raise exceptions, let those bubble up)
-    filenames = choose_files(repo_files.keys())
-    logger.debug(f"Chose: {filenames}")
+        raise PublicationError(
+            "Invalid or missing manifest or retrieval error"
+        ) from err
+    publications = manifest["publications"]
+    for publication in publications:
+        if rfctobe.rfc_number == publication["rfcNumber"]:
+            break  # use this publication
+    else:
+        raise PublicationError(f"Manifest does not contain RFC {rfctobe.rfc_number}")
+    # Choose files + validate that we have what we need / no ambiguities
+    chosen_files = choose_files(publication)
+    downloaded_files = {}
     # Download the selected files to a temp directory
     with TemporaryDirectory() as tmpdirname:
-        tmppath = Path(tmpdirname)
-        for fname in filenames:
-            output_path = tmppath / fname
-            logger.debug(f"Writing to {output_path}")
+        output_stem = Path(tmpdirname) / f"rfc{rfctobe.rfc_number}"
+        for type_, repo_path in chosen_files:
+            output_path = output_stem.with_suffix(suffix_for_type(type_))
+            logger.debug("Fetching %s", repo_path)
+            repo_file = repo.get_file(repo_path)
+            logger.debug("Saving as %s", str(output_path))
             with output_path.open("wb") as f:
-                for chunk in repo_files[fname].chunks():
+                for chunk in repo_file.chunks():
                     f.write(chunk)
+            downloaded_files[type_] = output_path
         # Now publish!
-        logger.debug("Calling publish_rfc_metad")
+        logger.debug("Calling publish_rfc_metadata")
         try:
             publish_rfc_metadata(rfctobe, rpcapi=rpcapi)
         except ApiException as api_error:
@@ -89,7 +99,11 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
                 raise InvalidDraftError from api_error
             elif "already-published-draft" in error_codes:
                 raise AlreadyPublishedDraftError from api_error
-        upload_rfc_contents(rfctobe, filenames, rpcapi=rpcapi)
+        upload_rfc_contents(
+            rfctobe,
+            [str(fn) for fn in downloaded_files.values()],
+            rpcapi=rpcapi,
+        )
 
 
 @with_rpcapi

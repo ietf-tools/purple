@@ -1,15 +1,19 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 """Document repository interfaces"""
 
-from collections.abc import Iterator
-from pathlib import PurePath
+import json
+import logging
+from pathlib import Path, PurePath
 
+import jsonschema
 import requests
 from django.conf import settings
 from django.core.files.base import File
 from github import Github
 from github.Auth import Auth as GithubAuth
 from github.Auth import Token as GithubAuthToken
+
+logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30  # seconds
 
@@ -38,6 +42,7 @@ class GithubRepositoryFile(RepositoryFile):
         if self._downloaded:
             raise ValueError("File can only be downloaded once")
         self._downloaded = True
+        logger.debug("Making request: GET %s", self._download_url)
         response = requests.get(
             url=self._download_url,
             allow_redirects=True,
@@ -51,9 +56,7 @@ class GithubRepositoryFile(RepositoryFile):
         try:
             response = self._get()
         except Exception as err:
-            raise RepositoryError(
-                f"Error downloading {self.name} from Github"
-            ) from err
+            raise RepositoryError(f"Error downloading {self.name} from Github") from err
         try:
             yield from response.iter_content(chunk_size or self.DEFAULT_CHUNK_SIZE)
         except Exception as err:
@@ -63,39 +66,56 @@ class GithubRepositoryFile(RepositoryFile):
 class Repository:
     """Base class for Repository"""
 
-    def directory_contents(self, directory: PurePath | str) -> Iterator[RepositoryFile]:
+    MANIFEST_PATH = "manifest.json"  # path in repo
+    MANIFEST_SCHEMA = "pubmanifest.schema.json"  # file relative to this script
+
+    def validate_manifest(self, manifest):
+        manifest_path = Path(__file__).resolve().with_name(self.MANIFEST_SCHEMA)
+        with manifest_path.open() as schema_file:
+            jsonschema.validate(manifest, json.load(schema_file))
+
+    def get_file(self, path: PurePath | str) -> RepositoryFile:
         raise NotImplementedError
 
 
 class GithubRepository(Repository):
     """Github repository"""
 
-    def __init__(
-        self, repo_id: str, ref: str | None = None, auth: GithubAuth | None = None
-    ):
+    def __init__(self, repo_id: str, auth: GithubAuth | None = None):
         if auth is None:
             auth_token = getattr(settings, "GITHUB_AUTH_TOKEN", None)
             if auth_token is not None:
                 auth = GithubAuthToken(auth_token)
         self.gh = Github(auth=auth)
         self.repo = self.gh.get_repo(repo_id)
-        self.ref = ref  # pin to a particular git ref
 
-    def directory_contents(self, directory: PurePath | str):
-        """Iterate files matching glob pattern"""
-        directory = str(directory)  # convert a Path to a directory
-        contents = (
-            self.repo.get_contents(directory)
-            if self.ref is None
-            else self.repo.get_contents(directory, self.ref)
+    def get_manifest(self):
+        logger.debug("Retrieving manifest from %s", self.repo.name)
+        try:
+            contents = self.repo.get_contents(self.MANIFEST_PATH)
+        except Exception as err:
+            raise RepositoryError from err
+        if contents.type != "file":
+            raise RepositoryError("Manifest is not a file (type is %s)", contents.type)
+        try:
+            manifest = json.loads(contents.decoded_content)
+            self.validate_manifest(manifest)
+        except Exception as err:
+            raise RepositoryError from err
+        return manifest
+
+    def get_file(self, path: PurePath | str) -> GithubRepositoryFile:
+        # We can't use decoded_content because the file might be too large (> 1 MB).
+        # Instead, use GithubRepositoryFile so it can be chunked via download_url.
+        path = str(path)
+        contents = self.repo.get_contents(path)
+        if contents.type != "file":
+            raise RepositoryError("Path is not a file (type is %s)", contents.type)
+        return GithubRepositoryFile(
+            name=contents.name,
+            download_url=contents.download_url,
+            size=contents.size,
         )
-        for rf in contents:
-            if rf.type == "file":
-                yield GithubRepositoryFile(
-                    name=rf.name,
-                    download_url=rf.download_url,
-                    size=rf.size,
-                )
 
 
 class RepositoryError(Exception):
