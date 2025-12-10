@@ -874,6 +874,7 @@ class ClusterMemberSerializer(serializers.Serializer):
 
         return rfctobe.disposition.slug
 
+    @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, clustermember: ClusterMember) -> list[dict] | None:
         """Get related documents for this cluster member"""
         if (
