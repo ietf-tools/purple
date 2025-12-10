@@ -48,14 +48,19 @@ def suffix_for_type(type_):
 
 @with_rpcapi
 def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
-    # todo add guards
-    #  - state of rfctobe
-    #  - missing published_at
-    # todo error handling
     if rfctobe.rfc_number is None:
-        raise PublicationError("Cannot publish without an rfc_number")
+        raise PublicationError("Cannot publish to datatracker without an rfc_number")
     if rfctobe.repository.strip() == "":
-        raise PublicationError("Cannot publish without a repository")
+        raise PublicationError("Cannot publish to datatracker  without a repository")
+    if rfctobe.disposition_id != "published":
+        raise PublicationError(
+            f"Cannot publish to datatracker because "
+            f"disposition is {rfctobe.disposition_id}"
+        )
+    if rfctobe.published_at is None:
+        raise PublicationError(
+            "Cannot publish to datatracker until published_at timestamp is set"
+        )
     repo = GithubRepository(rfctobe.repository)
     try:
         manifest = repo.get_manifest()
