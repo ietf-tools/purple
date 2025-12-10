@@ -898,8 +898,8 @@ class ClusterMemberSerializer(serializers.Serializer):
     def get_is_received(self, clustermember: ClusterMember) -> bool | None:
         """Determine if the document has been received based on related documents"""
         if hasattr(clustermember.doc, "rfctobe_annotated"):
-            rfctobe_list = clustermember.doc.rfctobe_annotated
-            return bool(rfctobe_list)
+            rfctobes = clustermember.doc.rfctobe_annotated
+            return bool(rfctobes)
 
         # fallback to original logic
         return RfcToBe.objects.filter(draft=clustermember.doc).exists()
