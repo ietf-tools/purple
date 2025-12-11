@@ -364,6 +364,27 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
         with transaction.atomic():
             rfctobe = serializer.save()
 
+            # check for existing references where the new draft is the target
+            # if "not-received" references exist, change them to "refqueue"
+            # if "not-received-2/3g" references exist, delete them
+            existing_references = RpcRelatedDocument.objects.filter(
+                target_document__name=rfctobe.draft.name,
+                relationship__slug__in=(
+                    DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
+                ),
+            )
+            for existing_reference in existing_references:
+                if (
+                    existing_reference.relationship.slug
+                    == DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+                ):
+                    existing_reference.relationship = DocRelationshipName.objects.get(
+                        slug=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
+                    )
+                    existing_reference.save()
+                else:
+                    existing_reference.delete()
+
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
             references = rpcapi.get_draft_references(document_id)
