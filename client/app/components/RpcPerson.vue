@@ -1,0 +1,23 @@
+<template>
+  <span :class="ANCHOR_STYLE">
+    {{ person === null ? 'loading...' : person?.name ? person.name : '(System)' }}
+    {{  SPACE }}
+  </span>
+  <span :class="PERSON_ID_STYLE">
+    {{ person?.id ? `#${person.id}` : '' }}
+  </span>
+</template>
+
+<script setup lang="ts">
+import { SPACE } from '../utils/strings'
+import type { RpcPerson } from '~/purple_client';
+
+type Props = {
+  personId?: number | null,
+  people?: RpcPerson[],
+}
+
+const props = defineProps<Props>()
+
+const person = computed(() => props.people ? props.people.find(p => p.id === props.personId) : null)
+</script>

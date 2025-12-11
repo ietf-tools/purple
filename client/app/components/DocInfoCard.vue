@@ -13,8 +13,8 @@
               <div v-else>
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
                   <a :href="author.email ? datatrackerPersonLink(author.email) : undefined" :class="ANCHOR_STYLE">
-                    <span class="font-bold">{{ author.titlepageName }}</span>
-                    <span class="font-normal" v-if="author.id">{{ SPACE }}{{ ` #${author.id}` }}</span>
+                    <span :class="ANCHOR_STYLE">{{ author.titlepageName }}</span>
+                    <span :class="PERSON_ID_STYLE" v-if="author.id">{{ SPACE }}{{ ` #${author.id}` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
                   </a>
                 </div>
@@ -85,7 +85,7 @@ type Props = {
   rfcToBe: RfcToBe | null | undefined
   draftName: string
   isReadOnly?: boolean
-  refresh: () => void
+  refresh?: () => void
 }
 
 const props = defineProps<Props>()

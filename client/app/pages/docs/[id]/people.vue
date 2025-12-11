@@ -22,7 +22,7 @@
               </div>
               <dl v-else>
                 <div v-for="assignment of rfcToBeAssignments" :key="assignment.id" class="py-1 grid grid-cols-2">
-                  <dt>{{people.find(p => p.id === assignment.person)?.name ?? '(System)'}}</dt>
+                  <dt><Anchor :href="teamMemberLink(assignment?.person)"><RpcPerson :person-id="assignment.person" :people="people" /></Anchor></dt>
                   <dd class="relative">
                     <BaseBadge :label="assignment.role" />
                     <AssignmentState :state="assignment.state" />
@@ -65,6 +65,7 @@ import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
 import { type DocTabId } from '~/utils/doc'
+import { teamMemberLink }  from '~/utils/url'
 import type { Assignment } from '~/purple_client'
 
 const route = useRoute()
@@ -129,20 +130,6 @@ const rfcToBe = computed((): CookedDraft | null => {
 
 // DATA
 
-const { data: labels, status: labelsStatus } = await useLabels()
-
-const labels1 = computed(() =>
-  labels.value.filter((label) => label.used && label.isComplexity && !label.isException)
-)
-
-const labels2 = computed(() =>
-  labels.value.filter((label) => label.used && label.isComplexity && label.isException)
-)
-
-const labels3 = computed(
-  () => labels.value.filter((label) => label.used && !label.isComplexity)
-)
-
 watch(
   selectedLabelIds,
   async () => {
@@ -186,9 +173,7 @@ watch(
 
 const { data: people } = await useAsyncData(
   () => api.rpcPersonList(),
-  { server: false, lazy: true, default: () => [] }
+  { server: false, lazy: true }
 )
-
-const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
 
 </script>

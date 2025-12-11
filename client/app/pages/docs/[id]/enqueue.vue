@@ -9,8 +9,8 @@
       </div>
 
       <div class="flex flex-row">
-        <DocInfoCard :rfc-to-be="rfcToBe" />
-        <EditAuthors v-if="rfcToBe" :draft-name="id" v-model="rfcToBe"/>
+        <DocInfoCard :rfc-to-be="rfcToBe" :draft-name="draftName" />
+        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe"/>
       </div>
 
       <div class="flex w-full space-x-4">
@@ -28,7 +28,7 @@
       <div v-if="rfcToBe?.id">
         <DocumentDependencies v-model="relatedDocuments"
                               :id="rfcToBe.id"
-                              :draft-name="id"
+                              :draft-name="draftName"
                               :cluster-number="rfcToBe.cluster?.number">
         </DocumentDependencies>
       </div>
@@ -37,8 +37,8 @@
           <CardHeader title="Comments" />
         </template>
         <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-          <RpcCommentTextarea v-if="rfcToBe" :draft-name="id" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
-          <DocumentComments :draft-name="id" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
+          <RpcCommentTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
+          <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
             :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
             class="w-3/5 min-w-100" />
         </div>
@@ -63,20 +63,19 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import type { RfcToBe } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { QUEUE_QUEUE_PATH } from '~/utils/url'
 
 const route = useRoute()
 const api = useApi()
 
-const id = computed(() => route.params.id?.toString() ?? '')
+const draftName = computed(() => route.params.id?.toString() ?? '')
 
-const rfcToBeKey = computed(() => `rfcToBe-${id.value}`)
+const rfcToBeKey = computed(() => `rfcToBe-${draftName.value}`)
 
 const { data: rfcToBe, error: rfcToBeError } = await useAsyncData(
   rfcToBeKey,
-  () => api.documentsRetrieve({ draftName: id.value }),
+  () => api.documentsRetrieve({ draftName: draftName.value }),
   {
     server: false,
     deep: true // author editing relies on deep reactivity
@@ -108,7 +107,7 @@ const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
 watch(
   selectedLabelIds,
   async () => api.documentsPartialUpdate({
-    draftName: id.value,
+    draftName: draftName.value,
     patchedRfcToBeRequest: {
       labels: selectedLabelIds.value,
     }
@@ -121,9 +120,9 @@ const {
   pending: commentsPending,
   error: commentsError,
   refresh: commentsReload
-} = await useCommentsForDraft(id.value)
+} = await useCommentsForDraft(draftName.value)
 
-const { data: relatedDocuments } = await useReferencesForDraft(id.value)
+const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
 
 const isAddingToQueue = ref(false)
 
@@ -135,7 +134,7 @@ const addToQueue = async () => {
   isAddingToQueue.value = true
   try {
     const rfcToBe = await api.documentsPartialUpdate({
-      draftName: id.value,
+      draftName: draftName.value,
       patchedRfcToBeRequest: {
         disposition: IN_PROGRESS
       }
