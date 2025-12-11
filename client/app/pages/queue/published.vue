@@ -70,12 +70,12 @@ import {
   type SortingState,
 } from '@tanstack/vue-table'
 import type { PaginatedRfcToBeList } from '~/purple_client'
-import { sortDate, type TabId } from '~/utils/queue'
+import { sortDate, type QueueTabId } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 
 const api = useApi()
 
-const currentTab: TabId = 'published'
+const currentTab: QueueTabId = 'published'
 
 type Row = PaginatedRfcToBeList["results"][number]
 

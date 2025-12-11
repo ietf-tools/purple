@@ -134,14 +134,14 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { calculatePeopleWorkload, sortDate } from '~/utils/queue'
-import type { TabId, AssignmentMessageProps } from '~/utils/queue'
+import { calculatePeopleWorkload } from '~/utils/queue'
+import type { QueueTabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const api = useApi()
-const currentTab: TabId = 'queue'
+const currentTab: QueueTabId = 'queue'
 const route = useRoute()
 const router = useRouter()
 const siteStore = useSiteStore()

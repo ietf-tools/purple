@@ -1,14 +1,7 @@
 import type { Assignment, Cluster, Label, QueueItem, SimpleCluster } from '~/purple_client'
+import type { Tab } from './tab'
 
-export type Tab = {
-  id: string
-  name: string
-  to: string
-  icon: string
-  iconAnimate?: boolean
-}
-
-export const tabs: Tab[] = [
+export const queueTabs: Tab[] = [
   {
     id: 'submissions',
     name: 'Submissions',
@@ -33,9 +26,9 @@ export const tabs: Tab[] = [
     to: '/queue/published',
     icon: 'uil:check-circle'
   }
-] as const
+] as const satisfies Tab[]
 
-export type TabId = (typeof tabs)[number]['id']
+export type QueueTabId = (typeof queueTabs)[number]['id']
 
 export const sortDate = (
   dateA: Date | undefined | null,

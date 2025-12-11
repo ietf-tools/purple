@@ -70,11 +70,11 @@ import {
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
-import type { TabId } from '~/utils/queue'
+import type { QueueTabId } from '~/utils/queue'
 
 const api = useApi()
 
-const currentTab: TabId = 'enqueuing'
+const currentTab: QueueTabId = 'enqueuing'
 
 const {
   data,

@@ -9,46 +9,51 @@
         API error while requesting draft: {{ rawRfcToBeError }}
       </ErrorAlert>
       <div v-else
-        class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
+        class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
 
-        <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="() => rfcToBeRefresh()" />
-
-        <div class="flex">
-          <div class="flex flex-col">
-            <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
-            <div class="flex flex-row">
-              <DocLabelsCard title="Other complexities" v-model="selectedLabelIds" :labels="labels1" />
-              <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
+        <!-- Status summary -->
+        <BaseCard class="grid place-items-stretch">
+          <h2 class="sr-only">Status Summary</h2>
+          <div class="px-0 pt-6 sm:px-6">
+            <h3 class="text-base font-semibold leading-7">Assignments</h3>
+            <div class="text-sm font-medium">
+              <div v-if="rfcToBeAssignments.length === 0">
+                None
+              </div>
+              <dl v-else>
+                <div v-for="assignment of rfcToBeAssignments" :key="assignment.id" class="py-1 grid grid-cols-2">
+                  <dt>{{people.find(p => p.id === assignment.person)?.name ?? '(System)'}}</dt>
+                  <dd class="relative">
+                    <BaseBadge :label="assignment.role" />
+                    <AssignmentState :state="assignment.state" />
+                  </dd>
+                </div>
+              </dl>
             </div>
           </div>
-        </div>
-
-        <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
-
-        <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
-          <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName" :people="people"
-            :cluster-number="rawRfcToBe.cluster?.number">
-          </DocumentDependencies>
-        </div>
-
-        <BaseCard class="lg:col-span-full grid place-items-stretch">
-          <IANAActionsSummary v-if="rawRfcToBe && rawRfcToBe.name" :rfcToBe="rawRfcToBe"
-            :on-success="rfcToBeRefresh" :name="rawRfcToBe.name" />
-        </BaseCard>
-
-        <BaseCard class="lg:col-span-full grid place-items-stretch">
-          <template #header>
-            <CardHeader title="Comments (private)" />
-          </template>
-          <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-            <RpcCommentTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload"
-              class="w-4/5 min-w-100" />
-            <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
-              :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
-              class="w-3/5 min-w-100" />
+          <div class="px-0 pt-6 sm:px-6">
+            <h3 class="text-base font-semibold leading-7">Pending Activities</h3>
+            <div class="text-sm font-medium">
+              <div v-if="!rfcToBe || !rfcToBe.pendingActivities || rfcToBe.pendingActivities.length === 0">
+                None
+              </div>
+              <dl v-else>
+                <div v-for="pendingAct of rfcToBe?.pendingActivities" :key="pendingAct.slug"
+                  class="py-1 grid grid-cols-2">
+                  <dd class="relative">
+                    <BaseBadge :label="pendingAct.slug" />
+                  </dd>
+                </div>
+              </dl>
+            </div>
           </div>
         </BaseCard>
+
+        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
+
+        <div class="lg:col-span-full">
+          <DocumentFinalReviews :heading-level="4" :name="draftName" />
+        </div>
 
       </div>
     </div>
@@ -60,6 +65,7 @@ import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
 import { snackbarForErrors } from "~/utils/snackbar"
 import { type DocTabId } from '~/utils/doc'
+import type { Assignment } from '~/purple_client'
 
 const route = useRoute()
 const api = useApi()
@@ -67,7 +73,7 @@ const snackbar = useSnackbar()
 
 // COMPUTED
 
-const currentTab: DocTabId = 'index'
+const currentTab: DocTabId = 'people'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
@@ -86,6 +92,16 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh
     lazy: true,
     deep: true // author editing relies on deep reactivity
   }
+)
+
+// todo retrieve assignments for a single draft more efficiently
+const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
+  () => api.assignmentsList(),
+  { server: false, lazy: true, default: () => [] as Assignment[] }
+)
+
+const rfcToBeAssignments = computed(() =>
+  assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
 )
 
 const initialSelectedLabelIds = computed(() => {

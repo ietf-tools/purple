@@ -70,11 +70,11 @@ import type { SortingState } from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
 import type { SubmissionListItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
-import { sortDate, type TabId } from '~/utils/queue'
+import { sortDate, type QueueTabId } from '~/utils/queue'
 
 const api = useApi()
 
-const currentTab: TabId = 'submissions'
+const currentTab: QueueTabId = 'submissions'
 
 const {
   data,
