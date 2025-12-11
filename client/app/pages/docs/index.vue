@@ -71,4 +71,7 @@ const { data: labels } = await useAsyncData(
   { server: false, default: () => ([]) }
 )
 
+useHead({
+  title: 'My Documents'
+})
 </script>

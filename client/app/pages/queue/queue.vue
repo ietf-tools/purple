@@ -695,4 +695,7 @@ const deleteRedundantAssignment = async (redundantAssignment: Assignment) => {
   }
 }
 
+useHead({
+  title: 'RPC Queue'
+})
 </script>

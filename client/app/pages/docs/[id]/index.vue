@@ -175,4 +175,7 @@ const { data: people } = await useAsyncData(
 
 const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
 
+useHead({
+  title: draftName.value
+})
 </script>
