@@ -74,7 +74,7 @@ const snackbar = useSnackbar()
 
 // COMPUTED
 
-const currentTab: DocTabId = 'people'
+const currentTab: DocTabId = 'assignments'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 

@@ -7,25 +7,25 @@ export const docTabsFactory = (draftName: string) => {
       id: 'index',
       name: 'Info',
       to: `/docs/${sanitisedDraftName}`,
-      icon: 'uil:bolt-alt'
+      icon: 'fluent:document-one-page-sparkle-16-regular'
     },
     {
-      id: 'people',
-      name: 'People',
-      to: `/docs/${sanitisedDraftName}/people`,
-      icon: 'ic:outline-queue'
+      id: 'assignments',
+      name: 'Assignments',
+      to: `/docs/${sanitisedDraftName}/assignments`,
+      icon: 'fluent:layer-diagonal-person-16-regular'
     },
     {
-      id: 'public',
-      name: 'Public',
-      to: `/docs/${sanitisedDraftName}/public`,
-      icon: 'ic:outline-queue'
+      id: 'final-reviews',
+      name: 'Final Reviews',
+      to: `/docs/${sanitisedDraftName}/final-reviews`,
+      icon: 'fluent:emoji-hand-16-regular'
     },
     {
       id: 'history',
       name: 'History',
       to: `/docs/${sanitisedDraftName}/history`,
-      icon: 'ic:outline-queue'
+      icon: 'fluent:history-28-filled'
     },
   ] as const satisfies Tab[]
 }

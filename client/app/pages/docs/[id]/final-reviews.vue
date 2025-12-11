@@ -36,7 +36,7 @@ const api = useApi()
 
 // COMPUTED
 
-const currentTab: DocTabId = 'public'
+const currentTab: DocTabId = 'final-reviews'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
