@@ -3,7 +3,7 @@
 
 import json
 import logging
-from pathlib import Path, PurePath
+from pathlib import PurePath
 
 import jsonschema
 import requests

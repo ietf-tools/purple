@@ -38,8 +38,4 @@ class RepoTests(TestCase):
         with self.assertRaises(jsonschema.exceptions.ValidationError):
             repo.validate_manifest({})
         with self.assertRaises(jsonschema.exceptions.ValidationError):
-            repo.validate_manifest(
-                {
-                    "publications": []
-                }
-            )
+            repo.validate_manifest({"publications": []})
