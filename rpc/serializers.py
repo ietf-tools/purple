@@ -899,7 +899,7 @@ class ClusterMemberSerializer(serializers.Serializer):
             for ref in api_references:
                 if not existing_rfc_to_be.get(ref.id):
                     relationship = DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
-                elif existing_rfc_to_be.get(ref.id) == "in_progress":
+                elif existing_rfc_to_be.get(ref.id) in ("created", "in_progress"):
                     relationship = DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
                 else:
                     continue
