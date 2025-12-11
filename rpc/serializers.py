@@ -5,6 +5,7 @@ import warnings
 from dataclasses import dataclass
 from itertools import pairwise
 
+import rpcapi_client
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
@@ -14,6 +15,7 @@ from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
 from datatracker.models import DatatrackerPerson, Document
+from datatracker.rpcapi import with_rpcapi
 from datatracker.utils import build_datatracker_url
 
 from .models import (
@@ -865,7 +867,10 @@ class ClusterMemberSerializer(serializers.Serializer):
         return None
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
-    def get_references(self, clustermember: ClusterMember) -> list[dict] | None:
+    @with_rpcapi
+    def get_references(
+        self, clustermember: ClusterMember, rpcapi: rpcapi_client.PurpleApi
+    ) -> list[dict] | None:
         """Get related documents for this cluster member"""
         if hasattr(clustermember.doc, "rfctobe_annotated"):
             rfctobes = clustermember.doc.rfctobe_annotated
@@ -876,7 +881,38 @@ class ClusterMemberSerializer(serializers.Serializer):
             ).first()
 
         if not rfctobe:
-            return None
+            # if the doc is not received, get references on-the-fly from dt
+            api_references = rpcapi.get_draft_references(
+                clustermember.doc.datatracker_id
+            )
+            if not api_references:
+                return None
+
+            references_data = []
+            existing_rfc_to_be = dict(
+                RfcToBe.objects.filter(
+                    draft__datatracker_id__in=[s.id for s in api_references]
+                )
+                .exclude(disposition__slug="withdrawn")
+                .values_list("draft__datatracker_id", "disposition__slug")
+            )
+            for ref in api_references:
+                if not existing_rfc_to_be.get(ref.id):
+                    relationship = DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+                elif existing_rfc_to_be.get(ref.id) == "in_progress":
+                    relationship = DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
+                else:
+                    continue
+                references_data.append(
+                    {
+                        "id": None,
+                        "relationship": relationship,
+                        "draft_name": clustermember.doc.name,
+                        "target_draft_name": ref.name,
+                    }
+                )
+
+            return references_data
 
         # Check if references are already prefetched
         if hasattr(rfctobe, "references_annotated"):

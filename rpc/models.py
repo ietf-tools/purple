@@ -328,10 +328,13 @@ class StreamName(Name):
 
 class DocRelationshipName(Name):
     REFQUEUE_RELATIONSHIP_SLUG = "refqueue"
+    NOT_RECEIVED_RELATIONSHIP_SLUG = "not-received"
+    NOT_RECEIVED_2G_RELATIONSHIP_SLUG = "not-received-2g"
+    NOT_RECEIVED_3G_RELATIONSHIP_SLUG = "not-received-3g"
     NOT_RECEIVED_RELATIONSHIP_SLUGS = [
-        "not-received",
-        "not-received-2g",
-        "not-received-3g",
+        NOT_RECEIVED_RELATIONSHIP_SLUG,
+        NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+        NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
     ]
     REFERENCE_RELATIONSHIP_SLUGS = NOT_RECEIVED_RELATIONSHIP_SLUGS + [
         REFQUEUE_RELATIONSHIP_SLUG
