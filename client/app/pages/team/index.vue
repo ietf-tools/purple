@@ -124,7 +124,7 @@ const columnHelper = createColumnHelper<RpcPerson>()
 
 const columns = [
   columnHelper.accessor('name', {
-    header: 'Document',
+    header: 'Name',
     cell: data => {
       return h(Anchor, { href: `/team/${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
