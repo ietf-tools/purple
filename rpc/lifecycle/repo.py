@@ -79,7 +79,7 @@ class Repository:
     MANIFEST_SCHEMA = "pubmanifest.schema.json"  # file relative to this script
 
     def validate_manifest(self, manifest):
-        manifest_path = Path(__file__).resolve().with_name(self.MANIFEST_SCHEMA)
+        manifest_path = settings.SCHEMA_ROOT / self.MANIFEST_SCHEMA
         with manifest_path.open() as schema_file:
             jsonschema.validate(manifest, json.load(schema_file))
 
