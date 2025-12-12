@@ -161,6 +161,11 @@ class RfcToBe(models.Model):
         help_text="Current status of IANA actions for this document",
     )
 
+    repository = models.CharField(
+        blank=True,
+        help_text="Repository name (e.g., ietf-tools/purple",
+    )
+
     history = HistoricalRecords(m2m_fields=[labels])
 
     class Meta:
@@ -170,7 +175,7 @@ class RfcToBe(models.Model):
                 fields=["rfc_number"],
                 name="unique_non_null_rfc_number",
                 nulls_distinct=True,
-            )
+            ),
         ]
 
     def __str__(self):
