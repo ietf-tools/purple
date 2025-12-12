@@ -39,7 +39,7 @@
 <script setup lang="ts">
 import { uniq, uniqBy } from 'lodash-es';
 import { type Cluster, type RfcToBe } from '~/purple_client'
-import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
+import { drawGraph, type DrawGraphParameters } from '~/utils/document_relations';
 import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
 
@@ -104,6 +104,9 @@ const clusterGraphData = computed(() => {
 
   const isNodeParam = (data: unknown): data is NodeParam => {
     const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+    if (!isANode) {
+      console.log("!IS A NODE", isANode, data)
+    }
     return isANode
   }
 
@@ -113,7 +116,10 @@ const clusterGraphData = computed(() => {
 
   const rfcToBeToNodeParam = (rfcToBe: RfcToBe): NodeParam | undefined => {
     const { name, rfcNumber, disposition } = rfcToBe
-    if (!name) return
+    if (!name) {
+      console.warn("rfcToBe had no name?", rfcToBe)
+      return
+    }
 
     return {
       id: name,
@@ -183,7 +189,9 @@ const clusterGraphData = computed(() => {
     }).filter(isLinkParam)
   )
 
-  newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
+  console.log(newClusterGraphData.nodes.filter(node => !node.url), newClusterGraphData.nodes)
+
+  // newClusterGraphData.nodes = newClusterGraphData.nodes, (node) => node.id)
   newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
 
   return newClusterGraphData
@@ -210,7 +218,7 @@ const attemptToRenderGraph = () => {
     ? legendData
     : graphData
 
-  let [leg_el, leg_sim] = draw_graph(chosenGraphData, router.push);
+  let [leg_el, leg_sim] = drawGraph(chosenGraphData, router.push);
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
     console.error({ leg_el, leg_sim })

@@ -14,7 +14,7 @@ export const blue = "#0d6efd";
 export const orange = "#fd7e14";
 export const cyan = "#0dcaf0";
 export const yellow = "#ffc107";
-export const red = "#dc3545";
+export const red = "#ee828d";
 export const teal = "#20c997";
 export const white = "#fff";
 export const black = "#212529";
@@ -31,8 +31,8 @@ export const ref_type: Record<Relationship, string> = {
   relinfo: 'has rel info to'
 } as const;
 
-export const get_ref_type = (key: string) => {
-  return key in ref_type ? ref_type[key as keyof typeof ref_type] : key
+export const getHumanReadableRelationshipName = (relationship: Relationship | string) => {
+  return relationship in ref_type ? ref_type[relationship as keyof typeof ref_type] : relationship
 }
 
 export type Group = "" | "none" | "this group" | "other group";
@@ -148,6 +148,7 @@ export const legendData: DataParam = {
     { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: "refqueue"},
     { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: "relinfo"},
     { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: "withdrawnref"},
+    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'refnorm'},
   ],
   nodes: [
     { id: 'draft-one-with-rfc', isRfc: true, rfcNumber: 100, disposition: undefined },
