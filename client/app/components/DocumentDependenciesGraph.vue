@@ -30,12 +30,14 @@
     <div class="ml-4">
       <h3 class="mt-4 font-bold">Cluster</h3>
       <pre>{{ JSON.stringify(props.cluster, null, 2) }}</pre>
+      <h3 class="mt-4 font-bold">RFCsToBe</h3>
+      <pre>{{ JSON.stringify(rfcsToBe, null, 2) }}</pre>
     </div>
   </details>
 </template>
 
 <script setup lang="ts">
-import { attempt, uniq, uniqBy } from 'lodash-es';
+import { uniq, uniqBy } from 'lodash-es';
 import { type Cluster, type RfcToBe } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
 import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'

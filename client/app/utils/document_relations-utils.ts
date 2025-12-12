@@ -19,6 +19,7 @@ export const teal = "#20c997";
 export const white = "#fff";
 export const black = "#212529";
 export const gray400 = "#ced4da";
+export const gray800 = "#4e444a";
 
 export type Relationship = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
 

@@ -3,7 +3,7 @@
  */
 
 import * as d3 from "d3"
-import { black, blue, cyan, font, get_ref_type, gray400, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
+import { black, blue, cyan, font, get_ref_type, gray800, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
 import { getAncestors } from './dom'
 
 const link_color: Record<Relationship, string> = {
@@ -202,7 +202,7 @@ export function draw_graph(data: DataParam, pushRouter: (path: string) => void) 
     })
 
   a.append("text")
-    .attr("fill", (d) => (d.isRfc ? white : black))
+    .attr("fill", (d) => (d.isRfc ? gray800 : black))
     .each((d) => {
       (d as Node).lines = lines({
         rfcNumber: d.rfcNumber,
