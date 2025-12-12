@@ -50,11 +50,6 @@
         </BaseCard>
 
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
-
-        <div class="lg:col-span-full">
-          <DocumentFinalReviews :heading-level="4" :name="draftName" />
-        </div>
-
       </div>
     </div>
   </div>
