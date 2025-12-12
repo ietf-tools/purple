@@ -30,7 +30,9 @@ def is_blocked(rfc: RfcToBe) -> bool:
         action_holder_active_qs = rfc.actionholder_set.active()
         if action_holder_active_qs.exists():
             return True
-        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold", "ExtRef Hold"])
+        blocking_label_qs = rfc.labels.filter(
+            slug__in=["Stream Hold", "ExtRef Hold", "Author Input Required"]
+        )
         if blocking_label_qs.exists():
             return True
         # any related documents not received (incl. 2g/3g)
@@ -48,7 +50,9 @@ def is_blocked(rfc: RfcToBe) -> bool:
         action_holder_active_qs = rfc.actionholder_set.active()
         if action_holder_active_qs.exists():
             return True
-        blocking_label_qs = rfc.labels.filter(slug__in=["Stream Hold"])
+        blocking_label_qs = rfc.labels.filter(
+            slug__in=["Stream Hold", "Author Input Required"]
+        )
         if blocking_label_qs.exists():
             return True
 
