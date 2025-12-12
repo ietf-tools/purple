@@ -189,9 +189,7 @@ const clusterGraphData = computed(() => {
     }).filter(isLinkParam)
   )
 
-  console.log(newClusterGraphData.nodes.filter(node => !node.url), newClusterGraphData.nodes)
-
-  // newClusterGraphData.nodes = newClusterGraphData.nodes, (node) => node.id)
+  newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
   newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
 
   return newClusterGraphData
