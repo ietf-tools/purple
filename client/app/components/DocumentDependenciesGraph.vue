@@ -1,9 +1,7 @@
 <template>
-  <ErrorAlert v-if="clusterDocumentsReferencesListStatus === 'error'" title="Loading error">
-    {{ clusterDocumentsReferencesListError }}
-  </ErrorAlert>
-
-  <div ref="container" class="overflow-hidden h-[75vh] border border-gray-700 rounded-md bg-white inset-shadow-sm">
+  <div ref="container"
+    class="overflow-hidden h-[75vh] flex items-center justify-center border border-gray-700 rounded-md bg-white inset-shadow-sm text-center">
+    <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
   </div>
 
   <div class="flex gap-2 justify-between py-2 px-1.5">
@@ -32,26 +30,15 @@
     <div class="ml-4">
       <h3 class="mt-4 font-bold">Cluster</h3>
       <pre>{{ JSON.stringify(props.cluster, null, 2) }}</pre>
-
-      <h3 class="mt-4 font-bold">documentsReferencesList per cluster document</h3>
-      <pre>{{ JSON.stringify(clusterDocumentsReferencesList, null, 2) }}</pre>
-
-      <h3 class="mt-4 font-bold">Unique documents (cluster document names, or those involved in the references list)</h3>
-      <ul class="ml-8 list-disc">
-        <li v-for="uniqueName in uniqueNames">{{ uniqueName }}</li>
-      </ul>
-
-      <h3 class="mt-4">docRetrieve of these names</h3>
-      <pre>{{ JSON.stringify(maybeRfcsToBe, null, 2) }}</pre>
     </div>
   </details>
 </template>
 
 <script setup lang="ts">
-import { uniq, uniqBy } from 'lodash-es';
+import { attempt, uniq, uniqBy } from 'lodash-es';
 import { type Cluster, type RfcToBe } from '~/purple_client'
 import { draw_graph, type DrawGraphParameters } from '~/utils/document_relations';
-import { legendData, type DataParam, type LinkParam, type NodeParam, type Rel } from '~/utils/document_relations-utils'
+import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
 
 type Props = {
@@ -60,8 +47,6 @@ type Props = {
 
 const props = defineProps<Props>()
 
-const api = useApi()
-
 const snackbar = useSnackbar()
 
 const router = useRouter()
@@ -69,66 +54,6 @@ const router = useRouter()
 const containerRef = useTemplateRef('container')
 
 const showLegend = ref(false)
-
-const { data: clusterDocumentsReferencesList, status: clusterDocumentsReferencesListStatus, error: clusterDocumentsReferencesListError } = await useAsyncData(
-  () => `cluster-documents-reference:${props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
-  async () =>
-    Promise.all(
-      props.cluster.documents?.map(
-        (clusterDocument) => api.documentsReferencesList({ draftName: clusterDocument.name })
-      ) ?? []),
-  {
-    server: false,
-  }
-)
-
-type MaybeRfcToBeError = {
-  name: string
-  error: unknown
-}
-
-const uniqueNames = ref<string[]>([])
-
-const isMaybeRfcToBeError = (obj: unknown): obj is MaybeRfcToBeError => Boolean(obj) && obj !== null && typeof obj === 'object' && 'name' in obj && 'error' in obj
-
-const { data: maybeRfcsToBe, status: rfcToBesStatus, error: rfcToBesError } = await useAsyncData(
-  () => `maybe-rfcs-to-be-${props.cluster.documents?.map(doc => doc.name).join(",") ?? ''}`,
-  async () => {
-    const filterIsString = (maybeString: string | undefined) => typeof maybeString === 'string'
-    const names: string[] = [
-    ...(props.cluster.documents   ?? []).flatMap(doc => doc.name),
-    ...(clusterDocumentsReferencesList.value ?? []).flatMap(
-      (relatedDocuments): string[] => [
-        ...relatedDocuments.map((relatedDocument) => relatedDocument.draftName).filter(filterIsString),
-        ...relatedDocuments.map((relatedDocument) => relatedDocument.targetDraftName).filter(filterIsString),
-      ])]
-
-    uniqueNames.value = uniq(names)
-    console.log("From", clusterDocumentsReferencesList.value, "Accessing draft names", uniqueNames.value)
-
-    return await Promise.all(
-      uniqueNames.value.map(async name => {
-        try {
-          return await api.documentsRetrieve({ draftName: name })
-        } catch (error) {
-          return {
-            name,
-            error,
-          } satisfies MaybeRfcToBeError
-        }
-      })
-    )
-  }, {
-  lazy: true,
-  server: false,
-})
-
-const rfcToBes = computed(() => {
-  if (!maybeRfcsToBe.value) {
-    return []
-  }
-  return maybeRfcsToBe.value.filter((maybeRfcToBe): maybeRfcToBe is RfcToBe => !isMaybeRfcToBeError(maybeRfcToBe))
-})
 
 const canDownload = ref(false)
 
@@ -142,29 +67,41 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
   })
 }
 
-watch(maybeRfcsToBe, () => {
-  const errors = maybeRfcsToBe.value ?
-    maybeRfcsToBe.value.filter(isMaybeRfcToBeError).map(e => e.name) :
-    []
-  if (errors.length > 0) {
-    snackbar.add({
-      type: 'error',
-      title: `Error loading some references`,
-      text: errors.join(', ')
+const api = useApi()
+
+const { data: rfcsToBe } = useAsyncData(`cluster-rfcs-${props.cluster.number}`, async () => {
+  const names = props.cluster.documents?.flatMap((document): string[] => {
+    return [document.name,
+    ...(document.references ?? []).flatMap(reference => {
+      return [reference.draftName, reference.targetDraftName].filter(val => typeof val === 'string')
     })
-  }
+    ]
+  }) ?? []
+
+  const uniqueNames = uniq(names)
+
+  console.log({ uniqueNames })
+
+  const drafts = await Promise.all(uniqueNames.map((draftName) =>
+    api.documentsRetrieve({ draftName })
+  ))
+  console.log({ drafts })
+  return drafts
+}, {
+  server: false,
+  lazy: true,
 })
 
 const hasMounted = ref(false)
 
-const data = computed(() => {
-  const newData: DataParam = {
+const clusterGraphData = computed(() => {
+  const newClusterGraphData: DataParam = {
     links: [],
     nodes: []
   }
 
   const isNodeParam = (data: unknown): data is NodeParam => {
-    const isANode = Boolean((data && typeof data === 'object' && 'id' in data && 'url' in data))
+    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
     return isANode
   }
 
@@ -172,72 +109,82 @@ const data = computed(() => {
     return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
   }
 
-  if (rfcToBes.value) {
-    newData.nodes.push(
-      ...rfcToBes.value.map((rfcToBe): NodeParam | null => {
-        const { name } = rfcToBe
-        if (!name) {
+  const rfcToBeToNodeParam = (rfcToBe: RfcToBe): NodeParam | undefined => {
+    const { name, rfcNumber, disposition } = rfcToBe
+    if (!name) return
+
+    return {
+      id: name,
+      isRfc: Boolean(rfcNumber),
+      rfcNumber: rfcNumber ?? undefined,
+      url: `/docs/${name}`,
+      disposition: parseDisposition(disposition),
+    }
+  }
+
+  type RfcByDraftName = Record<string, RfcToBe>
+  const rfcsByDraftName: RfcByDraftName = rfcsToBe.value ? rfcsToBe.value.reduce((acc, rfcToBe) => {
+    const { name } = rfcToBe
+    if (name) {
+      acc[name] = rfcToBe
+    }
+    return acc
+  }, {} as RfcByDraftName) : {}
+
+  newClusterGraphData.nodes.push(
+    ...(props.cluster.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
+      const { name, rfcNumber, disposition, references, isReceived } = clusterMember
+      const doc = name ? rfcsByDraftName[name] : undefined
+
+      const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
+
+      return [{
+        id: name,
+        isRfc: Boolean(resolvedRfcNumber),
+        rfcNumber: resolvedRfcNumber,
+        url: `/docs/${name}`,
+        isReceived: Boolean(isReceived),
+        disposition: parseDisposition(disposition),
+      },
+      ...(references ?? []).flatMap(reference => {
+        const { draftName, targetDraftName } = reference
+        const draft = draftName ? rfcsByDraftName[draftName] : undefined
+        const target = targetDraftName ? rfcsByDraftName[targetDraftName] : undefined
+
+        return [
+          draft ? rfcToBeToNodeParam(draft) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
+          target ? rfcToBeToNodeParam(target) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
+        ].filter(isNodeParam)
+      })
+      ]
+    }).filter(isNodeParam)
+  )
+
+  newClusterGraphData.links.push(
+    ...(props.cluster.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
+      const { references } = clusterMember
+
+      return references ? references.map((reference): LinkParam | null => {
+        const { draftName, targetDraftName, relationship } = reference
+
+        if (draftName === undefined || targetDraftName === undefined) {
+          console.warn("Graph: cluster reference", reference, " has undefined name(s)")
           return null
         }
+
         return {
-          id: name,
-          isRfc: Boolean(rfcToBe.rfcNumber),
-          rfcNumber: rfcToBe.rfcNumber ?? undefined,
-          url: `/docs/${name}`,
-          level: parseLevel(rfcToBe.submittedStdLevel)
+          source: draftName,
+          target: targetDraftName,
+          rel: parseRelationship(relationship),
         }
-      }).filter(isNodeParam)
-    )
-  }
+      }).filter(isLinkParam) : null
+    }).filter(isLinkParam)
+  )
 
-  if (clusterDocumentsReferencesList.value) {
-    clusterDocumentsReferencesList.value.forEach(documentsReferencesList => {
-      documentsReferencesList.forEach(reference => {
-        const { draftName, targetDraftName, relationship } = reference;
-        if (!draftName || !targetDraftName) {
-          return
-        }
-        newData.nodes.push(
-          { id: draftName },
-          { id: targetDraftName }
-        )
-        newData.links.push(
-          { source: draftName, target: targetDraftName, rel: relationship as Rel }
-        )
-      })
-    })
-  }
+  newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
+  newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
 
-  if (props.cluster.documents) {
-    newData.nodes.push(...props.cluster.documents.map((document): NodeParam | null => {
-      const { name } = document
-      if (!name) return null
-      return {
-        id: name
-      }
-    }).filter(isNodeParam))
-
-    newData.links.push(...props.cluster.documents.flatMap((document, index): LinkParam[] | null => {
-      const { name } = document
-      if (!name || !clusterDocumentsReferencesList.value) return null
-      const clusterDocumentReferences = clusterDocumentsReferencesList.value[index]
-      if (!clusterDocumentReferences) return null
-      return clusterDocumentReferences.map((clusterDocumentReference): LinkParam | null => {
-        const { draftName } = clusterDocumentReference
-        if (!draftName) return null
-        return {
-          source: name,
-          target: draftName,
-          rel: clusterDocumentReference.relationship as Rel,
-        }
-      }).filter(isLinkParam)
-    }).filter(isLinkParam))
-  }
-
-  newData.nodes = uniqBy(newData.nodes, (node) => node.id)
-  newData.links = uniqBy(newData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
-
-  return newData
+  return newClusterGraphData
 })
 
 const attemptToRenderGraph = () => {
@@ -254,7 +201,7 @@ const attemptToRenderGraph = () => {
 
   const graphData = structuredClone(
     // the D3 code will mutate arg data so we'll make a copy
-    data.value
+    clusterGraphData.value
   )
 
   const chosenGraphData: DrawGraphParameters[0] = showLegend.value
@@ -284,12 +231,9 @@ const attemptToRenderGraph = () => {
   canDownload.value = true // now that we've rendered the SVG we can offer it for download
 }
 
-onMounted(() => {
-  hasMounted.value === true
-  attemptToRenderGraph()
-})
-
-watch([data, rfcToBes, showLegend], attemptToRenderGraph)
+watch(clusterGraphData, attemptToRenderGraph)
+watch(showLegend, attemptToRenderGraph)
+onMounted(attemptToRenderGraph)
 
 const handleDownload = () => {
   if (!canDownload.value) {

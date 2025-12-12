@@ -20,9 +20,9 @@ export const white = "#fff";
 export const black = "#212529";
 export const gray400 = "#ced4da";
 
-export type Rel = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
+export type Relationship = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
 
-export const ref_type: Record<Rel, string> = {
+export const ref_type: Record<Relationship, string> = {
   refqueue: 'has ref queue to',
   'not-received': 'has not received to',
   withdrawnref: 'has withdrawn ref to',
@@ -47,14 +47,19 @@ export const parseLevel = (maybeLevel: string): Level => {
   switch (maybeLevel) {
     case "":
       return ""
+    case "inf":
     case "Informational":
       return "Informational"
+    case "bcp":
     case "Best Current Practice":
       return "Best Current Practice"
+    case "draft":
     case "Draft Standard":
       return "Draft Standard"
+    case "exp":
     case "Experimental":
       return "Experimental"
+    case "ps":
     case "Proposed Standard":
       return "Proposed Standard"
   }
@@ -62,51 +67,72 @@ export const parseLevel = (maybeLevel: string): Level => {
   return ""
 }
 
+type Disposition = undefined | 'assigned' | 'in_progress' | 'done'
+
+export const parseDisposition = (maybeDisposition: string | undefined | null): Disposition => {
+  if (!maybeDisposition) return undefined
+
+  switch (maybeDisposition) {
+    case 'assigned':
+    case 'in_progress':
+    case 'done':
+      return maybeDisposition
+  }
+  console.warn("Unable to parse disposition: ", maybeDisposition)
+  return undefined
+}
+
+export const parseRelationship = (maybeRelationship: string): Relationship => {
+  switch (maybeRelationship) {
+    case 'refqueue':
+    case 'not-received':
+    case 'withdrawnref':
+    case 'relinfo':
+    case 'refnorm':
+      return maybeRelationship
+  }
+  console.warn("Unable to parse relationship: ", maybeRelationship)
+  return 'not-received'
+}
+
 export type Line = {
-  text: string;
-  width: number;
+  text: string
+  width: number
   style?: string
 };
 
 export type Node = NodeParam & {
-  x: number;
-  y: number;
-  r: number;
-  lines?: Line[];
-  stroke?: number;
+  x: number
+  y: number
+  r: number
+  lines?: Line[]
+  stroke?: number
 };
 
 export type Link = Omit<LinkParam, 'source' | 'target'> & {
-  source: Node;
-  target: Node;
-  rel: Rel;
-  replaced?: boolean;
-  "post-wg"?: boolean;
-  group?: Group;
+  source: Node
+  target: Node
+  rel: Relationship
 };
 
 export type Data = {
-  links: Link[];
-  nodes: Node[];
+  links: Link[]
+  nodes: Node[]
 };
 
 export type NodeParam = {
-  id: string;
-  url?: string;
-  level?: Level;
-  group?: string;
-  rfcNumber?: number,
-  isRfc?: boolean;
-  isReplaced?: boolean;
-  isDead?: boolean;
-  isExpired?: boolean;
-  "post-wg"?: boolean;
+  id: string
+  url?: string
+  rfcNumber?: number
+  isRfc: boolean
+  isReceived?: boolean
+  disposition: Disposition
 };
 
 export type LinkParam = {
   source: string;
   target: string;
-  rel: Rel;
+  rel: Relationship;
 };
 
 export type DataParam = {
@@ -116,493 +142,20 @@ export type DataParam = {
 
 export const legendData: DataParam = {
   links: [
-    {
-      source: "Individual submission",
-      target: "Replaced",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "Individual submission",
-      target: "IESG or RFC queue",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "Expired",
-      target: "RFC published",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "Product of other group",
-      target: "IESG or RFC queue",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "Product of this group",
-      target: "Product of other group",
-      rel: "withdrawnref" satisfies Rel,
-    },
-    {
-      source: "Product of this group",
-      target: "Expired",
-      rel: "withdrawnref" satisfies Rel,
-    },
+    { source: "draft-one-with-rfc", target: "draft-is-not-received", rel: "not-received"},
+    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: "refnorm"},
+    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: "refqueue"},
+    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: "relinfo"},
+    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: "withdrawnref"},
   ],
   nodes: [
-    {
-      id: "Individual submission",
-      level: "Informational",
-      group: "",
-    },
-    {
-      id: "Replaced",
-      level: "Experimental",
-      isReplaced: true,
-    },
-    {
-      id: "IESG or RFC queue",
-      level: "Proposed Standard",
-      "post-wg": true,
-    },
-    {
-      id: "Product of other group",
-      level: "Best Current Practice",
-      group: "other group",
-    },
-    {
-      id: "Expired",
-      level: "Informational",
-      group: "this group",
-      isExpired: true,
-    },
-    {
-      id: "Product of this group",
-      level: "Proposed Standard",
-      group: "this group",
-    },
-    {
-      id: "RFC published",
-      level: "Draft Standard",
-      group: "other group",
-      rfcNumber: 1,
-      isRfc: true,
-    },
-  ],
-};
-
-export const test_data2: DataParam = {
-  links: [
-    {
-      source: "rfc7340",
-      target: "draft-cooper-iab-secure-origin",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc7340",
-      target: "draft-rosenberg-sip-rfc4474-concerns",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc7340",
-      target: "draft-jennings-vipr-overview",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc7340",
-      target: "draft-peterson-sipping-retarget",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc7375",
-      target: "draft-peterson-sipping-retarget",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc9027",
-      target: "draft-rosen-stir-emergency-calls",
-      rel: "withdrawnref" satisfies Rel,
-    },
-    {
-      source: "rfc8224",
-      target: "draft-peterson-sipping-retarget",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc8816",
-      target: "draft-ietf-modern-teri",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-wendt-stir-vesper",
-      target: "draft-wendt-acme-authority-token-jwtclaimcon",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "rfc8816",
-      target: "draft-jennings-vipr-overview",
-      rel: "withdrawnref" satisfies Rel,
-    },
-    {
-      source: "rfc8816",
-      target: "draft-privacy-pass",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-wendt-stir-vesper-use-cases",
-      target: "draft-wendt-stir-vesper",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-wendt-stir-vesper-use-cases",
-      target: "draft-wendt-acme-authority-token-jwtclaimcon",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-wendt-stir-vesper-use-cases",
-      target: "draft-wendt-stir-certificate-transparency",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-wendt-stir-vesper-use-cases",
-      target: "draft-ietf-stir-certificates-shortlived",
-      rel: "withdrawnref" satisfies Rel,
-    },
-    {
-      source: "rfc8224",
-      target: "draft-rosenberg-sip-rfc4474-concerns",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "rfc8224",
-      target: "draft-ietf-iri-comparison",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "rfc8224",
-      target: "draft-kaplan-stir-cider",
-      rel: "withdrawnref" satisfies Rel,
-    },
-    {
-      source: "rfc9475",
-      target: "draft-peterson-stir-rfc4916-update",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-rfc4916-update",
-      target: "rfc3325",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-certificates-ocsp",
-      target: "rfc5912",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-rfc4916-update",
-      target: "draft-peterson-stir-rfc4916-update",
-      rel: "refqueue" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-servprovider-oob",
-      target: "rfc8816",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-certificates-ocsp",
-      target: "draft-ietf-stir-certificates-shortlived",
-      rel: "not-received" satisfies Rel,
-    },
-    {
-      source: "draft-ietf-stir-certificates-ocsp",
-      target: "draft-ietf-tls-rfc8446bis",
-      rel: "refqueue" satisfies Rel,
-    },
-  ],
-  nodes: [
-    {
-      id: "rfc7375",
-      rfcNumber: 7375,
-      isRfc: true,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-threats/",
-      level: "Informational",
-    },
-    {
-      id: "draft-cooper-iab-secure-origin",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-cooper-iab-secure-origin/",
-      level: "",
-    },
-    {
-      id: "rfc8816",
-      isRfc: true,
-      rfcNumber: 8816,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-oob/",
-      level: "Informational",
-    },
-    {
-      id: "rfc5912",
-      isRfc: true,
-      rfcNumber: 5912,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "pkix",
-      url: undefined,
-      level: "Informational",
-    },
-    {
-      id: "draft-wendt-stir-certificate-transparency",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-wendt-stir-certificate-transparency/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-stir-servprovider-oob",
-      isRfc: false,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-servprovider-oob/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "draft-rosen-stir-emergency-calls",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-rosen-stir-emergency-calls/",
-      level: "",
-    },
-    {
-      id: "draft-rosenberg-sip-rfc4474-concerns",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-rosenberg-sip-rfc4474-concerns/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-stir-certificates-shortlived",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-certificates-shortlived/",
-      level: "",
-    },
-    {
-      id: "draft-wendt-stir-vesper",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-wendt-stir-vesper/",
-      level: "",
-    },
-    {
-      id: "rfc8816",
-      isRfc: true,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: undefined,
-      level: "Informational",
-    },
-    {
-      id: "draft-ietf-iri-comparison",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-ietf-iri-comparison/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "rfc9027",
-      isRfc: true,
-      rfcNumber: 9027,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-rph-emergency-services/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "rfc9475",
-      isRfc: true,
-      rfcNumber: 9475,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-messaging/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "draft-privacy-pass",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-privacy-pass/",
-      level: "",
-    },
-    {
-      id: "draft-wendt-acme-authority-token-jwtclaimcon",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-wendt-acme-authority-token-jwtclaimcon/",
-      level: "",
-    },
-    {
-      id: "draft-peterson-stir-rfc4916-update",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: true,
-      group: "",
-      url: "/docs/draft-peterson-stir-rfc4916-update/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-modern-teri",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "modern",
-      url: "/docs/draft-ietf-modern-teri/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-stir-rfc4916-update",
-      isRfc: false,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-rfc4916-update/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "draft-jennings-vipr-overview",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-jennings-vipr-overview/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-tls-rfc8446bis",
-      isRfc: false,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "tls",
-      url: "/docs/draft-ietf-tls-rfc8446bis/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "rfc8224",
-      isRfc: true,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-rfc4474bis/",
-      level: "Proposed Standard",
-    },
-    {
-      id: "rfc3325",
-      isRfc: true,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "sip",
-      url: undefined,
-      level: "Informational",
-    },
-    {
-      id: "rfc7340",
-      isRfc: true,
-      rfcNumber: 7340,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-problem-statement/",
-      level: "Informational",
-    },
-    {
-      id: "draft-kaplan-stir-cider",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-kaplan-stir-cider/",
-      level: "",
-    },
-    {
-      id: "draft-wendt-stir-vesper-use-cases",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: false,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-wendt-stir-vesper-use-cases/",
-      level: "",
-    },
-    {
-      id: "draft-peterson-sipping-retarget",
-      isRfc: false,
-      "post-wg": false,
-      isExpired: true,
-      isReplaced: false,
-      group: "",
-      url: "/docs/draft-peterson-sipping-retarget/",
-      level: "",
-    },
-    {
-      id: "draft-ietf-stir-certificates-ocsp",
-      isRfc: false,
-      "post-wg": true,
-      isExpired: false,
-      isReplaced: false,
-      group: "stir",
-      url: "/docs/draft-ietf-stir-certificates-ocsp/",
-      level: "Proposed Standard",
-    },
+    { id: 'draft-one-with-rfc', isRfc: true, rfcNumber: 100, disposition: undefined },
+    { id: 'draft-one-without-rfc', isRfc: false, disposition: undefined },
+    { id: 'draft-is-not-received', isRfc: false, isReceived: false, disposition: undefined },
+    { id: 'draft-is-received', isRfc: false, isReceived: true, disposition: undefined },
+    { id: 'draft-refnorm-target', isRfc: false, isReceived: true, disposition: undefined },
+    { id: 'draft-refqueue-target', isRfc: false, isReceived: true, disposition: undefined },
+    { id: 'draft-relinfo-target', isRfc: false, isReceived: true, disposition: undefined },
+    { id: 'draft-withdrawnref-target', isRfc: false, isReceived: true, disposition: undefined },
   ],
 };
