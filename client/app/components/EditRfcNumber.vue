@@ -1,6 +1,6 @@
 <template>
   <div class="flex gap-1">
-    <input v-model="rfcNumberInput" type="number" class="px-2f py-1 w-[6em] font-mono text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 input-number-no-spinners" />
+    <input v-model="rfcNumberInput" type="number" class="px-2f py-1 w-[6em] font-mono text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white input-number-no-spinners" />
     <BaseButton @click="updateRfcNumber" btn-type="outline" size="xs">Save</BaseButton>
   </div>
 </template>

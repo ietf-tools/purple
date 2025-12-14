@@ -9,7 +9,7 @@
       {{ error }} {{ peopleError }}
     </ErrorAlert>
 
-    <div class="flex flex-row gap-x-8 justify-between mb-4">
+    <div class="flex flex-row gap-x-8 justify-between mb-4 text-gray-800 dark:text-gray-300">
       <fieldset>
         <legend class="font-bold text-sm flex">
           Filters
@@ -39,7 +39,7 @@
             <div class="flex flex-col pt-1">
               <select
                 v-model="selectedRoleFilter"
-                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-3 py-1 border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option :value="null">All Roles</option>
                 <option v-for="role in allRoles" :key="role" :value="role">
@@ -56,7 +56,7 @@
             <div class="flex flex-col pt-1">
               <select
                 v-model="selectedPendingRoleFilter"
-                class="px-3 py-1 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                class="px-3 py-1 border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option :value="null">All Roles</option>
                 <option v-for="role in allPendingRoles" :key="role" :value="role">
@@ -78,45 +78,40 @@
       </fieldset>
     </div>
 
-    <div class="p-2">
-      <RpcTable>
-        <RpcThead>
-          <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-              @click="header.column.getToggleSortingHandler()?.($event)"
-              :title="header.column.getCanSort() ? 'Click to sort' : ''">
-              <div class="flex items-center gap-2">
-                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                  :props="header.getContext()" />
-                <Transition name="sort-indicator">
-                  <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
-                    class="text-gray-400 opacity-60 hover:opacity-100" />
-                </Transition>
-              </div>
-            </RpcTh>
-          </tr>
-        </RpcThead>
-        <RpcTbody>
-          <RpcRowMessage :status="[status, peopleStatus]" :column-count="table.getAllColumns().length"
-            :row-count="table.getRowModel().rows.length" />
-          <tr v-for="row in table.getRowModel().rows" :key="row.id">
-            <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
-              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-            </RpcTd>
-          </tr>
-        </RpcTbody>
-        <RpcTfoot>
-          <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
-            <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+    <RpcTable>
+      <RpcThead>
+        <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+            @click="header.column.getToggleSortingHandler()?.($event)"
+            :title="header.column.getCanSort() ? 'Click to sort' : ''">
+            <div class="flex items-center gap-2">
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
-            </RpcTh>
-          </tr>
-        </RpcTfoot>
-      </RpcTable>
-    </div>
+            </div>
+          </RpcTh>
+        </tr>
+      </RpcThead>
+      <RpcTbody>
+        <RpcRowMessage :status="[status, clustersStatus, peopleStatus]" :column-count="table.getAllColumns().length"
+          :row-count="table.getRowModel().rows.length" />
+        <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+          </RpcTd>
+        </tr>
+      </RpcTbody>
+      <RpcTfoot>
+        <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
+          <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+              :props="header.getContext()" />
+          </RpcTh>
+        </tr>
+      </RpcTfoot>
+    </RpcTable>
   </div>
+
 
 </template>
 
@@ -574,11 +569,15 @@ watch(() => siteStore.search, (newSearch) => {
   router.replace({ query })
 })
 
-const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(() => api.clustersList(), {
-  server: false,
-  lazy: false,
-  default: () => [] as Cluster[]
-})
+const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(
+  'queue2-clusterslist',
+  () => api.clustersList(),
+  {
+    server: false,
+    lazy: false,
+    default: () => [] as Cluster[]
+  }
+)
 
 const reloadTableAfterAssignmentChange = () => {
   refresh()

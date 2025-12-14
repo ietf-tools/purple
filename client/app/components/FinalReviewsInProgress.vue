@@ -15,10 +15,6 @@
             <div class="flex items-center gap-2">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
-              <Transition name="sort-indicator">
-                <Icon v-if="header.column.getCanSort()" name="heroicons:arrows-up-down"
-                  class="text-gray-400 opacity-60 hover:opacity-100" />
-              </Transition>
             </div>
           </RpcTh>
         </tr>
