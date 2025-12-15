@@ -1,6 +1,6 @@
 <template>
   <div ref="container"
-    class="overflow-hidden h-[75vh] flex items-center justify-center border border-gray-700 rounded-md bg-white inset-shadow-sm text-center">
+    class="overflow-hidden h-[75vh] flex items-center justify-center border border-gray-700 dark:border-gray-200 rounded-md inset-shadow-sm text-center">
     <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
   </div>
 
@@ -216,7 +216,7 @@ const attemptToRenderGraph = () => {
     ? legendData
     : graphData
 
-  let [leg_el, leg_sim] = drawGraph(chosenGraphData, router.push);
+  let [leg_el, leg_sim] = drawGraph(chosenGraphData, router.push, colorMode.value === 'dark' ? 'dark' : 'light');
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
     console.error({ leg_el, leg_sim })
@@ -239,6 +239,9 @@ const attemptToRenderGraph = () => {
   canDownload.value = true // now that we've rendered the SVG we can offer it for download
 }
 
+const colorMode = useColorMode()
+
+watch(() => colorMode.value, attemptToRenderGraph)
 watch(clusterGraphData, attemptToRenderGraph)
 watch(showLegend, attemptToRenderGraph)
 onMounted(attemptToRenderGraph)

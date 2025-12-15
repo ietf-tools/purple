@@ -6,7 +6,7 @@
     <p class="italic text-sm">(drag to reorder)</p>
     <ol ref="parent" class="min-w-[200px] mb-6">
       <li v-for="(clusterDocument, index) in clusterDocumentsRef" :index="index" :key="clusterDocument.name"
-        class="flex justify-between items-center pl-2 cursor-ns-resize pr-1 py-1 mt-1 bg-white border rounded-md border-gray-400 select-none">
+        class="flex justify-between items-center pl-2 cursor-ns-resize pr-1 py-1 mt-1 bg-white dark:bg-gray-700 border rounded-md border-gray-400 select-none">
         <span class="flex items-center">
           <Icon name="fluent:re-order-dots-vertical-24-regular" class="mr-2" />
           {{ clusterDocument.name }}

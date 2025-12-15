@@ -3,7 +3,7 @@
  */
 import { startCase } from 'lodash-es'
 import * as d3 from "d3"
-import { black, blue, cyan, font, getHumanReadableRelationshipName, gray800, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
+import { black, blue, cyan, font, getHumanReadableRelationshipName, gray200, gray800, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
 import { getAncestors } from './dom'
 
 const link_color: Record<Relationship, string> = {
@@ -118,7 +118,7 @@ function textRadius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof drawGraph>
 
-export function drawGraph(data: DataParam, pushRouter: (path: string) => void) {
+export function drawGraph(data: DataParam, pushRouter: (path: string) => void, colorMode: "light" | "dark") {
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
@@ -180,7 +180,7 @@ export function drawGraph(data: DataParam, pushRouter: (path: string) => void) {
       '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available
     )
     .attr("title", (d) =>
-      `Draft: ${typeof d.rfcNumber === 'number' ? `RFC ${d.rfcNumber} ` : ''}${d.id} (${d.isReceived ? 'Received' : 'Not received'}) (${startCase(d.disposition)})`
+      `Draft: ${typeof d.rfcNumber === 'number' ? `RFC ${d.rfcNumber} ` : ''}${d.id} (${d.isReceived ? 'Received' : 'Not received'}) ${d.disposition ? `(${startCase(d.disposition)})` : ''}`
     ).on('click', (e) => {
       e.preventDefault()
       const { target } = e
@@ -207,7 +207,7 @@ export function drawGraph(data: DataParam, pushRouter: (path: string) => void) {
     })
 
   a.append("text")
-    .attr("fill", (d) => (d.isRfc ? gray800 : black))
+    .attr("fill", (d) => (d.isRfc ? colorMode === 'light' ? gray800 : gray200 : colorMode === 'light' ? black : white))
     .each((d) => {
       (d as Node).lines = lines({
         rfcNumber: d.rfcNumber,

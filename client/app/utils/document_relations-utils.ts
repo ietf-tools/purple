@@ -3,23 +3,24 @@
  * so they've been hardcoded to ensure same rendering
  * If you change them please test a lot.
  */
-export const font_size = 14;
-export const line_height = font_size + 2;
+export const font_size = 14
+export const line_height = font_size + 2
 export const font_family =
   '"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"';
-export const font = `${font_size}px ${font_family}`;
+export const font = `${font_size}px ${font_family}`
 
-export const green = "#198754";
-export const blue = "#0d6efd";
-export const orange = "#fd7e14";
-export const cyan = "#0dcaf0";
-export const yellow = "#ffc107";
-export const red = "#ee828d";
-export const teal = "#20c997";
-export const white = "#fff";
-export const black = "#212529";
-export const gray400 = "#ced4da";
-export const gray800 = "#4e444a";
+export const green = "#198754"
+export const blue = "#0d6efd"
+export const orange = "#fd7e14"
+export const cyan = "#0dcaf0"
+export const yellow = "#ffc107"
+export const red = "#ee828d"
+export const teal = "#20c997"
+export const white = "#fff"
+export const black = "#212529"
+export const gray200 = "#E5E7EB"
+export const gray400 = "#ced4da"
+export const gray800 = "#4e444a"
 
 export type Relationship = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
 
@@ -35,14 +36,14 @@ export const getHumanReadableRelationshipName = (relationship: Relationship | st
   return relationship in ref_type ? ref_type[relationship as keyof typeof ref_type] : relationship
 }
 
-export type Group = "" | "none" | "this group" | "other group";
+export type Group = "" | "none" | "this group" | "other group"
 export type Level =
   | ""
   | "Informational"
   | "Experimental"
   | "Proposed Standard"
   | "Best Current Practice"
-  | "Draft Standard";
+  | "Draft Standard"
 
 export const parseLevel = (maybeLevel: string): Level => {
   switch (maybeLevel) {

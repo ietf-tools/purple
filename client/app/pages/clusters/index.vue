@@ -9,7 +9,7 @@
 
     <form class="flex flex-row items-center gap-6 pt-5" novalidate>
       <div class="flex flex-row items-center gap-1">
-        <label class="text-gray-900 text-sm font-bold mr-1" for="filterInput">Filter:</label>
+        <label class="text-gray-900 dark:text-white text-sm font-bold mr-1" for="filterInput">Filter:</label>
         <input type="text" inputmode="numeric" pattern="[0-9]*" id="filterInput" v-model="filterValueString"
           class="focus:shadow-gray-300 inline-flex w-full flex-1 items-center justify-center rounded-lg px-3 text-sm leading-none outline-none border-gray-500 text-gray-900"
           placeholder="E.g. 20" />
