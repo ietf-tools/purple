@@ -6,27 +6,27 @@
   <div v-else :class="`flex flex-row items-center ${
   // so that the ComboboxContent is positioned against this
   'relative'}`">
-    <label class="text-gray-900 w-[160px] text-right text-sm font-bold mr-1" :for="props.id"> {{ props.label }}:</label>
+    <label class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-1" :for="props.id"> {{ props.label }}:</label>
     <div>
     <ComboboxRoot v-model="selectedRfcToBe">
       <ComboboxAnchor
-        class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 leading-none gap-[5px] bg-white focus:shadow-[0_0_0_2px] focus:shadow-black outline-none">
+        class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 leading-none gap-[5px] bg-white dark:bg-gray-700 focus:shadow-[0_0_0_2px] focus:shadow-black outline-none">
         <span v-if="selectedRfcToBe"
-          class="flex flex-row bg-gray-100 text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
+          class="flex flex-row bg-gray-100 text-white dark:bg-gray-500 dark:text-white text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
           <b>{{ selectedRfcToBe.name }}</b>
           <span v-if="selectedRfcToBe.rfcNumber">RFC {{ selectedRfcToBe.rfcNumber }}</span>
           <button type="button"
-            class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none"
+            class="rounded-lg bg-gray-200 dark:bg-gray-300 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none"
             @click="handleClearSelectedDocument"
             :label="`Unselect document ${selectedRfcToBe.name}${selectedRfcToBe.rfcNumber ? `(RFC ${selectedRfcToBe.rfcNumber})` : ''}`">&times;</button>
         </span>
         <ComboboxInput v-model="inputRef" :id="props.id" :readonly="allDocuments.length === 0"
-          class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
+          class="outline-none bg-white dark:bg-black text-black dark:text-white text-sm py-1 border-none h-full placeholder-gray-400 dark:placeholder-gray-200"
           :placeholder="allDocuments.length === 0 ? 'Loading search...' : selectedRfcToBe?.name ? `Change draft...` : `Search draft`" />
       </ComboboxAnchor>
 
       <ComboboxContent
-        class="absolute left-0 top-10 z-10 w-full mt-1 min-w-[160px] max-h-[80vh] bg-white overflow-y-scroll rounded-lg shadow-sm border shadow-xl">
+        class="absolute left-0 top-10 z-10 w-full mt-1 min-w-[160px] max-h-[80vh] bg-white dark:bg-black overflow-y-scroll rounded-lg shadow-sm border shadow-xl">
         <ComboboxViewport class="p-[5px]">
           <ComboboxEmpty class="text-mauve8 text-xs font-medium text-center py-2">
             (no matches)

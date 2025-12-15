@@ -1,5 +1,5 @@
 <template>
-  <div class="h-full bg-gray-100 text-black dark:bg-gray-800 dark:text-black px-2 pt-10 pb-2">
+  <div class="h-full bg-gray-100 text-black dark:text-white dark:bg-gray-800 px-2 pt-10 pb-2">
     <div>
       <Heading :heading-level="3" class="py-5 px-3">
         Add to Cluster {{ props.cluster.number }}
