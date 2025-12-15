@@ -36,34 +36,28 @@
             Current Assignment Role
             <span class="text-md">&nbsp;</span>
           </legend>
-            <div class="flex flex-col pt-1">
-              <select
-                v-model="selectedRoleFilter"
-                class="px-3 py-1 border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option :value="null">All Roles</option>
-                <option v-for="role in allRoles" :key="role" :value="role">
-                  {{ role }}
-                </option>
-              </select>
-            </div>
+          <div class="flex flex-col pt-1">
+            <select v-model="selectedRoleFilter" :class="SELECT_STYLE">
+              <option :value="null">All Roles</option>
+              <option v-for="role in allRoles" :key="role" :value="role">
+                {{ role }}
+              </option>
+            </select>
+          </div>
         </fieldset>
         <fieldset>
           <legend class="font-bold text-sm flex items-end">
             Pending Assignment Role
             <span class="text-md">&nbsp;</span>
           </legend>
-            <div class="flex flex-col pt-1">
-              <select
-                v-model="selectedPendingRoleFilter"
-                class="px-3 py-1 border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option :value="null">All Roles</option>
-                <option v-for="role in allPendingRoles" :key="role" :value="role">
-                  {{ role }}
-                </option>
-              </select>
-            </div>
+          <div class="flex flex-col pt-1">
+            <select v-model="selectedPendingRoleFilter" :class="SELECT_STYLE">
+              <option :value="null">All Roles</option>
+              <option v-for="role in allPendingRoles" :key="role" :value="role">
+                {{ role }}
+              </option>
+            </select>
+          </div>
         </fieldset>
       </div>
       <fieldset class="flex-1">
@@ -83,8 +77,8 @@
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
           <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
             :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            @click="header.column.getToggleSortingHandler()?.($event)"
-            :title="header.column.getCanSort() ? 'Click to sort' : ''">
+            :column-name="getVNodeText(header.column.columnDef.header)"
+            @click="header.column.getToggleSortingHandler()?.($event)">
             <div class="flex items-center gap-2">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
@@ -134,6 +128,8 @@ import type { QueueTabId, AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
+
+const SELECT_STYLE = "px-3 py-1 bg-white dark:bg-black border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
 
 const api = useApi()
 const currentTab: QueueTabId = 'queue'
@@ -209,11 +205,11 @@ const columns = [
     {
       header: () => h('div', { class: 'text-center' }, [
         h('div', 'Enqueue Date'),
-        h('div', '(Weeks in queue)')
+        h('div', { class: "text-xs" }, '(Weeks in queue)')
       ]),
       cell: data => {
         const value = data.getValue()
-        if(!value) return ''
+        if (!value) return ''
 
         const enqueuedAt = DateTime.fromJSDate(value)
         const now = DateTime.now()

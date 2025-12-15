@@ -9,7 +9,7 @@
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
           <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
             :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            @click="header.column.getToggleSortingHandler()?.($event)">
+            :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
             <div class="flex items-center gap-2">
               <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
                 :props="header.getContext()" />
