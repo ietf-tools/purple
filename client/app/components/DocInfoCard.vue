@@ -54,7 +54,7 @@
           <DescriptionListDetails>
             <div v-if="!props.isReadOnly &&
               // published RFCs can't be edited
-              !rfcToBe.publishedAt" class="flex items-center gap-2">
+              rfcToBe.disposition === 'published'" class="flex items-center gap-2">
               <EditRfcNumber :name="rfcToBe.name" :initial-rfc-number="rfcToBe.rfcNumber"
                 :on-success="() => props.refresh?.()" />
             </div>
