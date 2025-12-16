@@ -6,7 +6,7 @@ import * as d3 from "d3"
 import { black, blue, cyan, font, getHumanReadableRelationshipName, gray200, gray800, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
 import { getAncestors } from './dom'
 
-const TOOLTIP_BUFFER_Y = 20
+const TOOLTIP_BUFFER_Y = 5
 
 const link_color: Record<Relationship, string> = {
   "refqueue": green,
@@ -108,7 +108,7 @@ function textRadius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof drawGraph>
 
-export type SetTooltip = (props?: undefined | { text: string, position: [number, number] }) => void
+export type SetTooltip = (props?: undefined | { text: string[], position: [number, number] }) => void
 
 type Props = {
   data: DataParam,
@@ -156,21 +156,23 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .append("path")
     .attr("d", "M0,-5L10,0L0,5")
 
+const LINE_STROKE_WIDTH = 5
+
+  // links between circles
   const link = svg
     .append("g")
     .attr("fill", "none")
-    .attr("stroke-width", 5)
+    .attr("stroke-width", LINE_STROKE_WIDTH)
     .selectAll("path")
     .data(data.links)
     .join("path")
     .attr("title", (d) => {
-      return getHumanReadableRelationshipName(d.rel)
+      return getLinkTitle(d)
     })
-    .on("focus mouseover", function (e) {
+    .on("focus mouseover", function (e, d) {
       d3.select(this).transition()
         .duration(200)
         .attr("opacity", 0.5)
-
 
       e.preventDefault()
       const { target } = e
@@ -191,7 +193,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
         return
       }
       setTooltip({
-        text: title,
+        text: getLinkTitle(d),
         position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
       })
     })
@@ -199,6 +201,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       d3.select(this).transition()
         .duration(200)
         .attr("opacity", 1)
+
       setTooltip()
     })
     .attr("marker-end", (d) => `url(#marker-${d.rel})`)
@@ -213,31 +216,29 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .attr("href", (d) => d.url ??
       '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available
     )
-    .attr("title", (d) =>
-      `${d.isReceived ? '(Received)' : '(Not received)'} ${d.disposition ? `(${startCase(d.disposition)})` : ''}`
-    )
-    .on("focus mouseover", (e) => {
+    .attr("title", (d) => getNodeTitle(d).join(" "))
+    .on("focus mouseover", function(e, d){
       e.preventDefault()
       const { target } = e
       if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
         console.error("Expected element but received ", target)
         return
       }
-      const anchor = target.closest('a')
-      if (!anchor) {
-        console.error("Couldn't find parent of ", target, { parents: getAncestors(target) })
+      const titleElement = target.closest('[title]')
+      if (!titleElement) {
+        console.error("Couldn't find title attribute in parents of ", target, { parents: getAncestors(target) })
         return
       }
-      const boundingClientRect = anchor.getBoundingClientRect()
+      const boundingClientRect = titleElement.getBoundingClientRect()
 
-      const title = anchor.getAttribute('title')
+      const title = titleElement.getAttribute('title')
       if (!title) {
         console.warn("couldn't find title attribute for tooltip")
         return
       }
       setTooltip({
-        text: title,
-        position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY + TOOLTIP_BUFFER_Y]
+        text: getNodeTitle(d),
+        position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
       })
     })
     .on('blur mouseout', () => {
@@ -269,10 +270,10 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     })
 
   a.append("text")
-    .attr("fill", (d) => (d.isRfc ? colorMode === 'light' ? gray800 : gray200 : colorMode === 'light' ? black : white))
+    .attr("fill", (d) => (d.rfcToBe ? colorMode === 'light' ? gray800 : gray200 : colorMode === 'light' ? black : white))
     .each((d) => {
       (d as Node).lines = lines({
-        rfcNumber: d.rfcNumber,
+        rfcNumber: d.rfcToBe?.rfcNumber ?? undefined,
         id: d.id,
       });
       (d as Node).r = textRadius((d as Node).lines!)
@@ -290,7 +291,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .attr("stroke", black)
     .lower()
     .attr("fill", (d) => {
-      if (d.isReceived === false) {
+      if (!d.isReceived) {
         return red
       }
       switch (d.disposition) {
@@ -336,10 +337,10 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       return dNode.stroke
     })
     .attr("stroke-dasharray", (d) => {
-      if (d.isRfc === false) {
+      if (d.rfcToBe) {
         return 8
       }
-      if (d.isReceived === false) {
+      if (!d.isReceived) {
         return 4
       }
       return 0
@@ -489,5 +490,19 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       .force("y", d3.forceY())
       .stop()
       .on("tick", ticked),
+  ]
+}
+
+const getNodeTitle = (d: NodeParam): string[] => {
+  return [
+    d.isReceived ? 'Received' : 'Not received',
+    d.disposition ? `Disposition ${startCase(d.disposition)}` : 'No disposition',
+    d.rfcToBe?.rfcNumber ? `RFC ${d.rfcToBe.rfcNumber}` : ''
+  ].filter(line => typeof line === 'string')
+}
+
+const getLinkTitle = (d: LinkParam): string[] => {
+  return [
+    getHumanReadableRelationshipName(d.rel),
   ]
 }

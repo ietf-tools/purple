@@ -1,4 +1,4 @@
-import type { Cluster } from "~/purple_client";
+import type { Cluster, RfcToBe } from "~/purple_client";
 
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
@@ -127,10 +127,9 @@ export type Data = {
 export type NodeParam = {
   id: string
   url?: string
-  rfcNumber?: number
-  isRfc: boolean
   isReceived?: boolean
   disposition: Disposition
+  rfcToBe?: RfcToBe
 };
 
 export type LinkParam = {
@@ -154,14 +153,14 @@ export const legendData: DataParam = {
     { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'refnorm' },
   ],
   nodes: [
-    { id: 'draft-one-with-rfc', isRfc: true, rfcNumber: 100, disposition: undefined },
-    { id: 'draft-one-without-rfc', isRfc: false, disposition: undefined },
-    { id: 'draft-is-not-received', isRfc: false, isReceived: false, disposition: undefined },
-    { id: 'draft-is-received', isRfc: false, isReceived: true, disposition: undefined },
-    { id: 'draft-refnorm-target', isRfc: false, isReceived: true, disposition: undefined },
-    { id: 'draft-refqueue-target', isRfc: false, isReceived: true, disposition: undefined },
-    { id: 'draft-relinfo-target', isRfc: false, isReceived: true, disposition: undefined },
-    { id: 'draft-withdrawnref-target', isRfc: false, isReceived: true, disposition: undefined },
+    { id: 'draft-one-with-rfc', rfcToBe: { rfcNumber: 100, disposition: '', labels: [], submittedFormat: '', submittedBoilerplate: '', submittedStdLevel: '', submittedStream: '', intendedBoilerplate: '', intendedStdLevel: '', intendedStream: '', authors: [] }, disposition: undefined },
+    { id: 'draft-one-without-rfc', disposition: undefined },
+    { id: 'draft-is-not-received', isReceived: false, disposition: undefined },
+    { id: 'draft-is-received', isReceived: true, disposition: undefined },
+    { id: 'draft-refnorm-target', isReceived: true, disposition: undefined },
+    { id: 'draft-refqueue-target', isReceived: true, disposition: undefined },
+    { id: 'draft-relinfo-target', isReceived: true, disposition: undefined },
+    { id: 'draft-withdrawnref-target', isReceived: true, disposition: undefined },
   ],
 };
 

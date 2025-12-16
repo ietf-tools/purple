@@ -10,7 +10,7 @@
   }">
     <div
       class="absolute transition-all bottom-0 text-xs text-center bg-white dark:bg-black text-black dark:text-white border border-gray-400 rounded-md shadow-xl p-2 w-[10em]">
-      {{ tooltip.text }}
+      <p v-for="line in tooltip.text">{{ line }}</p>
     </div>
   </div>
 
@@ -135,7 +135,7 @@ const handleChange = (e: Event) => {
 
 
 
-const tooltip = ref<{ text: string | undefined, position: [number, number] }>({ text: undefined, position: [0, 0] })
+const tooltip = ref<{ text: string[] | undefined, position: [number, number] }>({ text: undefined, position: [0, 0] })
 
 const setTooltip: SetTooltip = (props) => {
   if (!props) {
@@ -166,7 +166,7 @@ const clusterGraphData = computed(() => {
   }
 
   const rfcToBeToNodeParam = (rfcToBe: RfcToBe): NodeParam | undefined => {
-    const { name, rfcNumber, disposition } = rfcToBe
+    const { name, disposition } = rfcToBe
     if (!name) {
       console.warn("rfcToBe had no name?", rfcToBe)
       return
@@ -174,8 +174,7 @@ const clusterGraphData = computed(() => {
 
     return {
       id: name,
-      isRfc: Boolean(rfcNumber),
-      rfcNumber: rfcNumber ?? undefined,
+      rfcToBe,
       url: `/docs/${name}`,
       disposition: parseDisposition(disposition),
     }
@@ -199,8 +198,7 @@ const clusterGraphData = computed(() => {
 
       return [{
         id: name,
-        isRfc: Boolean(resolvedRfcNumber),
-        rfcNumber: resolvedRfcNumber,
+        rfcToBe: doc,
         url: `/docs/${name}`,
         isReceived: Boolean(isReceived),
         disposition: parseDisposition(disposition),
