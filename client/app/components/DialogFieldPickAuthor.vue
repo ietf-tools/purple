@@ -7,8 +7,8 @@
       >
         <span v-if="selectedAuthor" class="flex flex-row bg-gray-100 text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
           <b>{{ selectedAuthor.name }}</b>
-          <span>{{ ` #${selectedAuthor.personId}` }}</span>
-          <button type="button" :disabled="props.disabled" class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none" @click="handleClearSelectedAuthor" :label="`Unselect author ${selectedAuthor.name} #${selectedAuthor.personId}`">&times;</button>
+          <span v-if="selectedAuthor.email">{{ ` #${selectedAuthor.email}` }}</span>
+          <button type="button" :disabled="props.disabled" class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none" @click="handleClearSelectedAuthor" :label="`Unselect author ${selectedAuthor.name} ${selectedAuthor.email ?? ''}`">&times;</button>
         </span>
         <ComboboxInput v-model="inputRef" :id="props.id" :disabled="props.disabled" class="outline-none text-sm py-1 border-none h-full placeholder-gray-400" :placeholder=" selectedAuthor?.personId ? `Change ${personTerm}...` : `Search ${personTerm}`" />
       </ComboboxAnchor>
@@ -29,8 +29,8 @@
             <span class="font-bold">
               {{ searchResult.name }}
             </span>
-            <span class="font-normal ml-1" v-if="searchResult.personId">
-              {{ SPACE }}{{ ` #${searchResult.personId}` }}
+            <span class="font-normal ml-1" v-if="searchResult.email">
+              {{ SPACE }}{{ ` (${searchResult.email ?? ''})` }}
             </span>
           </ComboboxItem>
         </ComboboxViewport>

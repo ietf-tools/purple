@@ -33,7 +33,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         >
           {{ comment.ago }}
         </time>
-        <span v-if="comment.lastEdit && comment.lastEdit.by" :title="comment.lastEdit.by.personId ? `${comment.lastEdit.by.name} (user #${comment.lastEdit.by.personId})` : undefined">
+        <span v-if="comment.lastEdit && comment.lastEdit.by" :title="comment.lastEdit.by.personId ? `${comment.lastEdit.by.name} (${comment.lastEdit.by.email ?? ''})` : undefined">
           (last edited
           <span v-if="isEditedByAnotherUser">
             by

@@ -94,7 +94,7 @@ const columns = [
         return h('span', [
           h('a', { href: author.email ? datatrackerPersonLink(author.email) : undefined, class: ANCHOR_STYLE }, [
             `${author.name}`,
-            h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, ` #${author.personId}`)
+            h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, ` #${author.email}`)
           ]),
         ])
       }

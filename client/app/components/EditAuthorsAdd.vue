@@ -30,7 +30,7 @@
             {{ searchResult.name }}
           </span>
           <span class="font-normal ml-1" v-if="searchResult.personId">
-            {{ SPACE }}{{ ` #${searchResult.personId}` }}
+            {{ SPACE }}{{ ` #${searchResult.email ?? ''}` }}
           </span>
         </ComboboxItem>
       </ComboboxViewport>
@@ -79,7 +79,7 @@ watch(selectedAuthor, async () => {
     } catch (e: unknown) {
       snackbarForErrors({
         snackbar,
-        defaultTitle: `Unable to add author "${value.name}" #${value.personId} to draft "${draft.value.name}"`,
+        defaultTitle: `Unable to add author "${value.name}" (${value.email ?? ''}) to draft "${draft.value.name}"`,
         error: e
       })
     }
