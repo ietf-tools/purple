@@ -52,6 +52,5 @@
       }
     }
   },
-  "required": ["publications"],
-  "additionalProperties": false
+  "required": ["publications"]
 }
