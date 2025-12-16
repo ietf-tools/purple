@@ -13,7 +13,7 @@ export const font_family =
 export const font = `${font_size}px ${font_family}`
 
 export const green = "#198754"
-export const blue = "#0d6efd"
+export const blue = "#4d9efd"
 export const purple = '#bb44bb'
 export const orange = "#fd7e14"
 export const cyan = "#0dcaf0"
