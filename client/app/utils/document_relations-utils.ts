@@ -1,3 +1,5 @@
+import type { Cluster } from "~/purple_client";
+
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
  * so they've been hardcoded to ensure same rendering
@@ -25,11 +27,11 @@ export const gray800 = "#4e444a"
 export type Relationship = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
 
 export const ref_type: Record<Relationship, string> = {
-  refqueue: 'has ref queue to',
-  'not-received': 'has not received to',
-  withdrawnref: 'has withdrawn ref to',
-  refnorm: 'has ref norm to',
-  relinfo: 'has rel info to'
+  refqueue: 'has ref queue',
+  'not-received': 'has not received',
+  withdrawnref: 'has withdrawn ref',
+  refnorm: 'has ref norm',
+  relinfo: 'has rel info'
 } as const;
 
 export const getHumanReadableRelationshipName = (relationship: Relationship | string) => {
@@ -144,12 +146,12 @@ export type DataParam = {
 
 export const legendData: DataParam = {
   links: [
-    { source: "draft-one-with-rfc", target: "draft-is-not-received", rel: "not-received"},
-    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: "refnorm"},
-    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: "refqueue"},
-    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: "relinfo"},
-    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: "withdrawnref"},
-    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'refnorm'},
+    { source: "draft-one-with-rfc", target: "draft-is-not-received", rel: "not-received" },
+    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: "refnorm" },
+    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: "refqueue" },
+    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: "relinfo" },
+    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: "withdrawnref" },
+    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'refnorm' },
   ],
   nodes: [
     { id: 'draft-one-with-rfc', isRfc: true, rfcNumber: 100, disposition: undefined },
@@ -162,3 +164,209 @@ export const legendData: DataParam = {
     { id: 'draft-withdrawnref-target', isRfc: false, isReceived: true, disposition: undefined },
   ],
 };
+
+export const complexClusterExample: Cluster = {
+  "number": 535,
+  "documents": [
+    {
+      "name": "draft-ietf-cose-key-thumbprint",
+      "rfcNumber": 9679,
+      "disposition": "published",
+      "isReceived": true,
+      "order": 1
+    },
+    {
+      "name": "draft-ietf-suit-manifest",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 42,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-manifest",
+          "targetDraftName": "draft-ietf-suit-report"
+        },
+        {
+          "id": 43,
+          "relationship": "not-received",
+          "draftName": "draft-ietf-suit-manifest",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        },
+        {
+          "id": 44,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-manifest",
+          "targetDraftName": "draft-ietf-suit-trust-domains"
+        },
+        {
+          "id": 45,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-manifest",
+          "targetDraftName": "draft-ietf-suit-firmware-encryption"
+        },
+        {
+          "id": 46,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-manifest",
+          "targetDraftName": "draft-ietf-suit-mti"
+        }
+      ],
+      "isReceived": true,
+      "order": 2
+    },
+    {
+      "name": "draft-ietf-suit-firmware-encryption",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 48,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-firmware-encryption",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        },
+        {
+          "id": 49,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-firmware-encryption",
+          "targetDraftName": "draft-ietf-suit-trust-domains"
+        },
+        {
+          "id": 50,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-firmware-encryption",
+          "targetDraftName": "draft-ietf-suit-mti"
+        },
+        {
+          "id": 117,
+          "relationship": "not-received-2g",
+          "draftName": "draft-ietf-suit-firmware-encryption",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        },
+        {
+          "id": 123,
+          "relationship": "not-received-3g",
+          "draftName": "draft-ietf-suit-firmware-encryption",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        }
+      ],
+      "isReceived": true,
+      "order": 3
+    },
+    {
+      "name": "draft-ietf-suit-mti",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 77,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-mti",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        },
+        {
+          "id": 119,
+          "relationship": "not-received-2g",
+          "draftName": "draft-ietf-suit-mti",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        }
+      ],
+      "isReceived": true,
+      "order": 4
+    },
+    {
+      "name": "draft-ietf-suit-report",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 102,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-report",
+          "targetDraftName": "draft-ietf-suit-mti"
+        },
+        {
+          "id": 103,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-report",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        },
+        {
+          "id": 120,
+          "relationship": "not-received-2g",
+          "draftName": "draft-ietf-suit-report",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        },
+        {
+          "id": 125,
+          "relationship": "not-received-3g",
+          "draftName": "draft-ietf-suit-report",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        }
+      ],
+      "isReceived": true,
+      "order": 5
+    },
+    {
+      "name": "draft-ietf-suit-trust-domains",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 75,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-trust-domains",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        },
+        {
+          "id": 76,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-trust-domains",
+          "targetDraftName": "draft-ietf-suit-firmware-encryption"
+        },
+        {
+          "id": 118,
+          "relationship": "not-received-2g",
+          "draftName": "draft-ietf-suit-trust-domains",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        },
+        {
+          "id": 124,
+          "relationship": "not-received-3g",
+          "draftName": "draft-ietf-suit-trust-domains",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        }
+      ],
+      "isReceived": true,
+      "order": 6
+    },
+    {
+      "name": "draft-ietf-suit-update-management",
+      "references": [
+        {
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-update-management",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        }
+      ],
+      "isReceived": false,
+      "order": 7
+    },
+    {
+      "name": "draft-ietf-suit-mud",
+      "disposition": "in_progress",
+      "references": [
+        {
+          "id": 47,
+          "relationship": "refqueue",
+          "draftName": "draft-ietf-suit-mud",
+          "targetDraftName": "draft-ietf-suit-manifest"
+        },
+        {
+          "id": 116,
+          "relationship": "not-received-2g",
+          "draftName": "draft-ietf-suit-mud",
+          "targetDraftName": "draft-ietf-suit-update-management"
+        }
+      ],
+      "isReceived": true,
+      "order": 8
+    }
+  ],
+  "isActive": true
+}

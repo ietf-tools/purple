@@ -28,7 +28,6 @@
 </template>
 
 <script setup lang="ts">
-
 import ClusterAddDocumentModal from '../../components/ClusterAddDocumentModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
 
@@ -90,4 +89,5 @@ const openAddModal = () => {
     }
   })
 }
+
 </script>

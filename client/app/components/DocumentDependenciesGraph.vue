@@ -4,13 +4,26 @@
     <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
   </div>
 
+  <div v-show="tooltip.text" class="absolute transition-all" :style="{
+    left: `${tooltip.position[0]}px`,
+    top: `${tooltip.position[1]}px`,
+  }">
+    <div
+      class="absolute transition-all bottom-0 text-xs text-center bg-white dark:bg-black text-black dark:text-white border border-gray-400 rounded-md shadow-xl p-2 w-[10em]">
+      {{ tooltip.text }}
+    </div>
+  </div>
+
   <div class="flex gap-2 justify-between py-2 px-1.5">
     <span class="flex flex-row items-center text-sm pl-1">
       Pan and zoom the dependency graph after the layout settles.
     </span>
     <span class="flex flex-row items-center gap-2">
-      <RpcCheckbox label="Show legend" value="" :checked="showLegend" @change="showLegend = !showLegend" size='medium'
-        class="mr-3" />
+      <select @change="handleChange" class="text-xs rounded-md">
+        <option value="default">Show Cluster</option>
+        <option value="legend">Show Legend</option>
+        <option value="complex">Debug: Show complex cluster</option>
+      </select>
       <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
         <span v-if="canDownload">
           <Icon name="el:download-alt" size="1.1em" class="mr-2" />
@@ -29,7 +42,7 @@
 
     <div class="ml-4">
       <h3 class="mt-4 font-bold">Cluster</h3>
-      <pre>{{ JSON.stringify(props.cluster, null, 2) }}</pre>
+      <pre>{{ JSON.stringify(clusterToUse, null, 2) }}</pre>
       <h3 class="mt-4 font-bold">RFCsToBe</h3>
       <pre>{{ JSON.stringify(rfcsToBe, null, 2) }}</pre>
     </div>
@@ -39,8 +52,8 @@
 <script setup lang="ts">
 import { uniq, uniqBy } from 'lodash-es';
 import { type Cluster, type RfcToBe } from '~/purple_client'
-import { drawGraph, type DrawGraphParameters } from '~/utils/document_relations';
-import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
+import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations';
+import { legendData, complexClusterExample, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
 
 type Props = {
@@ -48,6 +61,8 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+
+const clusterToUse = ref(props.cluster)
 
 const snackbar = useSnackbar()
 
@@ -71,8 +86,8 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
 
 const api = useApi()
 
-const { data: rfcsToBe } = useAsyncData(`cluster-rfcs-${props.cluster.number}`, async () => {
-  const names = props.cluster.documents?.flatMap((document): string[] => {
+const { data: rfcsToBe, refresh } = useAsyncData(`cluster-rfcs-${clusterToUse.value.number}`, async () => {
+  const names = clusterToUse.value.documents?.flatMap((document): string[] => {
     return [document.name,
     ...(document.references ?? []).flatMap(reference => {
       return [reference.draftName, reference.targetDraftName].filter(val => typeof val === 'string')
@@ -93,6 +108,42 @@ const { data: rfcsToBe } = useAsyncData(`cluster-rfcs-${props.cluster.number}`, 
   server: false,
   lazy: true,
 })
+
+
+const handleChange = (e: Event) => {
+  const { target } = e
+  if (!(target instanceof HTMLSelectElement)) {
+    console.log("Expected <select>", e, target)
+    return
+  }
+  switch (target.value) {
+    case 'default':
+      clusterToUse.value = props.cluster
+      showLegend.value = false
+
+      break
+    case 'complex':
+      clusterToUse.value = complexClusterExample
+      showLegend.value = false
+
+      break
+    case 'legend':
+      showLegend.value = true
+      break
+  }
+}
+
+
+
+const tooltip = ref<{ text: string | undefined, position: [number, number] }>({ text: undefined, position: [0, 0] })
+
+const setTooltip: SetTooltip = (props) => {
+  if (!props) {
+    tooltip.value.text = undefined
+    return
+  }
+  tooltip.value = props
+}
 
 const hasMounted = ref(false)
 
@@ -140,7 +191,7 @@ const clusterGraphData = computed(() => {
   }, {} as RfcByDraftName) : {}
 
   newClusterGraphData.nodes.push(
-    ...(props.cluster.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
+    ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
       const { name, rfcNumber, disposition, references, isReceived } = clusterMember
       const doc = name ? rfcsByDraftName[name] : undefined
 
@@ -169,7 +220,7 @@ const clusterGraphData = computed(() => {
   )
 
   newClusterGraphData.links.push(
-    ...(props.cluster.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
+    ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
       const { references } = clusterMember
 
       return references ? references.map((reference): LinkParam | null => {
@@ -212,11 +263,16 @@ const attemptToRenderGraph = () => {
     clusterGraphData.value
   )
 
-  const chosenGraphData: DrawGraphParameters[0] = showLegend.value
+  const chosenGraphData: DrawGraphParameters[0]["data"] = showLegend.value
     ? legendData
     : graphData
 
-  let [leg_el, leg_sim] = drawGraph(chosenGraphData, router.push, colorMode.value === 'dark' ? 'dark' : 'light');
+  let [leg_el, leg_sim] = drawGraph({
+    data: chosenGraphData,
+    pushRouter: router.push,
+    colorMode: colorMode.value === 'dark' ? 'dark' : 'light',
+    setTooltip,
+  });
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
     console.error({ leg_el, leg_sim })
@@ -255,6 +311,7 @@ const handleDownload = () => {
     return snackbarMessage('container ref not found')
   }
   const svgString = container.innerHTML
-  downloadTextFile(`cluster-${props.cluster.number}.svg`, 'text/svg', svgString)
+  downloadTextFile(`cluster-${clusterToUse.value.number}.svg`, 'text/svg', svgString)
 }
+
 </script>
