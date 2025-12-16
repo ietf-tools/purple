@@ -1,3 +1,4 @@
+import { startCase } from "lodash-es";
 import type { Cluster, RfcToBe } from "~/purple_client";
 
 /**
@@ -13,6 +14,7 @@ export const font = `${font_size}px ${font_family}`
 
 export const green = "#198754"
 export const blue = "#0d6efd"
+export const purple = '#bb44bb'
 export const orange = "#fd7e14"
 export const cyan = "#0dcaf0"
 export const yellow = "#ffc107"
@@ -24,14 +26,16 @@ export const gray200 = "#E5E7EB"
 export const gray400 = "#ced4da"
 export const gray800 = "#4e444a"
 
-export type Relationship = 'refqueue' | 'not-received' | 'withdrawnref' | 'relinfo' | 'refnorm'
+export type Relationship = 'refqueue' |
+  'not-received' | // implicit 1g
+  'not-received-2g' |
+  'not-received-3g'
 
 export const ref_type: Record<Relationship, string> = {
-  refqueue: 'has ref queue',
-  'not-received': 'has not received',
-  withdrawnref: 'has withdrawn ref',
-  refnorm: 'has ref norm',
-  relinfo: 'has rel info'
+  refqueue: 'ref queue',
+  'not-received': 'not received',
+  'not-received-2g': 'not received 2g',
+  'not-received-3g': 'not received 3g',
 } as const;
 
 export const getHumanReadableRelationshipName = (relationship: Relationship | string) => {
@@ -71,15 +75,16 @@ export const parseLevel = (maybeLevel: string): Level => {
   return ""
 }
 
-type Disposition = undefined | 'assigned' | 'in_progress' | 'done'
+type Disposition = undefined | 'created' | 'in_progress' | 'published' | 'withdrawn'
 
 export const parseDisposition = (maybeDisposition: string | undefined | null): Disposition => {
   if (!maybeDisposition) return undefined
 
   switch (maybeDisposition) {
-    case 'assigned':
+    case 'created':
     case 'in_progress':
-    case 'done':
+    case 'published':
+    case 'withdrawn':
       return maybeDisposition
   }
   console.warn("Unable to parse disposition: ", maybeDisposition)
@@ -88,11 +93,10 @@ export const parseDisposition = (maybeDisposition: string | undefined | null): D
 
 export const parseRelationship = (maybeRelationship: string): Relationship => {
   switch (maybeRelationship) {
-    case 'refqueue':
-    case 'not-received':
-    case 'withdrawnref':
-    case 'relinfo':
-    case 'refnorm':
+    case 'refqueue' satisfies Relationship:
+    case 'not-received' satisfies Relationship:
+    case 'not-received-2g' satisfies Relationship:
+    case 'not-received-3g' satisfies Relationship:
       return maybeRelationship
   }
   console.warn("Unable to parse relationship: ", maybeRelationship)
@@ -129,6 +133,7 @@ export type NodeParam = {
   url?: string
   isReceived?: boolean
   disposition: Disposition
+  rfcNumber?: number | undefined,
   rfcToBe?: RfcToBe
 };
 
@@ -146,11 +151,11 @@ export type DataParam = {
 export const legendData: DataParam = {
   links: [
     { source: "draft-one-with-rfc", target: "draft-is-not-received", rel: "not-received" },
-    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: "refnorm" },
-    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: "refqueue" },
-    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: "relinfo" },
-    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: "withdrawnref" },
-    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'refnorm' },
+    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: 'not-received-2g' },
+    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: 'not-received-3g' },
+    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: 'refqueue' },
+    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: 'not-received' },
+    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'not-received' },
   ],
   nodes: [
     { id: 'draft-one-with-rfc', rfcToBe: { rfcNumber: 100, disposition: '', labels: [], submittedFormat: '', submittedBoilerplate: '', submittedStdLevel: '', submittedStream: '', intendedBoilerplate: '', intendedStdLevel: '', intendedStream: '', authors: [] }, disposition: undefined },

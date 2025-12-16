@@ -9,7 +9,7 @@
     top: `${tooltip.position[1]}px`,
   }">
     <div
-      class="absolute transition-all bottom-0 text-xs text-center bg-white dark:bg-black text-black dark:text-white border border-gray-400 rounded-md shadow-xl p-2 w-[10em]">
+      class="absolute transition-all bottom-0 text-xs text-center bg-white dark:bg-black text-black dark:text-white border border-gray-400 rounded-md shadow-xl p-2 w-[15em]">
       <p v-for="line in tooltip.text">{{ line }}</p>
     </div>
   </div>
@@ -133,8 +133,6 @@ const handleChange = (e: Event) => {
   }
 }
 
-
-
 const tooltip = ref<{ text: string[] | undefined, position: [number, number] }>({ text: undefined, position: [0, 0] })
 
 const setTooltip: SetTooltip = (props) => {
@@ -175,6 +173,7 @@ const clusterGraphData = computed(() => {
     return {
       id: name,
       rfcToBe,
+      rfcNumber: rfcToBe.rfcNumber ?? undefined,
       url: `/docs/${name}`,
       disposition: parseDisposition(disposition),
     }
@@ -200,6 +199,7 @@ const clusterGraphData = computed(() => {
         id: name,
         rfcToBe: doc,
         url: `/docs/${name}`,
+        rfcNumber: resolvedRfcNumber,
         isReceived: Boolean(isReceived),
         disposition: parseDisposition(disposition),
       },

@@ -3,7 +3,7 @@
  */
 import { startCase } from 'lodash-es'
 import * as d3 from "d3"
-import { black, blue, cyan, font, getHumanReadableRelationshipName, gray200, gray800, green, line_height, orange, red, ref_type, teal, white, yellow, type Data, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
+import { black, blue, purple, font, getHumanReadableRelationshipName, gray200, gray800, green, line_height, orange, red, teal, white, yellow, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
 import { getAncestors } from './dom'
 
 const TOOLTIP_BUFFER_Y = 5
@@ -11,9 +11,8 @@ const TOOLTIP_BUFFER_Y = 5
 const link_color: Record<Relationship, string> = {
   "refqueue": green,
   "not-received": red,
-  "withdrawnref": orange,
-  'refnorm': teal,
-  'relinfo': yellow
+  "not-received-2g": orange,
+  'not-received-3g': teal,
 } as const
 
 const getLinkColor = (rel: Relationship) => {
@@ -25,26 +24,16 @@ const getLinkColor = (rel: Relationship) => {
   return black
 }
 
-const getName = (sourceOrTarget: Link["source"] | LinkParam["source"]): string => {
-  if (typeof sourceOrTarget === 'string') {
-    return sourceOrTarget
-  }
-  return sourceOrTarget.id
-}
-
 const DEFAULT_STROKE = 10
 
 // code partially adapted from
 // https://observablehq.com/@mbostock/fit-text-to-circle
 
-type LinesProps = { id: string, rfcNumber?: number }
+type LinesProps = { id?: string, rfcNumber?: number }
 function lines({ id, rfcNumber }: LinesProps): Line[] {
-  let line_width_0 = Infinity
-  let text = id
-  let line: Line = {
-    text,
-    width: line_width_0,
-  }
+
+
+
 
   const lines: Line[] = []
   if (rfcNumber) {
@@ -55,6 +44,16 @@ function lines({ id, rfcNumber }: LinesProps): Line[] {
       style: 'font-weight: bold'
     })
   }
+  let line_width_0 = Infinity
+  if (!id) return lines;
+
+  let text = id
+  let line: Line = {
+    text,
+    width: line_width_0,
+  }
+
+
   let sep = "-"
   let words = text.trim().split(/-/g)
   if (words.length == 1) {
@@ -156,7 +155,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .append("path")
     .attr("d", "M0,-5L10,0L0,5")
 
-const LINE_STROKE_WIDTH = 5
+  const LINE_STROKE_WIDTH = 5
 
   // links between circles
   const link = svg
@@ -169,6 +168,15 @@ const LINE_STROKE_WIDTH = 5
     .attr("title", (d) => {
       return getLinkTitle(d)
     })
+    .attr("stroke-dasharray", (d) => {
+      switch (d.rel) {
+        case 'not-received-2g':
+        case 'not-received-3g':
+          return 4
+      }
+      return 0
+    })
+    .attr('tabindex', 0)
     .on("focus mouseover", function (e, d) {
       d3.select(this).transition()
         .duration(200)
@@ -217,7 +225,7 @@ const LINE_STROKE_WIDTH = 5
       '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available
     )
     .attr("title", (d) => getNodeTitle(d).join(" "))
-    .on("focus mouseover", function(e, d){
+    .on("focus mouseover", function (e, d) {
       e.preventDefault()
       const { target } = e
       if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
@@ -272,8 +280,10 @@ const LINE_STROKE_WIDTH = 5
   a.append("text")
     .attr("fill", (d) => (d.rfcToBe ? colorMode === 'light' ? gray800 : gray200 : colorMode === 'light' ? black : white))
     .each((d) => {
-      (d as Node).lines = lines({
-        rfcNumber: d.rfcToBe?.rfcNumber ?? undefined,
+      (d as Node).lines = d.disposition === 'published' ? lines({
+        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
+      }) : lines({
+        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
         id: d.id,
       });
       (d as Node).r = textRadius((d as Node).lines!)
@@ -285,37 +295,36 @@ const LINE_STROKE_WIDTH = 5
     .attr("x", 0)
     .attr("style", (d) => d.style ?? '')
     .attr("y", (d, i, x) => (i - x.length / 2 + 0.5) * line_height)
-    .text((d) => d.text)
+    .text((d) => {
+      return d.text
+    })
 
   a.append("circle")
     .attr("stroke", black)
     .lower()
     .attr("fill", (d) => {
+      if (d.disposition === 'published') {
+        return blue
+      }
       if (!d.isReceived) {
         return red
+      } else {
+        return purple
       }
-      switch (d.disposition) {
-        case 'assigned':
-          return orange
-        case 'done':
-          return green
-        case 'in_progress':
-          return blue
-      }
-      console.warn('Using default style for', d)
-      return cyan
     })
     .each((d) => {
       switch (d.disposition) {
-        case 'assigned':
+        case 'created':
           (d as Node).stroke = 3
           break
-        case 'done':
+        case 'published':
           (d as Node).stroke = 1
           break
         case 'in_progress':
           (d as Node).stroke = 6
           break
+        case 'withdrawn':
+          (d as Node).stroke = 0
         default:
           (d as Node).stroke = 4
       }
@@ -337,9 +346,6 @@ const LINE_STROKE_WIDTH = 5
       return dNode.stroke
     })
     .attr("stroke-dasharray", (d) => {
-      if (d.rfcToBe) {
-        return 8
-      }
       if (!d.isReceived) {
         return 4
       }
@@ -496,8 +502,7 @@ const LINE_STROKE_WIDTH = 5
 const getNodeTitle = (d: NodeParam): string[] => {
   return [
     d.isReceived ? 'Received' : 'Not received',
-    d.disposition ? `Disposition ${startCase(d.disposition)}` : 'No disposition',
-    d.rfcToBe?.rfcNumber ? `RFC ${d.rfcToBe.rfcNumber}` : ''
+    d.disposition ? `Disposition: ${startCase(d.disposition)}` : 'No disposition',
   ].filter(line => typeof line === 'string')
 }
 
