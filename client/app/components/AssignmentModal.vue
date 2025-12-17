@@ -199,7 +199,9 @@ watch(isPersonSelected, () => {
 
     // new assignments
     newActions.push(
-      ...Object.entries(isPersonSelected.value).map(([personIdString]): ActionAssign => {
+      ...Object.entries(isPersonSelected.value).filter(([personIdString, isSelected]) => {
+        return isSelected
+      }).map(([personIdString]): ActionAssign => {
         const personId = parseInt(personIdString, 10)
         return {
           type: 'assign',

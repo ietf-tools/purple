@@ -106,8 +106,6 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
 
   const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
     assertIsNumber(personId)
-
-    console.log({ pageCount })
     assert(role.length !== 0)
     assert(typeof pageCount === 'number')
 
