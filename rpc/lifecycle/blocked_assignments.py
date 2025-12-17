@@ -198,11 +198,17 @@ def _create_blocked_assignment(rfc: RfcToBe, reasons: set[str]) -> bool:
 
         # Store blocking reasons in RfcToBeBlockingReason
         for reason_slug in reasons:
-            reason_model = BlockingReason.objects.get(slug=reason_slug)
-            RfcToBeBlockingReason.objects.create(
-                rfc_to_be=rfc,
-                reason=reason_model,
-            )
+            try:
+                reason_model = BlockingReason.objects.get(slug=reason_slug)
+                RfcToBeBlockingReason.objects.create(
+                    rfc_to_be=rfc,
+                    reason=reason_model,
+                )
+            except BlockingReason.DoesNotExist as err:
+                logger.exception(
+                    "Invalid blocking reason slug '%s' for rfc %s", reason_slug, rfc.pk
+                )
+                raise NotFound(f"Invalid blocking reason slug: {reason_slug}") from err
 
     except Exception as err:
         logger.exception(
