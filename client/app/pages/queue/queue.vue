@@ -288,12 +288,25 @@ const columns = [
             h('ul', { class: 'flex flex-col gap-2' }, [
               ...assignmentsOfRole.map(assignment => {
                 const rpcPerson = people.value.find((p) => p.id === assignment.person)
-                return h(Anchor, {
-                  href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-                  class: [ANCHOR_STYLE, 'text-sm nowrap']
-                }, () => [
-                  rpcPerson ? rpcPerson.name : pending ? `...` : '(unknown person)',
-                ])
+                const children: (VNode | string)[] = [
+                  h(Anchor, {
+                    href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+                    class: [ANCHOR_STYLE, 'text-sm nowrap']
+                  }, () => [
+                    rpcPerson ? rpcPerson.name : '',
+                  ]),
+                ]
+
+                // Show blocking reasons slug for blocked assignments
+                if (role === 'blocked' && data.row.original.blockingReasons && data.row.original.blockingReasons.length > 0) {
+                  const reasons = data.row.original.blockingReasons.map((br: any) => br.reason.slug).join(', ')
+                  children.push(
+                    h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' }, `${reasons}`)
+                  )
+                }
+
+                return h('div', { class: 'inline-flex items-baseline' }, children)
+
               }).reduce((acc, item, index, arr) => {
                 // add commas between items
                 const listItemChildren = []

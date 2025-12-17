@@ -290,6 +290,50 @@ class SourceFormatName(Name):
     pass
 
 
+class BlockingReason(Name):
+    """Predefined blocking reasons for RfcToBe instances"""
+
+    ACTION_HOLDER_ACTIVE = "actionholder_active"
+    LABEL_STREAM_HOLD = "label_stream_hold"
+    LABEL_EXTREF_HOLD = "label_extref_hold"
+    LABEL_AUTHOR_INPUT_REQUIRED = "label_author_input_required"
+    LABEL_IANA_HOLD = "label_iana_hold"
+    REFERENCE_NOT_RECEIVED = "ref_not_received"
+    REFERENCE_NOT_RECEIVED_2G = "ref_not_received_2g"
+    REFERENCE_NOT_RECEIVED_3G = "ref_not_received_3g"
+    REFQUEUE_FIRST_EDIT_INCOMPLETE = "refqueue_first_edit_incomplete"
+    REFQUEUE_SECOND_EDIT_INCOMPLETE = "refqueue_second_edit_incomplete"
+    REFQUEUE_PUBLISH_INCOMPLETE = "refqueue_publish_incomplete"
+    FINAL_APPROVAL_PENDING = "final_approval_pending"
+    TOOLS_ISSUE = "tools_issue"
+
+
+class RfcToBeBlockingReason(models.Model):
+    """Tracks blocking reasons for RfcToBe instances"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    reason = models.ForeignKey(BlockingReason, on_delete=models.PROTECT)
+    since_when = models.DateTimeField(default=timezone.now)
+    resolved = models.DateTimeField(null=True, blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "reason"],
+                condition=models.Q(resolved__isnull=True),
+                name="unique_active_blocking_reason_per_rfc",
+                violation_error_message="This blocking reason is already active for "
+                "this RFC",
+            ),
+        ]
+        ordering = ["-since_when"]
+
+    def __str__(self):
+        status = "Resolved" if self.resolved else "Active"
+        return f"{status} blocking reason '{self.reason.slug}' for {self.rfc_to_be}"
+
+
 class StdLevelNameManager(models.Manager):
     def from_slug(self, slug):
         if self.filter(slug=slug).exists():

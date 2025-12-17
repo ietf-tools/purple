@@ -22,6 +22,7 @@ from .models import (
     ActionHolder,
     ApprovalLogMessage,
     Assignment,
+    BlockingReason,
     Capability,
     Cluster,
     ClusterMember,
@@ -396,6 +397,22 @@ class IanaStatusSerializer(NameSerializer):
         }
 
 
+class BlockingReasonSerializer(NameSerializer):
+    """Serialize BlockingReason model"""
+
+    class Meta:
+        model = BlockingReason
+        fields = ["slug", "name", "desc"]
+
+
+class RfcToBeBlockingReasonSerializer(serializers.Serializer):
+    """Serialize RfcToBeBlockingReason with reason details"""
+
+    reason = BlockingReasonSerializer(read_only=True)
+    since_when = serializers.DateTimeField(read_only=True)
+    resolved = serializers.DateTimeField(read_only=True)
+
+
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
@@ -414,6 +431,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="finalapproval_set", many=True, read_only=True
     )
     iana_status = IanaStatusSerializer(read_only=True)
+    blocking_reasons = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -434,6 +452,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "enqueued_at",
             "final_approval",
             "iana_status",
+            "blocking_reasons",
         ]
 
     @extend_schema_field(serializers.DateField())
@@ -451,6 +470,14 @@ class QueueItemSerializer(serializers.ModelSerializer):
         except obj.history.model.DoesNotExist:
             # Fallback if no history exists
             return None
+
+    @extend_schema_field(RfcToBeBlockingReasonSerializer(many=True))
+    def get_blocking_reasons(self, obj):
+        """Get active blocking reasons for this RfcToBe"""
+        active_reasons = obj.rfctobeblockingreason_set.filter(
+            resolved__isnull=True
+        ).select_related("reason")
+        return RfcToBeBlockingReasonSerializer(active_reasons, many=True).data
 
 
 class SubseriesMemberSerializer(serializers.ModelSerializer):
