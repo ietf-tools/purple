@@ -122,7 +122,7 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
     peopleWorkload[personId] = editorWorkload
   }
   queueItems.forEach(doc => {
-    const clustersWithDocument = clusters.filter(cluster => cluster.documents.some(clusterDocument =>
+    const clustersWithDocument = clusters.filter(cluster => cluster.documents?.some(clusterDocument =>
       clusterDocument.name === doc.name
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
