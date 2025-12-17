@@ -37,8 +37,8 @@
     </span>
   </div>
 
-  <details class="mt-10 float-right pb-10">
-    <summary class="font-bold cursor-pointer">Diagram data (for debug)</summary>
+  <details class="mt-10 pb-10">
+    <summary class="flex justify-end font-bold cursor-pointer">Diagram data (for debug)</summary>
 
     <div class="ml-4">
       <h3 class="mt-4 font-bold">Cluster</h3>
@@ -50,7 +50,7 @@
 </template>
 
 <script setup lang="ts">
-import { uniq, uniqBy } from 'lodash-es';
+import { uniqBy } from 'lodash-es';
 import { type Cluster, type RfcToBe } from '~/purple_client'
 import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations';
 import { legendData, complexClusterExample, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
@@ -58,6 +58,7 @@ import { downloadTextFile } from '~/utils/download';
 
 type Props = {
   cluster: Cluster
+  rfcsToBe?: RfcToBe[]
 }
 
 const props = defineProps<Props>()
@@ -85,29 +86,6 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
 }
 
 const api = useApi()
-
-const { data: rfcsToBe, refresh } = useAsyncData(`cluster-rfcs-${clusterToUse.value.number}`, async () => {
-  const names = clusterToUse.value.documents?.flatMap((document): string[] => {
-    return [document.name,
-    ...(document.references ?? []).flatMap(reference => {
-      return [reference.draftName, reference.targetDraftName].filter(val => typeof val === 'string')
-    })
-    ]
-  }) ?? []
-
-  const uniqueNames = uniq(names)
-
-  console.log({ uniqueNames })
-
-  const drafts = await Promise.all(uniqueNames.map((draftName) =>
-    api.documentsRetrieve({ draftName })
-  ))
-  console.log({ drafts })
-  return drafts
-}, {
-  server: false,
-  lazy: true,
-})
 
 
 const handleChange = (e: Event) => {
@@ -180,7 +158,7 @@ const clusterGraphData = computed(() => {
   }
 
   type RfcByDraftName = Record<string, RfcToBe>
-  const rfcsByDraftName: RfcByDraftName = rfcsToBe.value ? rfcsToBe.value.reduce((acc, rfcToBe) => {
+  const rfcsByDraftName: RfcByDraftName = props.rfcsToBe ? props.rfcsToBe.reduce((acc, rfcToBe) => {
     const { name } = rfcToBe
     if (name) {
       acc[name] = rfcToBe

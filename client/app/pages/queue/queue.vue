@@ -123,8 +123,8 @@ import {
 import type { SortingState } from '@tanstack/vue-table'
 import { groupBy, uniqBy } from 'lodash-es'
 import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { calculatePeopleWorkload } from '~/utils/queue'
-import type { QueueTabId, AssignmentMessageProps } from '~/utils/queue'
+import { calculatePeopleWorkload, calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
+import { type QueueTabId, type AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
@@ -211,19 +211,8 @@ const columns = [
         const value = data.getValue()
         if (!value) return ''
 
-        const enqueuedAt = DateTime.fromJSDate(value)
-        const now = DateTime.now()
-        const diffInDays = now.diff(enqueuedAt, 'days').days
-        const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
-
-        return h(
-          'div',
-          { class: 'text-xs' },
-          value ? [
-            h('div', enqueuedAt.toISODate() ?? ''),
-            h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
-          ] : []
-        )
+        const enqueuedAtData = calculateEnqueuedAtData(value)
+        return renderEnqueuedAt(enqueuedAtData)
       },
       sortingFn: (rowA, rowB, columnId) => {
         const now = DateTime.now()
