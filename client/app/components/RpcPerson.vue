@@ -3,9 +3,6 @@
     {{ person === null ? 'loading...' : person?.name ? person.name : '(System)' }}
     {{  SPACE }}
   </span>
-  <span :class="PERSON_ID_STYLE">
-    {{ person?.id ? `#${person.id}` : '' }}
-  </span>
 </template>
 
 <script setup lang="ts">
