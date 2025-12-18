@@ -3,6 +3,7 @@
 import datetime
 import warnings
 from dataclasses import dataclass
+from email.policy import EmailPolicy
 from itertools import pairwise
 
 import rpcapi_client
@@ -10,6 +11,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 from rest_framework.fields import empty
 from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
@@ -1230,12 +1232,30 @@ class CreateFinalApprovalSerializer(FinalApprovalSerializer):
         )
 
 
+class AddressListField(serializers.CharField):
+    """Serializer field for an email to, cc, or bcc entry
+
+    Serializes a list of email addresses into an RFC 5322 address-list.
+    """
+
+    def to_representation(self, value):
+        """Convert list of addresses into a string for serialization"""
+        return ",".join(str(addr) for addr in value)
+
+    def to_internal_value(self, data):
+        policy = EmailPolicy(utf8=True)  # allow direct UTF-8 in addresses
+        header = policy.header_factory("To", data)
+        if len(header.defects) > 0:
+            raise ValidationError("; ".join(str(defect) for defect in header.defects))
+        return header.addresses
+
+
 class MailMessageSerializer(serializers.Serializer):
     """Mail message serializer"""
 
     msgtype = serializers.CharField(help_text="slug that identifies message type ")
-    to = serializers.CharField(allow_blank=False)
-    cc = serializers.CharField(default="", allow_blank=True)
+    to = AddressListField(allow_blank=False)
+    cc = AddressListField(default="", allow_blank=True)
     subject = serializers.CharField(allow_blank=False)
     body = serializers.CharField(allow_blank=False)
 
