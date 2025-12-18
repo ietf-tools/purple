@@ -420,9 +420,9 @@ class ClusterQuerySet(models.QuerySet):
                 queryset=ClusterMember.objects.select_related("doc").prefetch_related(
                     Prefetch(
                         "doc__rfctobe_set",
-                        queryset=RfcToBe.objects.exclude(disposition__slug="withdrawn")
-                        .select_related("disposition")
-                        .prefetch_related(
+                        queryset=RfcToBe.objects.select_related(
+                            "disposition"
+                        ).prefetch_related(
                             Prefetch(
                                 "rpcrelateddocument_set",
                                 queryset=RpcRelatedDocument.objects.filter(
@@ -450,9 +450,9 @@ class ClusterQuerySet(models.QuerySet):
         """
         return self.annotate(
             is_active_annotated=Exists(
-                ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
-                    doc__rfctobe__disposition__slug="published"
-                )
+                ClusterMember.objects.filter(cluster=OuterRef("pk"))
+                .exclude(doc__rfctobe__disposition__slug="published")
+                .exclude(doc__rfctobe__disposition__slug="withdrawn")
             )
         )
 
