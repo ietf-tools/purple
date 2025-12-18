@@ -1230,26 +1230,14 @@ class CreateFinalApprovalSerializer(FinalApprovalSerializer):
         )
 
 
-class MailAttachmentSerializer(serializers.Serializer):
-    name = serializers.CharField()
-    content = serializers.FileField(
-        allow_empty_file=False,
-        use_url=False,
-    )
-
-
 class MailMessageSerializer(serializers.Serializer):
-    """Mail message serializer
-
-    Because of the FileField, this cannot be used with a JSONParser.
-    """
+    """Mail message serializer"""
 
     msgtype = serializers.CharField(help_text="slug that identifies message type ")
     to = serializers.CharField(allow_blank=False)
     cc = serializers.CharField(default="", allow_blank=True)
     subject = serializers.CharField(allow_blank=False)
     body = serializers.CharField(allow_blank=False)
-    attachments = MailAttachmentSerializer(many=True, required=False)
 
 
 class MailTemplateSerializer(serializers.Serializer):

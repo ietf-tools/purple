@@ -1413,14 +1413,11 @@ class Mail(views.APIView):
     )
     def post(self, request, format=None):
         # todo actually send mail
-        # todo debug whether attachments work as intended
         serializer = MailMessageSerializer(data=request.data)
         if serializer.is_valid():
             print(f"to: {serializer.validated_data['to']}")
             print(f"cc: {serializer.validated_data['cc']}")
             print(f"subject: {serializer.validated_data['subject']}")
-            for attachment in serializer.validated_data["attachments"]:
-                print(f"attachment: {attachment['name']}")
         else:
             print(serializer.errors)
         return Response(
