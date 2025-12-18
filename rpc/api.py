@@ -43,6 +43,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
+from purple.mail import send_mail
 
 from .lifecycle.publication import (
     can_publish,
@@ -1412,14 +1413,14 @@ class Mail(views.APIView):
         responses=MailResponseSerializer,
     )
     def post(self, request, format=None):
-        # todo actually send mail
         serializer = MailMessageSerializer(data=request.data)
-        if serializer.is_valid():
-            print(f"to: {serializer.validated_data['to']}")
-            print(f"cc: {serializer.validated_data['cc']}")
-            print(f"subject: {serializer.validated_data['subject']}")
-        else:
-            print(serializer.errors)
+        serializer.is_valid(raise_exception=True)
+        send_mail(
+            to=serializer.validated_data["to"],
+            subject=serializer.validated_data["subject"],
+            msg=serializer.validated_data["body"],
+            fail_silently=False,
+        )
         return Response(
             MailResponseSerializer(
                 {
