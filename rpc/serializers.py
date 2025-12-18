@@ -1009,7 +1009,7 @@ class ClusterSerializer(serializers.ModelSerializer):
             return False
 
         return (
-            # if any not published/withdrawn RFC exist in cluster, then active
+            # if any not published or withdrawn RFC exist in cluster, then active
             RfcToBe.objects.filter(draft_id__in=member_doc_ids)
             .exclude(disposition__slug="published")
             .exclude(disposition__slug="withdrawn")

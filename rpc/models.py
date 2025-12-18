@@ -417,8 +417,9 @@ class ClusterQuerySet(models.QuerySet):
         return self.prefetch_related(
             Prefetch(
                 "clustermember_set",
-                queryset=ClusterMember.objects
-                .exclude(doc__rfctobe__disposition__slug="withdrawn")
+                queryset=ClusterMember.objects.exclude(
+                    doc__rfctobe__disposition__slug="withdrawn"
+                )
                 .select_related("doc")
                 .prefetch_related(
                     Prefetch(
