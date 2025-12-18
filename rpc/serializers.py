@@ -993,7 +993,7 @@ class ClusterSerializer(serializers.ModelSerializer):
 
     def get_is_active(self, cluster) -> bool:
         """A cluster is considered active if it not empty and not all
-        drafts in the cluster are published.
+        drafts in the cluster are published or withdrawn.
         """
 
         # Use annotated value if available
@@ -1009,9 +1009,10 @@ class ClusterSerializer(serializers.ModelSerializer):
             return False
 
         return (
-            # if any not published RFC exist in cluster, then active
+            # if any not published/withdrawn RFC exist in cluster, then active
             RfcToBe.objects.filter(draft_id__in=member_doc_ids)
             .exclude(disposition__slug="published")
+            .exclude(disposition__slug="withdrawn")
             .exists()
         )
 
