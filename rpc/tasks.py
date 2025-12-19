@@ -33,4 +33,15 @@ def send_mail_task(message_id):
             str(err),
         )
         raise SendEmailError from err
+    comment = f"Sent {message.msgtype} email with Message-ID={message.message_id}"
+    if message.rfctobe is not None:
+        message.rfctobe.rpcdocumentcomment_set.create(
+            comment=comment,
+            by=message.sender_id,
+        )
+    if message.draft is not None:
+        message.draft.rpcdocumentcomment_set.create(
+            comment=comment,
+            by=message.sender_id,
+        )
     message.delete()

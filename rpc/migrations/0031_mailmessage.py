@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
+import django.db.models.deletion
 from django.db import migrations, models
 
 import purple.mail
@@ -8,6 +9,7 @@ import rpc.models
 
 class Migration(migrations.Migration):
     dependencies = [
+        ("datatracker", "0002_initial"),
         ("rpc", "0030_add_rfctobe_repository"),
     ]
 
@@ -41,6 +43,33 @@ class Migration(migrations.Migration):
                 ("body", models.TextField()),
                 ("message_id", models.CharField(default=purple.mail.make_message_id)),
                 ("attempts", models.PositiveSmallIntegerField(default=0)),
+                (
+                    "draft",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="draft to which this message relates",
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="datatracker.document",
+                    ),
+                ),
+                (
+                    "rfctobe",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="RfcToBe to which this message relates",
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="rpc.rfctobe",
+                    ),
+                ),
+                (
+                    "sender",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.PROTECT,
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
             ],
         ),
     ]

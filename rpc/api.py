@@ -1418,7 +1418,7 @@ class Mail(views.APIView):
             serializer.validated_data["subject"],
             ",".join(serializer.validated_data["to"]),
         )
-        message = serializer.save()
+        message = serializer.save(sender=request.user.datatracker_person())
         send_mail_task.delay(message.pk)
         return Response(
             MailResponseSerializer(

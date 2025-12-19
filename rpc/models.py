@@ -19,6 +19,7 @@ from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
+import datatracker.models
 from purple.mail import EmailMessage, make_message_id
 
 from .dt_v1_api_utils import (
@@ -1020,12 +1021,30 @@ class MailMessage(models.Model):
         PUBLICATION = "publication", "publication announcement"
 
     msgtype = models.CharField(choices=MessageType.choices, max_length=64)
+    rfctobe = models.ForeignKey(
+        "RfcToBe",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        help_text="RfcToBe to which this message relates",
+    )
+    draft = models.ForeignKey(
+        "datatracker.Document",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        help_text="draft to which this message relates",
+    )
     to = AddressListField(blank=False)
     cc = AddressListField(blank=True)
     subject = models.CharField()
     body = models.TextField()
     message_id = models.CharField(default=make_message_id)
     attempts = models.PositiveSmallIntegerField(default=0)
+    sender = models.ForeignKey(
+        datatracker.models.DatatrackerPerson,
+        on_delete=models.PROTECT,
+    )
 
     def as_emailmessage(self):
         """Instantiate an EmailMessage for delivery"""
