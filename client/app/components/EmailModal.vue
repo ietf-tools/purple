@@ -77,12 +77,13 @@ const confirmSend = async () => {
     return
   }
   const mailSendResponse = await api.mailSend({
-    msgtype: msgType.value,
-    to: toEmails.value.join(','),
-    subject: subject.value,
-    body: body.value,
-    cc: ccEmails.value.join(','),
-    attachments: []
+    mailMessageRequest: {
+      msgtype: msgType.value,
+      to: toEmails.value.join(','),
+      subject: subject.value,
+      body: body.value,
+      cc: ccEmails.value.join(',')
+    }
   })
   if (mailSendResponse.type === 'success') {
     await props.onSuccess()

@@ -1404,7 +1404,6 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
 
 
 class Mail(views.APIView):
-    parser_classes = [MultiPartParser]  # needed for FileField
     permission_classes = [AllowAny]  # todo not this
 
     @extend_schema(
