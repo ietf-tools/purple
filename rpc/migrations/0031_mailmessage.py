@@ -8,7 +8,7 @@ import rpc.models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0029_historicalrfctobeblockingreason_and_more"),
+        ("rpc", "0030_add_rfctobe_repository"),
     ]
 
     operations = [
