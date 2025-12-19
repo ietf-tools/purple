@@ -120,4 +120,7 @@ async function editLabel(label: Label) {
   }
 }
 
+useHead({
+  title: 'Manage Labels'
+})
 </script>

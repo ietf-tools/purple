@@ -1,3 +1,4 @@
+import type { RpcPerson } from '~/purple_client'
 import type { ResolvedQueueItem } from '../components/AssignmentsTypes'
 
 export const AUTH_PATH = '/auth'
@@ -34,3 +35,5 @@ export const isOidcLink = (href?: string): boolean => {
 }
 
 export const datatrackerPersonLink = (email: string ) => `https://datatracker.ietf.org/person/${encodeURIComponent(email)}`
+
+export const teamMemberLink = (personId: number | undefined | null) => personId ? `/team/${personId}` : undefined

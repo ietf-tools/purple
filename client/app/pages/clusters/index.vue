@@ -7,11 +7,14 @@
       </template>
     </TitleBlock>
 
-    <form class="flex flex-row items-center w-[200px] pt-5">
-      <label class="text-gray-900 text-sm font-bold mr-1" for="filterInput">Filter:</label>
-      <input type="text" inputmode="numeric" pattern="[0-9]*" id="filterInput" v-model="filterValueString"
-        class="focus:shadow-gray-300 inline-flex w-full flex-1 items-center justify-center rounded-lg px-3 text-sm leading-none outline-none border-gray-500 text-gray-900"
-        placeholder="E.g. 20" />
+    <form class="flex flex-row items-center gap-6 pt-5" novalidate>
+      <div class="flex flex-row items-center gap-1">
+        <label class="text-gray-900 dark:text-white text-sm font-bold mr-1" for="filterInput">Filter:</label>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" id="filterInput" v-model="filterValueString"
+          class="focus:shadow-gray-300 inline-flex w-full flex-1 items-center justify-center rounded-lg px-3 text-sm leading-none outline-none border-gray-500 text-gray-900"
+          placeholder="E.g. 20" />
+      </div>
+      <RpcCheckbox label="show inactive?" :checked="showInactive" @change="showInactive = !showInactive" />
     </form>
 
     <div class="flex flex-col gap-3 mt-5 mb-10">
@@ -54,9 +57,16 @@ const lastClusterNumber = computed(() => {
   return Math.max(...clusters.value.map(cluster => cluster.number))
 })
 
+const showInactive = ref(false)
+
 const clusterSearch = computed(() => clusters.value ? clusters.value.map(cluster => JSON.stringify(cluster)) : [])
 
-const filteredClusters = computed(() => clusters.value?.filter(
-  (_cluster, index) => clusterSearch.value[index] ? clusterSearch.value[index].includes(filterValueString.value.trim()) : false
-).sort((a, b) => b.number - a.number) ?? [])
+const filteredClusters = computed(() => clusters.value ? clusters.value
+  .filter(
+    (_cluster, index) => clusterSearch.value[index] ? clusterSearch.value[index].includes(filterValueString.value.trim()) : false
+  )
+  .filter(
+    cluster => showInactive.value === false ? cluster.isActive : true
+  )
+  .sort((a, b) => b.number - a.number) : [])
 </script>

@@ -15,7 +15,7 @@
         :checked="Boolean(selectedLabelIds?.includes(label.id ?? 0))"
         :class="[
           'pl-1 mb-1 pr-2 rounded-md text-xs font-medium ring-1 ring-inset text-xs',
-          badgeColors[label.color ?? 'violet']
+          badgeColors[label.color ?? 'gray' satisfies ColorEnum]
         ]"
         @change="handleCheckboxChange"
         size='small'
@@ -30,7 +30,7 @@
 
 <script setup lang="ts">
 import { groupBy } from 'lodash-es'
-import type { Label } from '~/purple_client'
+import { type Label, type ColorEnum } from '~/purple_client'
 import { SLUG_SEPARATOR, UNGROUPED } from '~/utils/labels'
 import { badgeColors } from '~/utils/badge'
 import { assert } from '~/utils/typescript'

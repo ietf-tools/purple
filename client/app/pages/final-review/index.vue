@@ -6,3 +6,9 @@
     <FinalReviews />
   </div>
 </template>
+
+<script setup lang="ts">
+useHead({
+  title: 'Final Review'
+})
+</script>

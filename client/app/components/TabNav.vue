@@ -36,7 +36,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Tab } from '~/utils/queue'
+import type { Tab } from '~/utils/tab'
 
 type Props = {
   tabs: Tab[]

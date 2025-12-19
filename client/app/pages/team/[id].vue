@@ -254,4 +254,8 @@ const activity = [
   { id: 2, type: 'edited', person: { name: 'Chelsea Hagon' }, date: '6d ago', dateTime: '2023-01-23T11:03' },
   { id: 3, type: 'published', person: { name: 'Chelsea Hagon' }, date: '6d ago', dateTime: '2023-01-23T11:24' }
 ]
+
+useHead(() => ({
+  title: person.value ? person.value.name : 'Loading...'
+}))
 </script>

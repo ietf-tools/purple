@@ -1,5 +1,5 @@
 <template>
-  <div class="rounded-lg bg-white shadow">
+  <div class="rounded-lg text-black bg-white dark:text-white dark:bg-black dark:border dark:border-gray-200 shadow">
     <slot name="header"/>
     <div class="px-4 py-5 sm:p-6">
       <slot/>
@@ -7,7 +7,3 @@
     <slot name="footer"/>
   </div>
 </template>
-
-<script setup lang="ts">
-
-</script>

@@ -1,14 +1,9 @@
-import type { Assignment, Cluster, Label, QueueItem, SimpleCluster } from '~/purple_client'
+import { h } from 'vue'
+import type { Assignment, Cluster, Label, QueueItem, RfcToBe, SimpleCluster } from '~/purple_client'
+import type { Tab } from './tab'
+import { DateTime } from 'luxon'
 
-export type Tab = {
-  id: string
-  name: string
-  to: string
-  icon: string
-  iconAnimate?: boolean
-}
-
-export const tabs: Tab[] = [
+export const queueTabs: Tab[] = [
   {
     id: 'submissions',
     name: 'Submissions',
@@ -33,9 +28,9 @@ export const tabs: Tab[] = [
     to: '/queue/published',
     icon: 'uil:check-circle'
   }
-] as const
+] as const satisfies Tab[]
 
-export type TabId = (typeof tabs)[number]['id']
+export type QueueTabId = (typeof queueTabs)[number]['id']
 
 export const sortDate = (
   dateA: Date | undefined | null,
@@ -86,16 +81,16 @@ export const sortCluster = (
 
 export type AssignmentMessageProps =
   | {
-      type: 'assign'
-      role: Assignment['role']
-      rfcToBeId: number
-    }
+    type: 'assign'
+    role: Assignment['role']
+    rfcToBeId: number
+  }
   | {
-      type: 'change'
-      assignments: Assignment[]
-      role: Assignment['role']
-      rfcToBeId: number
-    }
+    type: 'change'
+    assignments: Assignment[]
+    role: Assignment['role']
+    rfcToBeId: number
+  }
 
 export type RpcPersonWorkload = {
   personId: number
@@ -113,8 +108,6 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
 
   const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
     assertIsNumber(personId)
-
-    console.log({ pageCount })
     assert(role.length !== 0)
     assert(typeof pageCount === 'number')
 
@@ -131,7 +124,7 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
     peopleWorkload[personId] = editorWorkload
   }
   queueItems.forEach(doc => {
-    const clustersWithDocument = clusters.filter(cluster => cluster.documents.some(clusterDocument =>
+    const clustersWithDocument = clusters.filter(cluster => cluster.documents?.some(clusterDocument =>
       clusterDocument.name === doc.name
     ))
     const clusterIds = clustersWithDocument.map(cluster => cluster.number)
@@ -145,4 +138,21 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
   })
 
   return peopleWorkload
+}
+
+export const calculateEnqueuedAtData = (enqueuedAtJSDate: Date) => {
+  const enqueuedAt = DateTime.fromJSDate(enqueuedAtJSDate)
+  const now = DateTime.now()
+  const diffInDays = now.diff(enqueuedAt, 'days').days
+  const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
+  return { enqueuedAt, diffInDays, weeksInQueue }
+}
+
+export const renderEnqueuedAt = ({ enqueuedAt, weeksInQueue }: ReturnType<typeof calculateEnqueuedAtData>) => {
+  return h('div',
+    { class: 'text-xs' },
+    [
+      h('div', enqueuedAt.toISODate() ?? ''),
+      h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
+    ])
 }

@@ -5,6 +5,7 @@ import warnings
 from dataclasses import dataclass
 from itertools import pairwise
 
+import rpcapi_client
 from django.db import IntegrityError, transaction
 from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
@@ -14,16 +15,19 @@ from simple_history.models import ModelDelta
 from simple_history.utils import update_change_reason
 
 from datatracker.models import DatatrackerPerson, Document
+from datatracker.rpcapi import with_rpcapi
 from datatracker.utils import build_datatracker_url
 
 from .models import (
     ActionHolder,
     ApprovalLogMessage,
     Assignment,
+    BlockingReason,
     Capability,
     Cluster,
     ClusterMember,
     DispositionName,
+    DocRelationshipName,
     FinalApproval,
     Label,
     RfcAuthor,
@@ -393,6 +397,22 @@ class IanaStatusSerializer(NameSerializer):
         }
 
 
+class BlockingReasonSerializer(NameSerializer):
+    """Serialize BlockingReason model"""
+
+    class Meta:
+        model = BlockingReason
+        fields = ["slug", "name", "desc"]
+
+
+class RfcToBeBlockingReasonSerializer(serializers.Serializer):
+    """Serialize RfcToBeBlockingReason with reason details"""
+
+    reason = BlockingReasonSerializer(read_only=True)
+    since_when = serializers.DateTimeField(read_only=True)
+    resolved = serializers.DateTimeField(read_only=True)
+
+
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
@@ -411,6 +431,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="finalapproval_set", many=True, read_only=True
     )
     iana_status = IanaStatusSerializer(read_only=True)
+    blocking_reasons = serializers.SerializerMethodField()
 
     class Meta:
         model = RfcToBe
@@ -431,6 +452,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "enqueued_at",
             "final_approval",
             "iana_status",
+            "blocking_reasons",
         ]
 
     @extend_schema_field(serializers.DateField())
@@ -448,6 +470,14 @@ class QueueItemSerializer(serializers.ModelSerializer):
         except obj.history.model.DoesNotExist:
             # Fallback if no history exists
             return None
+
+    @extend_schema_field(RfcToBeBlockingReasonSerializer(many=True))
+    def get_blocking_reasons(self, obj):
+        """Get active blocking reasons for this RfcToBe"""
+        active_reasons = obj.rfctobeblockingreason_set.filter(
+            resolved__isnull=True
+        ).select_related("reason")
+        return RfcToBeBlockingReasonSerializer(active_reasons, many=True).data
 
 
 class SubseriesMemberSerializer(serializers.ModelSerializer):
@@ -826,6 +856,9 @@ class ClusterMemberListSerializer(serializers.ListSerializer):
 class ClusterMemberSerializer(serializers.Serializer):
     name = serializers.CharField(source="doc.name")
     rfc_number = serializers.SerializerMethodField()
+    disposition = serializers.SerializerMethodField()
+    references = serializers.SerializerMethodField()
+    is_received = serializers.SerializerMethodField()
     order = serializers.IntegerField()
 
     class Meta:
@@ -833,19 +866,106 @@ class ClusterMemberSerializer(serializers.Serializer):
         list_serializer_class = ClusterMemberListSerializer
 
     def get_rfc_number(self, clustermember: ClusterMember) -> int | None:
-        # Use the annotated field if available
-        if hasattr(clustermember, "rfc_number_annotated"):
-            return clustermember.rfc_number_annotated
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            if rfctobes:
+                return rfctobes[0].rfc_number
+            return None
 
-        # Fallback to original logic
-        rfctobe = (
-            RfcToBe.objects.filter(draft=clustermember.doc)
-            .exclude(disposition__slug="withdrawn")
-            .values("rfc_number")
-            .first()
+        # fallback to original logic
+        rfctobe = clustermember.doc.rfctobe_set.exclude(
+            disposition__slug="withdrawn"
+        ).first()
+        return rfctobe.rfc_number if rfctobe else None
+
+    def get_disposition(self, clustermember: ClusterMember) -> str | None:
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            if rfctobes:
+                return rfctobes[0].disposition.slug
+            return None
+
+        # fallback to original logic
+        rfctobe = clustermember.doc.rfctobe_set.exclude(
+            disposition__slug="withdrawn"
+        ).first()
+        if rfctobe and rfctobe.disposition:
+            return rfctobe.disposition.slug
+        return None
+
+    @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
+    @with_rpcapi
+    def get_references(
+        self, clustermember: ClusterMember, rpcapi: rpcapi_client.PurpleApi
+    ) -> list[dict] | None:
+        """Get related documents for this cluster member"""
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            rfctobe = rfctobes[0] if rfctobes else None
+        else:
+            rfctobe = clustermember.doc.rfctobe_set.exclude(
+                disposition__slug="withdrawn"
+            ).first()
+
+        if not rfctobe:
+            # if the doc is not received, get references on-the-fly from dt
+            api_references = rpcapi.get_draft_references(
+                clustermember.doc.datatracker_id
+            )
+            if not api_references:
+                return None
+
+            references_data = []
+            existing_rfc_to_be = dict(
+                RfcToBe.objects.filter(
+                    draft__datatracker_id__in=[s.id for s in api_references]
+                )
+                .exclude(disposition__slug="withdrawn")
+                .values_list("draft__datatracker_id", "disposition__slug")
+            )
+            for ref in api_references:
+                if not existing_rfc_to_be.get(ref.id):
+                    relationship = DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+                elif existing_rfc_to_be.get(ref.id) in ("created", "in_progress"):
+                    relationship = DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
+                else:
+                    continue
+                references_data.append(
+                    {
+                        "id": None,
+                        "relationship": relationship,
+                        "draft_name": clustermember.doc.name,
+                        "target_draft_name": ref.name,
+                    }
+                )
+
+            return references_data
+
+        # Check if references are already prefetched
+        if hasattr(rfctobe, "references_annotated"):
+            related_docs = rfctobe.references_annotated
+            if not related_docs:
+                return None
+            return RpcRelatedDocumentSerializer(related_docs, many=True).data
+
+        related_docs = RpcRelatedDocument.objects.filter(
+            source=rfctobe,
+            relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
         )
 
-        return rfctobe["rfc_number"] if rfctobe else None
+        if not related_docs.exists():
+            return None
+
+        return RpcRelatedDocumentSerializer(related_docs, many=True).data
+
+    def get_is_received(self, clustermember: ClusterMember) -> bool | None:
+        """Determine if the document has been received based on related documents"""
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            return bool(rfctobes)
+
+        # fallback to original logic
+        return RfcToBe.objects.filter(draft=clustermember.doc).exists()
 
 
 class ClusterSerializer(serializers.ModelSerializer):
@@ -865,10 +985,35 @@ class ClusterSerializer(serializers.ModelSerializer):
         required=False,
         help_text="List of draft names to add to the cluster",
     )
+    is_active = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = Cluster
-        fields = ["number", "documents", "draft_names"]
+        fields = ["number", "documents", "draft_names", "is_active"]
+
+    def get_is_active(self, cluster) -> bool:
+        """A cluster is considered active if it not empty and not all
+        drafts in the cluster are published.
+        """
+
+        # Use annotated value if available
+        if hasattr(cluster, "is_active_annotated"):
+            return cluster.is_active_annotated
+
+        member_doc_ids = list(
+            ClusterMember.objects.filter(cluster=cluster).values_list(
+                "doc_id", flat=True
+            )
+        )
+        if not member_doc_ids:
+            return False
+
+        return (
+            # if any not published RFC exist in cluster, then active
+            RfcToBe.objects.filter(draft_id__in=member_doc_ids)
+            .exclude(disposition__slug="published")
+            .exists()
+        )
 
     def create(self, validated_data):
         draft_names = validated_data.pop("draft_names", [])

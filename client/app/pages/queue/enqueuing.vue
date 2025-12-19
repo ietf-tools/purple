@@ -13,26 +13,14 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh
-              v-for="header in headerGroup.headers"
-              :key="header.id"
-              :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()"
-              :sort-direction="header.column.getIsSorted()"
-              @click="header.column.getToggleSortingHandler()?.($event)"
-            >
-              <div class="flex items-center gap-2">
-                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                  :props="header.getContext()" />
-                <Transition name="sort-indicator">
-                  <Icon
-                    v-if="header.column.getCanSort()"
-                    name="heroicons:arrows-up-down"
-                    class="text-gray-400 opacity-60 hover:opacity-100"
-                  />
-                </Transition>
-              </div>
-            </RpcTh>
+            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
+            :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
+            <div class="flex items-center gap-2">
+              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                :props="header.getContext()" />
+            </div>
+          </RpcTh>
           </tr>
         </RpcThead>
         <RpcTbody>
@@ -70,11 +58,11 @@ import {
 } from '@tanstack/vue-table'
 import type { QueueItem } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
-import type { TabId } from '~/utils/queue'
+import type { QueueTabId } from '~/utils/queue'
 
 const api = useApi()
 
-const currentTab: TabId = 'enqueuing'
+const currentTab: QueueTabId = 'enqueuing'
 
 const {
   data,

@@ -7,7 +7,11 @@ from itertools import pairwise
 
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import OuterRef, Prefetch, Subquery
+from django.db.models import (
+    Exists,
+    OuterRef,
+    Prefetch,
+)
 from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
@@ -291,6 +295,50 @@ class SourceFormatName(Name):
     pass
 
 
+class BlockingReason(Name):
+    """Predefined blocking reasons for RfcToBe instances"""
+
+    ACTION_HOLDER_ACTIVE = "actionholder_active"
+    LABEL_STREAM_HOLD = "label_stream_hold"
+    LABEL_EXTREF_HOLD = "label_extref_hold"
+    LABEL_AUTHOR_INPUT_REQUIRED = "label_author_input_required"
+    LABEL_IANA_HOLD = "label_iana_hold"
+    REFERENCE_NOT_RECEIVED = "ref_not_received"
+    REFERENCE_NOT_RECEIVED_2G = "ref_not_received_2g"
+    REFERENCE_NOT_RECEIVED_3G = "ref_not_received_3g"
+    REFQUEUE_FIRST_EDIT_INCOMPLETE = "refqueue_first_edit_incomplete"
+    REFQUEUE_SECOND_EDIT_INCOMPLETE = "refqueue_second_edit_incomplete"
+    REFQUEUE_PUBLISH_INCOMPLETE = "refqueue_publish_incomplete"
+    FINAL_APPROVAL_PENDING = "final_approval_pending"
+    TOOLS_ISSUE = "tools_issue"
+
+
+class RfcToBeBlockingReason(models.Model):
+    """Tracks blocking reasons for RfcToBe instances"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    reason = models.ForeignKey(BlockingReason, on_delete=models.PROTECT)
+    since_when = models.DateTimeField(default=timezone.now)
+    resolved = models.DateTimeField(null=True, blank=True)
+    history = HistoricalRecords()
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be", "reason"],
+                condition=models.Q(resolved__isnull=True),
+                name="unique_active_blocking_reason_per_rfc",
+                violation_error_message="This blocking reason is already active for "
+                "this RFC",
+            ),
+        ]
+        ordering = ["-since_when"]
+
+    def __str__(self):
+        status = "Resolved" if self.resolved else "Active"
+        return f"{status} blocking reason '{self.reason.slug}' for {self.rfc_to_be}"
+
+
 class StdLevelNameManager(models.Manager):
     def from_slug(self, slug):
         if self.filter(slug=slug).exists():
@@ -328,7 +376,18 @@ class StreamName(Name):
 
 
 class DocRelationshipName(Name):
-    pass
+    REFQUEUE_RELATIONSHIP_SLUG = "refqueue"
+    NOT_RECEIVED_RELATIONSHIP_SLUG = "not-received"
+    NOT_RECEIVED_2G_RELATIONSHIP_SLUG = "not-received-2g"
+    NOT_RECEIVED_3G_RELATIONSHIP_SLUG = "not-received-3g"
+    NOT_RECEIVED_RELATIONSHIP_SLUGS = [
+        NOT_RECEIVED_RELATIONSHIP_SLUG,
+        NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+        NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
+    ]
+    REFERENCE_RELATIONSHIP_SLUGS = NOT_RECEIVED_RELATIONSHIP_SLUGS + [
+        REFQUEUE_RELATIONSHIP_SLUG
+    ]
 
 
 class ClusterMember(models.Model):
@@ -357,20 +416,48 @@ class ClusterMember(models.Model):
 
 
 class ClusterQuerySet(models.QuerySet):
-    def with_rfc_number_annotated(self):
-        """Annotate cluster members with RFC numbers"""
-        rfc_number_subquery = Subquery(
-            RfcToBe.objects.filter(draft=OuterRef("doc"))
-            .exclude(disposition__slug="withdrawn")
-            .values("rfc_number")[:1]
-        )
+    def with_data_annotated(self):
+        """Prefetch cluster members with related data to avoid N+1 queries"""
 
         return self.prefetch_related(
             Prefetch(
                 "clustermember_set",
-                queryset=ClusterMember.objects.select_related("doc").annotate(
-                    rfc_number_annotated=rfc_number_subquery
+                queryset=ClusterMember.objects.select_related("doc").prefetch_related(
+                    Prefetch(
+                        "doc__rfctobe_set",
+                        queryset=RfcToBe.objects.exclude(disposition__slug="withdrawn")
+                        .select_related("disposition")
+                        .prefetch_related(
+                            Prefetch(
+                                "rpcrelateddocument_set",
+                                queryset=RpcRelatedDocument.objects.filter(
+                                    relationship__slug__in=(
+                                        DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
+                                    )
+                                ).select_related(
+                                    "relationship",
+                                    "target_document",
+                                    "target_rfctobe__draft",
+                                ),
+                                to_attr="references_annotated",
+                            )
+                        ),
+                        to_attr="rfctobe_annotated",
+                    )
                 ),
+            )
+        )
+
+    def with_is_active_annotated(self):
+        """Annotate clusters with is_active status
+        A cluster is considered active if it is not empty and not all drafts are
+        published.
+        """
+        return self.annotate(
+            is_active_annotated=Exists(
+                ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
+                    doc__rfctobe__disposition__slug="published"
+                )
             )
         )
 

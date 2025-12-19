@@ -63,7 +63,7 @@ const api = useApi()
 const addDependencyItem = async () => {
   const createArg: DocumentsReferencesCreateRequest = {
     draftName: props.draftName,
-    createRpcRelatedDocument: {
+    createRpcRelatedDocumentRequest: {
       source: props.id,
       relationship: relationship.value,
       targetDraftName: targetDraftName.value

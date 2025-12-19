@@ -18,9 +18,9 @@
       </template>
     </TitleBlock>
 
-    <DocumentDependenciesGraph :cluster="cluster" />
+    <DocumentDependenciesGraph :cluster="cluster" :rfcs-to-be="rfcsToBe" />
 
-    <ClusterReorder :cluster="cluster" :on-success="refresh" class="max-w-96" />
+    <ClusterReorder :cluster="cluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />
   </div>
   <div v-else>
     Unknown cluster
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-
+import { uniq } from 'lodash-es'
 import ClusterAddDocumentModal from '../../components/ClusterAddDocumentModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
 
@@ -54,6 +54,31 @@ const { data: cluster, error, status, refresh } = await useAsyncData(
     return api.clustersRetrieve({ number: clusterNumber.value })
   }
 )
+
+const { data: rfcsToBe, refresh: refreshClusters } = useAsyncData(
+  () => `cluster-rfcs-${cluster.value?.number}`,
+  async () => {
+    const names = cluster.value?.documents?.flatMap((document): string[] => {
+      return [document.name,
+      ...(document.references ?? []).flatMap(reference => {
+        return [reference.draftName, reference.targetDraftName].filter(val => typeof val === 'string')
+      })
+      ]
+    }) ?? []
+
+    const uniqueNames = uniq(names)
+
+    console.log({ uniqueNames })
+
+    const drafts = await Promise.all(uniqueNames.map((draftName) =>
+      api.documentsRetrieve({ draftName })
+    ))
+    console.log({ drafts })
+    return drafts
+  }, {
+  server: false,
+  lazy: true,
+})
 
 const snackbar = useSnackbar()
 
@@ -90,4 +115,5 @@ const openAddModal = () => {
     }
   })
 }
+
 </script>
