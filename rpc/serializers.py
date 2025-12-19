@@ -997,8 +997,8 @@ class ClusterSerializer(serializers.ModelSerializer):
         """
 
         # Use annotated value if available
-        # if hasattr(cluster, "is_active_annotated"):
-        #     return cluster.is_active_annotated
+        if hasattr(cluster, "is_active_annotated"):
+            return cluster.is_active_annotated
 
         return (
             ClusterMember.objects.filter(cluster=cluster)
