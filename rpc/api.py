@@ -1464,8 +1464,8 @@ class RfcMailTemplatesList(views.APIView):
                     "label": label,
                     "template": {
                         "msgtype": msgtype,
-                        "to": "someone@example.com",
-                        "cc": "nobody@example.com",
+                        "to": ["someone@example.com"],
+                        "cc": ["nobody@example.com"],
                         "subject": f"Message that is a {label}",
                         "body": (
                             render_to_string(
