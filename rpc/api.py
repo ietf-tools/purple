@@ -1420,6 +1420,10 @@ class Mail(views.APIView):
         )
         message = serializer.save(sender=request.user.datatracker_person())
         send_mail_task.delay(message.pk)
+        logger.info(
+            "Queued message-id: %s",
+            message.message_id,
+        )
         return Response(
             MailResponseSerializer(
                 {
@@ -1454,25 +1458,14 @@ class DocumentMail(views.APIView):
             raise NotFound()
         serializer = MailMessageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        logger.debug(
-            "Queuing mail: subject '%s', to: '%s'",
-            serializer.validated_data["subject"],
-            serializer.validated_data["to"],
-        )
         message = serializer.save(
             sender=request.user.datatracker_person(),
             rfctobe=rfctobe,
             draft=draft,
         )
-        logger.debug(
-            "Created mail: subject '%s', to: '%s', message-id: %s",
-            serializer.validated_data["subject"],
-            serializer.validated_data["to"],
-            message.message_id,
-        )
         send_mail_task.delay(message.pk)
         logger.info(
-            "Queued mail: message-id: %s",
+            "Queued message-id: %s",
             message.message_id,
         )
         return Response(
