@@ -1,8 +1,8 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.db.models import F
 
-from purple.mail import EmailMessage
 from rpc.models import MailMessage
 from utils.task_utils import RetryTask
 
@@ -22,15 +22,11 @@ class SendEmailError(Exception):
 @shared_task(base=EmailTask, autoretry_for=(SendEmailError,))
 def send_mail_task(message_id):
     message = MailMessage.objects.get(pk=message_id)
-    email = EmailMessage(
-        subject=message.subject,
-        body=message.body,
-        to=message.to,
-        cc=message.cc,
-    )
+    email = message.as_emailmessage()
     try:
         email.send()
     except Exception as err:
+        MailMessage.objects.filter(pk=message_id).update(attempts=F("attempts") + 1)
         logger.error(
             "Sending with subject '%s' failed: %s",
             message.subject,

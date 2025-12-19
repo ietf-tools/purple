@@ -1,4 +1,5 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
+from email.utils import make_msgid
 
 from django.conf import settings
 from django.core.mail import EmailMessage as _EmailMessage
@@ -54,3 +55,9 @@ class EmailMessage(_EmailMessage):
             cc,
             reply_to,
         )
+
+
+def make_message_id():
+    return make_msgid(
+        domain=getattr(settings, "MESSAGE_ID_DOMAIN", None),
+    )

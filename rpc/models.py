@@ -19,6 +19,8 @@ from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
 
+from purple.mail import EmailMessage, make_message_id
+
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
     NoSuchSlug,
@@ -1022,3 +1024,15 @@ class MailMessage(models.Model):
     cc = AddressListField(blank=True)
     subject = models.CharField()
     body = models.TextField()
+    message_id = models.CharField(default=make_message_id)
+    attempts = models.PositiveSmallIntegerField(default=0)
+
+    def as_emailmessage(self):
+        """Instantiate an EmailMessage for delivery"""
+        return EmailMessage(
+            subject=self.subject,
+            body=self.body,
+            to=self.to,
+            cc=self.cc,
+            headers={"message-id": self.message_id},
+        )

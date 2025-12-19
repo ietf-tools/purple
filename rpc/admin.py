@@ -190,6 +190,6 @@ class SubseriesMemberAdmin(admin.ModelAdmin):
 
 @admin.register(MailMessage)
 class MailMessageAdmin(admin.ModelAdmin):
-    list_display = ["subject", "msgtype", "to", "cc"]
-    search_fields = ["to", "cc", "subject"]
+    list_display = ["subject", "msgtype", "to", "message_id", "attempts"]
+    search_fields = ["to", "cc", "subject", "message_id"]
     list_filter = ["msgtype"]

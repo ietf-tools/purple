@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 
+import purple.mail
 import rpc.models
 
 
@@ -38,6 +39,8 @@ class Migration(migrations.Migration):
                 ("cc", rpc.models.AddressListField(blank=True)),
                 ("subject", models.CharField()),
                 ("body", models.TextField()),
+                ("message_id", models.CharField(default=purple.mail.make_message_id)),
+                ("attempts", models.PositiveSmallIntegerField(default=0)),
             ],
         ),
     ]
