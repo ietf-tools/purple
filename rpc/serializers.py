@@ -997,22 +997,13 @@ class ClusterSerializer(serializers.ModelSerializer):
         """
 
         # Use annotated value if available
-        if hasattr(cluster, "is_active_annotated"):
-            return cluster.is_active_annotated
-
-        member_doc_ids = list(
-            ClusterMember.objects.filter(cluster=cluster).values_list(
-                "doc_id", flat=True
-            )
-        )
-        if not member_doc_ids:
-            return False
+        # if hasattr(cluster, "is_active_annotated"):
+        #     return cluster.is_active_annotated
 
         return (
-            # if any not published or withdrawn RFC exist in cluster, then active
-            RfcToBe.objects.filter(draft_id__in=member_doc_ids)
-            .exclude(disposition__slug="published")
-            .exclude(disposition__slug="withdrawn")
+            ClusterMember.objects.filter(cluster=cluster)
+            .exclude(doc__rfctobe__disposition__slug="published")
+            .exclude(doc__rfctobe__disposition__slug="withdrawn")
             .exists()
         )
 
