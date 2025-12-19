@@ -37,7 +37,6 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
