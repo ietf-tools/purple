@@ -3,7 +3,7 @@ TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
 
 Title                  : {{ rfc_to_be.title }}
 {% for author in rfc_to_be.authors.all %}{% if forloop.first %}Author(s)              : {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}
-{% else %}                       {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
+{% else %}                         {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
 Working Group Chair(s) : TODO
 Area Director(s)       : TODO
 {% endautoescape %}
