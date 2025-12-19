@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0026_alter_rfctobe_rfc_number"),
+        ("rpc", "0029_historicalrfctobeblockingreason_and_more"),
     ]
 
     operations = [
