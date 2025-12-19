@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
 from django.conf import settings
-from django.core.mail import EmailMessage as _EmailMessage, send_mail as _send_mail
+from django.core.mail import EmailMessage as _EmailMessage
+from django.core.mail import send_mail as _send_mail
 
 
 def send_mail(to, subject, msg, frm=None, fail_silently=True):
@@ -25,6 +26,7 @@ class EmailMessage(_EmailMessage):
     Customizations:
       * use settings.DEFAULT_FROM_EMAIL as from address by default
     """
+
     def __init__(
         self,
         subject="",
