@@ -37,11 +37,11 @@ def send_mail_task(message_id):
     if message.rfctobe is not None:
         message.rfctobe.rpcdocumentcomment_set.create(
             comment=comment,
-            by=message.sender_id,
+            by=message.sender,
         )
     if message.draft is not None:
         message.draft.rpcdocumentcomment_set.create(
             comment=comment,
-            by=message.sender_id,
+            by=message.sender,
         )
     message.delete()

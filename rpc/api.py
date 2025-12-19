@@ -1430,6 +1430,61 @@ class Mail(views.APIView):
         )
 
 
+class DocumentMail(views.APIView):
+    @extend_schema(
+        operation_id="document_mail_send",
+        request=MailMessageSerializer,
+        responses=MailResponseSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location="path",
+                required=False,
+            ),
+        ],
+    )
+    def post(self, request, draft_name: str, format=None):
+        rfctobe = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfctobe is None:
+            draft = Document.objects.filter(name=draft_name).first()
+        else:
+            draft = None
+        if rfctobe is None and draft is None:
+            raise NotFound()
+        serializer = MailMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        logger.debug(
+            "Queuing mail: subject '%s', to: '%s'",
+            serializer.validated_data["subject"],
+            serializer.validated_data["to"],
+        )
+        message = serializer.save(
+            sender=request.user.datatracker_person(),
+            rfctobe=rfctobe,
+            draft=draft,
+        )
+        logger.debug(
+            "Created mail: subject '%s', to: '%s', message-id: %s",
+            serializer.validated_data["subject"],
+            serializer.validated_data["to"],
+            message.message_id,
+        )
+        send_mail_task.delay(message.pk)
+        logger.info(
+            "Queued mail: message-id: %s",
+            message.message_id,
+        )
+        return Response(
+            MailResponseSerializer(
+                {
+                    "type": "success",
+                    "message": "Message accepted",
+                }
+            ).data
+        )
+
+
 class RfcMailTemplatesList(views.APIView):
     @extend_schema(
         responses=MailTemplateSerializer(many=True),

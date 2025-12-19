@@ -159,6 +159,7 @@ const openEmailModal = async () => {
     openOverlayModal({
       component: EmailModal,
       componentProps: {
+        draftName: props.draftName,
         mailTemplates,
         onSuccess: () => { }
       },
