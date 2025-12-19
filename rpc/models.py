@@ -2,7 +2,9 @@
 
 import datetime
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
+from email.policy import EmailPolicy
 from itertools import pairwise
 
 from django.core.exceptions import ValidationError
@@ -977,3 +979,46 @@ class SubseriesTypeName(Name):
     """Types of subseries, e.g., BCP, FYI, STD, etc."""
 
     pass
+
+
+class AddressListField(models.CharField):
+    def from_db_value(self, value, expression, connection):
+        return self._parse_header_value(value)
+
+    def get_prep_value(self, value: str | Iterable[str]):
+        """Convert python value to query value"""
+        # Parse the value to validate it, then convert to a string for the CharField.
+        # A bit circular, but guarantees that only valid addresses are saved.
+        if isinstance(value, str):
+            parsed = self._parse_header_value(value)
+        else:
+            parsed = self._parse_header_value(",".join(value))
+        return ",".join(parsed)
+
+    def to_python(self, value: str | Iterable[str]):
+        if isinstance(value, str):
+            return self._parse_header_value(value)
+        return self._parse_header_value(",".join(str(item) for item in value))
+
+    @staticmethod
+    def _parse_header_value(value: str):
+        policy = EmailPolicy(utf8=True)  # allow direct UTF-8 in addresses
+        header = policy.header_factory("To", value)
+        if len(header.defects) > 0:
+            raise ValidationError("; ".join(str(defect) for defect in header.defects))
+        return [str(addr) for addr in header.addresses]
+
+
+class MailMessage(models.Model):
+    """Email message to be delivered"""
+
+    class MessageType(models.TextChoices):
+        BLANK = "blank", "freeform"
+        FINAL_APPROVAL = "finalapproval", "final approval"
+        PUBLICATION = "publication", "publication announcement"
+
+    msgtype = models.CharField(choices=MessageType.choices, max_length=64)
+    to = AddressListField(blank=False)
+    cc = AddressListField(blank=True)
+    subject = models.CharField()
+    body = models.TextField()

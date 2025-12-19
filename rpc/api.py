@@ -1418,12 +1418,8 @@ class Mail(views.APIView):
             serializer.validated_data["subject"],
             ",".join(serializer.validated_data["to"]),
         )
-        send_mail_task.delay(
-            subject=serializer.validated_data["subject"],
-            body=serializer.validated_data["body"],
-            to=serializer.validated_data["to"],
-            cc=serializer.validated_data["cc"],
-        )
+        message = serializer.save()
+        send_mail_task.delay(message.pk)
         return Response(
             MailResponseSerializer(
                 {
@@ -1463,8 +1459,8 @@ class RfcMailTemplatesList(views.APIView):
                     "label": label,
                     "template": {
                         "msgtype": msgtype,
-                        "to": ["someone@example.com"],
-                        "cc": ["nobody@example.com"],
+                        "to": "someone@example.com",
+                        "cc": "nobody@example.com",
                         "subject": f"Message that is a {label}",
                         "body": (
                             render_to_string(
