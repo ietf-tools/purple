@@ -43,7 +43,6 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from purple.mail import send_mail, EmailMessage
 
 from .lifecycle.publication import (
     can_publish,
@@ -113,6 +112,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
+from .tasks import send_mail_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 
@@ -1415,13 +1415,12 @@ class Mail(views.APIView):
     def post(self, request, format=None):
         serializer = MailMessageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        email = EmailMessage(
+        send_mail_task.delay(
             subject=serializer.validated_data["subject"],
             body=serializer.validated_data["body"],
             to=serializer.validated_data["to"],
             cc=serializer.validated_data["cc"],
         )
-        email.send(fail_silently=False)
         return Response(
             MailResponseSerializer(
                 {

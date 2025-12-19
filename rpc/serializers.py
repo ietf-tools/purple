@@ -1247,7 +1247,7 @@ class AddressListField(serializers.CharField):
         header = policy.header_factory("To", data)
         if len(header.defects) > 0:
             raise ValidationError("; ".join(str(defect) for defect in header.defects))
-        return header.addresses
+        return [str(addr) for addr in header.addresses]
 
 
 class MailMessageSerializer(serializers.Serializer):
