@@ -1006,6 +1006,9 @@ class AddressListField(models.CharField):
         return self._parse_header_value(",".join(str(item) for item in value))
 
     def formfield(self, **kwargs):
+        # n.b., the SimpleArrayField is intended for use with postgres ArrayField
+        # but it works cleanly with this field. We are not using a special postgres-
+        # only field in the model.
         defaults = {"form_class": SimpleArrayField, "base_field": forms.CharField()}
         defaults.update(kwargs)
         return super().formfield(**defaults)
@@ -1048,6 +1051,7 @@ class MailMessage(models.Model):
     body = models.TextField()
     message_id = models.CharField(default=make_message_id)
     attempts = models.PositiveSmallIntegerField(default=0)
+    sent = models.BooleanField(default=False)
     sender = models.ForeignKey(
         datatracker.models.DatatrackerPerson,
         on_delete=models.PROTECT,

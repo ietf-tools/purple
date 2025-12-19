@@ -43,6 +43,7 @@ class Migration(migrations.Migration):
                 ("body", models.TextField()),
                 ("message_id", models.CharField(default=purple.mail.make_message_id)),
                 ("attempts", models.PositiveSmallIntegerField(default=0)),
+                ("sent", models.BooleanField(default=False)),
                 (
                     "draft",
                     models.ForeignKey(

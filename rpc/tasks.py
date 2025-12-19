@@ -26,14 +26,22 @@ def send_mail_task(message_id):
     try:
         email.send()
     except Exception as err:
-        MailMessage.objects.filter(pk=message_id).update(attempts=F("attempts") + 1)
         logger.error(
             "Sending with subject '%s' failed: %s",
             message.subject,
             str(err),
         )
         raise SendEmailError from err
-    comment = f"Sent {message.msgtype} email with Message-ID={message.message_id}"
+    else:
+        # Flag that the message was sent in case the task fails before deleting it
+        MailMessage.objects.filter(pk=message_id).update(sent=True)
+    finally:
+        # Always increment this
+        MailMessage.objects.filter(pk=message_id).update(attempts=F("attempts") + 1)
+    comment = "Sent {message_type} email with Message-ID={message_id}".format(
+        message_type=dict(MailMessage.MessageType.choices)[message.msgtype],
+        message_id=message.message_id,
+    )
     if message.rfctobe is not None:
         message.rfctobe.rpcdocumentcomment_set.create(
             comment=comment,
