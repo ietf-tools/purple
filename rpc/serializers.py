@@ -992,8 +992,8 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """A cluster is considered active if it not empty and not all
-        drafts in the cluster are published or withdrawn.
+        """A cluster is considered active if at least one of its documents is not in
+        terminal state (published/withdrawn).
         """
 
         # Use annotated value if available

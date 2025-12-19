@@ -536,8 +536,8 @@ class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
 class ClusterFilter(django_filters.FilterSet):
     is_active = django_filters.BooleanFilter(
         field_name="is_active_annotated",
-        help_text="Filter by active status. A cluster is considered active if it not "
-        "empty and not all drafts in the cluster are published.",
+        help_text="Filter by active status. A cluster is considered active if at least "
+        "one of its documents is not in terminal state (published/withdrawn).",
     )
 
     class Meta:
