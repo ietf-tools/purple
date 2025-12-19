@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
 
 import datetime
+import logging
 import re
 from collections import defaultdict
 from dataclasses import dataclass
@@ -36,7 +37,6 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.parsers import MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
@@ -114,6 +114,8 @@ from .serializers import (
 )
 from .tasks import send_mail_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+
+logger = logging.getLogger(__name__)
 
 
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
@@ -1414,6 +1416,11 @@ class Mail(views.APIView):
     def post(self, request, format=None):
         serializer = MailMessageSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        logger.info(
+            "Queuing mail: subject '%s', to: '%s'",
+            serializer.validated_data["subject"],
+            ",".join(serializer.validated_data["to"]),
+        )
         send_mail_task.delay(
             subject=serializer.validated_data["subject"],
             body=serializer.validated_data["body"],
