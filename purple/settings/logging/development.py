@@ -43,6 +43,21 @@ LOGGING = {
             "level": "DEBUG",
             "propagate": False,
         },
+        "datatracker": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "purple": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
+        "rpc": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+            "propagate": False,
+        },
     },
     "root": {
         "handlers": ["console"],
