@@ -7,6 +7,8 @@ from dataclasses import dataclass
 from email.policy import EmailPolicy
 from itertools import pairwise
 
+from django import forms
+from django.contrib.postgres.forms import SimpleArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import (
@@ -1002,6 +1004,11 @@ class AddressListField(models.CharField):
         if isinstance(value, str):
             return self._parse_header_value(value)
         return self._parse_header_value(",".join(str(item) for item in value))
+
+    def formfield(self, **kwargs):
+        defaults = {"form_class": SimpleArrayField, "base_field": forms.CharField()}
+        defaults.update(kwargs)
+        return super().formfield(**defaults)
 
     @staticmethod
     def _parse_header_value(value: str):
