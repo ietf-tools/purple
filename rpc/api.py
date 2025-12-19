@@ -1406,8 +1406,6 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
 
 
 class Mail(views.APIView):
-    permission_classes = [AllowAny]  # todo not this
-
     @extend_schema(
         operation_id="mail_send",
         request=MailMessageSerializer,
@@ -1438,8 +1436,6 @@ class Mail(views.APIView):
 
 
 class RfcMailTemplatesList(views.APIView):
-    permission_classes = [AllowAny]  # todo not this
-
     @extend_schema(
         responses=MailTemplateSerializer(many=True),
         parameters=[
