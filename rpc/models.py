@@ -2,9 +2,13 @@
 
 import datetime
 import logging
+from collections.abc import Iterable
 from dataclasses import dataclass
+from email.policy import EmailPolicy
 from itertools import pairwise
 
+from django import forms
+from django.contrib.postgres.forms import SimpleArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import (
@@ -16,6 +20,9 @@ from django.utils import timezone
 from rules import always_deny
 from rules.contrib.models import RulesModel
 from simple_history.models import HistoricalRecords
+
+import datatracker.models
+from purple.mail import EmailMessage, make_message_id
 
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
@@ -977,3 +984,85 @@ class SubseriesTypeName(Name):
     """Types of subseries, e.g., BCP, FYI, STD, etc."""
 
     pass
+
+
+class AddressListField(models.CharField):
+    def from_db_value(self, value, expression, connection):
+        return self._parse_header_value(value)
+
+    def get_prep_value(self, value: str | Iterable[str]):
+        """Convert python value to query value"""
+        # Parse the value to validate it, then convert to a string for the CharField.
+        # A bit circular, but guarantees that only valid addresses are saved.
+        if isinstance(value, str):
+            parsed = self._parse_header_value(value)
+        else:
+            parsed = self._parse_header_value(",".join(value))
+        return ",".join(parsed)
+
+    def to_python(self, value: str | Iterable[str]):
+        if isinstance(value, str):
+            return self._parse_header_value(value)
+        return self._parse_header_value(",".join(str(item) for item in value))
+
+    def formfield(self, **kwargs):
+        # n.b., the SimpleArrayField is intended for use with postgres ArrayField
+        # but it works cleanly with this field. We are not using a special postgres-
+        # only field in the model.
+        defaults = {"form_class": SimpleArrayField, "base_field": forms.CharField()}
+        defaults.update(kwargs)
+        return super().formfield(**defaults)
+
+    @staticmethod
+    def _parse_header_value(value: str):
+        policy = EmailPolicy(utf8=True)  # allow direct UTF-8 in addresses
+        header = policy.header_factory("To", value)
+        if len(header.defects) > 0:
+            raise ValidationError("; ".join(str(defect) for defect in header.defects))
+        return [str(addr) for addr in header.addresses]
+
+
+class MailMessage(models.Model):
+    """Email message to be delivered"""
+
+    class MessageType(models.TextChoices):
+        BLANK = "blank", "freeform"
+        FINAL_APPROVAL = "finalapproval", "final approval"
+        PUBLICATION = "publication", "publication announcement"
+
+    msgtype = models.CharField(choices=MessageType.choices, max_length=64)
+    rfctobe = models.ForeignKey(
+        "RfcToBe",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        help_text="RfcToBe to which this message relates",
+    )
+    draft = models.ForeignKey(
+        "datatracker.Document",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        help_text="draft to which this message relates",
+    )
+    to = AddressListField(blank=False)
+    cc = AddressListField(blank=True)
+    subject = models.CharField()
+    body = models.TextField()
+    message_id = models.CharField(default=make_message_id)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    sent = models.BooleanField(default=False)
+    sender = models.ForeignKey(
+        datatracker.models.DatatrackerPerson,
+        on_delete=models.PROTECT,
+    )
+
+    def as_emailmessage(self):
+        """Instantiate an EmailMessage for delivery"""
+        return EmailMessage(
+            subject=self.subject,
+            body=self.body,
+            to=self.to,
+            cc=self.cc,
+            headers={"message-id": self.message_id},
+        )

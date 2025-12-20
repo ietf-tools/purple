@@ -16,6 +16,7 @@ from .models import (
     DumpInfo,
     FinalApproval,
     Label,
+    MailMessage,
     RfcAuthor,
     RfcToBe,
     RfcToBeLabel,
@@ -185,3 +186,10 @@ class RpcAuthorCommentAdmin(admin.ModelAdmin):
 @admin.register(SubseriesMember)
 class SubseriesMemberAdmin(admin.ModelAdmin):
     search_fields = ["number", "type__slug", "rfc_to_be__rfc_number"]
+
+
+@admin.register(MailMessage)
+class MailMessageAdmin(admin.ModelAdmin):
+    list_display = ["subject", "msgtype", "to", "message_id", "attempts", "sent"]
+    search_fields = ["to", "cc", "subject", "message_id"]
+    list_filter = ["msgtype", "sent"]

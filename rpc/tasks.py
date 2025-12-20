@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.db.models import F
 
-from purple.mail import EmailMessage
+from rpc.models import MailMessage
 from utils.task_utils import RetryTask
 
 logger = get_task_logger(__name__)
@@ -19,19 +20,35 @@ class SendEmailError(Exception):
 
 
 @shared_task(base=EmailTask, autoretry_for=(SendEmailError,))
-def send_mail_task(
-    subject: str,
-    body: str,
-    to: list[str] | tuple[str] | None,
-    cc: list[str] | tuple[str] | None,
-):
-    email = EmailMessage(subject=subject, body=body, to=to, cc=cc)
+def send_mail_task(message_id):
+    message = MailMessage.objects.get(pk=message_id)
+    email = message.as_emailmessage()
     try:
         email.send()
     except Exception as err:
         logger.error(
             "Sending with subject '%s' failed: %s",
-            subject,
+            message.subject,
             str(err),
         )
         raise SendEmailError from err
+    else:
+        # Flag that the message was sent in case the task fails before deleting it
+        MailMessage.objects.filter(pk=message_id).update(sent=True)
+    finally:
+        # Always increment this
+        MailMessage.objects.filter(pk=message_id).update(attempts=F("attempts") + 1)
+    # Get friendly name of msgtype
+    message_type = dict(MailMessage.MessageType.choices)[message.msgtype]
+    comment = f"Sent {message_type} email with Message-ID={message.message_id}"
+    if message.rfctobe is not None:
+        message.rfctobe.rpcdocumentcomment_set.create(
+            comment=comment,
+            by=message.sender,
+        )
+    if message.draft is not None:
+        message.draft.rpcdocumentcomment_set.create(
+            comment=comment,
+            by=message.sender,
+        )
+    message.delete()

@@ -32,6 +32,7 @@ from .models import (
     DocRelationshipName,
     FinalApproval,
     Label,
+    MailMessage,
     RfcAuthor,
     RfcToBe,
     RpcDocumentComment,
@@ -1250,14 +1251,18 @@ class AddressListField(serializers.CharField):
         return [str(addr) for addr in header.addresses]
 
 
-class MailMessageSerializer(serializers.Serializer):
+class MailMessageSerializer(serializers.ModelSerializer):
     """Mail message serializer"""
 
-    msgtype = serializers.CharField(help_text="slug that identifies message type ")
-    to = AddressListField(allow_blank=False)
-    cc = AddressListField(default="", allow_blank=True)
-    subject = serializers.CharField(allow_blank=False)
-    body = serializers.CharField(allow_blank=False)
+    class Meta:
+        model = MailMessage
+        fields = [
+            "msgtype",
+            "to",
+            "cc",
+            "subject",
+            "body",
+        ]
 
 
 class MailTemplateSerializer(serializers.Serializer):

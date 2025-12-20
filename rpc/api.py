@@ -1418,11 +1418,54 @@ class Mail(views.APIView):
             serializer.validated_data["subject"],
             ",".join(serializer.validated_data["to"]),
         )
-        send_mail_task.delay(
-            subject=serializer.validated_data["subject"],
-            body=serializer.validated_data["body"],
-            to=serializer.validated_data["to"],
-            cc=serializer.validated_data["cc"],
+        message = serializer.save(sender=request.user.datatracker_person())
+        send_mail_task.delay(message.pk)
+        logger.info(
+            "Queued message-id: %s",
+            message.message_id,
+        )
+        return Response(
+            MailResponseSerializer(
+                {
+                    "type": "success",
+                    "message": "Message accepted",
+                }
+            ).data
+        )
+
+
+class DocumentMail(views.APIView):
+    @extend_schema(
+        operation_id="document_mail_send",
+        request=MailMessageSerializer,
+        responses=MailResponseSerializer,
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location="path",
+            ),
+        ],
+    )
+    def post(self, request, draft_name: str, format=None):
+        rfctobe = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfctobe is None:
+            draft = Document.objects.filter(name=draft_name).first()
+        else:
+            draft = None
+        if rfctobe is None and draft is None:
+            raise NotFound()
+        serializer = MailMessageSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        message = serializer.save(
+            sender=request.user.datatracker_person(),
+            rfctobe=rfctobe,
+            draft=draft,
+        )
+        send_mail_task.delay(message.pk)
+        logger.info(
+            "Queued message-id: %s",
+            message.message_id,
         )
         return Response(
             MailResponseSerializer(
@@ -1463,8 +1506,8 @@ class RfcMailTemplatesList(views.APIView):
                     "label": label,
                     "template": {
                         "msgtype": msgtype,
-                        "to": ["someone@example.com"],
-                        "cc": ["nobody@example.com"],
+                        "to": "someone@example.com",
+                        "cc": "nobody@example.com",
                         "subject": f"Message that is a {label}",
                         "body": (
                             render_to_string(

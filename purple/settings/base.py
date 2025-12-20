@@ -152,6 +152,7 @@ CACHES = {
 # email
 EMAIL_BACKEND = "django.core.mail.backends.dummy.EmailBackend"
 DEFAULT_FROM_EMAIL = os.getenv("PURPLE_DEFAULT_FROM_EMAIL", "purple@rfc-editor.org")
+MESSAGE_ID_DOMAIN = "rfc-editor.org"
 
 ADMINS = [("Some Admin", "admin@example.org")]
 

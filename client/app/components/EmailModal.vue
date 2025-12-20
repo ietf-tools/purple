@@ -42,6 +42,7 @@ import { overlayModalKey } from '~/providers/providerKeys';
 import type { MailTemplate } from '~/purple_client';
 
 type Props = {
+  draftName: string
   mailTemplates: MailTemplate[]
   onSuccess: () => Promise<void>
 }
@@ -76,7 +77,8 @@ const confirmSend = async () => {
   if (!shouldSend) {
     return
   }
-  const mailSendResponse = await api.mailSend({
+  const mailSendResponse = await api.documentMailSend({
+    draftName: props.draftName,
     mailMessageRequest: {
       msgtype: msgType.value,
       to: toEmails.value.join(','),
