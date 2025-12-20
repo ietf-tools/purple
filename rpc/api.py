@@ -1444,7 +1444,6 @@ class DocumentMail(views.APIView):
                 name="draft_name",
                 type=OpenApiTypes.STR,
                 location="path",
-                required=False,
             ),
         ],
     )
