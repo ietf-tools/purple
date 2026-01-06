@@ -162,8 +162,9 @@ class RfcToBe(models.Model):
     )
 
     repository = models.CharField(
+        max_length=255,
         blank=True,
-        help_text="Repository name (e.g., ietf-tools/purple",
+        help_text="Repository name (e.g., ietf-tools/purple)",
     )
 
     history = HistoricalRecords(m2m_fields=[labels])

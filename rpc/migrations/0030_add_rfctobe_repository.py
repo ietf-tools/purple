@@ -13,14 +13,18 @@ class Migration(migrations.Migration):
             model_name="historicalrfctobe",
             name="repository",
             field=models.CharField(
-                blank=True, help_text="Repository name (e.g., ietf-tools/purple"
+                blank=True,
+                help_text="Repository name (e.g., ietf-tools/purple)",
+                max_length=255,
             ),
         ),
         migrations.AddField(
             model_name="rfctobe",
             name="repository",
             field=models.CharField(
-                blank=True, help_text="Repository name (e.g., ietf-tools/purple"
+                blank=True,
+                help_text="Repository name (e.g., ietf-tools/purple)",
+                max_length=255,
             ),
         ),
     ]
