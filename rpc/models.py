@@ -169,8 +169,9 @@ class RfcToBe(models.Model):
     )
 
     repository = models.CharField(
+        max_length=1000,
         blank=True,
-        help_text="Repository name (e.g., ietf-tools/purple",
+        help_text="Repository name (e.g., ietf-tools/purple)",
     )
 
     history = HistoricalRecords(m2m_fields=[labels])
@@ -429,7 +430,11 @@ class ClusterQuerySet(models.QuerySet):
         return self.prefetch_related(
             Prefetch(
                 "clustermember_set",
-                queryset=ClusterMember.objects.select_related("doc").prefetch_related(
+                queryset=ClusterMember.objects.exclude(
+                    doc__rfctobe__disposition__slug="withdrawn"
+                )
+                .select_related("doc")
+                .prefetch_related(
                     Prefetch(
                         "doc__rfctobe_set",
                         queryset=RfcToBe.objects.exclude(disposition__slug="withdrawn")
@@ -457,14 +462,14 @@ class ClusterQuerySet(models.QuerySet):
 
     def with_is_active_annotated(self):
         """Annotate clusters with is_active status
-        A cluster is considered active if it is not empty and not all drafts are
-        published.
+        A cluster is considered active if at least one of its documents is not in
+        terminal state (published/withdrawn).
         """
         return self.annotate(
             is_active_annotated=Exists(
-                ClusterMember.objects.filter(cluster=OuterRef("pk")).exclude(
-                    doc__rfctobe__disposition__slug="published"
-                )
+                ClusterMember.objects.filter(cluster=OuterRef("pk"))
+                .exclude(doc__rfctobe__disposition__slug="published")
+                .exclude(doc__rfctobe__disposition__slug="withdrawn")
             )
         )
 
