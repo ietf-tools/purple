@@ -162,7 +162,7 @@ class RfcToBe(models.Model):
     )
 
     repository = models.CharField(
-        max_length=255,
+        max_length=1000,
         blank=True,
         help_text="Repository name (e.g., ietf-tools/purple)",
     )

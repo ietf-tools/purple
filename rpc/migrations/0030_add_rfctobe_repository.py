@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 blank=True,
                 help_text="Repository name (e.g., ietf-tools/purple)",
-                max_length=255,
+                max_length=1000,
             ),
         ),
         migrations.AddField(
@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
             field=models.CharField(
                 blank=True,
                 help_text="Repository name (e.g., ietf-tools/purple)",
-                max_length=255,
+                max_length=1000,
             ),
         ),
     ]
