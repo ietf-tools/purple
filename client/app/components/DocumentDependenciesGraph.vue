@@ -216,7 +216,17 @@ const clusterGraphData = computed(() => {
     }).filter(isLinkParam)
   )
 
-  newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
+  const mergedNodesMap = new Map();
+
+  for (const node of newClusterGraphData.nodes) {
+    if (mergedNodesMap.has(node.id)) {
+      Object.assign(mergedNodesMap.get(node.id), node);
+    } else {
+      mergedNodesMap.set(node.id, { ...node });
+    }
+  }
+
+  newClusterGraphData.nodes = Array.from(mergedNodesMap.values());
   newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
 
   return newClusterGraphData
