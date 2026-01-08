@@ -6,7 +6,7 @@
       props.document.disposition === 'published'
         ? 'text-gray-400 bg-gray-100 dark:text-gray-500 dark:bg-gray-800'
         : props.document.isReceived === false
-          ? 'bg-[rgb(238,130,141)] text-white'
+          ? 'bg-[#ee828d] text-white'
           : 'text-gray-700 dark:text-gray-200'
     ]"
   >
