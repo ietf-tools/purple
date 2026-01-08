@@ -1,5 +1,15 @@
 <template>
-  <Anchor :href="`/docs/${props.document.name}`" class="text-gray-700 dark:text-gray-200 font-semibold no-underline hover:underline focus:underline inline-block p-1 rounded-md">
+  <Anchor
+    :href="`/docs/${props.document.name}`"
+    :class="[
+      'font-semibold no-underline hover:underline focus:underline inline-block p-1 rounded-md',
+      props.document.disposition === 'published'
+        ? 'text-gray-400 bg-gray-100 dark:text-gray-500 dark:bg-gray-800'
+        : props.document.isReceived === false
+          ? 'bg-[rgb(238,130,141)] text-white'
+          : 'text-gray-700 dark:text-gray-200'
+    ]"
+  >
     <span v-if="props.document.rfcNumber">
       <span class="font-normal">RFC{{ NBSP }}</span>
       <span class="font-semibold">{{ `${props.document.rfcNumber}:${SPACE} ` }}</span>

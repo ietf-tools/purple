@@ -18,9 +18,9 @@
       </template>
     </TitleBlock>
 
-    <DocumentDependenciesGraph :cluster="cluster" :rfcs-to-be="rfcsToBe" />
+    <DocumentDependenciesGraph :cluster="filteredCluster" :rfcs-to-be="rfcsToBe" />
 
-    <ClusterReorder :cluster="cluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />
+    <ClusterReorder :cluster="filteredCluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />
   </div>
   <div v-else>
     Unknown cluster
@@ -54,6 +54,14 @@ const { data: cluster, error, status, refresh } = await useAsyncData(
     return api.clustersRetrieve({ number: clusterNumber.value })
   }
 )
+
+// remove published documents from cluster for graph display
+const filteredCluster = computed(() => {
+  if (cluster.value && Array.isArray(cluster.value.documents)) {
+    return { ...cluster.value, documents: cluster.value.documents.filter(doc => doc.disposition !== 'published') }
+  }
+  return cluster.value
+})
 
 const { data: rfcsToBe, refresh: refreshClusters } = useAsyncData(
   () => `cluster-rfcs-${cluster.value?.number}`,
