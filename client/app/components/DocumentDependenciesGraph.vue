@@ -135,7 +135,8 @@ const rfcsByDraftName = computed(() => {
 
 const clusterGraphData = computed(() => {
 
-  if (!rfcsByDraftName.value || Object.keys(rfcsByDraftName.value).length === 0) {
+  // delay building graph until this is available
+  if (!rfcsByDraftName.value) {
     return { links: [], nodes: [] }
   }
 
