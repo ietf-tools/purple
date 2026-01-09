@@ -123,7 +123,23 @@ const setTooltip: SetTooltip = (props) => {
 
 const hasMounted = ref(false)
 
+const rfcsByDraftName = computed(() => {
+  const result: Record<string, RfcToBe> = {};
+  if (props.rfcsToBe) {
+    for (const rfcToBe of props.rfcsToBe) {
+      if (rfcToBe.name) result[rfcToBe.name] = rfcToBe;
+    }
+  }
+  return result;
+});
+
 const clusterGraphData = computed(() => {
+
+  // delay building graph until this is available
+  if (!rfcsByDraftName.value) {
+    return { links: [], nodes: [] }
+  }
+
   const newClusterGraphData: DataParam = {
     links: [],
     nodes: []
@@ -154,22 +170,14 @@ const clusterGraphData = computed(() => {
       rfcNumber: rfcToBe.rfcNumber ?? undefined,
       url: `/docs/${name}`,
       disposition: parseDisposition(disposition),
+      isReceived: true,
     }
   }
-
-  type RfcByDraftName = Record<string, RfcToBe>
-  const rfcsByDraftName: RfcByDraftName = props.rfcsToBe ? props.rfcsToBe.reduce((acc, rfcToBe) => {
-    const { name } = rfcToBe
-    if (name) {
-      acc[name] = rfcToBe
-    }
-    return acc
-  }, {} as RfcByDraftName) : {}
 
   newClusterGraphData.nodes.push(
     ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
       const { name, rfcNumber, disposition, references, isReceived } = clusterMember
-      const doc = name ? rfcsByDraftName[name] : undefined
+      const doc = name ? rfcsByDraftName.value[name] : undefined
 
       const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
 
@@ -183,8 +191,8 @@ const clusterGraphData = computed(() => {
       },
       ...(references ?? []).flatMap(reference => {
         const { draftName, targetDraftName } = reference
-        const draft = draftName ? rfcsByDraftName[draftName] : undefined
-        const target = targetDraftName ? rfcsByDraftName[targetDraftName] : undefined
+        const draft = draftName ? rfcsByDraftName.value[draftName] : undefined
+        const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
 
         return [
           draft ? rfcToBeToNodeParam(draft) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
