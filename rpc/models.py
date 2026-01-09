@@ -1050,11 +1050,11 @@ class MailMessage(models.Model):
         on_delete=models.PROTECT,
         help_text="draft to which this message relates",
     )
-    to = AddressListField(blank=False)
-    cc = AddressListField(blank=True)
-    subject = models.CharField()
+    to = AddressListField(blank=False, max_length=1000)
+    cc = AddressListField(blank=True, max_length=1000)
+    subject = models.CharField(max_length=1000)
     body = models.TextField()
-    message_id = models.CharField(default=make_message_id)
+    message_id = models.CharField(default=make_message_id, max_length=255)
     attempts = models.PositiveSmallIntegerField(default=0)
     sent = models.BooleanField(default=False)
     sender = models.ForeignKey(
