@@ -52,12 +52,46 @@
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Subseries" :spacing="spacing">
+          <DescriptionListDetails>
+            <div>
+              <div v-if="!props.isReadOnly && rfcToBe.disposition !== 'published'">
+                <template v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
+                  <div v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
+                    <EditSubseries
+                      :id="rfcToBe.id"
+                      :initial-subseries="sub"
+                      :on-success="() => props.refresh?.()"
+                    />
+                  </div>
+                </template>
+                <template v-else>
+                  <EditSubseries
+                    :id="rfcToBe.id"
+                    :initial-subseries="null"
+                    :on-success="() => props.refresh?.()"
+                  />
+                </template>
+              </div>
+              <div v-else>
+                <span v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
+                  <span v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
+                    {{ sub.displayName }}<span v-if="idx < rfcToBe.subseries.length - 1">, </span>
+                  </span>
+                </span>
+                <span v-else>
+                  (none)
+                </span>
+              </div>
+            </div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" :spacing="spacing" />
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
             <div v-if="!props.isReadOnly &&
               // published RFCs can't be edited
-              rfcToBe.disposition === 'published'" class="flex items-center gap-2">
+              rfcToBe.disposition !== 'published'" class="flex items-center gap-2">
               <EditRfcNumber :name="rfcToBe.name" :initial-rfc-number="rfcToBe.rfcNumber"
                 :on-success="() => props.refresh?.()" />
             </div>
@@ -86,6 +120,7 @@
 
 <script setup lang="ts">
 import type { RfcToBe } from '~/purple_client'
+import EditSubseries from './EditSubseries.vue'
 
 type Props = {
   rfcToBe: RfcToBe | null | undefined

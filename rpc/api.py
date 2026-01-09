@@ -69,6 +69,7 @@ from .models import (
     StdLevelName,
     StreamName,
     SubseriesMember,
+    SubseriesTypeName,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -107,6 +108,7 @@ from .serializers import (
     SubseriesDoc,
     SubseriesDocSerializer,
     SubseriesMemberSerializer,
+    SubseriesTypeNameSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
     check_user_has_role,
@@ -1522,3 +1524,10 @@ class RfcMailTemplatesList(views.APIView):
             many=True,
         )
         return Response(serializer.data)
+
+
+class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
+    """ViewSet for SubseriesTypeName entries (read-only)"""
+
+    queryset = SubseriesTypeName.objects.all()
+    serializer_class = SubseriesTypeNameSerializer
