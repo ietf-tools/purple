@@ -98,6 +98,9 @@ router.register(
 router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
 router.register(r"subseries_members", rpc_api.SubseriesMemberViewSet)
 router.register(r"subseries", rpc_api.SubseriesViewSet, basename="subseries")
+router.register(
+    r"subseries_types", rpc_api.SubseriesTypeNameViewSet, basename="subseries-types"
+)
 
 urlpatterns = [
     path("health/", lambda _: HttpResponse(status=204)),  # no content
