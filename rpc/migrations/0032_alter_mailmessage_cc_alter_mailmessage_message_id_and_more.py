@@ -1,8 +1,9 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 
+from django.db import migrations, models
+
 import purple.mail
 import rpc.models
-from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
