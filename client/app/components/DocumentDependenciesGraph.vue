@@ -124,14 +124,16 @@ const setTooltip: SetTooltip = (props) => {
 const hasMounted = ref(false)
 
 const rfcsByDraftName = computed(() => {
-  const result: Record<string, RfcToBe> = {};
+  const result: Record<string, RfcToBe> = {}
   if (props.rfcsToBe) {
     for (const rfcToBe of props.rfcsToBe) {
-      if (rfcToBe.name) result[rfcToBe.name] = rfcToBe;
+      if (rfcToBe.name) {
+        result[rfcToBe.name] = rfcToBe
+      }
     }
   }
-  return result;
-});
+  return result
+})
 
 const clusterGraphData = computed(() => {
 
