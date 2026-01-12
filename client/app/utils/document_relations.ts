@@ -40,7 +40,7 @@ function lines({ id, rfcNumber }: LinesProps): Line[] {
     const newRfcNumber = `RFC ${rfcNumber}`
     lines.push({
       text: newRfcNumber,
-      width: newRfcNumber.length * 10,
+      width: newRfcNumber.length,
       style: 'font-weight: bold'
     })
   }
@@ -70,12 +70,12 @@ function lines({ id, rfcNumber }: LinesProps): Line[] {
   const target_width = Math.sqrt(measureWidth(text.trim()) * line_height)
   for (let i = 0, n = words.length; i < n; ++i) {
     let line_text = (line ? line.text : "") + words[i]
-    let line_width = measureWidth(line_text)
+    let line_width = measureWidth(line_text) * 1.2
     if ((line_width_0 + line_width) / 2 < target_width) {
       line.width = line_width_0 = line_width
       line.text = line_text
     } else {
-      line_width_0 = measureWidth(words[i] ?? '')
+      line_width_0 = measureWidth(words[i] ?? '') * 1.2
       line = { width: line_width_0, text: words[i] ?? '' }
       lines.push(line)
     }
@@ -278,7 +278,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     })
 
   a.append("text")
-    .attr("fill", (d) => (d.rfcToBe ? colorMode === 'light' ? gray800 : gray200 : colorMode === 'light' ? black : white))
+    .attr("fill", (d) => black)
     .each((d) => {
       (d as Node).lines = d.disposition === 'published' ? lines({
         rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
