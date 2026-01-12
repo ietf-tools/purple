@@ -269,6 +269,7 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
             "is_editor",
             "picture",
             "datatracker_url",
+            "affiliation",
         ]
 
     def update(self, instance, validated_data):

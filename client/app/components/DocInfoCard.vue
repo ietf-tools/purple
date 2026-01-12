@@ -17,6 +17,9 @@
                     <span :class="PERSON_ID_STYLE" v-if="author.email">{{ SPACE }}{{ ` (${author.email})` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
                   </a>
+                  <div class="text-xs text-gray-500" v-if="author.affiliation">
+                    {{ author.affiliation }}
+                  </div>
                 </div>
               </div>
             </div>
