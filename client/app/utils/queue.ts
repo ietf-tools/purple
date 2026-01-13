@@ -3,7 +3,7 @@ import type { Assignment, Cluster, Label, QueueItem, RfcToBe, SimpleCluster } fr
 import type { Tab } from './tab'
 import { DateTime } from 'luxon'
 
-export const queueTabs: Tab[] = [
+export const queueTabs = [
   {
     id: 'submissions',
     name: 'Submissions',
@@ -23,6 +23,12 @@ export const queueTabs: Tab[] = [
     icon: 'uil:clock'
   },
   {
+    id: 'publish',
+    name: 'Publish',
+    to: '/queue/publish',
+    icon: 'uil:trophy'
+  },
+  {
     id: 'published',
     name: 'Recently Published',
     to: '/queue/published',
@@ -31,6 +37,9 @@ export const queueTabs: Tab[] = [
 ] as const satisfies Tab[]
 
 export type QueueTabId = (typeof queueTabs)[number]['id']
+
+// @ts-expect-error
+const _queueId: QueueTabId = 'an-id-that-does-not-exist'
 
 export const sortDate = (
   dateA: Date | undefined | null,

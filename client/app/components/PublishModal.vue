@@ -4,11 +4,11 @@
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
         Publish
         <span class="text-2xl mx-1 font-mono whitespace-nowrap">
-          <span class="font-bold">RFC</span> {{ props.rfcToBe.rfcNumber }}
+          <span class="font-bold">RFC</span> {{ props.queueItem.rfcNumber }}
         </span>?
         <span class="text-sm text-gray-700 dark:text-gray-300">
           <br />
-          (<span class="font-mono">{{ props.rfcToBe.name }}</span>)
+          (<span class="font-mono">{{ props.queueItem.name }}</span>)
         </span>
       </h1>
 
@@ -62,7 +62,7 @@
           </ul>
         </BaseCard>
       </div>
-      <DocInfoCard is-read-only :rfc-to-be="props.rfcToBe" :draft-name="props.rfcToBe.name ?? ''"
+      <DocInfoCard is-read-only :rfc-to-be="rfcToBe" :draft-name="rfcToBe.name ?? ''"
         @refresh="props.onSuccess" />
     </div>
     <div class="border-t-1 border-gray-800 flex justify-end items-center">
@@ -75,15 +75,17 @@
 <script setup lang="ts">
 import { BaseButton } from '#components'
 import { overlayModalKey } from '~/providers/providerKeys';
-import type { Label, RfcToBe } from '~/purple_client';
+import type { Label, QueueItem } from '~/purple_client';
 
 type Props = {
-  rfcToBe: RfcToBe
+  queueItem: QueueItem
   labels: Label[]
   onSuccess: () => void
 }
 
 const props = defineProps<Props>()
+
+const rfcToBe = computed(() => queueItemToRfcToBe(props.queueItem))
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
@@ -97,7 +99,7 @@ const complexityItems = computed(() => {
     if (typeof id !== 'number') {
       throw Error('Expected label id to be a number')
     }
-    return props.rfcToBe.labels.includes(id) && label.isComplexity
+    return props.queueItem.labels?.some(label => label.id === id) && label.isComplexity
   })
 })
 
@@ -129,7 +131,7 @@ const api = useApi()
 const { closeOverlayModal } = overlayModalKeyInjection
 
 const handlePublish = async () => {
-  const { name } = props.rfcToBe
+  const { name } = props.queueItem
 
   if (name === undefined) {
     snackbar.add({

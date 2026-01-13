@@ -33,12 +33,6 @@
               <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
             </span>
           </BaseButton>
-          <BaseButton @click="openPublishModal" class="flex items-center">
-            <span> Publish</span>
-            <span v-if="isLoadingPublishModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
-            </span>
-          </BaseButton>
         </div>
       </div>
     </div>
