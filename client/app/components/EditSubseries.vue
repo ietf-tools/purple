@@ -28,7 +28,7 @@ const deleteSubseries = async () => {
   }
 }
 import { ref, onMounted, watch } from 'vue'
-import type { RfcToBe, SubseriesMember } from '~/purple_client'
+import type { RfcToBe, SubseriesMember, subseriesMemberRequest, PatchedSubseriesMemberRequest } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
 const props = defineProps<{
@@ -79,18 +79,22 @@ watch(() => props.initialSubseries, () => {
 
 const updateSubseries = async () => {
   try {
-    let payload: any = {
-      type: selectedSlug.value,
-      number: subseriesNumber.value ? Number(subseriesNumber.value) : undefined
-    }
     if (props.initialSubseries && props.initialSubseries.id) {
+      let payload: PatchedSubseriesMemberRequest = {
+        type: selectedSlug.value,
+        number: Number(subseriesNumber.value)
+      }
       await api.subseriesMembersPartialUpdate({
         id: props.initialSubseries.id,
         patchedSubseriesMemberRequest: payload
       })
       snackbar.add({ type: 'success', title: `Subseries updated`, text: `Subseries updated` })
     } else {
-      payload = { ...payload, rfcToBe: Number(props.id) }
+      let payload: subseriesMemberRequest = {
+      type: selectedSlug.value,
+      number: Number(subseriesNumber.value),
+      rfcToBe: Number(props.id)
+    }
       await api.subseriesMembersCreate({
         subseriesMemberRequest: payload
       })
