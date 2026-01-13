@@ -23,12 +23,13 @@ const deleteSubseries = async () => {
     await api.subseriesMembersDestroy({ id: props.initialSubseries.id })
     snackbar.add({ type: 'success', title: 'Subseries deleted', text: 'Subseries deleted' })
     props.onSuccess()
-  } catch (e) {
-    snackbar.add({ type: 'error', title: 'Failed to delete subseries', text: String(e) })
+  } catch (error) {
+    snackbarForErrors({snackbar, error, defaultTitle: 'Failed to delete subseries'})
   }
 }
 import { ref, onMounted, watch } from 'vue'
 import type { RfcToBe, SubseriesMember } from '~/purple_client'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 const props = defineProps<{
   id: RfcToBe["id"]
@@ -98,8 +99,8 @@ const updateSubseries = async () => {
       subseriesNumber.value = ''
     }
     props.onSuccess()
-  } catch (e: unknown) {
-    snackbar.add({ type: 'error', title: `Failed to update subseries`, text: String(e) })
+  } catch (error: unknown) {
+    snackbarForErrors({snackbar, error, defaultTitle: `Failed to update subseries`})
   }
 }
 </script>

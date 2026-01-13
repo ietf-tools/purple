@@ -13,18 +13,18 @@
       <table class="min-w-full border border-gray-300 rounded mb-8">
         <thead class="bg-gray-100">
           <tr>
-            <th class="px-3 py-2 text-left" style="width: 160px;">Display Name</th>
-            <th class="px-3 py-2 text-left" style="width: 300px;">RFCs</th>
+            <th class="px-3 py-2 text-left w-[160px]">Display Name</th>
+            <th class="px-3 py-2 text-left w-[300px]">RFCs</th>
           </tr>
         </thead>
         <tbody>
           <tr v-for="item in group.items" :key="item.slug" class="border-t align-top">
-            <td class="px-3 py-2 font-semibold" style="width: 160px;">{{ item.displayName }}</td>
-            <td class="px-3 py-2 text-xs" style="width: 300px;">
+            <td class="px-3 py-2 font-semibold w-[160px]">{{ item.displayName }}</td>
+            <td class="px-3 py-2 text-xs w-[300px]">
               <template v-if="item.documents && item.documents.length">
                 <span>
                   <template v-for="(doc, i) in item.documents" :key="doc.name + '-' + doc.rfcNumber">
-                    <template v-if="doc.name.startsWith('draft-')">
+                    <template v-if="doc.name?.startsWith('draft-')">
                       <NuxtLink :to="`/docs/${doc.name}`" class="text-blue-600 hover:underline">
                         {{ doc.rfcNumber }}
                       </NuxtLink>
@@ -48,11 +48,11 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
+import type { SubseriesDoc, SubseriesTypeName } from '~/purple_client'
 
 const api = useApi()
-const subseriesList = ref<any[]>([])
-const subseriesTypes = ref<any[]>([])
-
+const subseriesList = ref<SubseriesDoc[]>([])
+const subseriesTypes = ref<SubseriesTypeName[]>([])
 onMounted(async () => {
   try {
     const [listResponse, typesResponse] = await Promise.all([
@@ -68,7 +68,7 @@ onMounted(async () => {
 })
 
 const groupedSubseries = computed(() => {
-  const groups: Record<string, { type: string, items: any[] }> = {}
+  const groups: Record<string, { type: string, items: SubseriesDoc[] }> = {}
   for (const item of subseriesList.value) {
     const type = item.type || 'Unknown'
     if (!groups[type]) {
