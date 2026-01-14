@@ -67,7 +67,7 @@ jobs:
         fetch-depth: 1
         fetch-tags: false
         repository: ietf-tools/datatracker
-        ref: feat/rpc-api
+        ref: main
         path: datatracker
 
     - name: Login to GitHub Container Registry

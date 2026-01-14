@@ -36,7 +36,7 @@
 ## Getting Started
 
 1. Clone this repository locally.
-2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `feat/rpc-api` branch, start the Docker environment, and start the dev server.
+2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `main` branch, start the Docker environment, and start the dev server.
 3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) *(optional, and not generally available)*
 4. Continue using the steps for your preferred IDE:
    - [Visual Studio Code](#using-vs-code)
@@ -147,7 +147,7 @@ This API is used by the Nuxt Client front end to communicate with the Django bac
 
 ### Back-end to Datatracker: `rpcapi`
 
-This API is used by the Django back end to communicate with the Datatracker. It is implemented in the Datatracker code and described (as of Jan 2024) by a hand-written OpenAPI spec in `rpcapi.yaml`. The current version of the spec is fetched from the Datatracker's `feat/rpc-api` branch when starting this project's Docker environment. If the API is updated on the Datatracker side, you must manually copy the new `rpcapi.yaml` into the root of this project and update the clients as described in the next section.
+This API is used by the Django back end to communicate with the Datatracker. It is implemented in the Datatracker code and described (as of Jan 2024) by a hand-written OpenAPI spec in `rpcapi.yaml`. The current version of the spec is fetched from the Datatracker's `main` branch when starting this project's Docker environment. If the API is updated on the Datatracker side, you must manually copy the new `rpcapi.yaml` into the root of this project and update the clients as described in the next section.
 
 ### Updating the API clients
 
