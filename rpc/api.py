@@ -118,6 +118,7 @@ from .serializers import (
 )
 from .tasks import send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+from celery.result import AsyncResult
 
 logger = logging.getLogger(__name__)
 
@@ -1573,13 +1574,11 @@ class MetadataValidationResultsViewSet(viewsets.ViewSet):
             ),
         },
     )
-    def get(self, request, *args, **kwargs):
+    def list(self, request, *args, **kwargs):
         """
         ViewSet endpoint to retrieve repository metadata for a given RfcToBe from DB.
         If a task_id is provided, check Celery task status first.
         """
-        from celery.result import AsyncResult
-
         draft_name = kwargs.get("draft_name")
         task_id = request.query_params.get("task_id")
         if task_id:
