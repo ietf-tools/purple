@@ -33,6 +33,7 @@ from .models import (
     FinalApproval,
     Label,
     MailMessage,
+    MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
     RpcDocumentComment,
@@ -1294,3 +1295,35 @@ class ApprovalLogMessageSerializer(serializers.Serializer):
             **validated_data,
         )
         return ApprovalLogMessage.objects.get(pk=instance.pk)
+
+
+class MetadataDateSerializer(serializers.Serializer):
+    """Serializer for metadata date field"""
+
+    day = serializers.CharField()
+    year = serializers.CharField()
+    month = serializers.CharField()
+
+
+class MetadataSerializer(serializers.Serializer):
+    """Serializer for repository metadata structure"""
+
+    date = MetadataDateSerializer()
+    authors = serializers.ListField(child=serializers.CharField())
+    updates = serializers.ListField(child=serializers.CharField())
+    abstract = serializers.CharField()
+    obsoletes = serializers.ListField(child=serializers.CharField())
+
+
+class MetadataValidationResultsSerializer(serializers.ModelSerializer):
+    repository = serializers.CharField(source="rfc_to_be.repository", read_only=True)
+    metadata = MetadataSerializer()
+
+    class Meta:
+        model = MetadataValidationResults
+        fields = [
+            "rfc_to_be",
+            "repository",
+            "head_sha",
+            "metadata",
+        ]

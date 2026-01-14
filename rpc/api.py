@@ -15,6 +15,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
+from django_celery_results.models import TaskResult
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
@@ -59,6 +60,7 @@ from .models import (
     DocRelationshipName,
     FinalApproval,
     Label,
+    MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
     RpcDocumentComment,
@@ -93,6 +95,7 @@ from .serializers import (
     MailMessageSerializer,
     MailResponseSerializer,
     MailTemplateSerializer,
+    MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
@@ -113,7 +116,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .tasks import send_mail_task
+from .tasks import send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 logger = logging.getLogger(__name__)
@@ -1531,3 +1534,146 @@ class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = SubseriesTypeName.objects.all()
     serializer_class = SubseriesTypeNameSerializer
+
+
+class MetadataValidationResultsViewSet(viewsets.ViewSet):
+    @extend_schema(
+        operation_id="metadata_validation_results_retrieve",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+            OpenApiParameter(
+                name="task_id",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                description="Optional Celery task ID to check status",
+            ),
+        ],
+        responses={
+            200: MetadataValidationResultsSerializer,
+            202: inline_serializer(
+                name="TaskStatusResponse",
+                fields={"status": serializers.CharField()},
+            ),
+            404: inline_serializer(
+                name="NotFoundResponse",
+                fields={"error": serializers.CharField()},
+            ),
+            500: inline_serializer(
+                name="TaskFailureResponse",
+                fields={
+                    "status": serializers.CharField(),
+                    "error": serializers.CharField(),
+                },
+            ),
+        },
+    )
+    def get(self, request, *args, **kwargs):
+        """
+        ViewSet endpoint to retrieve repository metadata for a given RfcToBe from DB.
+        If a task_id is provided, check Celery task status first.
+        """
+        from celery.result import AsyncResult
+
+        draft_name = kwargs.get("draft_name")
+        task_id = request.query_params.get("task_id")
+        if task_id:
+            result = AsyncResult(task_id)
+            if result.state in ["PENDING", "STARTED"]:
+                return Response({"status": result.state.lower()}, status=202)
+            elif result.state == "FAILURE":
+                return Response(
+                    {"status": "failure", "error": str(result.result)}, status=500
+                )
+
+        metadata_validation_results = MetadataValidationResults.objects.filter(
+            rfc_to_be__draft__name=draft_name
+        ).first()
+        if metadata_validation_results is None:
+            return Response(
+                {"error": "No metadata validation results found for draft."}, status=404
+            )
+        serializer = MetadataValidationResultsSerializer(metadata_validation_results)
+        return Response(serializer.data)
+
+    @extend_schema(
+        operation_id="metadata_validation_results_create",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        request=None,
+        responses={
+            202: inline_serializer(
+                name="TaskQueuedResponse",
+                fields={
+                    "task_id": serializers.CharField(),
+                    "status": serializers.CharField(),
+                },
+            ),
+            404: inline_serializer(
+                name="RfcToBeNotFoundResponse",
+                fields={"error": serializers.CharField()},
+            ),
+            409: inline_serializer(
+                name="TaskAlreadyInProgressResponse",
+                fields={
+                    "task_id": serializers.CharField(),
+                    "status": serializers.CharField(),
+                    "message": serializers.CharField(),
+                },
+            ),
+        },
+    )
+    def create(self, request, *args, **kwargs):
+        """
+        Async endpoint: enqueue Celery task to validate metadata for a given RfcToBe.
+        Returns a job/task id for status polling.
+        """
+        draft_name = kwargs.get("draft_name")
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfc_to_be is None:
+            return Response(
+                {"error": "RfcToBe for draft not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Check for existing in-progress tasks for this RfcToBe
+        # if it exists, refuse to enqueue another
+        existing_tasks = TaskResult.objects.filter(
+            task_name="rpc.tasks.validate_metadata_task",
+            status__in=["PENDING", "STARTED"],
+            task_args__contains=f"[{rfc_to_be.id}]",
+        ).order_by("-date_created")
+
+        if existing_tasks.exists():
+            existing_task = existing_tasks.first()
+            return Response(
+                {
+                    "task_id": existing_task.task_id,
+                    "status": "already_in_progress",
+                    "message": "A metadata task is already running for this RfcToBe",
+                },
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        # Enqueue Celery task
+        task = validate_metadata_task.delay(rfc_to_be.id)
+        return Response({"task_id": task.id, "status": "queued"}, status=202)
+
+    def get_file_path(self, manifest, rfc_number, file_type):
+        for pub in manifest.get("publications", []):
+            if pub.get("rfcNumber") == rfc_number:
+                for f in pub.get("files", []):
+                    if f.get("type", "").lower() == file_type.lower():
+                        return f.get("path")
+        return None

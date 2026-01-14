@@ -1,6 +1,7 @@
 ./openapi/rpcapi_client
 celery>=5.5.3
 Django~=5.2
+django_celery_results>=2.6.0
 django-debug-toolbar>=4.0.0
 django-filter>=25.1
 django-simple-history>=3.4

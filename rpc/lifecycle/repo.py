@@ -3,6 +3,7 @@
 
 import json
 import logging
+import xml.etree.ElementTree as ET
 from pathlib import PurePath
 
 import jsonschema
@@ -133,6 +134,17 @@ class GithubRepository(Repository):
             size=contents.size,
         )
 
+    def get_head_sha(self) -> str:
+        """Get the SHA of the head commit of the default branch."""
+        try:
+            commits = self.repo.get_commits()
+            head_commit = commits[0]
+            return head_commit.sha
+        except GithubException as err:
+            if err.status // 100 == 5:  # 5xx
+                raise TemporaryRepositoryError from err
+            raise RepositoryError from err
+
 
 class RepositoryError(Exception):
     """Base class for repository exceptions"""
@@ -140,3 +152,60 @@ class RepositoryError(Exception):
 
 class TemporaryRepositoryError(RepositoryError):
     """Repository exception that is likely temporary and worth retrying"""
+
+
+class Metadata:
+    """Base class for metadata extraction"""
+
+    @staticmethod
+    def parse_rfc_xml(xml_string):
+        root = ET.fromstring(xml_string)
+        ns = {}
+
+        front = root.find("front", ns)
+        if front is None:
+            return None
+
+        abstract_elem = front.find("abstract", ns)
+        abstract_text = ""
+        if abstract_elem is not None:
+            abstract_text = " ".join(
+                t.text.strip() for t in abstract_elem.findall("t", ns) if t.text
+            )
+
+        authors = []
+        for author in front.findall("author", ns):
+            fullname = author.attrib.get("fullname")
+            if fullname:
+                authors.append(fullname)
+
+        obsoletes_str = root.attrib.get("obsoletes", "")
+        obsoletes = (
+            [s.strip() for s in obsoletes_str.split(",") if s.strip()]
+            if obsoletes_str
+            else []
+        )
+
+        updates_str = root.attrib.get("updates", "")
+        updates = (
+            [s.strip() for s in updates_str.split(",") if s.strip()]
+            if updates_str
+            else []
+        )
+
+        date_elem = front.find("date", ns)
+        date = None
+        if date_elem is not None:
+            date = {
+                "month": date_elem.attrib.get("month"),
+                "day": date_elem.attrib.get("day"),
+                "year": date_elem.attrib.get("year"),
+            }
+
+        return {
+            "abstract": abstract_text,
+            "authors": authors,
+            "obsoletes": obsoletes,
+            "updates": updates,
+            "date": date,
+        }

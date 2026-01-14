@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     "rpc.apps.RpcConfig",
     "rpcauth.apps.RpcAuthConfig",
     "errata.apps.ErrataConfig",
+    "django_celery_results",
 ]
 
 MIDDLEWARE = [
@@ -160,7 +161,8 @@ ADMINS = [("Some Admin", "admin@example.org")]
 CELERY_TIMEZONE = "UTC"
 CELERY_BROKER_URL = os.environ.get("PURPLE_BROKER_URL", "amqp://mq/")
 CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_TASK_IGNORE_RESULT = True  # ignore results unless specifically enabled
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_TASK_IGNORE_RESULT = False  # store results by default
 
 # Crossref / DOI
 CROSSREF_API = os.environ.get(
