@@ -22,6 +22,12 @@ export const docTabsFactory = (draftName: string) => {
       icon: 'fluent:emoji-hand-16-regular'
     },
     {
+      id: 'publication-preparation',
+      name: 'Publication Prep',
+      to: `/docs/${sanitisedDraftName}/publication-preparation`,
+      icon: 'material-symbols:difference-outline' // was 'fluent:checkmark-circle-hint-16-filled'
+    },
+    {
       id: 'history',
       name: 'History',
       to: `/docs/${sanitisedDraftName}/history`,
