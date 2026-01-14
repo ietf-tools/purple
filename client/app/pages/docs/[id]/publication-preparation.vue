@@ -22,16 +22,29 @@
       </template>
       <template v-else-if="step.type === 'loading'">
         <div class="text-center">
-          <Icon name="ei:spinner-3" size="3.5em" class="animate-spin mb-3" />
+          <div class="mx-auto w-[3.5em] h-[3.5em] mb-3 bg-white rounded-md">
+            <Icon name="ei:spinner-3" size="3.5em" class="animate-spin" />
+          </div>
         </div>
       </template>
       <template v-else-if="step.type === 'diff'">
-        <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
+        <Heading :heading-level="2" class="px-8 py-4 text-gray-700 dark:text-gray-300">
           Metadata
           {{ SPACE }}
           <template v-if="!step.isMatch">does not match</template>
           <template v-else>matches</template>
         </Heading>
+        <p class="ml-8 mb-4 text-sm text-black dark:text-white">
+          Fetched git commit
+          {{ SPACE }}
+          <button class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate" @click="() => step.type === 'diff' && copyGitHashToClipboard(step.gitHash)">
+            <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" />{{ step.gitHash }}
+          </button>
+          {{ SPACE }}
+          from
+          {{ SPACE }}
+          <a :href="step.gitRepoUrl" :class="ANCHOR_STYLE">{{ step.gitRepoUrl }}</a>
+        </p>
         <BaseCard>
           <div class="w-full">
             <DiffTable :columns="step.columns" :rows="step.rows" />
@@ -205,4 +218,20 @@ const cancel = () => {
   step.value = { type: "cancelled" }
 }
 
+const snackbar = useSnackbar()
+
+const copyGitHashToClipboard = async (gitHash: string) => {
+  const isCopied = await copyToClipboard(gitHash)
+  if (isCopied) {
+    snackbar.add({
+      type: 'success',
+      text: 'Git hash copied to clipboard'
+    })
+  } else {
+    snackbar.add({
+      type: 'error',
+      text: "Couldn't copy git hash to clipboard. Permissions error?"
+    })
+  }
+}
 </script>
