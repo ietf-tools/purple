@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 import django_filters
 import rpcapi_client
+from celery.result import AsyncResult
 from django import forms
 from django.db import transaction
 from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
@@ -118,7 +119,6 @@ from .serializers import (
 )
 from .tasks import send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
-from celery.result import AsyncResult
 
 logger = logging.getLogger(__name__)
 
