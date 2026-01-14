@@ -55,7 +55,7 @@
             <BaseButton btn-type="cancel" @click="cancel">
               Cancel
             </BaseButton>
-            <BaseButton btn-type="default" @click="postRfc">
+            <BaseButton btn-type="default" @click="publishRfc">
               Post this RFC
             </BaseButton>
           </template>
@@ -169,6 +169,22 @@ watch(rfcToBe, () => {
 const fetchAndVerifyMetadata = async () => {
   step.value = { type: 'loading' }
   // TODO: api for fetch and verifying metadata, with optional error
+  /**
+   * API use probably looks like,
+   * Request:
+   *  { name: string }
+   *
+   * Response:
+   *  Error, or
+   *  {
+   *   isMatch: boolean,
+   *   gitHash: string,
+   *   gitRepoUrl: string
+   *   databaseRfcToBe: RfcToBe,
+   *   documentRfcToBe: RfcToBe,
+   *  }
+   */
+
   await sleep(1000)
   step.value = {
     type: 'diff',
@@ -198,9 +214,18 @@ const fetchAndVerifyMetadata = async () => {
   }
 }
 
-const postRfc = async () => {
+const publishRfc = async () => {
   step.value = { type: 'loading' }
-  // TODO: api to post RFC, with optional error
+  // TODO: api to post RFC
+  /**
+   * API use probably looks like,
+   * Request: ..verify that Git HEAD of repo is still Githash, that metadata is still in sync, then publish
+   *  { name: string, gitHash: string }
+   *
+   * Response:
+   *  Error, or rfc with new disposition='published'
+   *  { rfcToBe: RfcToBe }
+   */
   await sleep(1000)
   step.value = {
     type: 'rfcPosted'
@@ -210,7 +235,16 @@ const postRfc = async () => {
 
 const updateDatabaseToMatchDocument = async () => {
   step.value = { type: 'loading' }
-  // TODO: api to update database to match document, with optional error
+  // TODO: api to update database to match document
+  /**
+   * API use probably looks like,
+   * Request:
+   *  { name: string, gitHash: string }
+   *
+   * Response:
+   *  error or new RFC with synced data
+   *  { rfcToBe: RfcToBe }
+   */
   await sleep(1000)
   step.value = {
     type: 'databaseUpdated',
