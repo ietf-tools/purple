@@ -10,19 +10,19 @@
     </thead>
     <tbody>
       <tr v-for="row in computedRows" :class="{
-        [badgeColors.red]: !row.isSame,
-        [badgeColors.green]: row.isSame,
+        [badgeColors.red]: !row.isMatch,
+        [badgeColors.green]: row.isMatch,
       }">
-        <td class="p-2" :style="row.nameOffset > 0 && `padding-left: ${row.nameOffset}rem`">
-          <template v-if="row.nameOffset > 0">&bull;</template>
-          {{ row.name }}
+        <td class="p-2" :style="row.rowNameListDepth > 0 && `padding-left: ${row.rowNameListDepth}rem`">
+          <template v-if="row.rowNameListDepth > 0">&bull;</template>
+          {{ row.rowName }}
         </td>
         <td class="p-2">
           <component :is="row.leftValue"/>
         </td>
         <td class="align-middle">
-          <Icon v-if="!row.isSame" name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
-          <Icon v-if="row.isSame" name="ic:outline-equals" size="1rem" aria-label="=" title="="/>
+          <Icon v-if="!row.isMatch" name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
+          <Icon v-if="row.isMatch" name="ic:outline-equals" size="1rem" aria-label="=" title="="/>
         </td>
         <td class="p-2">
           <component :is="row.rightValue"/>
@@ -33,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-type Row = { name: string, nameOffset: number, leftValue?: string, rightValue?: string }
+type Row = { rowName: string, rowNameListDepth: number, leftValue?: string, rightValue?: string }
 
 type Props = {
   columns: { nameColumn: string, leftColumn: string, rightColumn: string }
@@ -43,9 +43,9 @@ type Props = {
 const props = defineProps<Props>()
 
 type RenderableRow = {
-  name: string
-  nameOffset: number
-  isSame: boolean
+  rowName: string
+  rowNameListDepth: number
+  isMatch: boolean
   leftValue: ReturnType<typeof h>
   rightValue: ReturnType<typeof h>
 }
@@ -58,9 +58,9 @@ const computedRows = computed((): RenderableRow[] => {
     const leftValue = `${(row.leftValue ?? '').padEnd(targetLength)}`
     const rightValue = `${(row.rightValue ?? '').padEnd(targetLength)}`
     return {
-      name: row.name,
-      nameOffset: row.nameOffset,
-      isSame: row.leftValue === row.rightValue,
+      rowName: row.rowName,
+      rowNameListDepth: row.rowNameListDepth,
+      isMatch: row.leftValue === row.rightValue,
       leftValue: h('span', leftValue.split('').map((leftChar, index) => {
         const rightChar = rightValue.charAt(index)
         const isSame = leftChar !== rightChar

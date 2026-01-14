@@ -13,7 +13,7 @@
           </BaseButton>
         </div>
       </template>
-      <template v-else-if="step.type === 'fetchAndVerifyAndMetadata'">
+      <template v-else-if="step.type === 'fetchAndVerifyAndMetadataButton'">
         <div class="text-center">
           <BaseButton btn-type="default" @click="fetchAndVerifyMetadata">
             Fetch and verify metadata
@@ -79,6 +79,26 @@
           </div>
         </template>
       </template>
+      <template v-else-if="step.type === 'rfcPosted'">
+        <template v-if="step.error">
+          <div class="text-center">
+            <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
+              Unable to post RFC
+            </Heading>
+            <div class="mt-4 mb-8 text-sm"><span :class="[badgeColors.red, 'p-2']">Error: {{ step.error }}</span></div>
+            <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+              Fetch and verify metadata
+            </BaseButton>
+          </div>
+        </template>
+        <template v-else>
+          <div class="text-center">
+            <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
+              RFC Posted
+            </Heading>
+          </div>
+        </template>
+      </template>
     </div>
   </div>
 </template>
@@ -97,18 +117,27 @@ const currentTab: DocTabId = 'publication-preparation'
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
 type Step =
-  | { type: 'cancelled' }
-  | { type: 'fetchAndVerifyAndMetadata' }
+  | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
   | {
-      type: 'diff',
-      isMatch: boolean,
-      columns: { nameColumn: string, leftColumn: string, rightColumn: string }
-      rows: { name: string, nameOffset: number, leftValue?: string, rightValue?: string }[]
-    }
+    type: 'diff'
+    error?: string
+    gitHash: string
+    gitRepoUrl: string
+    isMatch: boolean
+    columns: { nameColumn: string, leftColumn: string, rightColumn: string }
+    rows: { rowName: string, rowNameListDepth: number, leftValue?: string, rightValue?: string }[]
+  }
+  | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
+  | { type: 'rfcPosted', error?: string }
 
-const step = ref<Step>({ type: 'fetchAndVerifyAndMetadata' })
+const step = ref<Step>({ type: 'loading' })
+
+onMounted(async () => {
+  await sleep(1000)
+  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+})
 
 const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
@@ -116,19 +145,24 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   {
     server: false,
     lazy: true,
-    deep: true // author editing relies on deep reactivity
+    deep: true
   }
 )
 
 const fetchAndVerifyMetadata = async () => {
   step.value = { type: 'loading' }
-  // TODO: api usage
+  // TODO: api for fetch and verifying metadata, with optional error
   await sleep(1000)
-  step.value = { type: 'diff', isMatch: false,
+  step.value = {
+    type: 'diff',
+    isMatch: false,
+    gitHash: 'b26bf8af130955c5c67cfea96f9532680b963628',
+    gitRepoUrl: 'http://github.com/ietf-tools/rfc10000',
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
     rows: [
-      { name: "title", nameOffset: 0, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" },
-      { name: "abstract", nameOffset: 0, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
+      { rowName: "title", rowNameListDepth: 0, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" },
+      {
+        rowName: "abstract", rowNameListDepth: 0, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
 
   Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous disconnections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
 
@@ -137,32 +171,38 @@ const fetchAndVerifyMetadata = async () => {
   Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous connections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
 
   This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` },
-      { name: "authors:", nameOffset: 0 },
-      { name: "", nameOffset: 1, leftValue: "John", rightValue: "John" },
-      { name: "", nameOffset: 1, leftValue: "Jane", rightValue: "Jane" },
-      { name: "", nameOffset: 1, leftValue: "Jake", rightValue: "Jack" },
-      { name: "RFC Number", nameOffset: 0, leftValue: "9999", rightValue: "9999" },
-      { name: "submittedStdLevel", nameOffset: 0, leftValue: "draft", rightValue: "draft" },
+      { rowName: "authors:", rowNameListDepth: 0 },
+      { rowName: "", rowNameListDepth: 1, leftValue: "John", rightValue: "John" },
+      { rowName: "", rowNameListDepth: 1, leftValue: "Jane", rightValue: "Jane" },
+      { rowName: "", rowNameListDepth: 1, leftValue: "Jake", rightValue: "Jack" },
+      { rowName: "RFC Number", rowNameListDepth: 0, leftValue: "9999", rightValue: "9999" },
+      { rowName: "submittedStdLevel", rowNameListDepth: 0, leftValue: "draft", rightValue: "draft" },
     ]
   }
 }
 
 const postRfc = async () => {
   step.value = { type: 'loading' }
-  // TODO: api usage
+  // TODO: api to post RFC, with optional error
   await sleep(1000)
+  step.value = {
+    type: 'rfcPosted'
+    // error: 'a problem occurred'
+  }
 }
 
 const updateDatabaseToMatchDocument = async () => {
   step.value = { type: 'loading' }
-  // TODO: api usage
+  // TODO: api to update database to match document, with optional error
   await sleep(1000)
-  step.value = { type: 'databaseUpdated' }
+  step.value = {
+    type: 'databaseUpdated',
+    // error: 'a problem occurred'
+  }
 }
 
 const cancel = () => {
   step.value = { type: "cancelled" }
 }
-
 
 </script>
