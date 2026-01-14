@@ -43,6 +43,7 @@ from .models import (
     StdLevelName,
     StreamName,
     SubseriesMember,
+    SubseriesTypeName,
     UnusableRfcNumber,
 )
 
@@ -1224,6 +1225,12 @@ class CreateFinalApprovalSerializer(FinalApprovalSerializer):
             overriding_approver=overriding_approver_dt_person,
             **validated_data,
         )
+
+
+class SubseriesTypeNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SubseriesTypeName
+        fields = ["slug", "name", "desc", "used"]
 
 
 class AddressListField(serializers.CharField):
