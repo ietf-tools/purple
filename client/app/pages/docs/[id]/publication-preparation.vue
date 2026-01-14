@@ -123,8 +123,6 @@ import { type DocTabId } from '~/utils/doc'
 const route = useRoute()
 const api = useApi()
 
-// COMPUTED
-
 const currentTab: DocTabId = 'publication-preparation'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
@@ -147,11 +145,6 @@ type Step =
 
 const step = ref<Step>({ type: 'loading' })
 
-onMounted(async () => {
-  await sleep(1000)
-  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
-})
-
 const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
@@ -161,6 +154,17 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
     deep: true
   }
 )
+
+watch(rfcToBe, () => {
+  if(!rfcToBe.value) {
+    return
+  }
+  if (rfcToBe.value.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+  } else {
+    step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+  }
+})
 
 const fetchAndVerifyMetadata = async () => {
   step.value = { type: 'loading' }
