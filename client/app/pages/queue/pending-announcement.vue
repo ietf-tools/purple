@@ -149,6 +149,9 @@ const columns = [
                 if (a.template.msgtype === 'publication') {
                   return -1
                 }
+                if (b.template.msgtype === 'publication') {
+                  return 1
+                }
                 return 0
               }
             })
