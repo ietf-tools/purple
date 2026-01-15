@@ -55,7 +55,7 @@
             <BaseButton btn-type="cancel" @click="cancel">
               Cancel
             </BaseButton>
-            <BaseButton btn-type="default" @click="publishRfc">
+            <BaseButton btn-type="default" @click="postRfc">
               Post this RFC
             </BaseButton>
           </template>
@@ -156,7 +156,7 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
 )
 
 watch(rfcToBe, () => {
-  if(!rfcToBe.value) {
+  if (!rfcToBe.value) {
     return
   }
   if (rfcToBe.value.disposition === 'published') {
@@ -214,16 +214,16 @@ const fetchAndVerifyMetadata = async () => {
   }
 }
 
-const publishRfc = async () => {
+const postRfc = async () => {
   step.value = { type: 'loading' }
   // TODO: api to post RFC
   /**
    * API use probably looks like,
-   * Request: ..verify that Git HEAD of repo is still Githash, that metadata is still in sync, then publish
+   * Request: ..verify that Git HEAD of repo is still Githash, that metadata is still in sync, then post
    *  { name: string, gitHash: string }
    *
    * Response:
-   *  Error, or rfc with new disposition='published'
+   *  Error, or rfc
    *  { rfcToBe: RfcToBe }
    */
   await sleep(1000)
