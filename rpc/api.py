@@ -1668,11 +1668,3 @@ class MetadataValidationResultsViewSet(viewsets.ViewSet):
         # Enqueue Celery task
         task = validate_metadata_task.delay(rfc_to_be.id)
         return Response({"task_id": task.id, "status": "queued"}, status=202)
-
-    def get_file_path(self, manifest, rfc_number, file_type):
-        for pub in manifest.get("publications", []):
-            if pub.get("rfcNumber") == rfc_number:
-                for f in pub.get("files", []):
-                    if f.get("type", "").lower() == file_type.lower():
-                        return f.get("path")
-        return None
