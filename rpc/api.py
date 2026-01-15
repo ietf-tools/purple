@@ -1667,4 +1667,6 @@ class MetadataValidationResultsViewSet(viewsets.ViewSet):
 
         # Enqueue Celery task
         task = validate_metadata_task.delay(rfc_to_be.id)
-        return Response({"task_id": task.id, "status": "queued"}, status=202)
+        return Response(
+            {"task_id": task.id, "status": "queued"}, status=status.HTTP_202_ACCEPTED
+        )
