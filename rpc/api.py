@@ -8,7 +8,6 @@ from dataclasses import dataclass
 
 import django_filters
 import rpcapi_client
-from celery.result import AsyncResult
 from django import forms
 from django.db import transaction
 from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
@@ -16,7 +15,6 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.utils import timezone
-from django_celery_results.models import TaskResult
 from django_filters import rest_framework as filters
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (

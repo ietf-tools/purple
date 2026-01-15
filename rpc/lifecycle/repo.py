@@ -11,19 +11,19 @@ import jsonschema
 import requests
 from django.conf import settings
 from django.core.files.base import File
+from django.db import transaction
 from github import Github, GithubException
 from github.Auth import Auth as GithubAuth
 from github.Auth import Token as GithubAuthToken
 from requests import HTTPError
-from django.db import transaction
+
 from rpc.models import (
-    RpcRelatedDocument,
     DocRelationshipName,
     RfcToBe,
+    RpcRelatedDocument,
     SubseriesMember,
     SubseriesTypeName,
 )
-
 
 logger = logging.getLogger(__name__)
 
