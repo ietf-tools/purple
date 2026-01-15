@@ -178,14 +178,8 @@ const fetchAndVerifyMetadata = async () => {
    *  { name: string }
    *
    * Response:
-   *  Error, or
-   *  {
-   *   isMatch: boolean,
-   *   gitHash: string,
-   *   gitRepoUrl: string
-   *   databaseRfcToBe: RfcToBe,
-   *   documentRfcToBe: RfcToBe,
-   *  }
+   *  Error, or the 'diff' step
+   *
    */
 
   await sleep(1000)
@@ -227,8 +221,7 @@ const postRfc = async () => {
    *  { name: string, gitHash: string }
    *
    * Response:
-   *  Error, or rfc
-   *  { rfcToBe: RfcToBe }
+   *  Error or success
    */
   await sleep(1000)
   step.value = {
@@ -246,8 +239,7 @@ const updateDatabaseToMatchDocument = async () => {
    *  { name: string, gitHash: string }
    *
    * Response:
-   *  error or new RFC with synced data
-   *  { rfcToBe: RfcToBe }
+   *  error or success
    */
   await sleep(1000)
   step.value = {
