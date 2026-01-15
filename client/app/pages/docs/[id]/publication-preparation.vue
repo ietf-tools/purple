@@ -127,6 +127,8 @@ const currentTab: DocTabId = 'publication-preparation'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
+type DiffRowValue = { isMatch: boolean,  leftValue?: string, rightValue?: string }
+
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
@@ -136,8 +138,9 @@ type Step =
     gitHash: string
     gitRepoUrl: string
     isMatch: boolean
+    serverCanFix: boolean
     columns: { nameColumn: string, leftColumn: string, rightColumn: string }
-    rows: { rowName: string, rowNameListDepth: number, leftValue?: string, rightValue?: string }[]
+    rows: { rowName: string, rowNameListDepth: number, rowValue?: DiffRowValue }[]
   }
   | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
@@ -189,13 +192,14 @@ const fetchAndVerifyMetadata = async () => {
   step.value = {
     type: 'diff',
     isMatch: false,
+    serverCanFix: true,
     gitHash: 'b26bf8af130955c5c67cfea96f9532680b963628',
     gitRepoUrl: 'http://github.com/ietf-tools/rfc10000',
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
     rows: [
-      { rowName: "title", rowNameListDepth: 0, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" },
+      { rowName: "title", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" } },
       {
-        rowName: "abstract", rowNameListDepth: 0, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
+        rowName: "abstract", rowNameListDepth: 0, rowValue: { isMatch: false, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
 
   Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous disconnections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
 
@@ -203,13 +207,13 @@ const fetchAndVerifyMetadata = async () => {
 
   Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous connections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
 
-  This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` },
+  This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` } },
       { rowName: "authors:", rowNameListDepth: 0 },
-      { rowName: "", rowNameListDepth: 1, leftValue: "John", rightValue: "John" },
-      { rowName: "", rowNameListDepth: 1, leftValue: "Jane", rightValue: "Jane" },
-      { rowName: "", rowNameListDepth: 1, leftValue: "Jake", rightValue: "Jack" },
-      { rowName: "RFC Number", rowNameListDepth: 0, leftValue: "9999", rightValue: "9999" },
-      { rowName: "submittedStdLevel", rowNameListDepth: 0, leftValue: "draft", rightValue: "draft" },
+      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "John", rightValue: "John" } },
+      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jane", rightValue: "Jane" } },
+      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jake", rightValue: "Jack" } },
+      { rowName: "RFC Number", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "9999", rightValue: "9999" } },
+      { rowName: "submittedStdLevel", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "draft", rightValue: "draft" } },
     ]
   }
 }

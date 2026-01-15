@@ -10,22 +10,22 @@
     </thead>
     <tbody>
       <tr v-for="row in computedRows" :class="{
-        [badgeColors.red]: !row.isMatch,
-        [badgeColors.green]: row.isMatch,
+        [badgeColors.red]: row.value && !row.value.isMatch,
+        [badgeColors.green]: row.value && row.value.isMatch,
       }">
         <td class="p-2" :style="row.rowNameListDepth > 0 && `padding-left: ${row.rowNameListDepth}rem`">
           <template v-if="row.rowNameListDepth > 0">&bull;</template>
           {{ row.rowName }}
         </td>
         <td class="p-2">
-          <component :is="row.leftValue"/>
+          <component :is="row.value?.leftValue ?? ''"/>
         </td>
         <td class="align-middle">
-          <Icon v-if="!row.isMatch" name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
-          <Icon v-if="row.isMatch" name="ic:outline-equals" size="1rem" aria-label="=" title="="/>
+          <Icon v-if="row.value && !row.value.isMatch" name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
+          <Icon v-if="row.value && row.value.isMatch" name="ic:outline-equals" size="1rem" aria-label="=" title="="/>
         </td>
         <td class="p-2">
-          <component :is="row.rightValue"/>
+          <component :is="row.value?.rightValue ?? ''"/>
         </td>
       </tr>
     </tbody>
@@ -33,7 +33,11 @@
 </template>
 
 <script setup lang="ts">
-type Row = { rowName: string, rowNameListDepth: number, leftValue?: string, rightValue?: string }
+type Row = {
+  rowName: string,
+  rowNameListDepth: number,
+  value?: { isMatch: boolean, leftValue: string, rightValue: string }
+}
 
 type Props = {
   columns: { nameColumn: string, leftColumn: string, rightColumn: string }
@@ -45,34 +49,44 @@ const props = defineProps<Props>()
 type RenderableRow = {
   rowName: string
   rowNameListDepth: number
-  isMatch: boolean
-  leftValue: ReturnType<typeof h>
-  rightValue: ReturnType<typeof h>
+  value?: {
+    isMatch: boolean
+    leftValue: ReturnType<typeof h>
+    rightValue: ReturnType<typeof h>
+  }
 }
 
 const invalidCharAttribute = { class: "bg-red-900 dark:bg-red-950 text-white" }
 
 const computedRows = computed((): RenderableRow[] => {
   return props.rows.map(row => {
-    const targetLength = Math.max(row.leftValue?.length ?? 0, row.rightValue?.length ?? 0)
-    const leftValue = `${(row.leftValue ?? '').padEnd(targetLength)}`
-    const rightValue = `${(row.rightValue ?? '').padEnd(targetLength)}`
+    if(!row.value) {
+      return {
+        rowName: row.rowName,
+        rowNameListDepth: row.rowNameListDepth,
+      }
+    }
+    const targetLength = Math.max(row.value.leftValue?.length ?? 0, row.value.rightValue.length ?? 0)
+    const leftValue = `${(row.value.leftValue).padEnd(targetLength)}`
+    const rightValue = `${(row.value.rightValue).padEnd(targetLength)}`
     return {
       rowName: row.rowName,
       rowNameListDepth: row.rowNameListDepth,
-      isMatch: row.leftValue === row.rightValue,
-      leftValue: h('span', leftValue.split('').map((leftChar, index) => {
-        const rightChar = rightValue.charAt(index)
-        const isSame = leftChar !== rightChar
-        const isWhitespace = leftChar.match(/\s/)
-        return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : leftChar)
-      })),
-      rightValue: h('span', rightValue.split('').map((rightChar, index) => {
-        const leftChar = leftValue.charAt(index)
-        const isSame = leftChar !== rightChar
-        const isWhitespace = rightChar.match(/\s/)
-        return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : rightChar)
-      }))
+      value: {
+        isMatch: row.value.isMatch,
+        leftValue: h('span', leftValue.split('').map((leftChar, index) => {
+          const rightChar = rightValue.charAt(index)
+          const isSame = leftChar !== rightChar
+          const isWhitespace = leftChar.match(/\s/)
+          return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : leftChar)
+        })),
+        rightValue: h('span', rightValue.split('').map((rightChar, index) => {
+          const leftChar = leftValue.charAt(index)
+          const isSame = leftChar !== rightChar
+          const isWhitespace = rightChar.match(/\s/)
+          return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : rightChar)
+        }))
+      }
     }
   })
 })
