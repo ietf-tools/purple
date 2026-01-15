@@ -1554,6 +1554,32 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
+        operation_id="metadata_validation_results_list",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        responses={
+            200: MetadataValidationResultsSerializer,
+        },
+    )
+    def list(self, request, *args, **kwargs):
+        """Return single metadata validation result for this draft"""
+        draft_name = kwargs.get("draft_name")
+        try:
+            mvr = MetadataValidationResults.objects.get(
+                rfc_to_be__draft__name=draft_name
+            )
+            serializer = self.get_serializer(mvr)
+            return Response(serializer.data)
+        except MetadataValidationResults.DoesNotExist:
+            return Response(None, status=status.HTTP_200_OK)
+
+    @extend_schema(
         operation_id="metadata_validation_results_create",
         parameters=[
             OpenApiParameter(
@@ -1609,6 +1635,10 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         ],
         responses={
             204: None,
+            400: inline_serializer(
+                name="DeleteMetadataBadRequestResponse",
+                fields={"detail": serializers.CharField()},
+            ),
             404: inline_serializer(
                 name="DeleteMetadataNotFoundResponse",
                 fields={"detail": serializers.CharField()},
@@ -1623,6 +1653,13 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         metadata_result = get_object_or_404(
             MetadataValidationResults, rfc_to_be__draft__name=draft_name
         )
+
+        if metadata_result.is_pending:
+            return Response(
+                {"detail": "Cannot delete pending metadata validation results."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         metadata_result.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
