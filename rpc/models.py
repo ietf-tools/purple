@@ -1078,12 +1078,14 @@ class MetadataValidationResults(models.Model):
 
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     received_at = models.DateTimeField(auto_now_add=True)
-    is_valid = models.BooleanField()
     head_sha = models.CharField(
         max_length=40,
         help_text="Head SHA of the commit that was validated",
+        null=True,
+        blank=True,
     )
-    metadata = models.JSONField()
+    metadata = models.JSONField(null=True, blank=True)
+    is_pending = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["-received_at"]
@@ -1105,7 +1107,7 @@ class MetadataValidationResults(models.Model):
         ]
 
     def __str__(self):
-        status = "valid" if self.is_valid else "invalid"
+        status = "pending" if self.is_pending else "received"
         return (
             f"MetadataValidationResults for {self.rfc_to_be}: {status} on "
             + f"{self.received_at:%Y-%m-%d %H:%M}"

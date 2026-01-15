@@ -1297,7 +1297,7 @@ class ApprovalLogMessageSerializer(serializers.Serializer):
         return ApprovalLogMessage.objects.get(pk=instance.pk)
 
 
-class MetadataDateSerializer(serializers.Serializer):
+class MetadataPublicationDateSerializer(serializers.Serializer):
     """Serializer for metadata date field"""
 
     day = serializers.CharField()
@@ -1305,14 +1305,26 @@ class MetadataDateSerializer(serializers.Serializer):
     month = serializers.CharField()
 
 
+class MetadataAuthorSerializer(serializers.Serializer):
+    """Serializer for metadata authors field"""
+
+    fullname = serializers.CharField()
+    role = serializers.CharField(required=False)
+    initials = serializers.CharField()
+    surname = serializers.CharField()
+    organization = serializers.CharField()
+
+
 class MetadataSerializer(serializers.Serializer):
     """Serializer for repository metadata structure"""
 
-    date = MetadataDateSerializer()
-    authors = serializers.ListField(child=serializers.CharField())
+    title = serializers.CharField()
+    publication_date = MetadataPublicationDateSerializer()
+    authors = serializers.ListField(child=MetadataAuthorSerializer())
     updates = serializers.ListField(child=serializers.CharField())
     abstract = serializers.CharField()
     obsoletes = serializers.ListField(child=serializers.CharField())
+    subseries = serializers.ListField(child=serializers.CharField())
 
 
 class MetadataValidationResultsSerializer(serializers.ModelSerializer):

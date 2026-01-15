@@ -90,6 +90,7 @@ def validate_metadata_task(self, rfc_to_be_id):
                     if f.get("type", "").lower() == "xml":
                         xml_path = f.get("path")
                         break
+
         if not xml_path:
             logger.error(f"No XML file found in manifest for RFC {rfc_number}")
             return {"error": "No XML file found in manifest for this RFC number."}
@@ -97,16 +98,14 @@ def validate_metadata_task(self, rfc_to_be_id):
         xml_bytes = b"".join(chunk for chunk in xml_file.chunks())
         xml_string = xml_bytes.decode("utf-8")
         metadata = Metadata.parse_rfc_xml(xml_string)
-        # Store in DB
-        mvr, _ = MetadataValidationResults.objects.get_or_create(
-            rfc_to_be=rfc_to_be,
-            head_sha=head_sha,
-            defaults={"metadata": metadata, "is_valid": False},
-        )
-        if not _:
-            mvr.metadata = metadata
-            mvr.head_sha = head_sha
-            mvr.save()
+
+        # Update the existing record
+        mvr = MetadataValidationResults.objects.get(rfc_to_be=rfc_to_be)
+        mvr.head_sha = head_sha
+        mvr.metadata = metadata
+        mvr.is_pending = False
+        mvr.save()
+
         logger.info(f"Metadata validation complete for RfcToBe {rfc_to_be_id}")
         return {"status": "success", "id": mvr.id}
     except Exception as e:

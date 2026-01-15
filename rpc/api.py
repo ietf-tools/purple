@@ -44,6 +44,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
+from rpc.lifecycle.repo import Metadata
 
 from .lifecycle.publication import (
     can_publish,
@@ -96,6 +97,7 @@ from .serializers import (
     MailMessageSerializer,
     MailResponseSerializer,
     MailTemplateSerializer,
+    MetadataSerializer,
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
@@ -1537,68 +1539,19 @@ class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubseriesTypeNameSerializer
 
 
-class MetadataValidationResultsViewSet(viewsets.ViewSet):
-    @extend_schema(
-        operation_id="metadata_validation_results_retrieve",
-        parameters=[
-            OpenApiParameter(
-                name="draft_name",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.PATH,
-                description="Draft name",
-            ),
-            OpenApiParameter(
-                name="task_id",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.QUERY,
-                required=False,
-                description="Optional Celery task ID to check status",
-            ),
-        ],
-        responses={
-            200: MetadataValidationResultsSerializer,
-            202: inline_serializer(
-                name="TaskStatusResponse",
-                fields={"status": serializers.CharField()},
-            ),
-            404: inline_serializer(
-                name="NotFoundResponse",
-                fields={"error": serializers.CharField()},
-            ),
-            500: inline_serializer(
-                name="TaskFailureResponse",
-                fields={
-                    "status": serializers.CharField(),
-                    "error": serializers.CharField(),
-                },
-            ),
-        },
-    )
-    def list(self, request, *args, **kwargs):
-        """
-        ViewSet endpoint to retrieve repository metadata for a given RfcToBe from DB.
-        If a task_id is provided, check Celery task status first.
-        """
-        draft_name = kwargs.get("draft_name")
-        task_id = request.query_params.get("task_id")
-        if task_id:
-            result = AsyncResult(task_id)
-            if result.state in ["PENDING", "STARTED"]:
-                return Response({"status": result.state.lower()}, status=202)
-            elif result.state == "FAILURE":
-                return Response(
-                    {"status": "failure", "error": str(result.result)}, status=500
-                )
+@extend_schema_with_draft_name()
+class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
+    queryset = MetadataValidationResults.objects.all()
+    serializer_class = MetadataValidationResultsSerializer
+    http_method_names = ["get", "post", "delete"]
+    lookup_field = "head_sha"
 
-        metadata_validation_results = MetadataValidationResults.objects.filter(
-            rfc_to_be__draft__name=draft_name
-        ).first()
-        if metadata_validation_results is None:
-            return Response(
-                {"error": "No metadata validation results found for draft."}, status=404
-            )
-        serializer = MetadataValidationResultsSerializer(metadata_validation_results)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+        )
 
     @extend_schema(
         operation_id="metadata_validation_results_create",
@@ -1612,32 +1565,16 @@ class MetadataValidationResultsViewSet(viewsets.ViewSet):
         ],
         request=None,
         responses={
-            202: inline_serializer(
-                name="TaskQueuedResponse",
-                fields={
-                    "task_id": serializers.CharField(),
-                    "status": serializers.CharField(),
-                },
-            ),
-            404: inline_serializer(
+            status.HTTP_201_CREATED: MetadataValidationResultsSerializer,
+            status.HTTP_200_OK: MetadataValidationResultsSerializer,
+            status.HTTP_404_NOT_FOUND: inline_serializer(
                 name="RfcToBeNotFoundResponse",
                 fields={"error": serializers.CharField()},
-            ),
-            409: inline_serializer(
-                name="TaskAlreadyInProgressResponse",
-                fields={
-                    "task_id": serializers.CharField(),
-                    "status": serializers.CharField(),
-                    "message": serializers.CharField(),
-                },
             ),
         },
     )
     def create(self, request, *args, **kwargs):
-        """
-        Async endpoint: enqueue Celery task to validate metadata for a given RfcToBe.
-        Returns a job/task id for status polling.
-        """
+        """Create a pending metadata validation result and enqueue task"""
         draft_name = kwargs.get("draft_name")
         rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
         if rfc_to_be is None:
@@ -1646,27 +1583,147 @@ class MetadataValidationResultsViewSet(viewsets.ViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        # Check for existing in-progress tasks for this RfcToBe
-        # if it exists, refuse to enqueue another
-        existing_tasks = TaskResult.objects.filter(
-            task_name="rpc.tasks.validate_metadata_task",
-            status__in=["PENDING", "STARTED"],
-            task_args__contains=f"[{rfc_to_be.id}]",
-        ).order_by("-date_created")
+        mvr, created = MetadataValidationResults.objects.get_or_create(
+            rfc_to_be=rfc_to_be,
+            defaults={"is_pending": True},
+        )
 
-        if existing_tasks.exists():
-            existing_task = existing_tasks.first()
-            return Response(
-                {
-                    "task_id": existing_task.task_id,
-                    "status": "already_in_progress",
-                    "message": "A metadata task is already running for this RfcToBe",
+        if created:
+            # Enqueue Celery task
+            validate_metadata_task.delay(rfc_to_be.id)
+
+        return Response(
+            MetadataValidationResultsSerializer(mvr).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        operation_id="metadata_validation_results_delete",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        responses={
+            204: None,
+            404: inline_serializer(
+                name="DeleteMetadataNotFoundResponse",
+                fields={"detail": serializers.CharField()},
+            ),
+        },
+    )
+    def delete(self, request, *args, **kwargs):
+        """
+        Delete metadata validation results for a given RfcToBe.
+        """
+        draft_name = kwargs.get("draft_name")
+        metadata_result = get_object_or_404(
+            MetadataValidationResults, rfc_to_be__draft__name=draft_name
+        )
+        metadata_result.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        operation_id="metadata_validation_results_update_metadata",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        request=inline_serializer(
+            name="UpdateMetadataRequest",
+            fields={
+                "head_sha": serializers.CharField(
+                    required=True, help_text="Git commit hash to match"
+                ),
+            },
+        ),
+        responses={
+            200: inline_serializer(
+                name="TitleUpdateSuccessResponse",
+                fields={
+                    "status": serializers.CharField(),
+                    "message": serializers.CharField(),
+                    "updated_title": serializers.CharField(),
                 },
-                status=status.HTTP_409_CONFLICT,
+            ),
+            404: inline_serializer(
+                name="MetadataNotFoundResponse",
+                fields={"error": serializers.CharField()},
+            ),
+            400: inline_serializer(
+                name="MissingHashResponse",
+                fields={"error": serializers.CharField()},
+            ),
+        },
+    )
+    @action(detail=False, methods=["post"], url_path="update")
+    def update_metadata(self, request, *args, **kwargs):
+        """
+        Update the draft title from validated metadata.
+        Requires head_sha in request body to match the commit hash.
+        """
+        draft_name = kwargs.get("draft_name")
+        head_sha = request.data.get("head_sha")
+
+        if not head_sha:
+            return Response(
+                {"error": "Missing required parameter: head_sha"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Enqueue Celery task
-        task = validate_metadata_task.delay(rfc_to_be.id)
+        # Find RfcToBe by draft name
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfc_to_be is None:
+            return Response(
+                {"error": "RfcToBe for draft not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Find metadata matching both rfc_to_be and head_sha
+        metadata_result = MetadataValidationResults.objects.filter(
+            rfc_to_be=rfc_to_be, head_sha=head_sha
+        ).first()
+
+        if metadata_result is None:
+            return Response(
+                {
+                    "error": f"No metadata found for draft {draft_name} with "
+                    f"head_sha {head_sha}"
+                },
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Extract title from metadata
+        metadata = metadata_result.metadata
+
+        # validate fields using metadata serializer
+        serializer = MetadataSerializer(data=metadata)
+        serializer.is_valid(raise_exception=True)
+        validated_data = serializer.validated_data
+
+        updated_fields = Metadata.update_metadata(rfc_to_be, validated_data)
+
+        if not updated_fields:
+            return Response(
+                {
+                    "status": "error",
+                    "message": "No metadata fields updated",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         return Response(
-            {"task_id": task.id, "status": "queued"}, status=status.HTTP_202_ACCEPTED
+            {
+                "status": "success",
+                "message": f"Metadata updated for {draft_name}",
+                "updated_fields": updated_fields,
+            },
+            status=status.HTTP_200_OK,
         )
