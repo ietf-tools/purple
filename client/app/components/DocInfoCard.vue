@@ -5,7 +5,22 @@
     </template>
     <div v-if="rfcToBe">
       <DescriptionList>
-        <DescriptionListItem term="Title" :details="rfcToBe.title" :spacing="spacing" />
+        <DescriptionListItem term="Title" :spacing="spacing">
+          <DescriptionListDetails>
+            <template v-if="!props.isReadOnly">
+              <PatchRfcToBeField
+                key="title"
+                :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }"
+                :draft-name="rfcToBe.name!"
+                :initial-value="rfcToBe.title"
+                :on-success="() => props.refresh?.()"
+              />
+            </template>
+            <template v-else>
+              {{ rfcToBe.title }}
+            </template>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Authors" :spacing="spacing">
           <DescriptionListDetails>
             <div class="mx-0 text-sm font-medium">
