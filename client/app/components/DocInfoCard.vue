@@ -8,9 +8,11 @@
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
             <template v-if="!props.isReadOnly">
-              <EditTitle
+              <PatchRfcToBeField
+                key="title"
+                :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }"
                 :draft-name="rfcToBe.name!"
-                :initial-title="rfcToBe.title"
+                :initial-value="rfcToBe.title"
                 :on-success="() => props.refresh?.()"
               />
             </template>
