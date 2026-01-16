@@ -2,6 +2,7 @@
 
 import datetime
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
 from email.policy import EmailPolicy
 from itertools import pairwise
@@ -1380,3 +1381,94 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "is_match": comparator.is_match(),
         }
         return MetadataCompareSerializer(data).data
+
+
+@dataclass
+class MetadataTableRowValue:
+    left_value: str
+    right_value: str
+    is_match: bool
+
+
+@dataclass
+class MetadataTableRow:
+    row_name: str
+    row_name_list_depth: int
+    row_value: MetadataTableRowValue
+
+
+@dataclass
+class MetadataTable:
+    rfc_to_be: int
+    repository: str
+    head_sha: str
+    can_autofix: bool
+    is_match: bool
+    metadata_compare: Sequence[MetadataTableRow]
+
+
+class MetadataTableRowValueSerializer(serializers.Serializer):
+    left_value = serializers.CharField(
+        allow_blank=True, help_text="Value for left column"
+    )
+    right_value = serializers.CharField(
+        allow_blank=True, help_text="Value for right column"
+    )
+    is_match = serializers.BooleanField(help_text="Are the values equivalent?")
+
+
+class MetadataTableRowSerializer(serializers.Serializer):
+    row_name = serializers.CharField(
+        allow_blank=True,
+    )
+    row_name_list_depth = serializers.IntegerField()
+    row_value = MetadataTableRowValueSerializer()
+
+
+class MetadataTableSerializer(serializers.Serializer):
+    rfc_to_be = serializers.IntegerField()
+    repository = serializers.CharField(help_text="Github repository")
+    head_sha = serializers.CharField(
+        help_text="Git hash of repo commit that was validated"
+    )
+    can_autofix = serializers.BooleanField(
+        help_text="Can the discrepancy be fixed without editor intervention?"
+    )
+    is_match = serializers.BooleanField(help_text="Do the metadata match overall?")
+    metadata_compare = MetadataTableRowSerializer(many=True)
+
+    def to_representation(self, instance: dict):
+        """Convert input dict to a serializable proxy object representation"""
+        obj = MetadataTable(
+            rfc_to_be=12345,
+            repository="some/repo",
+            head_sha="deadbeef",
+            can_autofix=instance["can_autofix"],
+            is_match=False,
+            metadata_compare=[],
+        )
+        for row in instance["metadata_compare"]:
+            obj.metadata_compare.append(
+                MetadataTableRow(
+                    row_name=row["field"],
+                    row_name_list_depth=0,
+                    row_value=MetadataTableRowValue(
+                        left_value=row.get("db_value") or "",
+                        right_value=row.get("xml_value") or "",
+                        is_match=row["is_match"],
+                    )
+                )
+            )
+            for item in row.get("items", []):
+                obj.metadata_compare.append(
+                    MetadataTableRow(
+                        row_name="",
+                        row_name_list_depth=1,
+                        row_value=MetadataTableRowValue(
+                            left_value=item.get("db_value") or "",
+                            right_value=item.get("xml_value") or "",
+                            is_match=item["is_match"],
+                        )
+                    )
+                )
+        return super().to_representation(obj)
