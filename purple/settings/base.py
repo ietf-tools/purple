@@ -31,7 +31,6 @@ INSTALLED_APPS = [
     "rpc.apps.RpcConfig",
     "rpcauth.apps.RpcAuthConfig",
     "errata.apps.ErrataConfig",
-    "django_celery_results",
 ]
 
 MIDDLEWARE = [
