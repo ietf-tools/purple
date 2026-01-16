@@ -24,19 +24,19 @@
           <BaseButton @click="openEmailModal" class="flex items-center">
             <span>New Email</span>
             <span v-if="isLoadingNewEmailModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
           <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
             <span>Finish assignments</span>
             <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
           <BaseButton @click="openPublishModal" class="flex items-center">
             <span> Publish</span>
             <span v-if="isLoadingPublishModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
         </div>
@@ -104,12 +104,14 @@ const openAssignmentFinishedModal = async () => {
       personsRef.value ? personsRef.value : api.rpcPersonList()
     ])
 
+    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe.id)
+
     personsRef.value = rpcPersonList
 
     openOverlayModal({
       component: AssignmentFinishedModal,
       componentProps: {
-        assignments,
+        assignments: rfcToBeAssignments,
         people: rpcPersonList,
         rfcToBe: props.rfcToBe,
         onSuccess: () => { }
