@@ -79,6 +79,11 @@ router.register(
     rpc_api.ApprovalLogMessageViewSet,
     basename="documents-approval-log-messages",
 )
+router.register(
+    r"documents/(?P<draft_name>[^/.]+)/metadata_validation_results",
+    rpc_api.MetadataValidationResultsViewSet,
+    basename="documents-metadata-validation-results",
+)
 router.register(r"labels", rpc_api.LabelViewSet)
 router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)

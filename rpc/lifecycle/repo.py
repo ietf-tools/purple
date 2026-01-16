@@ -133,6 +133,17 @@ class GithubRepository(Repository):
             size=contents.size,
         )
 
+    def get_head_sha(self) -> str:
+        """Get the SHA of the head commit of the default branch."""
+        try:
+            commits = self.repo.get_commits()
+            head_commit = commits[0]
+            return head_commit.sha
+        except GithubException as err:
+            if err.status // 100 == 5:  # 5xx
+                raise TemporaryRepositoryError from err
+            raise RepositoryError from err
+
 
 class RepositoryError(Exception):
     """Base class for repository exceptions"""
