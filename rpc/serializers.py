@@ -19,6 +19,7 @@ from simple_history.utils import update_change_reason
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 from datatracker.utils import build_datatracker_url
+from rpc.lifecycle.metadata import MetadataComparator
 
 from .models import (
     ActionHolder,
@@ -1312,7 +1313,7 @@ class MetadataAuthorSerializer(serializers.Serializer):
     role = serializers.CharField(required=False)
     initials = serializers.CharField()
     surname = serializers.CharField()
-    organization = serializers.CharField()
+    organization = serializers.CharField(required=False)
 
 
 class MetadataSerializer(serializers.Serializer):
@@ -1327,9 +1328,37 @@ class MetadataSerializer(serializers.Serializer):
     subseries = serializers.ListField(child=serializers.CharField())
 
 
+class MetadataComparisonSubItemSerializer(serializers.Serializer):
+    """Serializer for individual items within array field comparisons (e.g., authors)"""
+
+    is_match = serializers.BooleanField()
+    xml_value = serializers.CharField()
+    db_value = serializers.CharField()
+
+
+class MetadataComparisonItemSerializer(serializers.Serializer):
+    """Serializer for individual metadata field comparison"""
+
+    field = serializers.CharField()
+    xml_value = serializers.JSONField(required=False)
+    db_value = serializers.JSONField(required=False)
+    can_fix = serializers.BooleanField(default=False, required=False)
+    is_match = serializers.BooleanField()
+    items = MetadataComparisonSubItemSerializer(many=True, required=False)
+
+
+class MetadataCompareSerializer(serializers.Serializer):
+    """Serializer for the complete metadata comparison response"""
+
+    comparisons = MetadataComparisonItemSerializer(many=True)
+    can_fix = serializers.BooleanField()
+    is_match = serializers.BooleanField()
+
+
 class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     repository = serializers.CharField(source="rfc_to_be.repository", read_only=True)
     metadata = MetadataSerializer()
+    metadata_compare = serializers.SerializerMethodField()
 
     class Meta:
         model = MetadataValidationResults
@@ -1338,4 +1367,16 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "repository",
             "head_sha",
             "metadata",
+            "metadata_compare",
         ]
+
+    @extend_schema_field(MetadataCompareSerializer())
+    def get_metadata_compare(self, obj):
+        """Compare metadata from XML with database values using MetadataComparator"""
+        comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        data = {
+            "comparisons": comparator.compare_all(),
+            "can_fix": comparator.can_fix(),
+            "is_match": comparator.is_match(),
+        }
+        return MetadataCompareSerializer(data).data

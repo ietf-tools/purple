@@ -42,7 +42,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from rpc.lifecycle.repo import Metadata
+from rpc.lifecycle.metadata import Metadata
 
 from .lifecycle.publication import (
     can_publish,

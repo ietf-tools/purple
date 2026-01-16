@@ -1,29 +1,18 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 """Document repository interfaces"""
 
-import datetime
 import json
 import logging
-import xml.etree.ElementTree as ET
 from pathlib import PurePath
 
 import jsonschema
 import requests
 from django.conf import settings
 from django.core.files.base import File
-from django.db import transaction
 from github import Github, GithubException
 from github.Auth import Auth as GithubAuth
 from github.Auth import Token as GithubAuthToken
 from requests import HTTPError
-
-from rpc.models import (
-    DocRelationshipName,
-    RfcToBe,
-    RpcRelatedDocument,
-    SubseriesMember,
-    SubseriesTypeName,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -162,189 +151,3 @@ class RepositoryError(Exception):
 
 class TemporaryRepositoryError(RepositoryError):
     """Repository exception that is likely temporary and worth retrying"""
-
-
-class Metadata:
-    """Base class for metadata extraction"""
-
-    @staticmethod
-    def parse_rfc_xml(xml_string):
-        root = ET.fromstring(xml_string)
-        ns = {}
-
-        front = root.find("front", ns)
-        if front is None:
-            return None
-
-        title_elem = front.find("title", ns)
-        title = title_elem.text.strip() if title_elem is not None else ""
-
-        abstract_elem = front.find("abstract", ns)
-        abstract_text = ""
-        if abstract_elem is not None:
-            abstract_text = " ".join(
-                t.text.strip() for t in abstract_elem.findall("t", ns) if t.text
-            )
-
-        authors = []
-        for author in front.findall("author", ns):
-            author_dict = dict(author.attrib)
-            org_elem = author.find("organization", ns)
-            if org_elem is not None and org_elem.text:
-                author_dict["organization"] = org_elem.text.strip()
-            if author_dict:
-                authors.append(author_dict)
-
-        obsoletes_str = root.attrib.get("obsoletes", "")
-        obsoletes = (
-            [s.strip() for s in obsoletes_str.split(",") if s.strip()]
-            if obsoletes_str
-            else []
-        )
-
-        updates_str = root.attrib.get("updates", "")
-        updates = (
-            [s.strip() for s in updates_str.split(",") if s.strip()]
-            if updates_str
-            else []
-        )
-
-        date_elem = front.find("date", ns)
-        date = None
-        if date_elem is not None:
-            date = {
-                "month": date_elem.attrib.get("month"),
-                "day": date_elem.attrib.get("day"),
-                "year": date_elem.attrib.get("year"),
-            }
-
-        subseries = []
-        for series_info in root.findall("seriesInfo", ns):
-            name = series_info.attrib.get("name")
-            if name in ("BCP", "FYI", "STD"):
-                value = series_info.attrib.get("value")
-                if name and value:
-                    subseries.append({"name": name, "value": value})
-
-        return {
-            "title": title,
-            "abstract": abstract_text,
-            "authors": authors,
-            "obsoletes": obsoletes,
-            "updates": updates,
-            "publication_date": date,
-            "subseries": subseries,
-        }
-
-    @staticmethod
-    def update_metadata(rfctobe, metadata):
-        """Update the draft title from metadata dictionary"""
-
-        updated_fields = {}
-
-        with transaction.atomic():
-            # title
-            new_title = metadata.get("title")
-            draft = rfctobe.draft
-            if not new_title:
-                raise ValueError("No title in metadata")
-            draft.title = new_title
-            draft.save(update_fields=["title"])
-            updated_fields["title"] = new_title
-
-            # obsoletes and updates
-            # Delete existing obsoletes and updates relationships
-            RpcRelatedDocument.objects.filter(
-                source=rfctobe, relationship__slug__in=["obs", "updates"]
-            ).delete()
-
-            # Create new obsoletes relationships
-            obsoletes = metadata.get("obsoletes", [])
-            relationship = DocRelationshipName.objects.get(slug="obs")
-            for rfc_num in obsoletes:
-                try:
-                    target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
-                    RpcRelatedDocument.objects.create(
-                        source=rfctobe,
-                        relationship=relationship,
-                        target_rfctobe=target_rfctobe,
-                    )
-                except RfcToBe.DoesNotExist:
-                    logger.warning(
-                        f"RFC {rfc_num} not found for obsoletes relationship"
-                    )
-
-            # Create new updates relationships
-            updates = metadata.get("updates", [])
-            relationship = DocRelationshipName.objects.get(slug="updates")
-            for rfc_num in updates:
-                try:
-                    target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
-                    RpcRelatedDocument.objects.create(
-                        source=rfctobe,
-                        relationship=relationship,
-                        target_rfctobe=target_rfctobe,
-                    )
-                except RfcToBe.DoesNotExist:
-                    logger.warning(f"RFC {rfc_num} not found for updates relationship")
-
-            updated_fields["obsoletes"] = obsoletes
-            updated_fields["updates"] = updates
-
-            # abstract
-            # todo
-
-            # authors
-            # todo: implement author updates of affiliation, order and is_editor
-
-            # publication status
-            # todo
-
-            # publication date
-            pub_date = metadata.get("publication_date")
-            if pub_date:
-                year = int(pub_date.get("year"))
-                month_str = pub_date.get("month")
-                day = int(pub_date.get("day", 1))
-
-                if not year or not month_str or not day:
-                    raise ValueError("Incomplete publication date in metadata")
-
-                # Convert month name to month number
-                month = datetime.datetime.strptime(month_str, "%B").month
-
-                rfctobe.published_at = datetime.datetime(year, month, day, 12, 0, 0)
-                rfctobe.save(
-                    update_fields=[
-                        "published_at",
-                    ]
-                )
-                updated_fields["published_at"] = rfctobe.published_at
-
-            # subseries
-            # Delete all existing subseries memberships
-            SubseriesMember.objects.filter(rfc_to_be=rfctobe).delete()
-
-            # Create new subseries memberships
-            subseries = metadata.get("subseries", [])
-            for subseries_item in subseries:
-                # subseries_item is like {"name": "BCP", "value": "38"}
-                type_slug = subseries_item.get("name", "").lower()
-                number = subseries_item.get("value")
-
-                if type_slug and number:
-                    try:
-                        subseries_type = SubseriesTypeName.objects.get(slug=type_slug)
-                        SubseriesMember.objects.create(
-                            rfc_to_be=rfctobe,
-                            type=subseries_type,
-                            number=int(number),
-                        )
-                    except SubseriesTypeName.DoesNotExist:
-                        logger.warning(f"Subseries type {type_slug} not found")
-                    except ValueError:
-                        logger.warning(f"Invalid subseries number: {number}")
-
-            updated_fields["subseries"] = subseries
-
-        return updated_fields

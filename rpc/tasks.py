@@ -3,7 +3,8 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
-from rpc.lifecycle.repo import GithubRepository, Metadata
+from rpc.lifecycle.metadata import Metadata
+from rpc.lifecycle.repo import GithubRepository
 from rpc.models import MailMessage, MetadataValidationResults, RfcToBe
 from utils.task_utils import RetryTask
 
