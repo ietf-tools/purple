@@ -43,12 +43,3 @@ const updateTitle = async () => {
   }
 }
 </script>
-
-<style>
-.input-number-no-spinners,
-.input-number-no-spinners::-webkit-inner-spin-button,
-.input-number-no-spinners::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-</style>
