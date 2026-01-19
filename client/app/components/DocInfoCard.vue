@@ -23,7 +23,7 @@
         </DescriptionListItem>
         <DescriptionListItem term="Authors" :spacing="spacing">
           <DescriptionListDetails>
-            <div class="mx-0 text-sm font-medium">
+            <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else>
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
@@ -37,10 +37,23 @@
                   </div>
                 </div>
               </div>
+              <div>
+                <Anchor :href="editAuthorsHref" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+              </div>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Pages" :details="rfcToBe.draft?.pages?.toString()" :spacing="spacing" />
+        <DescriptionListItem term="Submitted Pages" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField
+              key="pages"
+              :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1 }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.draft?.pages?.toString()"
+              :on-success="() => props.refresh?.()"
+            />
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Document Shepherd" details="Dolly Shepherd (mocked)" :spacing="spacing" />
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
@@ -143,6 +156,8 @@ type Props = {
   isReadOnly?: boolean
   refresh?: () => void
 }
+
+const editAuthorsHref = computed(() => editAuthorsPathAndFragment(props.rfcToBe.name))
 
 const props = defineProps<Props>()
 const emit = defineEmits<{

@@ -1,7 +1,9 @@
 <template>
   <div class="flex w-full h-full gap-1 items-center">
     <template v-if="!isEditing">
-      {{ valueRef }}
+      <div class="flex-1">
+        {{ valueRef }}
+      </div>
       <BaseButton @click="isEditing = true" size="xs" btn-type="outline"><Icon name="uil:pen" /></BaseButton>
     </template>
     <template v-else-if="props.uiMode.type === 'textbox'">
@@ -15,13 +17,13 @@
       />
       <input
         v-if="props.uiMode.rows === 1"
-        type="text"
+        :type="props.uiMode.isNumber ? 'number' : 'text'"
         :id="props.key"
         v-model="valueRef"
-        class="px-2 py-1 flex-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
+        class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
         :placeholder="props.uiMode.placeholder"
       />
-      <div class="flex flex-col h-full justify-between">
+      <div class="flex flex-col gap-1 h-full justify-between">
         <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
       </div>
@@ -36,7 +38,7 @@
           {{ option.label }}
         </option>
       </select>
-      <div class="flex flex-col h-full justify-between">
+      <div class="flex flex-col gap-1 h-full justify-between">
         <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
       </div>
@@ -51,7 +53,7 @@ import type { RfcToBe, PatchedRfcToBeRequest } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
 type UIMode =
-  | { type: 'textbox', rows: number, placeholder: string }
+  | { type: 'textbox', rows: number, placeholder: string, isNumber?: boolean }
   | {
     type: 'select'
     options: { value: string, label: string }[]

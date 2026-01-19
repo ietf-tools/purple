@@ -8,7 +8,7 @@
       <ErrorAlert v-if="rawRfcToBeError" title="API Error">
         API error while requesting draft: {{ rawRfcToBeError }}
       </ErrorAlert>
-      <div v-else
+      <div
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
 
         <!-- Status summary -->
@@ -49,7 +49,9 @@
           </div>
         </BaseCard>
 
-        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
+        <HighlightSection id="edit-authors">
+          <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
+        </HighlightSection>
       </div>
     </div>
   </div>
