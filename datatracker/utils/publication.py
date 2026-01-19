@@ -6,7 +6,7 @@ published and uploading the file contents. Note that there is a similarly named 
 in the rpc app (rpc.lifecycle.publication) that contains logic related to the API the
 purple front-end uses to trigger RFC publication.
 """
-
+import datetime
 import json
 import logging
 from json import JSONDecodeError
@@ -117,7 +117,8 @@ def publish_rfc(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
         try:
             upload_rfc_contents(
                 rfctobe,
-                [str(fn) for fn in downloaded_files.values()],
+                filenames=[str(fn) for fn in downloaded_files.values()],
+                mtime=rfctobe.published_at,
                 rpcapi=rpcapi,
             )
         except Exception as err:
@@ -189,10 +190,17 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
 
 @with_rpcapi
 def upload_rfc_contents(
-    rfctobe: RfcToBe, filenames: list[str], *, rpcapi: rpcapi_client.PurpleApi
+    rfctobe: RfcToBe,
+    filenames: list[str],
+    mtime: datetime.datetime | None,
+    *, rpcapi: rpcapi_client.PurpleApi
 ):
     # set up and call API
-    rpcapi.upload_rfc_files(rfc=rfctobe.rfc_number, contents=filenames)
+    rpcapi.upload_rfc_files(
+        rfc=rfctobe.rfc_number,
+        mtime=mtime,
+        contents=filenames,
+    )
 
 
 class PublicationError(Exception):
