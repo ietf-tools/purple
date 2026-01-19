@@ -1,6 +1,10 @@
 <template>
-  <div class="w-full flex gap-1 items-center">
-    <template v-if="props.uiMode.type === 'textbox'">
+  <div class="flex w-full h-full gap-1 items-center">
+    <template v-if="!isEditing">
+      {{ valueRef }}
+      <BaseButton @click="isEditing = true" size="xs" btn-type="outline"><Icon name="uil:pen" /></BaseButton>
+    </template>
+    <template v-else-if="props.uiMode.type === 'textbox'">
       <textarea
         v-if="props.uiMode.rows > 1"
         :id="props.key"
@@ -17,6 +21,10 @@
         class="px-2 py-1 flex-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
         :placeholder="props.uiMode.placeholder"
       />
+      <div class="flex flex-col h-full justify-between">
+        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
+        <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
+      </div>
     </template>
     <template v-else-if="props.uiMode.type === 'select'">
       <select
@@ -28,8 +36,11 @@
           {{ option.label }}
         </option>
       </select>
+      <div class="flex flex-col h-full justify-between">
+        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
+        <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
+      </div>
     </template>
-    <BaseButton @click="updateValue" btn-type="outline" size="xs">Save</BaseButton>
   </div>
 </template>
 
@@ -58,6 +69,8 @@ const api = useApi()
 const snackbar = useSnackbar()
 
 const valueRef = ref(props.initialValue)
+
+const isEditing = ref(false)
 
 const updateValue = async () => {
   try {
