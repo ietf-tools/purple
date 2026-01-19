@@ -12,7 +12,7 @@
               <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else>
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
-                  <a :href="author.email ? datatrackerPersonLink(author.email) : undefined" :class="ANCHOR_STYLE">
+                  <a :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined" :class="ANCHOR_STYLE">
                     <span :class="ANCHOR_STYLE">{{ author.titlepageName }}</span>
                     <span :class="PERSON_ID_STYLE" v-if="author.email">{{ SPACE }}{{ ` (${author.email})` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
@@ -121,6 +121,9 @@
 <script setup lang="ts">
 import type { RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
+import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
+
+const datatrackerLinks = useDatatrackerLinks()
 
 type Props = {
   rfcToBe: RfcToBe | null | undefined

@@ -46,6 +46,7 @@ import type { SortingState } from '@tanstack/vue-table'
 import type { BaseDatatrackerPerson, FinalApproval } from '~/purple_client'
 import DocumentFinalReviewModal from './DocumentFinalReviewModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
+import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
 
 type Props = {
   name: string
@@ -56,6 +57,7 @@ type Props = {
 const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
 const api = useApi()
+const datatrackerLinks = useDatatrackerLinks()
 
 const {
   data: finalApprovalsList,
@@ -92,7 +94,7 @@ const columns = [
 
       const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
         return h('span', [
-          h('a', { href: author.email ? datatrackerPersonLink(author.email) : undefined, class: ANCHOR_STYLE }, [
+          h('a', { href: author.email ? datatrackerLinks.personByEmail(author.email) : undefined, class: ANCHOR_STYLE }, [
             `${author.name}`,
             h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, ` #${author.email}`)
           ]),
