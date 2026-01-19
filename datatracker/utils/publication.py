@@ -6,6 +6,7 @@ published and uploading the file contents. Note that there is a similarly named 
 in the rpc app (rpc.lifecycle.publication) that contains logic related to the API the
 purple front-end uses to trigger RFC publication.
 """
+
 import datetime
 import json
 import logging
@@ -193,7 +194,8 @@ def upload_rfc_contents(
     rfctobe: RfcToBe,
     filenames: list[str],
     mtime: datetime.datetime | None,
-    *, rpcapi: rpcapi_client.PurpleApi
+    *,
+    rpcapi: rpcapi_client.PurpleApi,
 ):
     # set up and call API
     rpcapi.upload_rfc_files(
