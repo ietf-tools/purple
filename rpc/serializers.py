@@ -1299,25 +1299,6 @@ class ApprovalLogMessageSerializer(serializers.Serializer):
         return ApprovalLogMessage.objects.get(pk=instance.pk)
 
 
-class MetadataComparisonSubItemSerializer(serializers.Serializer):
-    """Serializer for individual items within array field comparisons (e.g., authors)"""
-
-    is_match = serializers.BooleanField()
-    xml_value = serializers.CharField()
-    db_value = serializers.CharField()
-
-
-class MetadataComparisonItemSerializer(serializers.Serializer):
-    """Serializer for individual metadata field comparison"""
-
-    field = serializers.CharField()
-    xml_value = serializers.JSONField(required=False)
-    db_value = serializers.JSONField(required=False)
-    can_fix = serializers.BooleanField(default=False, required=False)
-    is_match = serializers.BooleanField()
-    items = MetadataComparisonSubItemSerializer(many=True, required=False)
-
-
 @dataclass
 class MetadataTableRowValue:
     left_value: str
