@@ -1318,14 +1318,6 @@ class MetadataComparisonItemSerializer(serializers.Serializer):
     items = MetadataComparisonSubItemSerializer(many=True, required=False)
 
 
-class MetadataCompareSerializer(serializers.Serializer):
-    """Serializer for the complete metadata comparison response"""
-
-    comparisons = MetadataComparisonItemSerializer(many=True)
-    can_fix = serializers.BooleanField()
-    is_match = serializers.BooleanField()
-
-
 @dataclass
 class MetadataTableRowValue:
     left_value: str
@@ -1341,9 +1333,7 @@ class MetadataTableRow:
 
 
 @dataclass
-class MetadataTable:
-    can_autofix: bool
-    is_match: bool
+class MetadataComparisonTable:
     metadata_compare: Sequence[MetadataTableRow]
 
 
@@ -1365,18 +1355,12 @@ class MetadataTableRowSerializer(serializers.Serializer):
     row_value = MetadataTableRowValueSerializer()
 
 
-class MetadataTableSerializer(serializers.Serializer):
-    can_autofix = serializers.BooleanField(
-        help_text="Can the discrepancy be fixed without editor intervention?"
-    )
-    is_match = serializers.BooleanField(help_text="Do the metadata match overall?")
+class MetadataComparisonTableSerializer(serializers.Serializer):
     metadata_compare = MetadataTableRowSerializer(many=True)
 
     def to_representation(self, instance: dict):
         """Convert input dict to a serializable proxy object representation"""
-        obj = MetadataTable(
-            can_autofix=instance["can_autofix"],
-            is_match=instance["is_match"],
+        obj = MetadataComparisonTable(
             metadata_compare=[],
         )
         for row in instance["metadata_compare"]:
@@ -1408,7 +1392,9 @@ class MetadataTableSerializer(serializers.Serializer):
 
 class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     repository = serializers.CharField(source="rfc_to_be.repository", read_only=True)
-    metadata_table = serializers.SerializerMethodField()
+    can_autofix = serializers.SerializerMethodField()
+    is_match = serializers.SerializerMethodField()
+    metadata_compare = serializers.SerializerMethodField()
 
     class Meta:
         model = MetadataValidationResults
@@ -1416,27 +1402,29 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "rfc_to_be",
             "repository",
             "head_sha",
-            "metadata_table",
+            "can_autofix",
+            "is_match",
+            "metadata_compare",
         ]
 
-    @extend_schema_field(MetadataCompareSerializer())
-    def get_metadata_compare(self, obj):
-        """Compare metadata from XML with database values using MetadataComparator"""
+    @extend_schema_field(serializers.BooleanField())
+    def get_can_autofix(self, obj):
+        """Check if metadata can be auto-fixed"""
         comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
-        data = {
-            "comparisons": comparator.compare_all(),
-            "can_fix": comparator.can_fix(),
-            "is_match": comparator.is_match(),
-        }
-        return MetadataCompareSerializer(data).data
+        return comparator.can_fix()
 
-    @extend_schema_field(MetadataTableSerializer())
-    def get_metadata_table(self, obj):
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_match(self, obj):
+        """Check if all metadata fields match"""
+        comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        return comparator.is_match()
+
+    @extend_schema_field(MetadataTableRowSerializer(many=True))
+    def get_metadata_compare(self, obj):
         """Convert metadata comparison to table format"""
         comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
         table_data = {
-            "can_autofix": comparator.can_fix(),
-            "is_match": comparator.is_match(),
             "metadata_compare": comparator.compare_all(),
         }
-        return MetadataTableSerializer(table_data).data
+        serialized = MetadataComparisonTableSerializer(table_data).data
+        return serialized["metadata_compare"]
