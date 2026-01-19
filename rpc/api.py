@@ -42,7 +42,6 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
-from rpc.lifecycle.metadata import Metadata
 
 from .lifecycle.publication import (
     can_publish,
@@ -95,7 +94,6 @@ from .serializers import (
     MailMessageSerializer,
     MailResponseSerializer,
     MailTemplateSerializer,
-    MetadataSerializer,
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
@@ -1660,105 +1658,3 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
 
         metadata_result.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-    @extend_schema(
-        operation_id="metadata_validation_results_update_metadata",
-        parameters=[
-            OpenApiParameter(
-                name="draft_name",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.PATH,
-                description="Draft name",
-            ),
-        ],
-        request=inline_serializer(
-            name="UpdateMetadataRequest",
-            fields={
-                "head_sha": serializers.CharField(
-                    required=True, help_text="Git commit hash to match"
-                ),
-            },
-        ),
-        responses={
-            200: inline_serializer(
-                name="TitleUpdateSuccessResponse",
-                fields={
-                    "status": serializers.CharField(),
-                    "message": serializers.CharField(),
-                    "updated_title": serializers.CharField(),
-                },
-            ),
-            404: inline_serializer(
-                name="MetadataNotFoundResponse",
-                fields={"error": serializers.CharField()},
-            ),
-            400: inline_serializer(
-                name="MissingHashResponse",
-                fields={"error": serializers.CharField()},
-            ),
-        },
-    )
-    @action(detail=False, methods=["post"], url_path="update")
-    def update_metadata(self, request, *args, **kwargs):
-        """
-        Update the draft title from validated metadata.
-        Requires head_sha in request body to match the commit hash.
-        """
-        draft_name = kwargs.get("draft_name")
-        head_sha = request.data.get("head_sha")
-
-        if not head_sha:
-            return Response(
-                {"error": "Missing required parameter: head_sha"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Find RfcToBe by draft name
-        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
-        if rfc_to_be is None:
-            return Response(
-                {"error": "RfcToBe for draft not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Find metadata matching both rfc_to_be and head_sha
-        metadata_result = MetadataValidationResults.objects.filter(
-            rfc_to_be=rfc_to_be, head_sha=head_sha
-        ).first()
-
-        if metadata_result is None:
-            return Response(
-                {
-                    "error": f"No metadata found for draft {draft_name} with "
-                    f"head_sha {head_sha}"
-                },
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Extract title from metadata
-        metadata = metadata_result.metadata
-
-        # validate fields using metadata serializer
-        serializer = MetadataSerializer(data=metadata)
-        serializer.is_valid(raise_exception=True)
-        validated_data = serializer.validated_data
-
-        updated_fields = Metadata.update_metadata(rfc_to_be, validated_data)
-
-        if not updated_fields:
-            return Response(
-                {
-                    "status": "error",
-                    "message": "No metadata fields updated",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        return Response(
-            {
-                "status": "success",
-                "message": f"Metadata updated for {draft_name}",
-                "updated_fields": updated_fields,
-            },
-            status=status.HTTP_200_OK,
-        )

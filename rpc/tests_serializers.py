@@ -12,8 +12,14 @@ class SerializerTests(TestCase):
             "metadata_compare": [
                 {
                     "field": "title",
-                    "xml_value": "Applicability of Interfaces to Network Security Functions to Network-Based Security Services",
-                    "db_value": "Applicability of Interfaces to Network Security Functions to Network-Based Security Services",
+                    "xml_value": (
+                        "Applicability of Interfaces to Network Security Functions "
+                        "to Network-Based Security Services"
+                    ),
+                    "db_value": (
+                        "Applicability of Interfaces to Network Security Functions "
+                        "to Network-Based Security Services"
+                    ),
                     "is_match": True,
                 },
                 {
@@ -28,7 +34,10 @@ class SerializerTests(TestCase):
                     "items": [
                         {
                             "is_match": False,
-                            "xml_value": "J. Jeong (Department of Computer Science and Engineering)",
+                            "xml_value": (
+                                "J. Jeong (Department of Computer Science and "
+                                "Engineering)"
+                            ),
                             "db_value": "J. Jeong (Sungkyunkwan University)",
                         },
                         {
@@ -66,8 +75,14 @@ class SerializerTests(TestCase):
                     "row_name": "title",
                     "row_name_list_depth": 0,
                     "row_value": {
-                        "left_value": "Applicability of Interfaces to Network Security Functions to Network-Based Security Services",
-                        "right_value": "Applicability of Interfaces to Network Security Functions to Network-Based Security Services",
+                        "left_value": (
+                            "Applicability of Interfaces to Network Security Functions "
+                            "to Network-Based Security Services"
+                        ),
+                        "right_value": (
+                            "Applicability of Interfaces to Network Security Functions "
+                            "to Network-Based Security Services"
+                        ),
                         "is_match": True,
                     },
                 },
@@ -94,7 +109,9 @@ class SerializerTests(TestCase):
                     "row_name_list_depth": 1,
                     "row_value": {
                         "left_value": "J. Jeong (Sungkyunkwan University)",
-                        "right_value": "J. Jeong (Department of Computer Science and Engineering)",
+                        "right_value": (
+                            "J. Jeong (Department of Computer Science and Engineering)"
+                        ),
                         "is_match": False,
                     },
                 },
@@ -134,7 +151,7 @@ class SerializerTests(TestCase):
                         "is_match": True,
                     },
                 },
-            ]
+            ],
         }
         self.assertEqual(
             dict(MetadataTableSerializer(INPUT_DATA).data), EXPECTED_OUTPUT
