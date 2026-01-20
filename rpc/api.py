@@ -1573,7 +1573,10 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(mvr)
             return Response(serializer.data)
         except MetadataValidationResults.DoesNotExist:
-            raise NotFound(f"No metadata validation results for draft '{draft_name}'")
+            return Response(
+                {"error": "No MetadataValidationResults for draft found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
 
     @extend_schema(
         operation_id="metadata_validation_results_create",
