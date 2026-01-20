@@ -7,18 +7,16 @@
       <DescriptionList>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
-            <template v-if="!props.isReadOnly">
-              <PatchRfcToBeField
-                key="title"
-                :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }"
-                :draft-name="rfcToBe.name!"
-                :initial-value="rfcToBe.title"
-                :on-success="() => props.refresh?.()"
-              />
-            </template>
-            <template v-else>
+            <PatchRfcToBeField
+              key="title"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }"
+              :draft-name="rfcToBe.name!"
+              :initial-value="rfcToBe.title"
+              :on-success="() => props.refresh?.()"
+            >
               {{ rfcToBe.title }}
-            </template>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Authors" :spacing="spacing">
@@ -38,7 +36,7 @@
                 </div>
               </div>
               <div>
-                <Anchor :href="editAuthorsHref" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
               </div>
             </div>
           </DescriptionListDetails>
@@ -47,23 +45,55 @@
           <DescriptionListDetails>
             <PatchRfcToBeField
               key="pages"
+              :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1 }"
               :draft-name="rfcToBe.name ?? ''"
               :initial-value="rfcToBe.draft?.pages?.toString()"
               :on-success="() => props.refresh?.()"
-            />
+            >
+              {{ rfcToBe.draft?.pages?.toString() }}
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Document Shepherd" details="Dolly Shepherd (mocked)" :spacing="spacing" />
+        <DescriptionListItem term="Document Shepherd" :spacing="spacing">
+          <DescriptionListDetails>
+            <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
+              <span class="flex-1">Dolly Shepherd (mocked)</span>
+              <span v-if="!props.isReadOnly">
+                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-document-shepherd')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+              </span>
+            </div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            {{ rfcToBe.intendedStream }}
-            <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
-              (submitted as {{ rfcToBe.submittedStream }})
-            </span>
+            <PatchRfcToBeField
+              key="intendedStream"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStream }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.intendedStream"
+              :on-success="() => props.refresh?.()"
+            >
+              <span class="flex-1">
+                {{ rfcToBe.intendedStream }}
+                <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
+                  (submitted as {{ rfcToBe.submittedStream }})
+                </span>
+              </span>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Stream Manager" details="Ari Drecker (mocked)" :spacing="spacing" />
+        <DescriptionListItem term="Stream Manager" :spacing="spacing">
+          <DescriptionListDetails>
+            <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
+              <span class="flex-1">Ari Drecker (mocked)</span>
+              <span v-if="!props.isReadOnly">
+                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-stream-manger')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+              </span>
+            </div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Submitted Format" :details="rfcToBe.submittedFormat" :spacing="spacing" />
         <DescriptionListItem term="Submitted Boilerplate" :spacing="spacing">
           <DescriptionListDetails>{{ rfcToBe.intendedBoilerplate }}
@@ -157,13 +187,25 @@ type Props = {
   refresh?: () => void
 }
 
-const editAuthorsHref = computed(() => editAuthorsPathAndFragment(props.rfcToBe.name))
-
 const props = defineProps<Props>()
 const emit = defineEmits<{
   update: [rfcToBe: RfcToBe]
   refresh: []
 }>()
+
+const api = useApi()
+
+const loadStream = async (): Promise<SelectOption[]> => {
+  const streamNames = await api.streamNamesList()
+  return streamNames
+    .filter(streamName => streamName.used)
+    .map(streamName => {
+      return {
+        value: streamName.slug,
+        label: streamName.name
+      }
+    })
+}
 
 const spacing = computed(() => props.isReadOnly ? 'small' : 'large')
 </script>

@@ -38,9 +38,9 @@ export const datatrackerPersonLink = (email: string) => `https://datatracker.iet
 
 export const teamMemberLink = (personId: number | undefined | null) => personId ? `/team/${personId}` : undefined
 
-export const editAuthorsPathAndFragment = (draftName: string | undefined | null) => {
+export const draftAssignmentsHref = (draftName: string | undefined | null, hashState: 'edit-authors' | 'edit-document-shepherd' | 'edit-stream-manger') => {
   if (!draftName) {
     return undefined
   }
-  return `/docs/${draftName}/assignments#edit-authors`
+  return `/docs/${draftName}/assignments#${hashState}`
 }

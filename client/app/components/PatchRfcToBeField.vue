@@ -1,10 +1,13 @@
 <template>
   <div class="flex w-full h-full gap-1 items-center">
+    <template v-if="isReadOnly">
+      <slot />
+    </template>
     <template v-if="!isEditing">
       <div class="flex-1">
-        {{ valueRef }}
+        <slot />
       </div>
-      <BaseButton @click="isEditing = true" size="xs" btn-type="outline"><Icon name="uil:pen" /></BaseButton>
+      <BaseButton @click="switchToEditMode" size="xs" btn-type="outline"><Icon name="uil:pen" /></BaseButton>
     </template>
     <template v-else-if="props.uiMode.type === 'textbox'">
       <textarea
@@ -34,7 +37,8 @@
         v-model="valueRef"
         class="px-2 py-1 flex-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
       >
-        <option v-for="(option, index) in props.uiMode.options" :key="index" :value="option.value">
+        <option v-if="typeof props.uiMode.options === 'function' && selectOptions.length === 0" readonly value="">loading</option>
+        <option v-for="(option, index) in selectOptions" :key="index" :value="option.value">
           {{ option.label }}
         </option>
       </select>
@@ -56,11 +60,12 @@ type UIMode =
   | { type: 'textbox', rows: number, placeholder: string, isNumber?: boolean }
   | {
     type: 'select'
-    options: { value: string, label: string }[]
+    options: SelectOption[] | (() => Promise<SelectOption[]>)
   }
 
 const props = defineProps<{
   draftName: NonNullable<RfcToBe["name"]>
+  isReadOnly: boolean
   initialValue?: string
   uiMode: UIMode
   key: keyof PatchedRfcToBeRequest
@@ -73,6 +78,15 @@ const snackbar = useSnackbar()
 const valueRef = ref(props.initialValue)
 
 const isEditing = ref(false)
+
+const selectOptions = ref<SelectOption[]>( props.uiMode.type === 'select' ? typeof props.uiMode.options === 'function' ? [] : props.uiMode.options : [])
+
+const switchToEditMode = async () => {
+  isEditing.value = true
+  if(props.uiMode.type === 'select' && typeof props.uiMode.options === 'function') {
+    selectOptions.value = await props.uiMode.options()
+  }
+}
 
 const updateValue = async () => {
   try {
