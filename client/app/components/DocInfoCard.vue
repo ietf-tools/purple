@@ -70,7 +70,7 @@
             <PatchRfcToBeField
               key="intendedStream"
               :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadStream }"
+              :ui-mode="{ type: 'select', options: loadStreams }"
               :draft-name="rfcToBe.name ?? ''"
               :initial-value="rfcToBe.intendedStream"
               :on-success="() => props.refresh?.()"
@@ -94,20 +94,52 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Format" :details="rfcToBe.submittedFormat" :spacing="spacing" />
+        <DescriptionListItem term="Submitted Format" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField
+              key="submittedFormat"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadFormats }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.submittedFormat"
+              :on-success="() => props.refresh?.()"
+            >
+              {{ rfcToBe.submittedFormat }}
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Submitted Boilerplate" :spacing="spacing">
-          <DescriptionListDetails>{{ rfcToBe.intendedBoilerplate }}
-            <span v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate">
-              (submitted as {{ rfcToBe.submittedBoilerplate }})
-            </span>
+          <DescriptionListDetails>
+            <PatchRfcToBeField
+              key="intendedBoilerplate"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadBoilerplates }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.submittedFormat"
+              :on-success="() => props.refresh?.()"
+            >
+              {{ rfcToBe.intendedBoilerplate }}
+              <span v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate">
+                (submitted as {{ rfcToBe.submittedBoilerplate }})
+              </span>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level" :spacing="spacing">
           <DescriptionListDetails>
-            {{ rfcToBe.intendedStdLevel }}
-            <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
-              (submitted as {{ rfcToBe.submittedStdLevel }})
-            </span>
+            <PatchRfcToBeField
+              key="intendedStdLevel"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStandardLevels }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.intendedStdLevel"
+              :on-success="() => props.refresh?.()"
+            >
+              {{ rfcToBe.intendedStdLevel }}
+              <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
+                (submitted as {{ rfcToBe.submittedStdLevel }})
+              </span>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Subseries" :spacing="spacing">
@@ -144,31 +176,56 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Disposition" :details="rfcToBe.disposition" :spacing="spacing" />
+        <DescriptionListItem term="Disposition" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField
+              key="disposition"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: dispositionOptions }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.disposition"
+              :on-success="() => props.refresh?.()"
+            >
+              {{ rfcToBe.disposition }}
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="!props.isReadOnly &&
-              // published RFCs can't be edited
-              rfcToBe.disposition !== 'published'" class="flex items-center gap-2">
-              <EditRfcNumber :name="rfcToBe.name" :initial-rfc-number="rfcToBe.rfcNumber"
-                :on-success="() => props.refresh?.()" />
-            </div>
-            <div v-else class="font-mono">
-              {{ rfcToBe.rfcNumber || '(none)' }}
-            </div>
+            <PatchRfcToBeField
+              key="rfcNumber"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #' }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.rfcNumber?.toString()"
+              :on-success="() => props.refresh?.()"
+            >
+              <div class="font-mono">
+                {{ rfcToBe.rfcNumber || '(none)' }}
+              </div>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
-            <span v-if="rfcToBe.consensus === true" class="text-green-600">
-              Yes
-            </span>
-            <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
-              No
-            </span>
-            <span v-else class="text-gray-500">
-              Unknown
-            </span>
+            <PatchRfcToBeField
+              key="consensus"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'checkbox', label: 'Consensus' }"
+              :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.consensus"
+              :on-success="() => props.refresh?.()"
+            >
+              <span v-if="rfcToBe.consensus === true" class="text-green-600">
+                Yes
+              </span>
+              <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
+                No
+              </span>
+              <span v-else class="text-gray-500">
+                Unknown
+              </span>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
       </DescriptionList>
@@ -177,7 +234,7 @@
 </template>
 
 <script setup lang="ts">
-import type { RfcToBe } from '~/purple_client'
+import { type RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
 
 type Props = {
@@ -195,7 +252,7 @@ const emit = defineEmits<{
 
 const api = useApi()
 
-const loadStream = async (): Promise<SelectOption[]> => {
+const loadStreams = async (): Promise<SelectOption[]> => {
   const streamNames = await api.streamNamesList()
   return streamNames
     .filter(streamName => streamName.used)
@@ -206,6 +263,53 @@ const loadStream = async (): Promise<SelectOption[]> => {
       }
     })
 }
+
+const loadFormats = async (): Promise<SelectOption[]> => {
+  const formatNames = await api.sourceFormatNamesList()
+  return formatNames
+    .filter(formatName => formatName.used)
+    .map(formatName => {
+      return {
+        value: formatName.slug,
+        label: formatName.name
+      }
+    })
+}
+
+const loadBoilerplates = async (): Promise<SelectOption[]> => {
+  const boilerplates = await api.tlpBoilerplateChoiceNamesList()
+  return boilerplates
+    .filter(boilerplate => boilerplate.used)
+    .map(boilerplate => {
+      return {
+        value: boilerplate.slug,
+        label: boilerplate.name
+      }
+    })
+}
+
+const loadStandardLevels = async (): Promise<SelectOption[]> => {
+  const standardLevels = await api.stdLevelNamesList()
+  return standardLevels
+    .filter(standardLevel => standardLevel.used)
+    .map(standardLevel => {
+      return {
+        value: standardLevel.slug,
+        label: standardLevel.name
+      }
+    })
+}
+
+const dispositionOptions = computed((): SelectOption[] => {
+  return dispositionValues
+    .filter(dispositionValue => typeof dispositionValue === 'string')
+    .map(dispositionValue => {
+      return {
+        value: dispositionValue,
+        label: dispositionValue
+      }
+    })
+})
 
 const spacing = computed(() => props.isReadOnly ? 'small' : 'large')
 </script>

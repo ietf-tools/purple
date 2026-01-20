@@ -23,9 +23,29 @@
         :type="props.uiMode.isNumber ? 'number' : 'text'"
         :id="props.key"
         v-model="valueRef"
-        class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
+        :class="[
+          'px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
+          props.uiMode.isNumber ? 'input-number-no-spinners' : '',
+        ]"
         :placeholder="props.uiMode.placeholder"
       />
+      <div class="flex flex-col gap-1 h-full justify-between">
+        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
+        <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
+      </div>
+    </template>
+    <template v-else-if="props.uiMode.type === 'checkbox'">
+      <div class="flex-1 flex flex-row justify-center">
+        <input
+          :aria-label="props.uiMode.label"
+          type="checkbox"
+          :id="props.key"
+          v-model="valueRef"
+          :class="[
+            'pointer-click border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
+          ]"
+        />
+      </div>
       <div class="flex flex-col gap-1 h-full justify-between">
         <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel</BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">Save</BaseButton>
@@ -35,7 +55,7 @@
       <select
         :id="props.key"
         v-model="valueRef"
-        class="px-2 py-1 flex-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
+        class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
       >
         <option v-if="typeof props.uiMode.options === 'function' && selectOptions.length === 0" readonly value="">loading</option>
         <option v-for="(option, index) in selectOptions" :key="index" :value="option.value">
@@ -58,6 +78,7 @@ import { snackbarForErrors } from '~/utils/snackbar'
 
 type UIMode =
   | { type: 'textbox', rows: number, placeholder: string, isNumber?: boolean }
+  | { type: 'checkbox', label: string }
   | {
     type: 'select'
     options: SelectOption[] | (() => Promise<SelectOption[]>)
@@ -66,7 +87,7 @@ type UIMode =
 const props = defineProps<{
   draftName: NonNullable<RfcToBe["name"]>
   isReadOnly: boolean
-  initialValue?: string
+  initialValue?: string | boolean
   uiMode: UIMode
   key: keyof PatchedRfcToBeRequest
   onSuccess: () => void
@@ -75,7 +96,7 @@ const props = defineProps<{
 const api = useApi()
 const snackbar = useSnackbar()
 
-const valueRef = ref(props.initialValue)
+const valueRef = ref(props.uiMode.type === 'select' && typeof props.uiMode.options === 'function' ? '' : props.initialValue)
 
 const isEditing = ref(false)
 
@@ -83,8 +104,9 @@ const selectOptions = ref<SelectOption[]>( props.uiMode.type === 'select' ? type
 
 const switchToEditMode = async () => {
   isEditing.value = true
-  if(props.uiMode.type === 'select' && typeof props.uiMode.options === 'function') {
+  if(props.uiMode.type === 'select' && typeof props.uiMode.options === 'function' && selectOptions.value.length === 0) {
     selectOptions.value = await props.uiMode.options()
+    valueRef.value = props.initialValue
   }
 }
 
@@ -103,3 +125,12 @@ const updateValue = async () => {
   }
 }
 </script>
+
+<style>
+.input-number-no-spinners,
+.input-number-no-spinners::-webkit-inner-spin-button,
+.input-number-no-spinners::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>
