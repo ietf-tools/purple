@@ -1097,13 +1097,6 @@ class MetadataValidationResults(models.Model):
                     "There can be only one MetadataValidationResults per rfc_to_be.",
                 ),
             ),
-            models.UniqueConstraint(
-                fields=["head_sha"],
-                name="unique_metadata_validation_per_head_sha",
-                violation_error_message=(
-                    "There can be only one MetadataValidationResults per head_sha.",
-                ),
-            ),
         ]
 
     def __str__(self):
