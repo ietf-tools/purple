@@ -1388,22 +1388,28 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "metadata_compare",
         ]
 
+    def _get_comparator(self, obj):
+        """Get or create a cached MetadataComparator for this object"""
+        if not hasattr(self, "_comparator"):
+            self._comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        return self._comparator
+
     @extend_schema_field(serializers.BooleanField())
     def get_can_autofix(self, obj):
         """Check if metadata can be auto-fixed"""
-        comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        comparator = self._get_comparator(obj)
         return comparator.can_fix()
 
     @extend_schema_field(serializers.BooleanField())
     def get_is_match(self, obj):
         """Check if all metadata fields match"""
-        comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        comparator = self._get_comparator(obj)
         return comparator.is_match()
 
     @extend_schema_field(MetadataTableRowSerializer(many=True))
     def get_metadata_compare(self, obj):
         """Convert metadata comparison to table format"""
-        comparator = MetadataComparator(obj.rfc_to_be, obj.metadata)
+        comparator = self._get_comparator(obj)
         table_data = {
             "metadata_compare": comparator.compare_all(),
         }
