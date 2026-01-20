@@ -1,14 +1,12 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from django.test import TestCase
 
-from .serializers import MetadataTableSerializer
+from .serializers import MetadataComparisonTableSerializer
 
 
 class SerializerTests(TestCase):
     def test_metadata_table_serializer(self):
         INPUT_DATA = {
-            "is_match": False,
-            "can_autofix": False,
             "metadata_compare": [
                 {
                     "field": "title",
@@ -65,11 +63,6 @@ class SerializerTests(TestCase):
             ],
         }
         EXPECTED_OUTPUT = {
-            "rfc_to_be": 12345,
-            "repository": "some/repo",
-            "head_sha": "deadbeef",
-            "can_autofix": False,
-            "is_match": False,
             "metadata_compare": [
                 {
                     "row_name": "title",
@@ -154,5 +147,5 @@ class SerializerTests(TestCase):
             ],
         }
         self.assertEqual(
-            dict(MetadataTableSerializer(INPUT_DATA).data), EXPECTED_OUTPUT
+            dict(MetadataComparisonTableSerializer(INPUT_DATA).data), EXPECTED_OUTPUT
         )
