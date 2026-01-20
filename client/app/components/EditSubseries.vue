@@ -1,19 +1,43 @@
 <template>
-  <div class="flex gap-1 items-center">
-    <select v-model="selectedSlug" class="px-2 py-1 w-[6em] min-w-[6em] max-w-[6em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white">
-      <option v-for="sub in subseriesOptions" :key="sub.slug" :value="sub.slug">
-        {{ sub.slug.toUpperCase() }}
-      </option>
-    </select>
-    <input v-model="subseriesNumber" type="number" min="0" class="px-2 py-1 w-[5em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white" placeholder="Number" />
-    <BaseButton @click="updateSubseries" btn-type="outline" size="xs">Save</BaseButton>
-    <button
-      v-if="props.initialSubseries && props.initialSubseries.id"
-      @click="deleteSubseries"
-      class="w-5 h-5 flex items-center justify-center text-[10px] border border-red-400 rounded text-red-400 bg-white dark:bg-black hover:bg-red-50 dark:hover:bg-red-900"
-      title="Delete subseries"
-    >&#10006;</button>
-  </div>
+  <template v-if="!isEditing">
+    <div class="flex">
+      <div class="flex-1">
+        <slot />
+      </div>
+      <BaseButton @click="isEditing = true" size="xs" btn-type="outline">
+        <Icon name="uil:pen" />
+      </BaseButton>
+    </div>
+  </template>
+  <template v-else>
+    <div class="w-full flex flex-row">
+      <div class="flex-1">
+        <select
+          v-model="selectedSlug"
+          class="px-2 py-1 w-[6em] min-w-[2em] max-w-[6em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
+        >
+          <option v-for="sub in subseriesOptions" :key="sub.slug" :value="sub.slug">
+            {{ sub.slug.toUpperCase() }}
+          </option>
+        </select>
+        <input
+          v-model="subseriesNumber"
+          type="number"
+          min="0"
+          class="input-number-no-spinners px-2 py-1 w-[5em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
+          placeholder="#"
+        />
+      </div>
+      <div class="flex flex-col gap-1 h-full justify-between">
+        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel
+        </BaseButton>
+        <button v-if="props.initialSubseries && props.initialSubseries.id" @click="deleteSubseries"
+          class="w-5 h-5 flex items-center justify-center text-[10px] border border-red-400 rounded text-red-400 bg-white dark:bg-black hover:bg-red-50 dark:hover:bg-red-900"
+          title="Delete subseries">&#10006;</button>
+        <BaseButton @click="updateSubseries" btn-type="default" size="xs">Save</BaseButton>
+      </div>
+    </div>
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -24,7 +48,7 @@ const deleteSubseries = async () => {
     snackbar.add({ type: 'success', title: 'Subseries deleted', text: 'Subseries deleted' })
     props.onSuccess()
   } catch (error) {
-    snackbarForErrors({snackbar, error, defaultTitle: 'Failed to delete subseries'})
+    snackbarForErrors({ snackbar, error, defaultTitle: 'Failed to delete subseries' })
   }
 }
 import { ref, onMounted, watch } from 'vue'
@@ -43,6 +67,7 @@ const snackbar = useSnackbar()
 const subseriesOptions = ref<Array<{ slug: string, name: string }>>([])
 const selectedSlug = ref('')
 const subseriesNumber = ref('')
+const isEditing = ref(false)
 
 if (props.initialSubseries) {
   selectedSlug.value = props.initialSubseries.slug ?? ''
@@ -91,10 +116,10 @@ const updateSubseries = async () => {
       snackbar.add({ type: 'success', title: `Subseries updated`, text: `Subseries updated` })
     } else {
       let payload: SubseriesMemberRequest = {
-      type: selectedSlug.value,
-      number: Number(subseriesNumber.value),
-      rfcToBe: Number(props.id)
-    }
+        type: selectedSlug.value,
+        number: Number(subseriesNumber.value),
+        rfcToBe: Number(props.id)
+      }
       await api.subseriesMembersCreate({
         subseriesMemberRequest: payload
       })
@@ -104,7 +129,7 @@ const updateSubseries = async () => {
     }
     props.onSuccess()
   } catch (error: unknown) {
-    snackbarForErrors({snackbar, error, defaultTitle: `Failed to update subseries`})
+    snackbarForErrors({ snackbar, error, defaultTitle: `Failed to update subseries` })
   }
 }
 </script>
