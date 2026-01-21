@@ -78,5 +78,7 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
 def publish_rfctobe(rfctobe: RfcToBe):
     rfctobe.disposition_id = "published"
     rfctobe.published_at = datetime.datetime.now(tz=datetime.UTC)
+    rfctobe.publication_std_level = rfctobe.std_level
+    rfctobe.publication_stream = rfctobe.stream
     rfctobe.save()
     notify_rfc_published_task.delay(rfctobe_id=rfctobe.pk)
