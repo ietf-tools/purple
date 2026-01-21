@@ -1630,10 +1630,15 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
                 {"error": "RfcToBe for draft not found."},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        if rfc_to_be.repository is None:
+            return Response(
+                {"error": "RfcToBe has no associated repository."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         mvr, created = MetadataValidationResults.objects.get_or_create(
             rfc_to_be=rfc_to_be,
-            defaults={"is_pending": True},
+            defaults={"status": MetadataValidationResults.Status.PENDING},
         )
 
         if created:
@@ -1676,7 +1681,7 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             MetadataValidationResults, rfc_to_be__draft__name=draft_name
         )
 
-        if metadata_result.is_pending:
+        if metadata_result.status == MetadataValidationResults.Status.PENDING:
             return Response(
                 {"detail": "Cannot delete pending metadata validation results."},
                 status=status.HTTP_400_BAD_REQUEST,

@@ -1111,6 +1111,11 @@ class MailMessage(models.Model):
 class MetadataValidationResults(models.Model):
     """Tracks validation status of metadata for RfcToBe instances"""
 
+    class Status(models.TextChoices):
+        PENDING = "pending"
+        SUCCESS = "success"
+        FAILED = "failed"
+
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
     received_at = models.DateTimeField(auto_now_add=True)
     head_sha = models.CharField(
@@ -1120,7 +1125,10 @@ class MetadataValidationResults(models.Model):
         blank=True,
     )
     metadata = models.JSONField(null=True, blank=True)
-    is_pending = models.BooleanField(default=False)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.PENDING
+    )
+    detail = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ["-received_at"]
@@ -1135,8 +1143,7 @@ class MetadataValidationResults(models.Model):
         ]
 
     def __str__(self):
-        status = "pending" if self.is_pending else "received"
         return (
-            f"MetadataValidationResults for {self.rfc_to_be}: {status} on "
+            f"MetadataValidationResults for {self.rfc_to_be}: {self.status} on "
             + f"{self.received_at:%Y-%m-%d %H:%M}"
         )

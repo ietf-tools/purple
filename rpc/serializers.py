@@ -1380,6 +1380,8 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     can_autofix = serializers.SerializerMethodField()
     is_match = serializers.SerializerMethodField()
     metadata_compare = serializers.SerializerMethodField()
+    status = serializers.CharField()
+    detail = serializers.CharField()
 
     class Meta:
         model = MetadataValidationResults
@@ -1390,6 +1392,8 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "can_autofix",
             "is_match",
             "metadata_compare",
+            "status",
+            "detail",
         ]
 
     def _get_comparator(self, obj):

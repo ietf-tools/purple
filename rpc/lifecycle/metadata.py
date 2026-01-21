@@ -160,7 +160,7 @@ class Metadata:
             if pub_date:
                 year = int(pub_date.get("year"))
                 month_str = pub_date.get("month")
-                day = int(pub_date.get("day", 1))
+                day = int(pub_date.get("day")) if pub_date.get("day") else None
 
                 if not year or not month_str or not day:
                     raise ValueError("Incomplete publication date in metadata")
@@ -268,10 +268,12 @@ class MetadataComparator:
                 # Parse month name from XML to month number
                 month_name = xml_date_obj.get("month", "")
                 month_num = datetime.datetime.strptime(month_name, "%B").month
-                year = xml_date_obj.get("year", "")
-                day = xml_date_obj.get("day", "")
-                xml_value = f"{year}-{month_num:02d}-{int(day):02d}"
-            except (ValueError, KeyError):
+                year = int(xml_date_obj.get("year", ""))
+                day = int(xml_date_obj.get("day", ""))
+                # Validate the date by creating a date object
+                datetime.date(year, month_num, day)
+                xml_value = f"{year}-{month_num:02d}-{day:02d}"
+            except (ValueError, KeyError, TypeError):
                 xml_value = None
 
         # Convert rfc_to_be.published_at to YYYY-mm-dd format
@@ -284,7 +286,7 @@ class MetadataComparator:
             "xml_value": xml_value,
             "db_value": db_value,
             "is_match": xml_value == db_value,
-            "can_fix": True,
+            "can_fix": xml_value is not None,  # can fix if XML date is valid
         }
 
     def compare_authors(self):
@@ -365,6 +367,7 @@ class MetadataComparator:
             "field": "updates",
             "is_match": overall_match,
             "items": items,
+            "can_fix": True,
         }
 
     def compare_obsoletes(self):
@@ -397,6 +400,7 @@ class MetadataComparator:
             "field": "obsoletes",
             "is_match": overall_match,
             "items": items,
+            "can_fix": True,
         }
 
     def compare_subseries(self):
@@ -418,6 +422,7 @@ class MetadataComparator:
             "xml_value": xml_value,
             "db_value": db_value,
             "is_match": set(xml_value) == set(db_value),
+            "can_fix": True,
         }
 
     def compare_abstract(self):
