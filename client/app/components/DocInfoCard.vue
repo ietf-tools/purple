@@ -7,14 +7,9 @@
       <DescriptionList>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="title"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }"
-              :draft-name="rfcToBe.name!"
-              :initial-value="rfcToBe.title"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="title" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }" :draft-name="rfcToBe.name!"
+              :initial-value="rfcToBe.title" :on-success="() => props.refresh?.()">
               {{ rfcToBe.title }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -36,21 +31,19 @@
                 </div>
               </div>
               <div>
-                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')"
+                  :class="[classForBtnType.outline, 'px-2 py-1']">
+                  <Icon name="uil:pen" />
+                </Anchor>
               </div>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Pages" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="pages"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1 }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.draft?.pages?.toString()"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="pages" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1, initialValue: rfcToBe.draft?.pages?.toString() }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.draft?.pages?.toString() }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -60,21 +53,32 @@
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
               <span class="flex-1">Dolly Shepherd (mocked)</span>
               <span v-if="!props.isReadOnly">
-                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-document-shepherd')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+                <TooltipProvider>
+                  <TooltipRoot>
+                    <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
+                      <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
+                        No
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipPortal>
+                      <TooltipContent
+                        class="data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade text-grass11 select-none rounded-md bg-white px-[15px] py-[10px] text-sm leading-none shadow-sm border will-change-[transform,opacity]"
+                        :side-offset="5">
+                        Edit on Datatracker
+                        <TooltipArrow class="fill-white stroke-gray-200" :width="12" :height="6" />
+                      </TooltipContent>
+                    </TooltipPortal>
+                  </TooltipRoot>
+                </TooltipProvider>
               </span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="intendedStream"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadStreams }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.intendedStream"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="intendedStream" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.intendedStream }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               <span class="flex-1">
                 {{ rfcToBe.intendedStream }}
                 <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
@@ -89,35 +93,28 @@
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
               <span class="flex-1">Ari Drecker (mocked)</span>
               <span v-if="!props.isReadOnly">
-                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-stream-manger')" :class="[classForBtnType.outline, 'px-2 py-1']"><Icon name="uil:pen" /></Anchor>
+                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-stream-manger')"
+                  :class="[classForBtnType.outline, 'px-2 py-1']">
+                  <Icon name="uil:pen" />
+                </Anchor>
               </span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Format" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="submittedFormat"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadFormats }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.submittedFormat"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="submittedFormat" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadFormats, initialValue: rfcToBe.submittedFormat }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.submittedFormat }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Boilerplate" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="intendedBoilerplate"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadBoilerplates }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.submittedFormat"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="intendedBoilerplate" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadBoilerplates, initialValue: rfcToBe.submittedFormat }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.intendedBoilerplate }}
               <span v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate">
                 (submitted as {{ rfcToBe.submittedBoilerplate }})
@@ -127,14 +124,9 @@
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="intendedStdLevel"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadStandardLevels }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.intendedStdLevel"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="intendedStdLevel" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.intendedStdLevel }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.intendedStdLevel }}
               <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
                 (submitted as {{ rfcToBe.submittedStdLevel }})
@@ -147,21 +139,13 @@
             <div v-if="!props.isReadOnly && rfcToBe.disposition !== 'published'">
               <template v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
                 <div v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
-                  <EditSubseries
-                    :id="rfcToBe.id"
-                    :initial-subseries="sub"
-                    :on-success="() => props.refresh?.()"
-                  >
+                  <EditSubseries :id="rfcToBe.id" :initial-subseries="sub" :on-success="() => props.refresh?.()">
                     {{ sub.displayName }}<span v-if="idx < rfcToBe.subseries.length - 1">, </span>
                   </EditSubseries>
                 </div>
               </template>
               <template v-else>
-                <EditSubseries
-                  :id="rfcToBe.id"
-                  :initial-subseries="null"
-                  :on-success="() => props.refresh?.()"
-                >
+                <EditSubseries :id="rfcToBe.id" :initial-subseries="null" :on-success="() => props.refresh?.()">
                   (none)
                 </EditSubseries>
               </template>
@@ -180,28 +164,19 @@
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="disposition"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: dispositionOptions }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.disposition"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="disposition" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: dispositionOptions }" :draft-name="rfcToBe.name ?? ''"
+              :initial-value="rfcToBe.disposition" :on-success="() => props.refresh?.()">
               {{ rfcToBe.disposition }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="rfcNumber"
-              :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField key="rfcNumber" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #' }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.rfcNumber?.toString()"
-              :on-success="() => props.refresh?.()"
-            >
+              :draft-name="rfcToBe.name ?? ''" :initial-value="rfcToBe.rfcNumber?.toString()"
+              :on-success="() => props.refresh?.()">
               <div class="font-mono">
                 {{ rfcToBe.rfcNumber || '(none)' }}
               </div>
@@ -210,14 +185,9 @@
         </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField
-              key="consensus"
-              :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'checkbox', label: 'Consensus' }"
-              :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.consensus"
-              :on-success="() => props.refresh?.()"
-            >
+            <PatchRfcToBeField key="consensus" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'checkbox', label: 'Consensus', initialValue: rfcToBe.consensus }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               <span v-if="rfcToBe.consensus === true" class="text-green-600">
                 Yes
               </span>
@@ -236,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 import { type RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
 
