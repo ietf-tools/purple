@@ -27,6 +27,15 @@
           </div>
         </div>
       </template>
+      <template v-else-if="step.type === 'error'">
+        <div class="text-center">
+          Error: {{ step.errorText }}
+          <br />
+          <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+            try again
+          </BaseButton>
+        </div>
+      </template>
       <template v-else-if="step.type === 'diff'">
         <Heading :heading-level="2" class="px-8 py-4 text-gray-700 dark:text-gray-300">
           Metadata
@@ -124,6 +133,8 @@
 
 <script setup lang="ts">
 import { useAsyncData } from '#app'
+import { hasTime } from 'reka-ui/date'
+import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
 
 const route = useRoute()
@@ -138,6 +149,7 @@ type DiffRowValue = { isMatch: boolean, leftValue?: string, rightValue?: string 
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
+  | { type: 'error', errorText: string }
   | {
     type: 'diff'
     error?: string
@@ -176,17 +188,45 @@ watch(rfcToBe, () => {
   // }
 })
 
+const MAXIMUM_ATTEMPTS_DURATION_MS = 10 * 1000
+const WAIT_BETWEEN_REQUESTS_MS = 1000
+
 const fetchAndVerifyMetadata = async () => {
+  let resultsCreate: MetadataValidationResults | undefined = undefined
+
   step.value = { type: 'loading' }
-  const metadataValidationResult = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+
+  const startTimeMs = Date.now()
+  let hasTimedOut = false
+  const endTimeMs = startTimeMs + MAXIMUM_ATTEMPTS_DURATION_MS
+  let attemptCount = 0
+
+  do {
+    attemptCount++
+    resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+    hasTimedOut = Date.now() > endTimeMs
+    console.log({ hasTimedOut, attemptCount, resultsCreate })
+    await sleep(WAIT_BETWEEN_REQUESTS_MS)
+  } while (!hasTimedOut && resultsCreate.status === 'pending')
+
+  console.log("Finished", { hasTimedOut, resultsCreate })
+
+  if(resultsCreate.status !== 'success') {
+    step.value = {
+      type: 'error',
+      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`
+    }
+    return
+  }
+
   step.value = {
     type: 'diff',
-    isMatch: metadataValidationResult.isMatch ?? false,
-    serverCanFix: metadataValidationResult.canAutofix ?? false,
-    gitHash: metadataValidationResult.headSha ?? undefined,
-    gitRepoUrl: metadataValidationResult.repository,
+    isMatch: resultsCreate.isMatch ?? false,
+    serverCanFix: resultsCreate.canAutofix ?? false,
+    gitHash: resultsCreate.headSha ?? undefined,
+    gitRepoUrl: resultsCreate.repository,
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
-    rows: metadataValidationResult.metadataCompare?.map(row => ({
+    rows: resultsCreate.metadataCompare?.map(row => ({
       rowName: row.rowName,
       rowNameListDepth: row.rowNameListDepth,
       rowValue: {
