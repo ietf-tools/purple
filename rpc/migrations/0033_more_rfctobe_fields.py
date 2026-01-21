@@ -21,6 +21,13 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="historicalrfctobe",
+            name="abstract",
+            field=models.TextField(
+                blank=True, help_text="Document abstract", max_length=32000
+            ),
+        ),
+        migrations.AddField(
+            model_name="historicalrfctobe",
             name="boilerplate",
             field=models.ForeignKey(
                 blank=True,
@@ -143,6 +150,13 @@ class Migration(migrations.Migration):
                 default="<title missing>", help_text="Document title", max_length=255
             ),
             preserve_default=False,
+        ),
+        migrations.AddField(
+            model_name="rfctobe",
+            name="abstract",
+            field=models.TextField(
+                blank=True, help_text="Document abstract", max_length=32000
+            ),
         ),
         migrations.AddField(
             model_name="rfctobe",

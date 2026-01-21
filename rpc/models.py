@@ -120,6 +120,11 @@ class RfcToBe(models.Model):
     )
 
     title = models.CharField(max_length=255, help_text="Document title")
+    abstract = models.TextField(
+        max_length=32000,
+        blank=True,
+        help_text="Document abstract",
+    )
     group = models.CharField(
         max_length=40,
         blank=True,
