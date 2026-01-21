@@ -63,7 +63,7 @@ def validate_metadata_task(self, rfc_to_be_id):
     results.
     """
 
-    def _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail = None):
+    def _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail=None):
         """Helper to save metadata validation results"""
         if rfc_to_be is not None and status is not None:
             mvr = MetadataValidationResults.objects.get(rfc_to_be=rfc_to_be)
