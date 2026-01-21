@@ -34,10 +34,12 @@
           <template v-if="!step.isMatch">does not match</template>
           <template v-else>matches</template>
         </Heading>
-        <p class="ml-8 mb-4 text-sm text-black dark:text-white">
+        <p v-if="step.gitHash" class="ml-8 mb-4 text-sm text-black dark:text-white">
           Fetched git commit
           {{ SPACE }}
-          <button class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate" @click="() => step.type === 'diff' && copyGitHashToClipboard(step.gitHash)">
+          <button
+            class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate"
+            @click="() => step.type === 'diff' && step.gitHash ? copyGitHashToClipboard(step.gitHash) : undefined">
             <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" />{{ step.gitHash }}
           </button>
           {{ SPACE }}
@@ -45,12 +47,16 @@
           {{ SPACE }}
           <a :href="step.gitRepoUrl" :class="ANCHOR_STYLE">{{ step.gitRepoUrl }}</a>
         </p>
+        <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
+          No git commit available in API response. Can't publish until this is verified.
+        </p>
         <BaseCard>
           <div class="w-full">
-            <DiffTable :columns="step.columns" :rows="step.rows" />
+            <DiffTable v-if="step.rows.length > 0" :columns="step.columns" :rows="step.rows" />
+            <p class="text-center">(no comparison available)</p>
           </div>
         </BaseCard>
-        <div class="flex justify-between mt-8 pt-4 border-t border-gray-500 dark:border-gray-300">
+        <div v-if="step.gitHash" class="flex justify-between mt-8 pt-4 border-t border-gray-500 dark:border-gray-300">
           <template v-if="step.isMatch">
             <BaseButton btn-type="cancel" @click="cancel">
               Cancel
@@ -127,7 +133,7 @@ const currentTab: DocTabId = 'publication-preparation'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-type DiffRowValue = { isMatch: boolean,  leftValue?: string, rightValue?: string }
+type DiffRowValue = { isMatch: boolean, leftValue?: string, rightValue?: string }
 
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
@@ -135,8 +141,8 @@ type Step =
   | {
     type: 'diff'
     error?: string
-    gitHash: string
-    gitRepoUrl: string
+    gitHash?: string
+    gitRepoUrl?: string
     isMatch: boolean
     serverCanFix: boolean
     columns: { nameColumn: string, leftColumn: string, rightColumn: string }
@@ -162,85 +168,80 @@ watch(rfcToBe, () => {
   if (!rfcToBe.value) {
     return
   }
-  if (rfcToBe.value.disposition === 'published') {
-    step.value = { type: 'rfcPosted' }
-  } else {
-    step.value = { type: 'fetchAndVerifyAndMetadataButton' }
-  }
+  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+
+  // if (rfcToBe.value.disposition === 'published') {
+  //   step.value = { type: 'rfcPosted' }
+  // } else {
+  // }
 })
 
 const fetchAndVerifyMetadata = async () => {
   step.value = { type: 'loading' }
-  // TODO: api for fetch and verifying metadata, with optional error
-  /**
-   * API use probably looks like,
-   * Request:
-   *  { name: string }
-   *
-   * Response:
-   *  Error, or the 'diff' step
-   *
-   */
-
-  await sleep(1000)
+  const metadataValidationResult = await api.metadataValidationResultsCreate({ draftName: draftName.value })
   step.value = {
     type: 'diff',
-    isMatch: false,
-    serverCanFix: true,
-    gitHash: 'b26bf8af130955c5c67cfea96f9532680b963628',
-    gitRepoUrl: 'http://github.com/ietf-tools/rfc10000',
+    isMatch: metadataValidationResult.isMatch ?? false,
+    serverCanFix: metadataValidationResult.canAutofix ?? false,
+    gitHash: metadataValidationResult.headSha ?? undefined,
+    gitRepoUrl: metadataValidationResult.repository,
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
-    rows: [
-      { rowName: "title", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" } },
-      {
-        rowName: "abstract", rowNameListDepth: 0, rowValue: { isMatch: false, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
+    rows: metadataValidationResult.metadataCompare?.map(row => ({
+      rowName: row.rowName,
+      rowNameListDepth: row.rowNameListDepth,
+      rowValue: {
+        isMatch: row.rowValue.isMatch,
+        leftValue: row.rowValue.leftValue,
+        rightValue: row.rowValue.rightValue,
+      }
+    })) ?? []
 
-  Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous disconnections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
+    //   [
+    //     { rowName: "title", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" } },
+    //     {
+    //       rowName: "abstract", rowNameListDepth: 0, rowValue: { isMatch: false, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
 
-  This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.`, rightValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
+    // Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous disconnections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
 
-  Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous connections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
+    // This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.`, rightValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
 
-  This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` } },
-      { rowName: "authors:", rowNameListDepth: 0 },
-      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "John", rightValue: "John" } },
-      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jane", rightValue: "Jane" } },
-      { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jake", rightValue: "Jack" } },
-      { rowName: "RFC Number", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "9999", rightValue: "9999" } },
-      { rowName: "submittedStdLevel", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "draft", rightValue: "draft" } },
-    ]
+    // Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous connections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
+
+    // This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` } },
+    //     { rowName: "authors:", rowNameListDepth: 0 },
+    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "John", rightValue: "John" } },
+    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jane", rightValue: "Jane" } },
+    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jake", rightValue: "Jack" } },
+    //     { rowName: "RFC Number", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "9999", rightValue: "9999" } },
+    //     { rowName: "submittedStdLevel", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "draft", rightValue: "draft" } },
+    //   ]
   }
 }
 
 const postRfc = async () => {
   step.value = { type: 'loading' }
-  // TODO: api to post RFC
-  /**
-   * API use probably looks like,
-   * Request: ..verify that Git HEAD of repo is still Githash, that metadata is still in sync, then post
-   *  { name: string, gitHash: string }
-   *
-   * Response:
-   *  Error or success
-   */
-  await sleep(1000)
-  step.value = {
-    type: 'rfcPosted'
-    // error: 'a problem occurred'
+  try {
+    // BE: result should be success or fail, or is a 500 error (which the js api client throws on) expected?
+    const result = await api.documentsPublish({
+      draftName: draftName.value
+      // BE: this should also take the sha hash so the server can verify that HEAD hasn't changed
+    })
+    step.value = {
+      type: 'rfcPosted'
+    }
+  } catch (e: unknown) {
+    step.value = {
+      type: 'rfcPosted',
+      error: `Problem publishing: ${e}`
+    }
   }
 }
 
 const updateDatabaseToMatchDocument = async () => {
   step.value = { type: 'loading' }
-  // TODO: api to update database to match document
-  /**
-   * API use probably looks like,
-   * Request:
-   *  { name: string, gitHash: string }
-   *
-   * Response:
-   *  error or success
-   */
+
+  // BE: how do I tell the server to sync changes (update database to match document)
+
   await sleep(1000)
   step.value = {
     type: 'databaseUpdated',
