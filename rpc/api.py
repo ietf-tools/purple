@@ -343,28 +343,21 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
-    draft_info = None
-    try:
-        draft = Document.objects.get(datatracker_id=document_id)
-    except Document.DoesNotExist:
-        draft_info = rpcapi.get_draft_by_id(document_id)
-        if draft_info is None:
-            return Response(status=404)
-        draft, _ = Document.objects.get_or_create(
-            datatracker_id=document_id,
-            defaults={
-                "name": draft_info.name,
-                "rev": draft_info.rev,
-                "title": draft_info.title,
-                "group": draft_info.group,
-                "stream": draft_info.stream,
-                "pages": draft_info.pages,
-                "intended_std_level": draft_info.intended_std_level,
-            },
-        )
-    else:
-        # todo update draft details
-        pass
+    draft_info = rpcapi.get_draft_by_id(document_id)
+    if draft_info is None:
+        return Response(status=404)
+    draft, created = Document.objects.update_or_create(
+        datatracker_id=document_id,
+        defaults={
+            "name": draft_info.name,
+            "rev": draft_info.rev,
+            "title": draft_info.title,
+            "group": draft_info.group,
+            "stream": draft_info.stream,
+            "pages": draft_info.pages,
+            "intended_std_level": draft_info.intended_std_level,
+        }
+    )
 
     # Check whether shepherd / ad exist
     if draft.shepherd is not None:
