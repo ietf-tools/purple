@@ -356,7 +356,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "stream": draft_info.stream,
             "pages": draft_info.pages,
             "intended_std_level": draft_info.intended_std_level,
-        }
+        },
     )
 
     # Check whether shepherd / ad exist
