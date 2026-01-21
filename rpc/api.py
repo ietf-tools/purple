@@ -356,14 +356,43 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                 "name": draft_info.name,
                 "rev": draft_info.rev,
                 "title": draft_info.title,
+                "group": draft_info.group,
                 "stream": draft_info.stream,
                 "pages": draft_info.pages,
                 "intended_std_level": draft_info.intended_std_level,
             },
         )
+    else:
+        # todo update draft details
+        pass
+
+    # Check whether shepherd / ad exist
+    if draft.shepherd is not None:
+        shepherd, _ = DatatrackerPerson.objects.get_or_create(
+            datatracker_id=draft.shepherd
+        )
+    else:
+        shepherd = None
+    if draft.ad is not None and draft.stream == "ietf":
+        iesg_contact, _ = DatatrackerPerson.objects.get_or_create(
+            datatracker_id=draft.ad
+        )
+    else:
+        iesg_contact = None
 
     # Create the RfcToBe
-    serializer = CreateRfcToBeSerializer(data=request.data | {"draft": draft.pk})
+    serializer = CreateRfcToBeSerializer(
+        data=request.data
+        | {
+            "draft": draft.pk,
+            "title": draft.title,
+            "group": draft.group,
+            "abstract": draft.abstract,
+            "shepherd": shepherd.pk if shepherd is not None else None,
+            "iesg_contact": iesg_contact.pk if iesg_contact is not None else None,
+            "pages": draft.pages,
+        }
+    )
     if serializer.is_valid():
         with transaction.atomic():
             rfctobe = serializer.save()
@@ -416,6 +445,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "name": draft_info_ref.name,
                                 "rev": draft_info_ref.rev,
                                 "title": draft_info_ref.title,
+                                "group": draft_info_ref.group,
                                 "stream": draft_info_ref.stream,
                                 "pages": draft_info_ref.pages,
                                 "intended_std_level": draft_info_ref.intended_std_level,
