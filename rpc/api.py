@@ -43,6 +43,7 @@ from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 
+from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     can_publish,
     publish_rfctobe,
@@ -1666,3 +1667,86 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
 
         metadata_result.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(
+        operation_id="metadata_validation_results_sync",
+        description="Sync metadata validation results - update DB fields from XML. "
+        "Requires head_sha in request body to make sure the right metadata is synced.",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        request=inline_serializer(
+            name="SyncMetadataRequest",
+            fields={
+                "head_sha": serializers.CharField(
+                    help_text="Git commit SHA identifying the metadata result"
+                )
+            },
+        ),
+        responses={
+            200: MetadataValidationResultsSerializer,
+            404: inline_serializer(
+                name="SyncMetadataNotFoundResponse",
+                fields={"error": serializers.CharField()},
+            ),
+            400: inline_serializer(
+                name="SyncMetadataBadRequestResponse",
+                fields={"error": serializers.CharField()},
+            ),
+        },
+    )
+    @action(detail=False, methods=["post"], url_path="sync")
+    def sync(self, request, *args, **kwargs):
+        """
+        Sync metadata validation results - update all fields from payload.
+        Requires head_sha in request body to make sure the right metadata is synced.
+        """
+        draft_name = kwargs.get("draft_name")
+        head_sha = request.data.get("head_sha")
+
+        if not head_sha:
+            return Response(
+                {"error": "Missing required parameter: head_sha"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Find RfcToBe by draft name
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfc_to_be is None:
+            return Response(
+                {"error": "RfcToBe for draft not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        # Find or create metadata validation result
+        metadata_result = MetadataValidationResults.objects.filter(
+            rfc_to_be=rfc_to_be,
+            head_sha=head_sha,
+        ).first()
+
+        if metadata_result is None:
+            return Response(
+                {"error": "MetadataValidationResults with given head_sha not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        comparator = MetadataComparator(
+            xml_metadata=metadata_result.metadata,
+            rfc_to_be=rfc_to_be,
+        )
+        if not comparator.can_fix():
+            return Response(
+                {"error": "Metadata is not auto-fixable."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        Metadata.update_metadata(rfc_to_be, metadata_result.metadata)
+
+        metadata_result.refresh_from_db()
+        serializer = self.get_serializer(metadata_result)
+        return Response(serializer.data, status=status.HTTP_200_OK)
