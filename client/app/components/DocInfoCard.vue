@@ -8,8 +8,8 @@
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField key="title" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5 }" :draft-name="rfcToBe.name!"
-              :initial-value="rfcToBe.title" :on-success="() => props.refresh?.()">
+              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5, initialValue: rfcToBe.title }" :draft-name="rfcToBe.name!"
+              :on-success="() => props.refresh?.()">
               {{ rfcToBe.title }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -165,8 +165,8 @@
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField key="disposition" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: dispositionOptions }" :draft-name="rfcToBe.name ?? ''"
-              :initial-value="rfcToBe.disposition" :on-success="() => props.refresh?.()">
+              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }" :draft-name="rfcToBe.name ?? ''"
+              :on-success="() => props.refresh?.()">
               {{ rfcToBe.disposition }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -174,8 +174,8 @@
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField key="rfcNumber" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #' }"
-              :draft-name="rfcToBe.name ?? ''" :initial-value="rfcToBe.rfcNumber?.toString()"
+              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
+              :draft-name="rfcToBe.name ?? ''"
               :on-success="() => props.refresh?.()">
               <div class="font-mono">
                 {{ rfcToBe.rfcNumber || '(none)' }}
