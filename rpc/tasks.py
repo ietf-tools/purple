@@ -89,7 +89,7 @@ def validate_metadata_task(self, rfc_to_be_id):
             logger.info(
                 f"Metadata already stored for RfcToBe {rfc_to_be_id} at SHA {head_sha}"
             )
-            status = 'unchanged'
+            status = "unchanged"
             return
 
         manifest = repo.get_manifest()
@@ -128,6 +128,5 @@ def validate_metadata_task(self, rfc_to_be_id):
             mvr.status = status
             mvr.detail = detail
             mvr.save()
-
 
     return {"status": status, "detail": detail}
