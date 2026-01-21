@@ -81,10 +81,12 @@ class CrossrefTests(TestCase):
         PUBLISHED = timezone.now()
         stream = StreamNameFactory.create(slug="ietf", name="IETF")
         rfc = RfcToBeFactory.create(
-            rfc_number=RFC, published_at=PUBLISHED, submitted_stream=stream
+            rfc_number=RFC,
+            title="The Book of Mazarbul",
+            disposition__slug="published",
+            published_at=PUBLISHED,
+            stream=stream,
         )
-        rfc.draft.title = "The Book of Mazarbul"
-        rfc.draft.save()
         rfc_author_1 = RfcAuthorFactory.create(
             titlepage_name="A. Undómiel", is_editor=True
         )
@@ -118,7 +120,7 @@ class CrossrefTests(TestCase):
         self.assertEqual(second_author[0].get("contributor_role"), "author")
 
         # RFC metada
-        self.assertIn(f"<title>{rfc.draft.title}</title>", xml_str)
+        self.assertIn(f"<title>{rfc.title}</title>", xml_str)
         self.assertIn(f"<month>{PUBLISHED.month}</month>", xml_str)
         self.assertIn(f"<year>{PUBLISHED.year}</year>", xml_str)
         self.assertIn(f"<item_number>RFC{RFC}</item_number>", xml_str)
@@ -138,10 +140,12 @@ class CrossrefTests(TestCase):
         PUBLISHED = timezone.now()
         stream = StreamNameFactory.create(slug="ietf", name="IETF")
         rfc = RfcToBeFactory.create(
-            rfc_number=RFC, published_at=PUBLISHED, submitted_stream=stream
+            rfc_number=RFC,
+            title="The Book of Mazarbul",
+            disposition__slug="published",
+            published_at=PUBLISHED,
+            stream=stream,
         )
-        rfc.draft.title = "The Book of Mazarbul"
-        rfc.draft.save()
         rfc_author_1 = RfcAuthorFactory.create(
             titlepage_name="A. Undómiel", is_editor=True
         )
@@ -165,10 +169,12 @@ class CrossrefTests(TestCase):
         PUBLISHED = timezone.now()
         stream = StreamNameFactory.create(slug="ietf", name="IETF")
         rfc = RfcToBeFactory.create(
-            rfc_number=RFC, published_at=PUBLISHED, submitted_stream=stream
+            rfc_number=RFC,
+            title="The Book of Mazarbul",
+            disposition__slug="published",
+            published_at=PUBLISHED,
+            stream=stream,
         )
-        rfc.draft.title = "The Book of Mazarbul"
-        rfc.draft.save()
         rfc_author_1 = RfcAuthorFactory.create(
             titlepage_name="A. Undómiel", is_editor=True
         )

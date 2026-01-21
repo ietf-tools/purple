@@ -109,10 +109,10 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
     )
     stream = factory.SubFactory("rpc.factories.StreamNameFactory", slug="ietf")
     publication_std_level = factory.LazyAttribute(
-        lambda o: o.submitted_std_level if o.disposition == "published" else None
+        lambda o: o.std_level if o.disposition.slug == "published" else None
     )
     publication_stream = factory.LazyAttribute(
-        lambda o: o.submitted_stream if o.disposition == "published" else None
+        lambda o: o.stream if o.disposition.slug == "published" else None
     )
     external_deadline = factory.Faker(
         "date_time_between",
