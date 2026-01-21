@@ -1106,3 +1106,37 @@ class MailMessage(models.Model):
             cc=self.cc,
             headers={"message-id": self.message_id},
         )
+
+
+class MetadataValidationResults(models.Model):
+    """Tracks validation status of metadata for RfcToBe instances"""
+
+    rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    received_at = models.DateTimeField(auto_now_add=True)
+    head_sha = models.CharField(
+        max_length=40,
+        help_text="Head SHA of the commit that was validated",
+        null=True,
+        blank=True,
+    )
+    metadata = models.JSONField(null=True, blank=True)
+    is_pending = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ["-received_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["rfc_to_be"],
+                name="unique_metadata_validation_per_rfc_to_be",
+                violation_error_message=(
+                    "There can be only one MetadataValidationResults per rfc_to_be.",
+                ),
+            ),
+        ]
+
+    def __str__(self):
+        status = "pending" if self.is_pending else "received"
+        return (
+            f"MetadataValidationResults for {self.rfc_to_be}: {status} on "
+            + f"{self.received_at:%Y-%m-%d %H:%M}"
+        )

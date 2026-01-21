@@ -18,14 +18,14 @@
           {{ row.rowName }}
         </td>
         <td class="p-2">
-          <component :is="row.value?.leftValue ?? ''"/>
+          <component :is="row.value?.leftValue ?? emptySpan"/>
         </td>
         <td class="align-middle">
           <Icon v-if="row.value && !row.value.isMatch" name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
           <Icon v-if="row.value && row.value.isMatch" name="ic:outline-equals" size="1rem" aria-label="=" title="="/>
         </td>
         <td class="p-2">
-          <component :is="row.value?.rightValue ?? ''"/>
+          <component :is="row.value?.rightValue ?? emptySpan"/>
         </td>
       </tr>
     </tbody>
@@ -43,6 +43,8 @@ type Props = {
   columns: { nameColumn: string, leftColumn: string, rightColumn: string }
   rows: Row[]
 }
+
+const emptySpan = h('span')
 
 const props = defineProps<Props>()
 
@@ -78,13 +80,13 @@ const computedRows = computed((): RenderableRow[] => {
           const rightChar = rightValue.charAt(index)
           const isSame = leftChar !== rightChar
           const isWhitespace = leftChar.match(/\s/)
-          return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : leftChar)
+          return h('span', isSame ? invalidCharAttribute : {}, !isSame && isWhitespace ? `${NBSP} ` : leftChar ?? '')
         })),
         rightValue: h('span', rightValue.split('').map((rightChar, index) => {
           const leftChar = leftValue.charAt(index)
           const isSame = leftChar !== rightChar
           const isWhitespace = rightChar.match(/\s/)
-          return h('span', isSame ? invalidCharAttribute : undefined, !isSame && isWhitespace ? `${NBSP} ` : rightChar)
+          return h('span', isSame ? invalidCharAttribute : {}, !isSame && isWhitespace ? `${NBSP} ` : rightChar ?? '')
         }))
       }
     }
