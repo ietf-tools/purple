@@ -62,7 +62,17 @@ def validate_metadata_task(self, rfc_to_be_id):
     Celery task to fetch repo, manifest, parse XML, and store metadata validation
     results.
     """
-    detail = None
+
+    def _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail = None):
+        """Helper to save metadata validation results"""
+        if rfc_to_be is not None and status is not None:
+            mvr = MetadataValidationResults.objects.get(rfc_to_be=rfc_to_be)
+            mvr.head_sha = head_sha
+            mvr.metadata = metadata
+            mvr.status = status
+            mvr.detail = detail
+            mvr.save()
+
     status = None
     head_sha = None
     metadata = None
@@ -76,6 +86,7 @@ def validate_metadata_task(self, rfc_to_be_id):
             status = MetadataValidationResults.Status.FAILED
             detail = f"No repository URL for RfcToBe {rfc_to_be_id}"
             logger.error(detail)
+            _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
             return
 
         repo = GithubRepository(repo_url)
@@ -90,6 +101,7 @@ def validate_metadata_task(self, rfc_to_be_id):
                 f"Metadata already stored for RfcToBe {rfc_to_be_id} at SHA {head_sha}"
             )
             status = "unchanged"
+            _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
             return
 
         manifest = repo.get_manifest()
@@ -106,6 +118,7 @@ def validate_metadata_task(self, rfc_to_be_id):
             status = MetadataValidationResults.Status.FAILED
             detail = f"No XML file found in manifest for RFC {rfc_number}"
             logger.error(detail)
+            _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
             return
 
         xml_file = repo.get_file(xml_path)
@@ -114,19 +127,10 @@ def validate_metadata_task(self, rfc_to_be_id):
         metadata = Metadata.parse_rfc_xml(xml_string)
         status = MetadataValidationResults.Status.SUCCESS
         logger.info(f"Metadata validation complete for RfcToBe {rfc_to_be_id}")
+        _save_metadata_results(rfc_to_be, head_sha, metadata, status)
 
     except Exception as e:
         logger.error(f"Error in validate_metadata_task: {e}")
         detail = str(e)
         status = MetadataValidationResults.Status.FAILED
-
-    finally:
-        if rfc_to_be is not None and status is not None:
-            mvr = MetadataValidationResults.objects.get(rfc_to_be=rfc_to_be)
-            mvr.head_sha = head_sha
-            mvr.metadata = metadata
-            mvr.status = status
-            mvr.detail = detail
-            mvr.save()
-
-    return {"status": status, "detail": detail}
+        _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
