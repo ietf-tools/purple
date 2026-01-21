@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("datatracker", "0002_initial"),
-        ("rpc", "0032_alter_mailmessage_cc_alter_mailmessage_message_id_and_more"),
+        ("rpc", "0033_metadatavalidationresults"),
     ]
 
     operations = [
