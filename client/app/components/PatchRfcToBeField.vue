@@ -120,10 +120,10 @@ const updateValue = async () => {
         })
         break
     }
-    snackbar.add({ type: 'success', title: `${startCase(props.key)} updated`, text: '' })
+    snackbar.add({ type: 'success', title: `${JSON.stringify(props.key)} updated`, text: '' })
     props.onSuccess()
   } catch (error: unknown) {
-    snackbarForErrors({ snackbar, error, defaultTitle: `Failed to update title` })
+    snackbarForErrors({ snackbar, error, defaultTitle: `Failed to update ${JSON.stringify(props.key)}` })
   }
 }
 </script>
