@@ -31,7 +31,7 @@
                   </span>
             </li>
             <li>Submitted pages: {{ submission?.pages }}</li>
-            <li>Document shepherd: {{ submission?.shepherd }}</li>
+            <li>Document shepherd: {{ submission?.shepherd }}</li><!-- todo fetch person details -->
             <li>Stream: {{ submission?.stream.name }}</li>
             <li>Submitted standard level: {{ submission?.stdLevel?.name }}</li>
             <li>Submitted format: {{ submission?.sourceFormat.name }}</li>
