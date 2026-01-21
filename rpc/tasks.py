@@ -65,7 +65,7 @@ def validate_metadata_task(self, rfc_to_be_id):
 
     def _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail=None):
         """Helper to save metadata validation results"""
-        if rfc_to_be is not None and status is not None:
+        if rfc_to_be is not None:
             mvr = MetadataValidationResults.objects.get(rfc_to_be=rfc_to_be)
             mvr.head_sha = head_sha
             mvr.metadata = metadata
@@ -100,8 +100,6 @@ def validate_metadata_task(self, rfc_to_be_id):
             logger.info(
                 f"Metadata already stored for RfcToBe {rfc_to_be_id} at SHA {head_sha}"
             )
-            status = "unchanged"
-            _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
             return
 
         manifest = repo.get_manifest()
