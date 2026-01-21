@@ -5,7 +5,7 @@ from django.db import migrations
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0035_populate_new_rfctobe_fields"),
+        ("rpc", "0036_populate_new_rfctobe_fields"),
     ]
 
     operations = [

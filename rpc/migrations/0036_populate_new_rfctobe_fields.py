@@ -32,7 +32,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0034_more_rfctobe_fields"),
+        ("rpc", "0035_more_rfctobe_fields"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]

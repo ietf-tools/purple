@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
     dependencies = [
         ("datatracker", "0002_initial"),
-        ("rpc", "0033_metadatavalidationresults"),
+        ("rpc", "0034_remove_metadatavalidationresults_is_pending_and_more"),
     ]
 
     operations = [
