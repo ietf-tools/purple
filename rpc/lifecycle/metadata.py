@@ -200,7 +200,8 @@ class Metadata:
                             zip_longest(xml_authors, db_authors, fillvalue=None)
                         ):
                             if xml_author is None or db_author is None:
-                                # Skip mismatched lengths (should not happen if can_fix=True)
+                                # Skip mismatched lengths
+                                # (should not happen if can_fix=True)
                                 continue
 
                             # Update affiliation if different
@@ -228,7 +229,7 @@ class Metadata:
                                 db_author.save(update_fields=["is_editor"])
                                 if "authors" not in updated_fields:
                                     updated_fields["authors"] = []
-                                # Check if we already added this author to updated_fields
+                                # Check if we already added author to updated_fields
                                 author_entry = next(
                                     (
                                         a
