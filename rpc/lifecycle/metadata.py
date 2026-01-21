@@ -397,9 +397,8 @@ class MetadataComparator:
 
             # Extract author names
             xml_name = (
-                (xml_author.get("initials", "") + " " + xml_author.get("surname", ""))
-                .strip()
-            )
+                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
+            ).strip()
             db_name = db_author.titlepage_name
 
             # Check if names match
