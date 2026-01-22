@@ -33,7 +33,7 @@ __pycache__
 
 /rpcapi.yaml
 /openapi/rpcapi_client
-/docker/docker-compose.extend-custom.yml
+docker-compose.extend-custom.yml
 client/app/purple_client
 /static
 purple_api.yaml

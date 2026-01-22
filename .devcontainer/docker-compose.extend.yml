@@ -23,3 +23,14 @@ services:
     # Overrides default command so things don't shut down after the process ends.
     command: /bin/sh -c "while sleep 1000; do :; done"
 
+  celery:
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+      args:
+        # Pass through user UID/GID to Docker build for correct file permissions
+        # other values can be applied via docker-compose.extend-custom.yml
+        USER_UID: 1001
+        USER_GID: 1001
+    # This overrides the 'image' name for local development
+    image: "${COMPOSE_PROJECT_NAME}-app-dev"

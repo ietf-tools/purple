@@ -59,6 +59,7 @@ from .models import (
     DocRelationshipName,
     FinalApproval,
     Label,
+    MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
     RpcDocumentComment,
@@ -93,6 +94,7 @@ from .serializers import (
     MailMessageSerializer,
     MailResponseSerializer,
     MailTemplateSerializer,
+    MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
     QueueItemSerializer,
@@ -113,7 +115,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .tasks import send_mail_task
+from .tasks import send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 logger = logging.getLogger(__name__)
@@ -343,27 +345,49 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     """View to import a submission and create an RfcToBe"""
     # fetch and create a draft if needed
-    draft_info = None
-    try:
-        draft = Document.objects.get(datatracker_id=document_id)
-    except Document.DoesNotExist:
-        draft_info = rpcapi.get_draft_by_id(document_id)
-        if draft_info is None:
-            return Response(status=404)
-        draft, _ = Document.objects.get_or_create(
-            datatracker_id=document_id,
-            defaults={
-                "name": draft_info.name,
-                "rev": draft_info.rev,
-                "title": draft_info.title,
-                "stream": draft_info.stream,
-                "pages": draft_info.pages,
-                "intended_std_level": draft_info.intended_std_level,
-            },
+    draft_info = rpcapi.get_draft_by_id(document_id)
+    if draft_info is None:
+        return Response(status=404)
+    draft, created = Document.objects.update_or_create(
+        datatracker_id=document_id,
+        defaults={
+            "name": draft_info.name,
+            "rev": draft_info.rev,
+            "title": draft_info.title,
+            "group": draft_info.group,
+            "stream": draft_info.stream,
+            "pages": draft_info.pages,
+            "intended_std_level": draft_info.intended_std_level,
+        },
+    )
+
+    # Check whether shepherd / ad exist
+    if draft.shepherd is not None:
+        shepherd, _ = DatatrackerPerson.objects.get_or_create(
+            datatracker_id=draft.shepherd
         )
+    else:
+        shepherd = None
+    if draft.ad is not None and draft.stream == "ietf":
+        iesg_contact, _ = DatatrackerPerson.objects.get_or_create(
+            datatracker_id=draft.ad
+        )
+    else:
+        iesg_contact = None
 
     # Create the RfcToBe
-    serializer = CreateRfcToBeSerializer(data=request.data | {"draft": draft.pk})
+    serializer = CreateRfcToBeSerializer(
+        data=request.data
+        | {
+            "draft": draft.pk,
+            "title": draft.title,
+            "group": draft.group,
+            "abstract": draft.abstract,
+            "shepherd": shepherd.pk if shepherd is not None else None,
+            "iesg_contact": iesg_contact.pk if iesg_contact is not None else None,
+            "pages": draft.pages,
+        }
+    )
     if serializer.is_valid():
         with transaction.atomic():
             rfctobe = serializer.save()
@@ -416,6 +440,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "name": draft_info_ref.name,
                                 "rev": draft_info_ref.rev,
                                 "title": draft_info_ref.title,
+                                "group": draft_info_ref.group,
                                 "stream": draft_info_ref.stream,
                                 "pages": draft_info_ref.pages,
                                 "intended_std_level": draft_info_ref.intended_std_level,
@@ -1531,3 +1556,136 @@ class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = SubseriesTypeName.objects.all()
     serializer_class = SubseriesTypeNameSerializer
+
+
+@extend_schema_with_draft_name()
+class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
+    queryset = MetadataValidationResults.objects.all()
+    serializer_class = MetadataValidationResultsSerializer
+    http_method_names = ["get", "post", "delete"]
+    lookup_field = "head_sha"
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+        )
+
+    @extend_schema(
+        operation_id="metadata_validation_results_list",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        responses={
+            200: MetadataValidationResultsSerializer,
+        },
+    )
+    def list(self, request, *args, **kwargs):
+        """Return single metadata validation result for this draft"""
+        draft_name = kwargs.get("draft_name")
+        try:
+            mvr = MetadataValidationResults.objects.get(
+                rfc_to_be__draft__name=draft_name
+            )
+            serializer = self.get_serializer(mvr)
+            return Response(serializer.data)
+        except MetadataValidationResults.DoesNotExist:
+            return Response(
+                {"error": "No MetadataValidationResults for draft found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @extend_schema(
+        operation_id="metadata_validation_results_create",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        request=None,
+        responses={
+            status.HTTP_201_CREATED: MetadataValidationResultsSerializer,
+            status.HTTP_200_OK: MetadataValidationResultsSerializer,
+            status.HTTP_404_NOT_FOUND: inline_serializer(
+                name="RfcToBeNotFoundResponse",
+                fields={"error": serializers.CharField()},
+            ),
+        },
+    )
+    def create(self, request, *args, **kwargs):
+        """Create a pending metadata validation result and enqueue task"""
+        draft_name = kwargs.get("draft_name")
+        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
+        if rfc_to_be is None:
+            return Response(
+                {"error": "RfcToBe for draft not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        if rfc_to_be.repository is None:
+            return Response(
+                {"error": "RfcToBe has no associated repository."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        mvr, created = MetadataValidationResults.objects.get_or_create(
+            rfc_to_be=rfc_to_be,
+            defaults={"status": MetadataValidationResults.Status.PENDING},
+        )
+
+        if created:
+            # Enqueue Celery task
+            validate_metadata_task.delay(rfc_to_be.id)
+
+        return Response(
+            MetadataValidationResultsSerializer(mvr).data,
+            status=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
+        )
+
+    @extend_schema(
+        operation_id="metadata_validation_results_delete",
+        parameters=[
+            OpenApiParameter(
+                name="draft_name",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Draft name",
+            ),
+        ],
+        responses={
+            204: None,
+            400: inline_serializer(
+                name="DeleteMetadataBadRequestResponse",
+                fields={"detail": serializers.CharField()},
+            ),
+            404: inline_serializer(
+                name="DeleteMetadataNotFoundResponse",
+                fields={"detail": serializers.CharField()},
+            ),
+        },
+    )
+    def delete(self, request, *args, **kwargs):
+        """
+        Delete metadata validation results for a given RfcToBe.
+        """
+        draft_name = kwargs.get("draft_name")
+        metadata_result = get_object_or_404(
+            MetadataValidationResults, rfc_to_be__draft__name=draft_name
+        )
+
+        if metadata_result.status == MetadataValidationResults.Status.PENDING:
+            return Response(
+                {"detail": "Cannot delete pending metadata validation results."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        metadata_result.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)

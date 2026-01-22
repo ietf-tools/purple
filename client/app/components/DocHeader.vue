@@ -21,22 +21,22 @@
           </div>
         </div>
         <div class="flex flex-row gap-5">
-          <BaseButton @click="openEmailModal" class="flex items-center">
+          <BaseButton @click="handleOpenEmailModal" class="flex items-center">
             <span>New Email</span>
             <span v-if="isLoadingNewEmailModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
           <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
             <span>Finish assignments</span>
             <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
           <BaseButton @click="openPublishModal" class="flex items-center">
             <span> Publish</span>
             <span v-if="isLoadingPublishModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
         </div>
@@ -104,12 +104,14 @@ const openAssignmentFinishedModal = async () => {
       personsRef.value ? personsRef.value : api.rpcPersonList()
     ])
 
+    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe.id)
+
     personsRef.value = rpcPersonList
 
     openOverlayModal({
       component: AssignmentFinishedModal,
       componentProps: {
-        assignments,
+        assignments: rfcToBeAssignments,
         people: rpcPersonList,
         rfcToBe: props.rfcToBe,
         onSuccess: () => { }
@@ -130,7 +132,7 @@ const openAssignmentFinishedModal = async () => {
   isLoadingFinishAssignmentsModal.value = false
 }
 
-const openEmailModal = async () => {
+const handleOpenEmailModal = async () => {
   if (!props.rfcToBe || !props.rfcToBe.id) {
     snackbar.add({
       type: 'warning',
@@ -139,43 +141,16 @@ const openEmailModal = async () => {
     })
     return
   }
+  const { name, id } = props.rfcToBe
+  if(!name || !id) {
+    console.error({ rfcToBe: props.rfcToBe })
+    throw Error("Expected rfcToBe to have name and id but some were undefined. See console")
+  }
 
-  const { openOverlayModal } = overlayModal
 
   isLoadingNewEmailModal.value = true
 
-  try {
-
-    const [mailTemplates, rpcPersonList] = await Promise.all([
-      mailTemplateList.value ? mailTemplateList.value : api.mailtemplateList({
-        rfctobeId: props.rfcToBe.id,
-      }),
-      personsRef.value ? personsRef.value : api.rpcPersonList()
-    ])
-
-    mailTemplateList.value = mailTemplates
-    personsRef.value = rpcPersonList
-
-    openOverlayModal({
-      component: EmailModal,
-      componentProps: {
-        draftName: props.draftName,
-        mailTemplates,
-        onSuccess: () => { }
-      },
-      mode: 'overlay',
-    }).catch(e => {
-      if (e === undefined) {
-        // ignore... it's just signalling that the modal has closed
-      } else {
-        console.error(e)
-        throw e
-      }
-    })
-
-  } catch (e) {
-    console.error(e)
-  }
+  await openEmailModal({ overlayModal, api, draftName: name, rfcToBeId: id })
 
   isLoadingNewEmailModal.value = false
 }

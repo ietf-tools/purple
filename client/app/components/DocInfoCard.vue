@@ -20,7 +20,7 @@
               <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else>
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
-                  <a :href="author.email ? datatrackerPersonLink(author.email) : undefined" :class="ANCHOR_STYLE">
+                  <a :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined" :class="ANCHOR_STYLE">
                     <span :class="ANCHOR_STYLE">{{ author.titlepageName }}</span>
                     <span :class="PERSON_ID_STYLE" v-if="author.email">{{ SPACE }}{{ ` (${author.email})` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
@@ -76,13 +76,13 @@
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="intendedStream" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.intendedStream }"
+            <PatchRfcToBeField key="stream" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.stream }"
               :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               <span class="flex-1">
-                {{ rfcToBe.intendedStream }}
-                <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
-                  (submitted as {{ rfcToBe.submittedStream }})
+                {{ rfcToBe.stream }}
+                <span v-if="rfcToBe.publicationStream !== rfcToBe.stream">
+                  (submitted as {{ rfcToBe.publicationStream }})
                 </span>
               </span>
             </PatchRfcToBeField>
@@ -110,26 +110,23 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Boilerplate" :spacing="spacing">
+        <DescriptionListItem term="Boilerplate" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="intendedBoilerplate" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField key="boilerplate" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadBoilerplates, initialValue: rfcToBe.submittedFormat }"
               :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
-              {{ rfcToBe.intendedBoilerplate }}
-              <span v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate">
-                (submitted as {{ rfcToBe.submittedBoilerplate }})
-              </span>
+              {{ rfcToBe.boilerplate }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="intendedStdLevel" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.intendedStdLevel }"
+            <PatchRfcToBeField key="stdLevel" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
               :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
-              {{ rfcToBe.intendedStdLevel }}
-              <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
-                (submitted as {{ rfcToBe.submittedStdLevel }})
+              {{ rfcToBe.stdLevel }}
+              <span v-if="rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
+                (submitted as {{ rfcToBe.publicationStdLevel }})
               </span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -209,6 +206,9 @@
 import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 import { type RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
+import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
+
+const datatrackerLinks = useDatatrackerLinks()
 
 type Props = {
   rfcToBe: RfcToBe | null | undefined

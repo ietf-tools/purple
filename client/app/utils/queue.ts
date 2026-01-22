@@ -23,6 +23,12 @@ export const queueTabs: Tab[] = [
     icon: 'uil:clock'
   },
   {
+    id: 'pending-announcement',
+    name: 'Pending Announcement',
+    to: '/queue/pending-announcement',
+    icon: 'lucide:baby'
+  },
+  {
     id: 'published',
     name: 'Recently Published',
     to: '/queue/published',

@@ -103,6 +103,7 @@ class Document(models.Model):
     rev = models.CharField(max_length=16, help_text="Revision of draft")
     title = models.CharField(max_length=255, help_text="Title of draft")
     stream = models.CharField(max_length=32, help_text="Stream of draft")
+    group = models.CharField(max_length=40, blank=True, help_text="Group of draft")
     pages = models.PositiveSmallIntegerField(help_text="Number of pages")
     intended_std_level = models.CharField(max_length=32, blank=True)
 
@@ -112,6 +113,18 @@ class Document(models.Model):
 
     def __str__(self):
         return f"{self.name}-{self.rev}"
+
+    @property
+    def abstract(self) -> str:
+        return self._fetch("abstract")
+
+    @property
+    def shepherd(self) -> str:
+        return self._fetch("shepherd")
+
+    @property
+    def ad(self) -> str:
+        return self._fetch("ad")
 
     @property
     def consensus(self) -> bool:
