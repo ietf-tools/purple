@@ -103,18 +103,17 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
     submitted_format = factory.SubFactory(
         "rpc.factories.SourceFormatNameFactory", slug="xml-v3"
     )
-    submitted_std_level = factory.SubFactory(
-        "rpc.factories.StdLevelNameFactory", slug="ps"
-    )
-    submitted_boilerplate = factory.SubFactory(
+    std_level = factory.SubFactory("rpc.factories.StdLevelNameFactory", slug="ps")
+    boilerplate = factory.SubFactory(
         "rpc.factories.TlpBoilerplateChoiceNameFactory", slug="trust200902"
     )
-    submitted_stream = factory.SubFactory(
-        "rpc.factories.StreamNameFactory", slug="ietf"
+    stream = factory.SubFactory("rpc.factories.StreamNameFactory", slug="ietf")
+    publication_std_level = factory.LazyAttribute(
+        lambda o: o.std_level if o.disposition.slug == "published" else None
     )
-    intended_std_level = factory.LazyAttribute(lambda o: o.submitted_std_level)
-    intended_boilerplate = factory.LazyAttribute(lambda o: o.submitted_boilerplate)
-    intended_stream = factory.LazyAttribute(lambda o: o.submitted_stream)
+    publication_stream = factory.LazyAttribute(
+        lambda o: o.stream if o.disposition.slug == "published" else None
+    )
     external_deadline = factory.Faker(
         "date_time_between",
         start_date="+1d",

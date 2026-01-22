@@ -582,6 +582,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "title",
+            "abstract",
+            "group",
             "draft",
             "disposition",
             "external_deadline",
@@ -589,13 +591,16 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "labels",
             "cluster",
             "submitted_format",
-            "submitted_boilerplate",
-            "submitted_std_level",
-            "submitted_stream",
-            "intended_boilerplate",
-            "intended_std_level",
-            "intended_stream",
+            "pages",
+            "keywords",
+            "boilerplate",
+            "std_level",
+            "publication_std_level",
+            "stream",
+            "publication_stream",
             "authors",
+            "shepherd",
+            "iesg_contact",
             "assignment_set",
             "actionholder_set",
             "pending_activities",
@@ -663,28 +668,27 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
         model = RfcToBe
         fields = [
             "submitted_format",
-            "submitted_boilerplate",
-            "submitted_std_level",
-            "submitted_stream",
+            "boilerplate",
+            "std_level",
+            "stream",
             "external_deadline",
             "labels",
             "draft",
+            "title",
+            "group",
+            "abstract",
+            "shepherd",
+            "iesg_contact",
+            "pages",
+            "keywords",
             "iana_status_slug",
         ]
 
     def create(self, validated_data):
         extra_data = {
             "disposition": DispositionName.objects.get(slug="created"),
-            "intended_boilerplate": validated_data["submitted_boilerplate"],
-            "intended_std_level": validated_data["submitted_std_level"],
-            "intended_stream": validated_data["submitted_stream"],
             "internal_goal": validated_data["external_deadline"],
         }
-        # default to intended_* == submitted_*
-        for field_name in ["boilerplate", "std_level", "stream"]:
-            extra_data[f"intended_{field_name}"] = validated_data[
-                f"submitted_{field_name}"
-            ]
         inst = super().create(validated_data | extra_data)
         update_change_reason(inst, "Added to the queue")
         return inst

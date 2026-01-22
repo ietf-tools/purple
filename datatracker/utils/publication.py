@@ -150,19 +150,20 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
                 ),
                 email=author.datatracker_person.email,
                 affiliation=author.affiliation or "",
-                country="",  # todo author country?
+                country="",  # purple does not model country
             )
             for author in rfctobe.authors.all()
         ],
-        # group=<not implemented, comes from draft>
-        stream=rfctobe.intended_stream.slug,
-        # abstract="This is the abstract. It is not yet modeled.",
-        # pages=None,  # todo pages
-        # words=None,  # todo words
-        # formal_languages=<not implemented, comes from draft>
-        std_level=rfctobe.intended_std_level.slug,
-        # ad=<not implemented, comes from draft>
-        # note=<not implemented, comes from draft>
+        group=rfctobe.group,
+        stream=rfctobe.publication_stream.slug,
+        abstract=rfctobe.abstract,
+        pages=rfctobe.pages,
+        std_level=rfctobe.publication_std_level.slug,
+        ad=(
+            rfctobe.iesg_contact.datatracker_id
+            if rfctobe.publication_stream_id == "ietf"
+            else None
+        ),
         obsoletes=list(
             rfctobe.obsoletes.exclude(
                 # obsoleting an RFC that has no rfc_number is nonsensical, but

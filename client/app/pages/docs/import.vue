@@ -24,13 +24,14 @@
                     {{ submission?.name }}-{{ submission?.rev }}
                   </span>
             </li>
-            <li>
+            <li>Title: {{ submission?.title }}</li>
+            <li>Authors:
                   <span v-for="auth of submission?.authors" :key="auth.id" class="pr-2">
                     {{ auth.plainName }}
                   </span>
             </li>
             <li>Submitted pages: {{ submission?.pages }}</li>
-            <li>Document shepherd: {{ submission?.shepherd }}</li>
+            <li>Document shepherd: {{ submission?.shepherd }}</li><!-- todo fetch person details -->
             <li>Stream: {{ submission?.stream.name }}</li>
             <li>Submitted standard level: {{ submission?.stdLevel?.name }}</li>
             <li>Submitted format: {{ submission?.sourceFormat.name }}</li>
@@ -223,10 +224,10 @@ async function importSubmission () {
     imported = await api.submissionsImport({
       documentId: submission.value.id,
       createRfcToBeRequest: {
-        submittedBoilerplate: state.boilerplate.slug,
+        boilerplate: state.boilerplate.slug,
         submittedFormat: state.sourceFormat.slug,
-        submittedStdLevel: state.stdLevel.slug,
-        submittedStream: state.stream.slug,
+        stdLevel: state.stdLevel.slug,
+        stream: state.stream.slug,
         externalDeadline: DateTime.fromISO(state.deadline, { zone: 'utc' }).toJSDate(),
         labels: state.labels
       }

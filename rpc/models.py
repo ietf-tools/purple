@@ -119,33 +119,75 @@ class RfcToBe(models.Model):
         validators=[validate_not_unusable_rfc_number],
     )
 
-    submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
-    submitted_std_level = models.ForeignKey(
-        "StdLevelName", on_delete=models.PROTECT, related_name="+"
+    title = models.CharField(max_length=255, help_text="Document title")
+    abstract = models.TextField(
+        max_length=32000,
+        blank=True,
+        help_text="Document abstract",
     )
-    submitted_boilerplate = models.ForeignKey(
-        "TlpBoilerplateChoiceName",
+    group = models.CharField(
+        max_length=40,
+        blank=True,
+        help_text="Acronym of datatracker group where this document originated, if any",
+    )
+    submitted_format = models.ForeignKey("SourceFormatName", on_delete=models.PROTECT)
+
+    std_level = models.ForeignKey(
+        "StdLevelName",
         on_delete=models.PROTECT,
         related_name="+",
-        help_text="TLP IPR boilerplate option applicable when document entered the "
-        "queue",
+        help_text="Current StdLevel",
     )
-    submitted_stream = models.ForeignKey(
-        "StreamName", on_delete=models.PROTECT, related_name="+"
+    publication_std_level = models.ForeignKey(
+        "StdLevelName",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="+",
+        help_text="StdLevel at publication (blank until published)",
     )
 
-    intended_std_level = models.ForeignKey(
-        "StdLevelName", on_delete=models.PROTECT, related_name="+"
-    )
-    intended_boilerplate = models.ForeignKey(
+    boilerplate = models.ForeignKey(
         "TlpBoilerplateChoiceName",
         on_delete=models.PROTECT,
         related_name="+",
-        help_text="TLP IPR boilerplate option intended to apply upon publication "
-        "as RFC",
+        help_text="TLP IPR boilerplate option",
     )
-    intended_stream = models.ForeignKey(
-        "StreamName", on_delete=models.PROTECT, related_name="+"
+
+    stream = models.ForeignKey(
+        "StreamName",
+        on_delete=models.PROTECT,
+        related_name="+",
+        help_text="Current stream",
+    )
+    publication_stream = models.ForeignKey(
+        "StreamName",
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="+",
+        help_text="Stream at publication (blank until published)",
+    )
+
+    shepherd = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="shepherded_rfctobe_set",
+        help_text="Document shepherd",
+    )
+    iesg_contact = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+        help_text="Responsible or shepherding AD, if any",
+    )
+    pages = models.PositiveIntegerField(null=True, help_text="Page count")
+    keywords = models.CharField(
+        max_length=1000, blank=True, help_text="Comma-separated list of keywords"
     )
 
     external_deadline = models.DateTimeField(null=True, blank=True)
@@ -208,13 +250,6 @@ class RfcToBe(models.Model):
         if self.rfc_number is not None:
             return f"RFC {self.rfc_number}"
         return f"<RfcToBe {self.pk}>"
-
-    @property
-    def title(self) -> str:
-        if self.draft:
-            return self.draft.title
-        self._warn_if_not_april1_rfc()
-        return "<No title>"
 
     # Easier interface to the cluster_set
     @property

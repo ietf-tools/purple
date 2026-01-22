@@ -54,8 +54,14 @@ class RfcToBeLabelAdmin(admin.ModelAdmin):
 @admin.register(RfcToBe)
 class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
     list_display = ["draft", "draft__rev", "rfc_number", "disposition", "repository"]
-    list_filter = ["disposition"]
-    search_fields = ["draft__name", "rfc_number"]
+    list_filter = [
+        "disposition",
+        "std_level",
+        "publication_std_level",
+        "stream",
+        "publication_stream",
+    ]
+    search_fields = ["draft__name", "rfc_number", "title", "group", "keywords"]
 
 
 @admin.register(DispositionName)

@@ -158,7 +158,7 @@ export const legendData: DataParam = {
     { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'not-received' },
   ],
   nodes: [
-    { id: 'draft-one-with-rfc', rfcToBe: { rfcNumber: 100, disposition: '', labels: [], submittedFormat: '', submittedBoilerplate: '', submittedStdLevel: '', submittedStream: '', intendedBoilerplate: '', intendedStdLevel: '', intendedStream: '', authors: [] }, disposition: undefined },
+    { id: 'draft-one-with-rfc', rfcToBe: { rfcNumber: 100, disposition: '', labels: [], submittedFormat: '', title: '', boilerplate: '', stdLevel: '', stream: '', publicationStdLevel: '', publicationStream: '', authors: [], group: '' }, disposition: undefined },
     { id: 'draft-one-without-rfc', disposition: undefined },
     { id: 'draft-is-not-received', isReceived: false, disposition: undefined },
     { id: 'draft-is-received', isReceived: true, disposition: undefined },

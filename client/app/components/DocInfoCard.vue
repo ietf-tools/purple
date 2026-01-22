@@ -29,26 +29,22 @@
         <DescriptionListItem term="Document Shepherd" details="Dolly Shepherd (mocked)" :spacing="spacing" />
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            {{ rfcToBe.intendedStream }}
-            <span v-if="rfcToBe.submittedStream !== rfcToBe.intendedStream">
-              (submitted as {{ rfcToBe.submittedStream }})
+            {{ rfcToBe.stream }}
+            <span v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
+              (published as {{ rfcToBe.publicationStream }})
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Stream Manager" details="Ari Drecker (mocked)" :spacing="spacing" />
         <DescriptionListItem term="Submitted Format" :details="rfcToBe.submittedFormat" :spacing="spacing" />
-        <DescriptionListItem term="Submitted Boilerplate" :spacing="spacing">
-          <DescriptionListDetails>{{ rfcToBe.intendedBoilerplate }}
-            <span v-if="rfcToBe.submittedBoilerplate !== rfcToBe.intendedBoilerplate">
-              (submitted as {{ rfcToBe.submittedBoilerplate }})
-            </span>
-          </DescriptionListDetails>
+        <DescriptionListItem term="Boilerplate" :spacing="spacing">
+          <DescriptionListDetails>{{ rfcToBe.boilerplate }}</DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level" :spacing="spacing">
           <DescriptionListDetails>
-            {{ rfcToBe.intendedStdLevel }}
-            <span v-if="rfcToBe.submittedStdLevel !== rfcToBe.intendedStdLevel">
-              (submitted as {{ rfcToBe.submittedStdLevel }})
+            {{ rfcToBe.stdLevel }}
+            <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
+              (published as {{ rfcToBe.publicationStdLevel }})
             </span>
           </DescriptionListDetails>
         </DescriptionListItem>
