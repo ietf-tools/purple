@@ -238,14 +238,28 @@ const postRfc = async () => {
 }
 
 const updateDatabaseToMatchDocument = async () => {
-  step.value = { type: 'loading' }
 
-  // BE: how do I tell the server to sync changes (update database to match document)
+  try {
+    if (!step.value.gitHash) {
+      throw new Error('No git hash available')
+    }
 
-  await sleep(1000)
-  step.value = {
-    type: 'databaseUpdated',
-    // error: 'a problem occurred'
+    // Call the sync endpoint to update database from document metadata
+    await api.metadataValidationResultsSync({
+      draftName: draftName.value,
+      syncMetadataRequestRequest: {
+        headSha: step.value.gitHash
+      }
+    })
+
+    step.value = {
+      type: 'databaseUpdated'
+    }
+  } catch (e: unknown) {
+    step.value = {
+      type: 'databaseUpdated',
+      error: `Problem updating database: ${e}`
+    }
   }
 }
 
