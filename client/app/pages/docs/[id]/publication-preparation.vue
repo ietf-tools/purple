@@ -189,7 +189,7 @@ const fetchAndVerifyMetadata = async () => {
     rows: metadataValidationResult.metadataCompare?.map(row => ({
       rowName: row.rowName,
       rowNameListDepth: row.rowNameListDepth,
-      rowValue: {
+      value: {
         isMatch: row.rowValue.isMatch,
         leftValue: row.rowValue.leftValue,
         rightValue: row.rowValue.rightValue,
