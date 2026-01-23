@@ -79,7 +79,6 @@ def validate_metadata_task(self, rfc_to_be_id):
             mvr.detail = detail
             mvr.save()
 
-    status = None
     head_sha = None
     metadata = None
     rfc_to_be = None
