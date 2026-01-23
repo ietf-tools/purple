@@ -40,14 +40,17 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
             )
             for author in rfctobe.authors.all()
         ],
-        group=rfctobe.group,
+        group=rfctobe.group if rfctobe.group.strip() else None,
         stream=rfctobe.publication_stream.slug,
         abstract=rfctobe.abstract,
         pages=rfctobe.pages,
         std_level=rfctobe.publication_std_level.slug,
         ad=(
             rfctobe.iesg_contact.datatracker_id
-            if rfctobe.publication_stream_id == "ietf"
+            if (
+                rfctobe.iesg_contact is not None
+                and rfctobe.publication_stream_id == "ietf"
+            )
             else None
         ),
         obsoletes=list(

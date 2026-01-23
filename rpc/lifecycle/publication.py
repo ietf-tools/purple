@@ -86,9 +86,7 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
             code="rfctobe-no-rfc-number",
         )
     if rfctobe.repository.strip() == "":
-        raise serializers.ValidationError(
-            "no repository is configured"
-        )
+        raise serializers.ValidationError("no repository is configured")
     # todo IANA check, what else?
 
 
@@ -124,18 +122,24 @@ def publish_rfctobe(
     try:
         validate_ready_to_publish(rfctobe)
     except serializers.ValidationError as err:
-        raise PublicationError(f"Cannot publish because {err}")
+        raise PublicationError(f"Cannot publish because {err}") from err
 
     repo = GithubRepository(rfctobe.repository)
     # Check that head commit matches expected_head. This check defines the instant
     # after which commits to the repository will be ignored for this publication
-    # attempt. Call this the publication instant.
-    rfctobe.published_at = timezone.now()  # not yet saved!!
+    # attempt.
     if repo.ref != expected_head:
         raise PublicationError(
             f"Cannot publish because HEAD of {rfctobe.repository} repo moved "
             f"(expected {expected_head}, found {repo.ref})"
         )
+
+    # Call this the publication instant; actual save happens below, after datatracker
+    # accepts the metadata update
+    rfctobe.published_at = timezone.now()
+    rfctobe.publication_std_level = rfctobe.std_level
+    rfctobe.publication_stream = rfctobe.stream
+
     try:
         manifest = repo.get_manifest()
     except TemporaryRepositoryError as err:
@@ -185,12 +189,13 @@ def publish_rfctobe(
                 raise InvalidDraftError from api_error
             elif "already-published-draft" in error_codes:
                 raise AlreadyPublishedDraftError from api_error
-
+            else:
+                raise PublicationError(
+                    f"Publication failed: codes={error_codes}"
+                ) from api_error
         # Datatracker accepted it, so mark the RfcToBe as published. N.b., we set
-        # the published_at timestamp earlier.
+        # the published_at timestamp and other publication fields earlier.
         rfctobe.disposition_id = "published"
-        rfctobe.publication_std_level = rfctobe.std_level
-        rfctobe.publication_stream = rfctobe.stream
         rfctobe.save()
 
         try:
