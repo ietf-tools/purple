@@ -116,9 +116,16 @@ class Metadata:
                     if field == "title":
                         new_title = metadata.get("title")
                         if new_title:
-                            rfctobe.draft.title = new_title
-                            rfctobe.draft.save(update_fields=["title"])
+                            rfctobe.title = new_title
+                            rfctobe.save(update_fields=["title"])
                             updated_fields["title"] = new_title
+
+                    elif field == "abstract":
+                        new_abstract = metadata.get("abstract")
+                        if new_abstract:
+                            rfctobe.abstract = new_abstract
+                            rfctobe.save(update_fields=["abstract"])
+                            updated_fields["abstract"] = new_abstract
 
                     elif field == "publication_date":
                         pub_date = metadata.get("publication_date")
@@ -342,6 +349,7 @@ class MetadataComparator:
             self.compare_updates(),
             self.compare_obsoletes(),
             self.compare_subseries(),
+            self.compare_abstract(),
         ]
 
     def compare_title(self):
@@ -566,11 +574,7 @@ class MetadataComparator:
     def compare_abstract(self):
         """Compare abstract field"""
         xml_value = self.xml_metadata.get("abstract", "").strip()
-        db_value = (
-            (self.rfc_to_be.draft.abstract or "").strip()
-            if self.rfc_to_be.draft
-            else ""
-        )
+        db_value = (self.rfc_to_be.abstract or "").strip()
 
         return {
             "field": "abstract",
