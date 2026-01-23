@@ -127,31 +127,6 @@ class Metadata:
                             rfctobe.save(update_fields=["abstract"])
                             updated_fields["abstract"] = new_abstract
 
-                    elif field == "publication_date":
-                        pub_date = metadata.get("publication_date")
-                        if pub_date:
-                            year = int(pub_date.get("year"))
-                            month_str = pub_date.get("month")
-                            day = (
-                                int(pub_date.get("day"))
-                                if pub_date.get("day")
-                                else None
-                            )
-
-                            if not year or not month_str or not day:
-                                raise ValueError(
-                                    "Incomplete publication date in metadata"
-                                )
-
-                            # Convert month name to month number
-                            month = datetime.datetime.strptime(month_str, "%B").month
-
-                            rfctobe.published_at = datetime.datetime(
-                                year, month, day, 12, 0, 0
-                            )
-                            rfctobe.save(update_fields=["published_at"])
-                            updated_fields["published_at"] = rfctobe.published_at
-
                     elif field == "updates":
                         # Delete existing updates relationships
                         RpcRelatedDocument.objects.filter(
@@ -344,7 +319,6 @@ class MetadataComparator:
 
         return [
             self.compare_title(),
-            self.compare_publication_date(),
             self.compare_authors(),
             self.compare_updates(),
             self.compare_obsoletes(),
@@ -363,38 +337,6 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": xml_value == db_value,
             "can_fix": True,
-        }
-
-    def compare_publication_date(self):
-        """Compare publication date field"""
-        xml_date_obj = self.xml_metadata.get("publication_date", {})
-
-        # Convert XML publication_date object to YYYY-mm-dd format
-        xml_value = None
-        if xml_date_obj:
-            try:
-                # Parse month name from XML to month number
-                month_name = xml_date_obj.get("month", "")
-                month_num = datetime.datetime.strptime(month_name, "%B").month
-                year = int(xml_date_obj.get("year", ""))
-                day = int(xml_date_obj.get("day", ""))
-                # Validate the date by creating a date object
-                datetime.date(year, month_num, day)
-                xml_value = f"{year}-{month_num:02d}-{day:02d}"
-            except (ValueError, KeyError, TypeError):
-                xml_value = None
-
-        # Convert rfc_to_be.published_at to YYYY-mm-dd format
-        db_value = None
-        if self.rfc_to_be.published_at:
-            db_value = self.rfc_to_be.published_at.strftime("%Y-%m-%d")
-
-        return {
-            "field": "publication_date",
-            "xml_value": xml_value,
-            "db_value": db_value,
-            "is_match": xml_value == db_value,
-            "can_fix": xml_value is not None,  # can fix if XML date is valid
         }
 
     def compare_authors(self):
