@@ -110,7 +110,7 @@ class GithubRepository(Repository):
     def get_manifest(self):
         logger.debug("Retrieving manifest from %s", self.repo.name)
         try:
-            contents = self.get_contents(self.MANIFEST_PATH)
+            contents = self._get_contents(self.MANIFEST_PATH)
         except GithubException as err:
             if err.status // 100 == 5:  # 5xx
                 raise TemporaryRepositoryError from err
@@ -128,7 +128,7 @@ class GithubRepository(Repository):
         # We can't use decoded_content because the file might be too large (> 1 MB).
         # Instead, use GithubRepositoryFile so it can be chunked via download_url.
         path = str(path)
-        contents = self.get_contents(path)
+        contents = self._get_contents(path)
         if contents.type != "file":
             raise RepositoryError("Path is not a file (type is %s)", contents.type)
         return GithubRepositoryFile(

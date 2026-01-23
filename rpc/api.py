@@ -848,7 +848,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=["post"])
     def publish(self, request, draft__name=None):
-        serializer = PublishRfcSerializer(request.data)
+        serializer = PublishRfcSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         rfctobe = self.get_object()
         if not can_publish(rfctobe, request.user):

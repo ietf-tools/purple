@@ -117,7 +117,7 @@ def suffix_for_type(type_):
 
 @with_rpcapi
 def publish_rfctobe(
-    rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.RpcApi
+    rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.PurpleApi
 ):
     # Re-validate that the RfcToBe is ready to publish, things may have changed
     # since the task was queued.
