@@ -133,7 +133,6 @@
 
 <script setup lang="ts">
 import { useAsyncData } from '#app'
-import { hasTime } from 'reka-ui/date'
 import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
 
