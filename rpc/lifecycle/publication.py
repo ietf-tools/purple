@@ -52,10 +52,12 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
     """Is this RfcToBe ready to be published?
 
     No return value. Raises serializers.ValidationError if not ready.
+
+    detail messages should complete the sentence, "Cannot publish because..."
     """
     if rfctobe.disposition_id != "in_progress":
         raise serializers.ValidationError(
-            "disposition is not 'in_progress'",
+            f"disposition is '{rfctobe.disposition}, not 'In Progress'",
             code="rfctobe-bad-disposition",
         )
     if rfctobe.assignment_set.active().exclude(role_id="publisher").exists():
@@ -82,6 +84,10 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
         raise serializers.ValidationError(
             "no RFC number is assigned",
             code="rfctobe-no-rfc-number",
+        )
+    if rfctobe.repository.strip() == "":
+        raise serializers.ValidationError(
+            "no repository is configured"
         )
     # todo IANA check, what else?
 
@@ -113,14 +119,12 @@ def suffix_for_type(type_):
 def publish_rfctobe(
     rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.RpcApi
 ):
-    if rfctobe.rfc_number is None:
-        raise PublicationError("Cannot publish without an rfc_number")
-    if rfctobe.repository.strip() == "":
-        raise PublicationError("Cannot publish without a repository")
-    if rfctobe.disposition_id != "in_progress":
-        raise PublicationError(
-            f"Cannot publish because disposition is {rfctobe.disposition_id}"
-        )
+    # Re-validate that the RfcToBe is ready to publish, things may have changed
+    # since the task was queued.
+    try:
+        validate_ready_to_publish(rfctobe)
+    except serializers.ValidationError as err:
+        raise PublicationError(f"Cannot publish because {err}")
 
     repo = GithubRepository(rfctobe.repository)
     # Check that head commit matches expected_head. This check defines the instant
