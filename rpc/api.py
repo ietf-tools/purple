@@ -45,7 +45,6 @@ from datatracker.rpcapi import with_rpcapi
 
 from .lifecycle.publication import (
     can_publish,
-    publish_rfctobe,
     validate_ready_to_publish,
 )
 from .models import (
@@ -97,6 +96,7 @@ from .serializers import (
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
+    PublishRfcSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
     RfcToBeHistorySerializer,
@@ -115,7 +115,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .tasks import send_mail_task, validate_metadata_task
+from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 logger = logging.getLogger(__name__)
@@ -841,14 +841,22 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
         return Response(serializer.data)
 
-    @extend_schema(operation_id="documents_publish", request=None, responses=None)
+    @extend_schema(
+        operation_id="documents_publish",
+        request=PublishRfcSerializer,
+        responses=None,
+    )
     @action(detail=True, methods=["post"])
     def publish(self, request, draft__name=None):
+        serializer = PublishRfcSerializer(request.data)
+        serializer.is_valid(raise_exception=True)
         rfctobe = self.get_object()
         if not can_publish(rfctobe, request.user):
             raise PermissionDenied("User is not permitted to publish this RFC")
         validate_ready_to_publish(rfctobe)  # raises ValidationError
-        publish_rfctobe(rfctobe)
+        publish_rfctobe_task.delay(
+            rfctobe_id=rfctobe.pk, expected_head=serializer.validated_data["head_sha"]
+        )
         return Response()  # todo return value
 
 

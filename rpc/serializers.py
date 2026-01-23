@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023-2025, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 import datetime
 import warnings
@@ -1423,3 +1423,11 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
         }
         serialized = MetadataComparisonTableSerializer(table_data).data
         return serialized["metadata_compare"]
+
+
+class PublishRfcSerializer(serializers.Serializer):
+    head_sha = serializers.CharField(
+        min_length=40,
+        max_length=40,
+        help_text="Commit hash of repository HEAD intended for publication",
+    )

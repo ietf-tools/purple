@@ -2,10 +2,9 @@
 from celery import shared_task
 
 from datatracker.utils.publication import (
-    PublicationError,
-    TemporaryPublicationError,
     publish_rfc,
 )
+from rpc.lifecycle.publication import PublicationError, TemporaryPublicationError
 from rpc.models import RfcToBe
 from utils.task_utils import RetryTask
 

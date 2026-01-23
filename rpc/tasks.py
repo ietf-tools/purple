@@ -3,10 +3,16 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
-from rpc.lifecycle.metadata import Metadata
-from rpc.lifecycle.repo import GithubRepository
-from rpc.models import MailMessage, MetadataValidationResults, RfcToBe
 from utils.task_utils import RetryTask
+
+from .lifecycle.metadata import Metadata
+from .lifecycle.publication import (
+    PublicationError,
+    TemporaryPublicationError,
+    publish_rfctobe,
+)
+from .lifecycle.repo import GithubRepository
+from .models import MailMessage, MetadataValidationResults, RfcToBe
 
 logger = get_task_logger(__name__)
 
@@ -132,3 +138,18 @@ def validate_metadata_task(self, rfc_to_be_id):
         detail = str(e)
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
+
+
+class PublishRfcToBeTask(RetryTask):
+    pass
+
+
+@shared_task(
+    bind=True,
+    base=PublishRfcToBeTask,
+    throws=(RfcToBe.DoesNotExist, PublicationError),
+    autoretry_for=(TemporaryPublicationError,),
+)
+def publish_rfctobe_task(self, rfctobe_id, expected_head):
+    rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
+    publish_rfctobe(rfctobe, expected_head=expected_head)
