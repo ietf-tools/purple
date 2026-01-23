@@ -1,7 +1,6 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Document metadata interfaces"""
 
-import datetime
 import logging
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
