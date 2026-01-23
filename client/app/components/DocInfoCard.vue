@@ -81,8 +81,8 @@
               :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               <span class="flex-1">
                 {{ rfcToBe.stream }}
-                <span v-if="rfcToBe.publicationStream !== rfcToBe.stream">
-                  (submitted as {{ rfcToBe.publicationStream }})
+                <span v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
+                  (published as {{ rfcToBe.publicationStream }})
                 </span>
               </span>
             </PatchRfcToBeField>
