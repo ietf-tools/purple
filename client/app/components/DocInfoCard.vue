@@ -125,7 +125,7 @@
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
               :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.stdLevel }}
-              <span v-if="rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
+              <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
                 (submitted as {{ rfcToBe.publicationStdLevel }})
               </span>
             </PatchRfcToBeField>
@@ -207,6 +207,10 @@ import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRo
 import { type RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
+import { draftAssignmentsHref } from '~/utils/url'
+import { classForBtnType } from '~/utils/button'
+import type { SelectOption } from '~/utils/html'
+import { dispositionValues } from '~/utils/document_relations-utils'
 
 const datatrackerLinks = useDatatrackerLinks()
 
