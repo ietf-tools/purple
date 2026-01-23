@@ -30,7 +30,6 @@ INSTALLED_APPS = [
     "datatracker.apps.DatatrackerConfig",
     "rpc.apps.RpcConfig",
     "rpcauth.apps.RpcAuthConfig",
-    "errata.apps.ErrataConfig",
 ]
 
 MIDDLEWARE = [
@@ -133,6 +132,9 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "static"
 
+# Path for JSON schema, etc
+SCHEMA_ROOT = BASE_DIR / "schema"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
@@ -173,3 +175,6 @@ DOI_URL = "https://www.rfc-editor.org/info/"
 DOI_AUTHOR_ORGS = [
     "IAB",
 ]
+
+# Github
+GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
