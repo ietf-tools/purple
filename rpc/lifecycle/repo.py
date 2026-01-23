@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 """Document repository interfaces"""
 
 import json
@@ -93,6 +93,9 @@ class GithubRepository(Repository):
     Raises a RepositoryError if something goes wrong indicating a problem with
     the repository contents. Raises GithubException if there is an issue with
     Github itself.
+
+    Returns files from the HEAD of the repository the first time the repo is actually
+    accessed.
     """
 
     def __init__(self, repo_id: str, auth: GithubAuth | None = None):
@@ -102,11 +105,12 @@ class GithubRepository(Repository):
                 auth = GithubAuthToken(auth_token)
         self.gh = Github(auth=auth)
         self.repo = self.gh.get_repo(repo_id)
+        self._ref: str | None = None
 
     def get_manifest(self):
         logger.debug("Retrieving manifest from %s", self.repo.name)
         try:
-            contents = self.repo.get_contents(self.MANIFEST_PATH)
+            contents = self.get_contents(self.MANIFEST_PATH)
         except GithubException as err:
             if err.status // 100 == 5:  # 5xx
                 raise TemporaryRepositoryError from err
@@ -124,7 +128,7 @@ class GithubRepository(Repository):
         # We can't use decoded_content because the file might be too large (> 1 MB).
         # Instead, use GithubRepositoryFile so it can be chunked via download_url.
         path = str(path)
-        contents = self.repo.get_contents(path)
+        contents = self.get_contents(path)
         if contents.type != "file":
             raise RepositoryError("Path is not a file (type is %s)", contents.type)
         return GithubRepositoryFile(
@@ -132,6 +136,18 @@ class GithubRepository(Repository):
             download_url=contents.download_url,
             size=contents.size,
         )
+
+    def _get_contents(self, path):
+        """Wrapper that ensures contents reflect a consistent commit"""
+        return self.repo.get_contents(path, ref=self.ref)
+
+    @property
+    def ref(self) -> str:
+        # The first call to this method defines the commit that will be used for
+        # content retrieval
+        if self._ref is None:
+            self._ref = self.get_head_sha()
+        return self._ref
 
     def get_head_sha(self) -> str:
         """Get the SHA of the head commit of the default branch."""

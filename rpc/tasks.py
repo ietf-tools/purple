@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
@@ -90,7 +90,7 @@ def validate_metadata_task(self, rfc_to_be_id):
             return
 
         repo = GithubRepository(repo_url)
-        head_sha = repo.get_head_sha()
+        head_sha = repo.ref  # gets current head + guarantees all files from same ref
 
         # if sha unchanged, skip processing
         existing = MetadataValidationResults.objects.filter(
