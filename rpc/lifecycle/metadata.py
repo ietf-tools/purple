@@ -109,8 +109,8 @@ class Metadata:
             # Process each comparison result
             for comparison in comparisons:
                 field = comparison["field"]
-                is_match = comparison.get("is_match", False)
-                can_fix = comparison.get("can_fix", False)
+                is_match = comparison["is_match"]
+                can_fix = comparison["can_fix"]
 
                 if not is_match and can_fix:
                     if field == "title":
@@ -196,13 +196,34 @@ class Metadata:
                         xml_authors = metadata.get("authors", [])
                         db_authors = list(rfctobe.authors.all().order_by("order"))
 
+                        # Validate that lengths match and names match at each position
+                        if len(xml_authors) != len(db_authors):
+                            raise ValueError(
+                                f"Author length mismatch: XML has {len(xml_authors)} "
+                                f"authors, DB has {len(db_authors)} authors"
+                            )
+
                         for position, (xml_author, db_author) in enumerate(
                             zip_longest(xml_authors, db_authors, fillvalue=None)
                         ):
                             if xml_author is None or db_author is None:
-                                # Skip mismatched lengths
-                                # (should not happen if can_fix=True)
-                                continue
+                                raise ValueError(
+                                    f"Unexpected None value at position {position} "
+                                    "during author update"
+                                )
+
+                            # Verify names match
+                            xml_name = (
+                                xml_author.get("initials", "")
+                                + " "
+                                + xml_author.get("surname", "")
+                            ).strip()
+                            db_name = db_author.titlepage_name
+                            if xml_name != db_name:
+                                raise ValueError(
+                                    f"Author name mismatch at position {position}: "
+                                    f"XML='{xml_name}', DB='{db_name}'"
+                                )
 
                             # Update affiliation if different
                             xml_org = xml_author.get("organization", "").strip()
