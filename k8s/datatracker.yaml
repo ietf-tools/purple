@@ -21,7 +21,7 @@ spec:
         # Datatracker Container
         # -----------------------------------------------------
         - name: datatracker
-          image: "ghcr.io/ietf-tools/datatracker:latest"
+          image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
           imagePullPolicy: Always
           volumeMounts:
             - name: dt-vol
@@ -89,7 +89,7 @@ spec:
         # Celery Container
         # -----------------------------------------------------
         - name: celery
-          image: "ghcr.io/ietf-tools/datatracker:latest"
+          image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
@@ -146,7 +146,7 @@ spec:
             - name: dt-vol
               mountPath: "/a"
         - name: migration
-          image: "ghcr.io/ietf-tools/datatracker:latest"
+          image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
           imagePullPolicy: Always
           env:
             - name: "CONTAINER_ROLE"
