@@ -34,8 +34,6 @@ export const isOidcLink = (href?: string): boolean => {
   return oidcRegex.test(href ?? '')
 }
 
-export const datatrackerPersonLink = (email: string) => `https://datatracker.ietf.org/person/${encodeURIComponent(email)}`
-
 export const teamMemberLink = (personId: number | undefined | null) => personId ? `/team/${personId}` : undefined
 
 export const draftAssignmentsHref = (draftName: string | undefined | null, hashState: 'edit-authors' | 'edit-document-shepherd' | 'edit-stream-manger') => {
