@@ -624,7 +624,10 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option intended to apply upon publication as RFC",
+                        help_text=(
+                            "TLP IPR boilerplate option intended to apply upon "
+                            "publication as RFC"
+                        ),
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -636,7 +639,10 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         blank=True,
                         db_constraint=False,
-                        help_text="TLP IPR boilerplate option applicable when document entered the queue",
+                        help_text=(
+                            "TLP IPR boilerplate option applicable when document "
+                            "entered the queue"
+                        ),
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -1754,7 +1760,10 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="intended_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option intended to apply upon publication as RFC",
+                help_text=(
+                    "TLP IPR boilerplate option intended to apply upon publication as "
+                    "RFC"
+                ),
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1764,7 +1773,10 @@ class Migration(migrations.Migration):
             model_name="rfctobe",
             name="submitted_boilerplate",
             field=models.ForeignKey(
-                help_text="TLP IPR boilerplate option applicable when document entered the queue",
+                help_text=(
+                    "TLP IPR boilerplate option applicable when document entered the "
+                    "queue"
+                ),
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name="+",
                 to="rpc.tlpboilerplatechoicename",
@@ -1785,7 +1797,9 @@ class Migration(migrations.Migration):
                 deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
                 fields=("doc",),
                 name="clustermember_unique_doc",
-                violation_error_message="A document may not appear in more than one cluster",
+                violation_error_message=(
+                    "A document may not appear in more than one cluster"
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1793,7 +1807,9 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 fields=("datatracker_person", "rfc_to_be"),
                 name="unique_author_per_document",
-                violation_error_message="the person is already an author of this document",
+                violation_error_message=(
+                    "the person is already an author of this document"
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1835,7 +1851,9 @@ class Migration(migrations.Migration):
                 condition=models.Q(("resolved__isnull", True)),
                 fields=("rfc_to_be", "reason"),
                 name="unique_active_blocking_reason_per_rfc",
-                violation_error_message="This blocking reason is already active for this RFC",
+                violation_error_message=(
+                    "This blocking reason is already active for this RFC"
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1868,7 +1886,9 @@ class Migration(migrations.Migration):
                 condition=models.Q(("target_document__isnull", False)),
                 fields=("source", "target_document", "relationship"),
                 name="unique_source_targetdoc_relationship",
-                violation_error_message="A source/target_document/relationship combination must be unique.",
+                violation_error_message=(
+                    "A source/target_document/relationship combination must be unique."
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1877,7 +1897,9 @@ class Migration(migrations.Migration):
                 condition=models.Q(("target_rfctobe__isnull", False)),
                 fields=("source", "target_rfctobe", "relationship"),
                 name="unique_source_targetrfctobe_relationship",
-                violation_error_message="A source/target_rfctobe/relationship combination must be unique.",
+                violation_error_message=(
+                    "A source/target_rfctobe/relationship combination must be unique."
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1889,7 +1911,9 @@ class Migration(migrations.Migration):
                 ),
                 fields=("person", "rfc_to_be", "role"),
                 name="unique_active_assignment_per_person_rfc_role",
-                violation_error_message="A person can only have one active assignment per RFC and role",
+                violation_error_message=(
+                    "A person can only have one active assignment per RFC and role"
+                ),
             ),
         ),
         migrations.AddConstraint(
@@ -1897,7 +1921,9 @@ class Migration(migrations.Migration):
             constraint=models.UniqueConstraint(
                 fields=("rfc_to_be", "type", "number"),
                 name="unique_subseries_member",
-                violation_error_message="an RfcToBe can only be in the same subseries once",
+                violation_error_message=(
+                    "an RfcToBe can only be in the same subseries once"
+                ),
             ),
         ),
         migrations.AddConstraint(
