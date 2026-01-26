@@ -77,6 +77,9 @@ class SerializerTests(TestCase):
                             "to Network-Based Security Services"
                         ),
                         "is_match": True,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -86,6 +89,9 @@ class SerializerTests(TestCase):
                         "left_value": "",
                         "right_value": "2025-04-02",
                         "is_match": False,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -95,6 +101,9 @@ class SerializerTests(TestCase):
                         "left_value": "",
                         "right_value": "",
                         "is_match": False,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -106,6 +115,9 @@ class SerializerTests(TestCase):
                             "J. Jeong (Department of Computer Science and Engineering)"
                         ),
                         "is_match": False,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -115,6 +127,9 @@ class SerializerTests(TestCase):
                         "left_value": "S. Hyun (Myongji University)",
                         "right_value": "S. Hyun (Department of Computer Engineering)",
                         "is_match": False,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -124,6 +139,9 @@ class SerializerTests(TestCase):
                         "left_value": "T. Ahn (Korea Telecom)",
                         "right_value": "T. Ahn (KT)",
                         "is_match": False,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -133,6 +151,9 @@ class SerializerTests(TestCase):
                         "left_value": "S. Hares (Huawei)",
                         "right_value": "S. Hares (Huawei)",
                         "is_match": True,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
                 {
@@ -142,6 +163,9 @@ class SerializerTests(TestCase):
                         "left_value": "D. Lopez (Telefonica I+D)",
                         "right_value": "D. Lopez (Telefonica I+D)",
                         "is_match": True,
+                        "can_auto_fix": False,
+                        "is_error": False,
+                        "detail": "",
                     },
                 },
             ],
