@@ -1308,6 +1308,9 @@ class MetadataTableRowValue:
     left_value: str
     right_value: str
     is_match: bool
+    can_auto_fix: bool
+    is_informational: bool
+    detail: str
 
 
 @dataclass
@@ -1330,6 +1333,17 @@ class MetadataTableRowValueSerializer(serializers.Serializer):
         allow_blank=True, help_text="Value for right column"
     )
     is_match = serializers.BooleanField(help_text="Are the values equivalent?")
+    can_auto_fix = serializers.BooleanField(
+        help_text="Can the difference be auto-fixed?"
+    )
+    is_informational = serializers.BooleanField(
+        required=False, help_text="Is the difference informational and not an error?"
+    )
+    detail = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text="Additional details about the difference",
+    )
 
 
 class MetadataTableRowSerializer(serializers.Serializer):
@@ -1357,6 +1371,9 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                         left_value=row.get("db_value") or "",
                         right_value=row.get("xml_value") or "",
                         is_match=row["is_match"],
+                        can_auto_fix=row.get("can_fix", False),
+                        is_informational=row.get("is_informational", False),
+                        detail=row.get("detail", ""),
                     ),
                 )
             )
@@ -1369,6 +1386,9 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                             left_value=item.get("db_value") or "",
                             right_value=item.get("xml_value") or "",
                             is_match=item["is_match"],
+                            can_auto_fix=item.get("can_fix", False),
+                            is_informational=item.get("is_informational", False),
+                            detail=item.get("detail", ""),
                         ),
                     )
                 )

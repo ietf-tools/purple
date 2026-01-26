@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Document metadata interfaces"""
 
+import datetime
 import logging
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
@@ -310,14 +311,19 @@ class MetadataComparator:
             - xml_value: value from XML
             - db_value: value from database
             - is_match: boolean indicating if values match
-            - can_fix: boolean indicating if field can be auto-fixed (optional)
+            - can_fix: boolean indicating if field can be auto-fixed
             - items: list of per-item comparisons for array fields (optional)
+            - is_informational: boolean (default False) to flag fields that provide
+              additional info but will be ignored when determining overall match and
+              auto-fixability
+            - detail: additional details about the comparison (optional)
         """
         if not self.xml_metadata:
             return []
 
         return [
             self.compare_title(),
+            self.compare_publication_date(),
             self.compare_authors(),
             self.compare_updates(),
             self.compare_obsoletes(),
@@ -337,6 +343,65 @@ class MetadataComparator:
             "is_match": xml_value == db_value,
             "can_fix": True,
         }
+
+    def compare_publication_date(self):
+        """Compare publication date field
+        This is an informational field - it indicates whether the publication date
+        in the XML matches the current date. It does not affect overall match or
+        auto-fixability.
+        """
+        xml_date_obj = self.xml_metadata.get("publication_date", {})
+
+        # Convert XML publication_date object to YYYY-mm-dd format
+        xml_value = None
+        if xml_date_obj:
+            try:
+                # Parse month name from XML to month number
+                month_name = xml_date_obj.get("month", "")
+                month_num = datetime.datetime.strptime(month_name, "%B").month
+                year = int(xml_date_obj.get("year", ""))
+                day_str = xml_date_obj.get("day")
+
+                # Check if date in XML matches current date
+                if day_str:
+                    day = int(day_str)
+                    parsed_date = datetime.date(year, month_num, day)
+                    xml_value = f"{year}-{month_num:02d}-{day:02d}"
+
+                    # Check if it's today's date
+                    today = datetime.date.today()
+                    if parsed_date != today:
+                        is_match = False
+                else:
+                    # Only month and year provided - check if it's current month/year
+                    xml_value = f"{year}-{month_num:02d}"
+
+                    today = datetime.date.today()
+                    if year != today.year or month_num != today.month:
+                        is_match = False
+            except (ValueError, KeyError, TypeError):
+                xml_value = None
+
+        # Convert rfc_to_be.published_at to YYYY-mm-dd format
+        db_value = None
+        if self.rfc_to_be.published_at:
+            db_value = self.rfc_to_be.published_at.strftime("%Y-%m-%d")
+
+        result = {
+            "field": "publication_date",
+            "xml_value": xml_value,
+            "db_value": db_value,
+            "is_match": is_match if xml_value is not None else False,
+            "can_fix": False,
+            "is_informational": True,
+            "detail": (
+                f"XML Publication date {xml_value} differs from current date {today}."
+                if not is_match
+                else "XML Publication date matches current date."
+            ),
+        }
+
+        return result
 
     def compare_authors(self):
         """Compare authors field with position-based comparison.
@@ -528,6 +593,7 @@ class MetadataComparator:
     def can_fix(self):
         """
         Determine if all metadata fields can be auto-fixed.
+        Ignore informational fields.
 
         Returns:
             bool: True if all fields can be auto-fixed, and NOT all match,
@@ -535,19 +601,24 @@ class MetadataComparator:
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("can_fix", False):
+            if not comparison.get("is_informational", False) and not comparison.get(
+                "can_fix", False
+            ):
                 return False
         return not self.is_match()
 
     def is_match(self):
         """
         Determine if all metadata fields match.
+        Ignore informational fields.
 
         Returns:
             bool: True if all fields match, False otherwise
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("is_match", False):
+            if not comparison.get("is_informational", False) and not comparison.get(
+                "is_match", False
+            ):
                 return False
         return True
