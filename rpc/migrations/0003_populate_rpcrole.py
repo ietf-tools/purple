@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023-2025, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 from django.db import migrations
 
@@ -22,6 +22,11 @@ def forward(apps, schema_editor):
     )
     RpcRole.objects.create(slug="publisher", name="Publisher", desc="RFC publisher")
     RpcRole.objects.create(slug="manager", name="Manager", desc="RPC Manager")
+    RpcRole.objects.create(
+        slug="ref_checker",
+        name="Reference Checker",
+        desc="Normative Reference Checker",
+    )
     RpcRole.objects.create(slug="blocked", name="Blocked", desc="Blocked assignment")
 
 
@@ -35,6 +40,8 @@ def reverse(apps, schema_editor):
             "final_review_editor",
             "publisher",
             "manager",
+            "ref_checker",
+            "blocked",
         ]
     ).delete()
 
