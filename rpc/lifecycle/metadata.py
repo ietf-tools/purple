@@ -598,16 +598,16 @@ class MetadataComparator:
     def can_fix(self):
         """
         Determine if all metadata fields can be auto-fixed.
+        Fields that are not erroneous should be considered not needing a fix.
 
         Returns:
-            bool: True if all fields can be auto-fixed, and NOT all match,
-            False otherwise
+            bool: True if there are errors AND all can be auto-fixed, False otherwise
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("can_fix", False):
+            if not comparison.get("can_fix") and comparison.get("is_error"):
                 return False
-        return not self.is_match()
+        return self.is_error()
 
     def is_match(self):
         """
@@ -618,7 +618,7 @@ class MetadataComparator:
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("is_match", False):
+            if not comparison.get("is_match"):
                 return False
         return True
 
@@ -631,6 +631,6 @@ class MetadataComparator:
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if comparison.get("is_error", False):
+            if comparison.get("is_error"):
                 return True
         return False
