@@ -1338,7 +1338,6 @@ class MetadataTableRowValueSerializer(serializers.Serializer):
     )
     is_error = serializers.BooleanField(help_text="Is the difference an error?")
     detail = serializers.CharField(
-        required=False,
         allow_blank=True,
         help_text="Additional details about the difference",
     )

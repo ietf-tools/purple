@@ -354,6 +354,7 @@ class MetadataComparator:
 
         # Convert XML publication_date object to YYYY-mm-dd format
         xml_value = None
+        is_match = False
         if xml_date_obj:
             try:
                 # Parse month name from XML to month number
@@ -362,7 +363,6 @@ class MetadataComparator:
                 year = int(xml_date_obj.get("year", ""))
                 day_str = xml_date_obj.get("day")
 
-                # Check if date in XML matches current date
                 if day_str:
                     day = int(day_str)
                     parsed_date = datetime.date(year, month_num, day)
@@ -370,34 +370,31 @@ class MetadataComparator:
 
                     # Check if it's today's date
                     today = datetime.date.today()
-                    if parsed_date != today:
-                        is_match = False
+                    db_value = today.strftime("%Y-%m-%d")
+                    if parsed_date == today:
+                        is_match = True
                 else:
                     # Only month and year provided - check if it's current month/year
                     xml_value = f"{year}-{month_num:02d}"
 
                     today = datetime.date.today()
-                    if year != today.year or month_num != today.month:
-                        is_match = False
+                    db_value = today.strftime("%Y-%m")
+                    if year == today.year and month_num == today.month:
+                        is_match = True
             except (ValueError, KeyError, TypeError):
                 xml_value = None
-
-        # Convert rfc_to_be.published_at to YYYY-mm-dd format
-        db_value = None
-        if self.rfc_to_be.published_at:
-            db_value = self.rfc_to_be.published_at.strftime("%Y-%m-%d")
 
         result = {
             "field": "publication_date",
             "xml_value": xml_value,
             "db_value": db_value,
-            "is_match": is_match if xml_value is not None else False,
+            "is_match": is_match or xml_value is None,
             "can_fix": False,
             "is_error": False,
             "detail": (
                 f"XML Publication date {xml_value} differs from current date {today}."
                 if not is_match
-                else "XML Publication date matches current date."
+                else ""
             ),
         }
 
