@@ -313,9 +313,8 @@ class MetadataComparator:
             - is_match: boolean indicating if values match
             - can_fix: boolean indicating if field can be auto-fixed
             - items: list of per-item comparisons for array fields (optional)
-            - is_informational: boolean (default False) to flag fields that provide
-              additional info but will be ignored when determining overall match and
-              auto-fixability
+            - is_error: boolean indicating if the result of the comparison is
+              considered an error (that should block publication)
             - detail: additional details about the comparison (optional)
         """
         if not self.xml_metadata:
@@ -342,6 +341,7 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": xml_value == db_value,
             "can_fix": True,
+            "is_error": xml_value != db_value,
         }
 
     def compare_publication_date(self):
@@ -393,7 +393,7 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": is_match if xml_value is not None else False,
             "can_fix": False,
-            "is_informational": True,
+            "is_error": False,
             "detail": (
                 f"XML Publication date {xml_value} differs from current date {today}."
                 if not is_match
@@ -487,6 +487,7 @@ class MetadataComparator:
             "is_match": overall_match,
             "can_fix": overall_can_fix,
             "items": items,
+            "is_error": not overall_match,
         }
 
     def compare_updates(self):
@@ -519,6 +520,7 @@ class MetadataComparator:
             "field": "updates",
             "is_match": overall_match,
             "items": items,
+            "is_error": not overall_match,
             "can_fix": True,
         }
 
@@ -553,6 +555,7 @@ class MetadataComparator:
             "is_match": overall_match,
             "items": items,
             "can_fix": True,
+            "is_error": not overall_match,
         }
 
     def compare_subseries(self):
@@ -575,6 +578,7 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": set(xml_value) == set(db_value),
             "can_fix": True,
+            "is_error": not (set(xml_value) == set(db_value)),
         }
 
     def compare_abstract(self):
@@ -588,12 +592,12 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": xml_value == db_value,
             "can_fix": True,
+            "is_error": xml_value != db_value,
         }
 
     def can_fix(self):
         """
         Determine if all metadata fields can be auto-fixed.
-        Ignore informational fields.
 
         Returns:
             bool: True if all fields can be auto-fixed, and NOT all match,
@@ -601,24 +605,32 @@ class MetadataComparator:
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("is_informational", False) and not comparison.get(
-                "can_fix", False
-            ):
+            if not comparison.get("can_fix", False):
                 return False
         return not self.is_match()
 
     def is_match(self):
         """
         Determine if all metadata fields match.
-        Ignore informational fields.
 
         Returns:
             bool: True if all fields match, False otherwise
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("is_informational", False) and not comparison.get(
-                "is_match", False
-            ):
+            if not comparison.get("is_match", False):
                 return False
         return True
+
+    def is_error(self):
+        """
+        Determine if any metadata field comparison is considered an error.
+
+        Returns:
+            bool: True if any field comparison is an error, False otherwise
+        """
+        comparisons = self.compare_all()
+        for comparison in comparisons:
+            if comparison.get("is_error", False):
+                return True
+        return False

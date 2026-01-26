@@ -1309,7 +1309,7 @@ class MetadataTableRowValue:
     right_value: str
     is_match: bool
     can_auto_fix: bool
-    is_informational: bool
+    is_error: bool
     detail: str
 
 
@@ -1336,9 +1336,7 @@ class MetadataTableRowValueSerializer(serializers.Serializer):
     can_auto_fix = serializers.BooleanField(
         help_text="Can the difference be auto-fixed?"
     )
-    is_informational = serializers.BooleanField(
-        required=False, help_text="Is the difference informational and not an error?"
-    )
+    is_error = serializers.BooleanField(help_text="Is the difference an error?")
     detail = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -1372,7 +1370,7 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                         right_value=row.get("xml_value") or "",
                         is_match=row["is_match"],
                         can_auto_fix=row.get("can_fix", False),
-                        is_informational=row.get("is_informational", False),
+                        is_error=row.get("is_error", False),
                         detail=row.get("detail", ""),
                     ),
                 )
@@ -1387,7 +1385,7 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                             right_value=item.get("xml_value") or "",
                             is_match=item["is_match"],
                             can_auto_fix=item.get("can_fix", False),
-                            is_informational=item.get("is_informational", False),
+                            is_error=item.get("is_error", False),
                             detail=item.get("detail", ""),
                         ),
                     )
@@ -1401,6 +1399,7 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     is_match = serializers.SerializerMethodField()
     metadata_compare = serializers.SerializerMethodField()
     status = serializers.CharField()
+    is_error = serializers.SerializerMethodField()
     detail = serializers.CharField()
 
     class Meta:
@@ -1414,6 +1413,7 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "metadata_compare",
             "status",
             "detail",
+            "is_error",
         ]
 
     def _get_comparator(self, obj):
@@ -1443,3 +1443,9 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
         }
         serialized = MetadataComparisonTableSerializer(table_data).data
         return serialized["metadata_compare"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_error(self, obj):
+        """Check if there are any metadata errors"""
+        comparator = self._get_comparator(obj)
+        return comparator.is_error()
