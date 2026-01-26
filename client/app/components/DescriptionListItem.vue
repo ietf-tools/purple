@@ -1,6 +1,6 @@
 <template>
   <div :class="[
-    'sm:grid sm:grid-cols-3',
+    'w-full',
     props.spacing === 'large' && 'px-4 py-3 sm:gap-4 sm:px-0',
     props.spacing === 'small' && 'px-1 py-0.5 sm:gap-0.5 sm:px-0',
   ]">

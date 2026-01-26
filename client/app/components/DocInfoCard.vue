@@ -8,19 +8,20 @@
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField key="title" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5, initialValue: rfcToBe.title }" :draft-name="rfcToBe.name!"
-              :on-success="() => props.refresh?.()">
+              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5, initialValue: rfcToBe.title }"
+              :draft-name="rfcToBe.name!" :on-success="() => props.refresh?.()">
               {{ rfcToBe.title }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Authors" :spacing="spacing">
           <DescriptionListDetails>
-            <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
+            <div class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="rfcToBe.authors.length === 0">None</div>
-              <div v-else>
+              <div v-else class="w-full">
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
-                  <a :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined" :class="ANCHOR_STYLE">
+                  <a :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined"
+                    :class="ANCHOR_STYLE">
                     <span :class="ANCHOR_STYLE">{{ author.titlepageName }}</span>
                     <span :class="PERSON_ID_STYLE" v-if="author.email">{{ SPACE }}{{ ` (${author.email})` }}</span>
                     <span v-if="author.isEditor">(editor)</span>
@@ -57,7 +58,7 @@
                   <TooltipRoot>
                     <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
                       <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
-                        No
+                        <Icon name="fe:disabled" />
                       </span>
                     </TooltipTrigger>
                     <TooltipPortal>
@@ -162,8 +163,8 @@
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField key="disposition" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }" :draft-name="rfcToBe.name ?? ''"
-              :on-success="() => props.refresh?.()">
+              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               {{ rfcToBe.disposition }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -172,8 +173,7 @@
           <DescriptionListDetails>
             <PatchRfcToBeField key="rfcNumber" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
-              :draft-name="rfcToBe.name ?? ''"
-              :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
               <div class="font-mono">
                 {{ rfcToBe.rfcNumber || '(none)' }}
               </div>
@@ -182,19 +182,36 @@
         </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="consensus" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'checkbox', label: 'Consensus', initialValue: rfcToBe.consensus }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
-              <span v-if="rfcToBe.consensus === true" class="text-green-600">
-                Yes
-              </span>
-              <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
-                No
-              </span>
-              <span v-else class="text-gray-500">
-                Unknown
-              </span>
-            </PatchRfcToBeField>
+            <div class="w-full flex justify-between">
+              <div>
+                <span v-if="rfcToBe.consensus === true" class="text-green-600">
+                  Yes
+                </span>
+                <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
+                  No
+                </span>
+                <span v-else class="text-gray-500">
+                  Unknown
+                </span>
+              </div>
+              <TooltipProvider>
+                <TooltipRoot>
+                  <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
+                    <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
+                      <Icon name="fe:disabled" />
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipPortal>
+                    <TooltipContent
+                      class="data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade text-grass11 select-none rounded-md bg-white px-[15px] py-[10px] text-sm leading-none shadow-sm border will-change-[transform,opacity]"
+                      :side-offset="5">
+                      Edit on Datatracker
+                      <TooltipArrow class="fill-white stroke-gray-200" :width="12" :height="6" />
+                    </TooltipContent>
+                  </TooltipPortal>
+                </TooltipRoot>
+              </TooltipProvider>
+            </div>
           </DescriptionListDetails>
         </DescriptionListItem>
       </DescriptionList>
