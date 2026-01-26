@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 from django.core.management.base import BaseCommand, CommandError, CommandParser
 
