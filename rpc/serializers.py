@@ -488,6 +488,32 @@ class QueueItemSerializer(serializers.ModelSerializer):
         return RfcToBeBlockingReasonSerializer(active_reasons, many=True).data
 
 
+class PublicQueueItemSerializer(QueueItemSerializer):
+    """RfcToBe serializer for the public view of the RFC Editor queue"""
+    authors = RfcAuthorSerializer(many=True)
+    bytes = serializers.IntegerField(help_text="Not yet modeled")
+    draft_url = serializers.URLField(source="draft.datatracker_url")
+    submitted = serializers.DateTimeField(help_text="Datetime document entered the queue")
+    cluster = serializers.IntegerField(source="cluster.number", allow_null=True)
+
+    class Meta:
+        model = QueueItemSerializer.Meta.model
+        fields = [
+            "id",
+            "name",
+            "rfc_number",
+            "authors",
+            "title",
+            "pages",
+            "bytes",
+            "draft_url",
+            # "state",
+            # "state_since",
+            "submitted",
+            "cluster",
+        ]
+
+
 class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 

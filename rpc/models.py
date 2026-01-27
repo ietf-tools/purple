@@ -241,6 +241,11 @@ class RfcToBe(models.Model):
                 "and is not an April 1st RFC"
             )
 
+    # Pseudo fields
+    @property
+    def submitted(self) -> datetime.datetime:
+        return self.history.order_by("history_date").first().history_date
+
     # Properties that we currently only get from our draft
     @property
     def name(self) -> str:

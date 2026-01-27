@@ -130,6 +130,10 @@ class Document(models.Model):
     def consensus(self) -> bool:
         return self._fetch("consensus")
 
+    @property
+    def datatracker_url(self) -> str:
+        return build_datatracker_url(f"/doc/{self.name}-{self.rev}")
+
     @with_rpcapi
     def _fetch(self, field_name, *, rpcapi: rpcapi_client.PurpleApi):
         """Get field_name value for draft (uses cache)"""
