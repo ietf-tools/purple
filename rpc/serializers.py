@@ -576,6 +576,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         help_text=("Set the IANA status by providing the slug identifier."),
     )
 
+    iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
+    shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+
     class Meta:
         model = RfcToBe
         fields = [
