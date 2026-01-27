@@ -42,3 +42,5 @@ export const draftAssignmentsHref = (draftName: string | undefined | null, hashS
   }
   return `/docs/${draftName}/assignments#${hashState}`
 }
+
+export const gitHubUrlBuilder = (repository: string): string => `https://github.com/${repository}`

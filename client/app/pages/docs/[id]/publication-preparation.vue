@@ -54,7 +54,7 @@
           {{ SPACE }}
           from
           {{ SPACE }}
-          <a :href="step.gitRepoUrl" :class="ANCHOR_STYLE">{{ step.gitRepoUrl }}</a>
+          <a :href="gitHubUrlBuilder(step.repository)" :class="ANCHOR_STYLE">{{ step.repository }}</a>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -62,7 +62,7 @@
         <BaseCard>
           <div class="w-full">
             <DiffTable v-if="step.rows.length > 0" :columns="step.columns" :rows="step.rows" />
-            <p class="text-center">(no comparison available)</p>
+            <p v-else class="text-center">(no comparison available)</p>
           </div>
         </BaseCard>
         <div v-if="step.gitHash" class="flex justify-between mt-8 pt-4 border-t border-gray-500 dark:border-gray-300">
@@ -153,7 +153,7 @@ type Step =
     type: 'diff'
     error?: string
     gitHash?: string
-    gitRepoUrl?: string
+    repository?: string
     isMatch: boolean
     serverCanFix: boolean
     columns: { nameColumn: string, leftColumn: string, rightColumn: string }
@@ -161,7 +161,7 @@ type Step =
   }
   | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
-  | { type: 'rfcPosted', error?: string }
+  | { type: 'rfcPosted', error?: string,  }
 
 const step = ref<Step>({ type: 'loading' })
 
@@ -179,12 +179,11 @@ watch(rfcToBe, () => {
   if (!rfcToBe.value) {
     return
   }
-  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
-
-  // if (rfcToBe.value.disposition === 'published') {
-  //   step.value = { type: 'rfcPosted' }
-  // } else {
-  // }
+  if (rfcToBe.value.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+  } else {
+    step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+  }
 })
 
 const MAXIMUM_ATTEMPTS_DURATION_MS = 10 * 1000
@@ -210,7 +209,7 @@ const fetchAndVerifyMetadata = async () => {
 
   console.log("Finished", { hasTimedOut, resultsCreate })
 
-  if(resultsCreate.status !== 'success') {
+  if (resultsCreate.status !== 'success') {
     step.value = {
       type: 'error',
       errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`
@@ -223,7 +222,7 @@ const fetchAndVerifyMetadata = async () => {
     isMatch: resultsCreate.isMatch ?? false,
     serverCanFix: resultsCreate.canAutofix ?? false,
     gitHash: resultsCreate.headSha ?? undefined,
-    gitRepoUrl: resultsCreate.repository,
+    repository: resultsCreate.repository,
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
     rows: resultsCreate.metadataCompare?.map(row => ({
       rowName: row.rowName,
