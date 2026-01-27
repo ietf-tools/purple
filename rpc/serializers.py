@@ -488,12 +488,21 @@ class QueueItemSerializer(serializers.ModelSerializer):
         return RfcToBeBlockingReasonSerializer(active_reasons, many=True).data
 
 
+class PublicQueueAuthorSerializer(RfcAuthorSerializer):
+    class Meta:
+        model = RfcAuthorSerializer.Meta.model
+        fields = ["titlepage_name", "is_editor"]
+
+
 class PublicQueueItemSerializer(QueueItemSerializer):
     """RfcToBe serializer for the public view of the RFC Editor queue"""
-    authors = RfcAuthorSerializer(many=True)
+
+    authors = PublicQueueAuthorSerializer(many=True)
     bytes = serializers.IntegerField(help_text="Not yet modeled")
     draft_url = serializers.URLField(source="draft.datatracker_url")
-    submitted = serializers.DateTimeField(help_text="Datetime document entered the queue")
+    enqueued_at = serializers.DateTimeField(
+        help_text="Datetime document entered the queue"
+    )
     cluster = serializers.IntegerField(source="cluster.number", allow_null=True)
 
     class Meta:
@@ -509,7 +518,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "draft_url",
             # "state",
             # "state_since",
-            "submitted",
+            "enqueued_at",
             "cluster",
         ]
 

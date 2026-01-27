@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023-2025, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 import datetime
 import logging
@@ -10,7 +10,7 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, OuterRef, Prefetch, Q, Subquery
+from django.db.models import Max, Prefetch, Q, Value
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -37,6 +37,7 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
@@ -97,6 +98,7 @@ from .serializers import (
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
+    PublicQueueItemSerializer,
     PublishRfcSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
@@ -522,16 +524,10 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     # lists its contents. Normally we'd expect the List action to list queues and
     # the Retrieve action to retrieve a single queue. That does not apply to our
     # concept of a singular queue, so I'm using this because it works.
-    HistoricalRfcToBe = RfcToBe.history.model
-    enqueued_at_sq = Subquery(
-        HistoricalRfcToBe.objects.filter(id=OuterRef("pk"), history_type="+")
-        .order_by("history_date")
-        .values("history_date")[:1]
-    )
 
     queryset = (
-        RfcToBe.objects.filter(disposition__slug__in=("created", "in_progress"))
-        .annotate(enqueued_at=enqueued_at_sq)
+        RfcToBe.objects.in_queue()
+        .with_enqueued_at()
         .select_related(
             "draft",
         )
@@ -556,6 +552,17 @@ class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = QueueFilter
+
+
+class PublicQueueList(ListAPIView):
+    permission_classes = [AllowAny]  # todo permissions
+    queryset = (
+        RfcToBe.objects.in_queue()
+        .with_enqueued_at()
+        .select_related("draft")
+        .annotate(bytes=Value(0))  # todo model this
+    )
+    serializer_class = PublicQueueItemSerializer
 
 
 class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
