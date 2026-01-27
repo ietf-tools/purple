@@ -216,7 +216,9 @@ class RfcToBe(models.Model):
         help_text="Repository name (e.g., ietf-tools/purple)",
     )
 
-    consensus = models.BooleanField(default=False, help_text="Whether document has consensus")
+    consensus = models.BooleanField(
+        default=False, help_text="Whether document has consensus"
+    )
 
     history = HistoricalRecords(m2m_fields=[labels])
 
