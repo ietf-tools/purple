@@ -7,9 +7,9 @@
       <DescriptionList>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="title" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="title" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5, initialValue: rfcToBe.title }"
-              :draft-name="rfcToBe.name!" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name!" :on-success="props.refresh">
               {{ rfcToBe.title }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -42,9 +42,9 @@
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Pages" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="pages" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="pages" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1, initialValue: rfcToBe.draft?.pages?.toString() }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.draft?.pages?.toString() }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -77,9 +77,9 @@
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="stream" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="stream" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.stream }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <span class="flex-1">
                 {{ rfcToBe.stream }}
                 <span v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
@@ -104,27 +104,27 @@
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Format" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="submittedFormat" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="submittedFormat" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadFormats, initialValue: rfcToBe.submittedFormat }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.submittedFormat }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Boilerplate" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="boilerplate" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="boilerplate" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadBoilerplates, initialValue: rfcToBe.submittedFormat }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.boilerplate }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Standard Level" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="stdLevel" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="stdLevel" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.stdLevel }}
               <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
                 (submitted as {{ rfcToBe.publicationStdLevel }})
@@ -162,18 +162,18 @@
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="disposition" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="disposition" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.disposition }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField key="rfcNumber" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="rfcNumber" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="() => props.refresh?.()">
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <div class="font-mono">
                 {{ rfcToBe.rfcNumber || '(none)' }}
               </div>
@@ -235,7 +235,7 @@ type Props = {
   rfcToBe: RfcToBe | null | undefined
   draftName: string
   isReadOnly?: boolean
-  refresh?: () => void
+  refresh?: () => Promise<void>
 }
 
 const props = defineProps<Props>()

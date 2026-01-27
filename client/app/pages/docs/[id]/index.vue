@@ -12,7 +12,7 @@
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
 
         <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="() => rfcToBeRefresh()" :is-read-only="Boolean(rawRfcToBe?.publishedAt)" />
+        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="rfcToBeRefresh" :is-read-only="Boolean(rawRfcToBe?.publishedAt)" />
 
         <div class="flex">
           <div class="flex flex-col">
