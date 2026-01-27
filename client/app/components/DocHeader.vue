@@ -33,12 +33,6 @@
               <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
-          <BaseButton @click="openPublishModal" class="flex items-center">
-            <span> Publish</span>
-            <span v-if="isLoadingPublishModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
-            </span>
-          </BaseButton>
         </div>
       </div>
     </div>
@@ -151,48 +145,6 @@ const handleOpenEmailModal = async () => {
   isLoadingNewEmailModal.value = true
 
   await openEmailModal({ overlayModal, api, draftName: name, rfcToBeId: id })
-
-  isLoadingNewEmailModal.value = false
-}
-
-const openPublishModal = async () => {
-  if (!props.rfcToBe) {
-    snackbar.add({
-      type: 'warning',
-      title: `Still loading RFC...`,
-      text: 'Try again in a few seconds'
-    })
-    return
-  }
-
-  const { openOverlayModal } = overlayModal
-
-  isLoadingPublishModal.value = true
-
-  try {
-    const [labels] = await Promise.all([
-      api.labelsList()
-    ])
-
-    openOverlayModal({
-      component: PublishModal,
-      componentProps: {
-        rfcToBe: props.rfcToBe,
-        labels,
-        onSuccess: () => { }
-      },
-    }).catch(e => {
-      if (e === undefined) {
-        // ignore... it's just signalling that the modal has closed
-      } else {
-        console.error(e)
-        throw e
-      }
-    })
-
-  } catch (e) {
-    console.error(e)
-  }
 
   isLoadingNewEmailModal.value = false
 }
