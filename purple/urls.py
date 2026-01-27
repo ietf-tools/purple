@@ -85,7 +85,6 @@ router.register(
     basename="documents-metadata-validation-results",
 )
 router.register(r"labels", rpc_api.LabelViewSet)
-router.register(r"queue", rpc_api.QueueViewSet, basename="queue")
 router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
 router.register(
     r"rpc_person/(?P<person_id>[^/.]+)/assignments",
@@ -113,6 +112,7 @@ urlpatterns = [
     path("oidc/", include("mozilla_django_oidc.urls")),
     path("login/", views.index),
     path("api/pubq/queue/", rpc_api.PublicQueueList.as_view()),
+    path("api/rpc/queue/", rpc_api.QueueList.as_view()),
     path(
         "api/rpc/search/datatrackerpersons/", rpc_api.SearchDatatrackerPersons.as_view()
     ),

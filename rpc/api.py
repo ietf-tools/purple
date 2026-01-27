@@ -519,12 +519,7 @@ class QueueFilter(django_filters.FilterSet):
         fields = ["disposition", "pending_final_approval"]
 
 
-class QueueViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    # This is abusing the List action a bit - the "queue" is singular, so this
-    # lists its contents. Normally we'd expect the List action to list queues and
-    # the Retrieve action to retrieve a single queue. That does not apply to our
-    # concept of a singular queue, so I'm using this because it works.
-
+class QueueList(ListAPIView):
     queryset = (
         RfcToBe.objects.in_queue()
         .with_enqueued_at()
