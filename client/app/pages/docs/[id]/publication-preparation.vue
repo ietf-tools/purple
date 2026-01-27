@@ -54,7 +54,7 @@
           {{ SPACE }}
           from
           {{ SPACE }}
-          <a :href="gitHubUrlBuilder(step.repository)" :class="ANCHOR_STYLE">{{ step.repository }}</a>
+          <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{ step.repository }}</a>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
