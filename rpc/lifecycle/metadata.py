@@ -93,114 +93,196 @@ class Metadata:
 
     @staticmethod
     def update_metadata(rfctobe, metadata):
-        """Update the draft title from metadata dictionary"""
+        """Update metadata fields from metadata dictionary
+
+        First compares all fields to see what needs to be updated,
+        then selectively updates only those fields that differ and can be auto-fixed.
+        """
 
         updated_fields = {}
 
+        # First, compare all fields to see what needs to be updated
+        comparator = MetadataComparator(rfctobe, metadata)
+        comparisons = comparator.compare_all()
+
         with transaction.atomic():
-            # title
-            new_title = metadata.get("title")
-            draft = rfctobe.draft
-            if not new_title:
-                raise ValueError("No title in metadata")
-            draft.title = new_title
-            draft.save(update_fields=["title"])
-            updated_fields["title"] = new_title
+            # Process each comparison result
+            for comparison in comparisons:
+                field = comparison["field"]
+                is_match = comparison["is_match"]
+                can_fix = comparison["can_fix"]
 
-            # obsoletes and updates
-            # Delete existing obsoletes and updates relationships
-            RpcRelatedDocument.objects.filter(
-                source=rfctobe, relationship__slug__in=["obs", "updates"]
-            ).delete()
+                if not is_match and can_fix:
+                    if field == "title":
+                        new_title = metadata.get("title")
+                        if new_title:
+                            rfctobe.title = new_title
+                            rfctobe.save(update_fields=["title"])
+                            updated_fields["title"] = new_title
 
-            # Create new obsoletes relationships
-            obsoletes = metadata.get("obsoletes", [])
-            relationship = DocRelationshipName.objects.get(slug="obs")
-            for rfc_num in obsoletes:
-                try:
-                    target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
-                    RpcRelatedDocument.objects.create(
-                        source=rfctobe,
-                        relationship=relationship,
-                        target_rfctobe=target_rfctobe,
-                    )
-                except RfcToBe.DoesNotExist:
-                    logger.warning(
-                        f"RFC {rfc_num} not found for obsoletes relationship"
-                    )
+                    elif field == "abstract":
+                        new_abstract = metadata.get("abstract")
+                        if new_abstract:
+                            rfctobe.abstract = new_abstract
+                            rfctobe.save(update_fields=["abstract"])
+                            updated_fields["abstract"] = new_abstract
 
-            # Create new updates relationships
-            updates = metadata.get("updates", [])
-            relationship = DocRelationshipName.objects.get(slug="updates")
-            for rfc_num in updates:
-                try:
-                    target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
-                    RpcRelatedDocument.objects.create(
-                        source=rfctobe,
-                        relationship=relationship,
-                        target_rfctobe=target_rfctobe,
-                    )
-                except RfcToBe.DoesNotExist:
-                    logger.warning(f"RFC {rfc_num} not found for updates relationship")
+                    elif field == "updates":
+                        # Delete existing updates relationships
+                        RpcRelatedDocument.objects.filter(
+                            source=rfctobe, relationship__slug="updates"
+                        ).delete()
 
-            updated_fields["obsoletes"] = obsoletes
-            updated_fields["updates"] = updates
+                        # Create new updates relationships
+                        updates = metadata.get("updates", [])
+                        relationship = DocRelationshipName.objects.get(slug="updates")
+                        for rfc_num in updates:
+                            try:
+                                target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
+                                RpcRelatedDocument.objects.create(
+                                    source=rfctobe,
+                                    relationship=relationship,
+                                    target_rfctobe=target_rfctobe,
+                                )
+                            except RfcToBe.DoesNotExist:
+                                logger.warning(
+                                    f"RFC {rfc_num} not found for updates relationship"
+                                )
+                        updated_fields["updates"] = updates
 
-            # abstract
-            # todo
+                    elif field == "obsoletes":
+                        # Delete existing obsoletes relationships
+                        RpcRelatedDocument.objects.filter(
+                            source=rfctobe, relationship__slug="obs"
+                        ).delete()
 
-            # authors
-            # todo: implement author updates of affiliation, order and is_editor
+                        # Create new obsoletes relationships
+                        obsoletes = metadata.get("obsoletes", [])
+                        relationship = DocRelationshipName.objects.get(slug="obs")
+                        for rfc_num in obsoletes:
+                            try:
+                                target_rfctobe = RfcToBe.objects.get(rfc_number=rfc_num)
+                                RpcRelatedDocument.objects.create(
+                                    source=rfctobe,
+                                    relationship=relationship,
+                                    target_rfctobe=target_rfctobe,
+                                )
+                            except RfcToBe.DoesNotExist:
+                                logger.warning(
+                                    f"RFC {rfc_num} not found for obsolete relationship"
+                                )
+                        updated_fields["obsoletes"] = obsoletes
 
-            # publication status
-            # todo
+                    elif field == "authors":
+                        # Update author affiliation and is_editor role where they differ
+                        xml_authors = metadata.get("authors", [])
+                        db_authors = list(rfctobe.authors.all().order_by("order"))
 
-            # publication date
-            pub_date = metadata.get("publication_date")
-            if pub_date:
-                year = int(pub_date.get("year"))
-                month_str = pub_date.get("month")
-                day = int(pub_date.get("day")) if pub_date.get("day") else None
+                        # Validate that lengths match and names match at each position
+                        if len(xml_authors) != len(db_authors):
+                            raise ValueError(
+                                f"Author length mismatch: XML has {len(xml_authors)} "
+                                f"authors, DB has {len(db_authors)} authors"
+                            )
 
-                if not year or not month_str or not day:
-                    raise ValueError("Incomplete publication date in metadata")
+                        for position, (xml_author, db_author) in enumerate(
+                            zip_longest(xml_authors, db_authors, fillvalue=None)
+                        ):
+                            if xml_author is None or db_author is None:
+                                raise ValueError(
+                                    f"Unexpected None value at position {position} "
+                                    "during author update"
+                                )
 
-                # Convert month name to month number
-                month = datetime.datetime.strptime(month_str, "%B").month
+                            # Verify names match
+                            xml_name = (
+                                xml_author.get("initials", "")
+                                + " "
+                                + xml_author.get("surname", "")
+                            ).strip()
+                            db_name = db_author.titlepage_name
+                            if xml_name != db_name:
+                                raise ValueError(
+                                    f"Author name mismatch at position {position}: "
+                                    f"XML='{xml_name}', DB='{db_name}'"
+                                )
 
-                rfctobe.published_at = datetime.datetime(year, month, day, 12, 0, 0)
-                rfctobe.save(
-                    update_fields=[
-                        "published_at",
-                    ]
-                )
-                updated_fields["published_at"] = rfctobe.published_at
+                            # Update affiliation if different
+                            xml_org = xml_author.get("organization", "").strip()
+                            if xml_org != (db_author.affiliation or ""):
+                                db_author.affiliation = xml_org
+                                db_author.save(update_fields=["affiliation"])
+                                if "authors" not in updated_fields:
+                                    updated_fields["authors"] = []
+                                updated_fields["authors"].append(
+                                    {
+                                        "position": position,
+                                        "name": db_author.titlepage_name
+                                        or db_author.datatracker_person.plain_name,
+                                        "affiliation": xml_org,
+                                    }
+                                )
 
-            # subseries
-            # Delete all existing subseries memberships
-            SubseriesMember.objects.filter(rfc_to_be=rfctobe).delete()
+                            # Update is_editor if different
+                            xml_is_editor = (
+                                xml_author.get("role", "").lower() == "editor"
+                            )
+                            if xml_is_editor != db_author.is_editor:
+                                db_author.is_editor = xml_is_editor
+                                db_author.save(update_fields=["is_editor"])
+                                if "authors" not in updated_fields:
+                                    updated_fields["authors"] = []
+                                # Check if we already added author to updated_fields
+                                author_entry = next(
+                                    (
+                                        a
+                                        for a in updated_fields["authors"]
+                                        if a["position"] == position
+                                    ),
+                                    None,
+                                )
+                                if author_entry:
+                                    author_entry["is_editor"] = xml_is_editor
+                                else:
+                                    updated_fields["authors"].append(
+                                        {
+                                            "position": position,
+                                            "name": db_author.titlepage_name
+                                            or db_author.datatracker_person.plain_name,
+                                            "is_editor": xml_is_editor,
+                                        }
+                                    )
 
-            # Create new subseries memberships
-            subseries = metadata.get("subseries", [])
-            for subseries_item in subseries:
-                # subseries_item is like {"name": "BCP", "value": "38"}
-                type_slug = subseries_item.get("name", "").lower()
-                number = subseries_item.get("value")
+                    elif field == "subseries":
+                        # Delete all existing subseries memberships
+                        SubseriesMember.objects.filter(rfc_to_be=rfctobe).delete()
 
-                if type_slug and number:
-                    try:
-                        subseries_type = SubseriesTypeName.objects.get(slug=type_slug)
-                        SubseriesMember.objects.create(
-                            rfc_to_be=rfctobe,
-                            type=subseries_type,
-                            number=int(number),
-                        )
-                    except SubseriesTypeName.DoesNotExist:
-                        logger.warning(f"Subseries type {type_slug} not found")
-                    except ValueError:
-                        logger.warning(f"Invalid subseries number: {number}")
+                        # Create new subseries memberships
+                        subseries = metadata.get("subseries", [])
+                        for subseries_item in subseries:
+                            type_slug = subseries_item.get("name", "").lower()
+                            number = subseries_item.get("value")
 
-            updated_fields["subseries"] = subseries
+                            if type_slug and number:
+                                try:
+                                    subseries_type = SubseriesTypeName.objects.get(
+                                        slug=type_slug
+                                    )
+                                    SubseriesMember.objects.create(
+                                        rfc_to_be=rfctobe,
+                                        type=subseries_type,
+                                        number=int(number),
+                                    )
+                                except SubseriesTypeName.DoesNotExist:
+                                    logger.warning(
+                                        f"Subseries type {type_slug} not found"
+                                    )
+                                except ValueError:
+                                    logger.warning(
+                                        f"Invalid subseries number: {number}"
+                                    )
+
+                        updated_fields["subseries"] = subseries
 
         return updated_fields
 
@@ -229,8 +311,11 @@ class MetadataComparator:
             - xml_value: value from XML
             - db_value: value from database
             - is_match: boolean indicating if values match
-            - can_fix: boolean indicating if field can be auto-fixed (optional)
+            - can_fix: boolean indicating if field can be auto-fixed
             - items: list of per-item comparisons for array fields (optional)
+            - is_error: boolean indicating if the result of the comparison is
+              considered an error (that should block publication)
+            - detail: additional details about the comparison (optional)
         """
         if not self.xml_metadata:
             return []
@@ -242,6 +327,7 @@ class MetadataComparator:
             self.compare_updates(),
             self.compare_obsoletes(),
             self.compare_subseries(),
+            self.compare_abstract(),
         ]
 
     def compare_title(self):
@@ -255,86 +341,150 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": xml_value == db_value,
             "can_fix": True,
+            "is_error": xml_value != db_value,
         }
 
     def compare_publication_date(self):
-        """Compare publication date field"""
+        """Compare publication date field
+        This is an informational field - it indicates whether the publication date
+        in the XML matches the current date. It does not affect overall match or
+        auto-fixability.
+        """
         xml_date_obj = self.xml_metadata.get("publication_date", {})
 
         # Convert XML publication_date object to YYYY-mm-dd format
         xml_value = None
+        is_match = False
         if xml_date_obj:
             try:
                 # Parse month name from XML to month number
                 month_name = xml_date_obj.get("month", "")
                 month_num = datetime.datetime.strptime(month_name, "%B").month
                 year = int(xml_date_obj.get("year", ""))
-                day = int(xml_date_obj.get("day", ""))
-                # Validate the date by creating a date object
-                datetime.date(year, month_num, day)
-                xml_value = f"{year}-{month_num:02d}-{day:02d}"
+                day_str = xml_date_obj.get("day")
+
+                if day_str:
+                    day = int(day_str)
+                    parsed_date = datetime.date(year, month_num, day)
+                    xml_value = f"{year}-{month_num:02d}-{day:02d}"
+
+                    # Check if it's today's date
+                    today = datetime.date.today()
+                    db_value = today.strftime("%Y-%m-%d")
+                    if parsed_date == today:
+                        is_match = True
+                else:
+                    # Only month and year provided - check if it's current month/year
+                    xml_value = f"{year}-{month_num:02d}"
+
+                    today = datetime.date.today()
+                    db_value = today.strftime("%Y-%m")
+                    if year == today.year and month_num == today.month:
+                        is_match = True
             except (ValueError, KeyError, TypeError):
                 xml_value = None
 
-        # Convert rfc_to_be.published_at to YYYY-mm-dd format
-        db_value = None
-        if self.rfc_to_be.published_at:
-            db_value = self.rfc_to_be.published_at.strftime("%Y-%m-%d")
-
-        return {
+        result = {
             "field": "publication_date",
             "xml_value": xml_value,
             "db_value": db_value,
-            "is_match": xml_value == db_value,
-            "can_fix": xml_value is not None,  # can fix if XML date is valid
+            "is_match": is_match or xml_value is None,
+            "can_fix": False,
+            "is_error": False,
+            "detail": (
+                f"XML Publication date {xml_value} differs from current date {today}."
+                if not is_match
+                else ""
+            ),
         }
 
+        return result
+
     def compare_authors(self):
-        """Compare authors field with position-based comparison"""
+        """Compare authors field with position-based comparison.
+
+        Author names must match exactly. If names match, organization and editor role
+        differences are considered fixable. If names don't match, it's not fixable.
+        """
         xml_value = self.xml_metadata.get("authors", [])
-
-        db_author_parts = []
-        for author in self.rfc_to_be.authors.all():
-            author_name = author.titlepage_name or author.datatracker_person.plain_name
-            if author.is_editor:
-                author_name += ", Ed."
-            if author.affiliation:
-                author_name += f" ({author.affiliation})"
-            db_author_parts.append(author_name)
-
-        xml_author_parts = []
-        for xml_author in xml_value:
-            author_name = (
-                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
-            )
-            if xml_author.get("role", "").lower() == "editor":
-                author_name += ", Ed."
-            if xml_author.get("organization", ""):
-                author_name += f" ({xml_author.get('organization')})"
-            xml_author_parts.append(author_name)
+        db_authors = list(self.rfc_to_be.authors.all().order_by("order"))
 
         # Create items array with per-position comparison
         items = []
-        overall_match = len(xml_author_parts) == len(db_author_parts)
+        overall_match = len(xml_value) == len(db_authors)
+        overall_can_fix = True
 
-        for xml_val, db_val in zip_longest(
-            xml_author_parts, db_author_parts, fillvalue=""
+        for position, (xml_author, db_author) in enumerate(
+            zip_longest(xml_value, db_authors, fillvalue=None)
         ):
-            is_match = xml_val == db_val
-            if not is_match:
+            item = {"position": position}
+
+            if xml_author is None or db_author is None:
+                # Mismatched lengths - cannot fix
+                item["is_match"] = False
+                item["can_fix"] = False
                 overall_match = False
-            items.append(
-                {
-                    "is_match": is_match,
-                    "xml_value": xml_val,
-                    "db_value": db_val,
-                }
-            )
+                overall_can_fix = False
+                items.append(item)
+                continue
+
+            # Extract author names
+            xml_name = (
+                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
+            ).strip()
+            db_name = db_author.titlepage_name
+
+            # Check if names match
+            if xml_name != db_name:
+                # Names don't match - not fixable
+                item["is_match"] = False
+                item["can_fix"] = False
+                item["xml_value"] = xml_name
+                item["db_value"] = db_name
+                overall_match = False
+                overall_can_fix = False
+                items.append(item)
+                continue
+
+            # Names match, now check organization and editor role
+            xml_org = xml_author.get("organization", "").strip()
+            db_org = (db_author.affiliation or "").strip()
+            xml_is_editor = xml_author.get("role", "").lower() == "editor"
+            db_is_editor = db_author.is_editor
+
+            org_match = xml_org == db_org
+            editor_match = xml_is_editor == db_is_editor
+
+            if xml_is_editor:
+                xml_name += " , Ed."
+            if db_is_editor:
+                db_name += " , Ed."
+            if xml_org:
+                xml_name += f" ({xml_org})"
+            if db_org:
+                db_name += f" ({db_org})"
+            item["xml_value"] = xml_name
+            item["db_value"] = db_name
+            item["name_match"] = True
+
+            if org_match and editor_match:
+                # Everything matches
+                item["is_match"] = True
+                item["can_fix"] = True
+            else:
+                # Name matches but organization or editor role differs - fixable
+                item["is_match"] = False
+                item["can_fix"] = True
+                overall_match = False
+
+            items.append(item)
 
         return {
             "field": "authors",
             "is_match": overall_match,
+            "can_fix": overall_can_fix,
             "items": items,
+            "is_error": not overall_match,
         }
 
     def compare_updates(self):
@@ -367,6 +517,7 @@ class MetadataComparator:
             "field": "updates",
             "is_match": overall_match,
             "items": items,
+            "is_error": not overall_match,
             "can_fix": True,
         }
 
@@ -401,6 +552,7 @@ class MetadataComparator:
             "is_match": overall_match,
             "items": items,
             "can_fix": True,
+            "is_error": not overall_match,
         }
 
     def compare_subseries(self):
@@ -423,16 +575,13 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": set(xml_value) == set(db_value),
             "can_fix": True,
+            "is_error": not (set(xml_value) == set(db_value)),
         }
 
     def compare_abstract(self):
         """Compare abstract field"""
         xml_value = self.xml_metadata.get("abstract", "").strip()
-        db_value = (
-            (self.rfc_to_be.draft.abstract or "").strip()
-            if self.rfc_to_be.draft
-            else ""
-        )
+        db_value = (self.rfc_to_be.abstract or "").strip()
 
         return {
             "field": "abstract",
@@ -440,20 +589,22 @@ class MetadataComparator:
             "db_value": db_value,
             "is_match": xml_value == db_value,
             "can_fix": True,
+            "is_error": xml_value != db_value,
         }
 
     def can_fix(self):
         """
         Determine if all metadata fields can be auto-fixed.
+        Fields that are not erroneous should be considered not needing a fix.
 
         Returns:
-            bool: True if all fields can be auto-fixed, False otherwise
+            bool: True if there are errors AND all can be auto-fixed, False otherwise
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("can_fix", False):
+            if not comparison.get("can_fix") and comparison.get("is_error"):
                 return False
-        return True
+        return self.is_error()
 
     def is_match(self):
         """
@@ -464,6 +615,19 @@ class MetadataComparator:
         """
         comparisons = self.compare_all()
         for comparison in comparisons:
-            if not comparison.get("is_match", False):
+            if not comparison.get("is_match"):
                 return False
         return True
+
+    def is_error(self):
+        """
+        Determine if any metadata field comparison is considered an error.
+
+        Returns:
+            bool: True if any field comparison is an error, False otherwise
+        """
+        comparisons = self.compare_all()
+        for comparison in comparisons:
+            if comparison.get("is_error"):
+                return True
+        return False

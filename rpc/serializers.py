@@ -576,6 +576,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         help_text=("Set the IANA status by providing the slug identifier."),
     )
 
+    iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
+    shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+
     class Meta:
         model = RfcToBe
         fields = [
@@ -1308,6 +1311,9 @@ class MetadataTableRowValue:
     left_value: str
     right_value: str
     is_match: bool
+    can_auto_fix: bool
+    is_error: bool
+    detail: str
 
 
 @dataclass
@@ -1330,6 +1336,14 @@ class MetadataTableRowValueSerializer(serializers.Serializer):
         allow_blank=True, help_text="Value for right column"
     )
     is_match = serializers.BooleanField(help_text="Are the values equivalent?")
+    can_auto_fix = serializers.BooleanField(
+        help_text="Can the difference be auto-fixed?"
+    )
+    is_error = serializers.BooleanField(help_text="Is the difference an error?")
+    detail = serializers.CharField(
+        allow_blank=True,
+        help_text="Additional details about the difference",
+    )
 
 
 class MetadataTableRowSerializer(serializers.Serializer):
@@ -1357,6 +1371,9 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                         left_value=row.get("db_value") or "",
                         right_value=row.get("xml_value") or "",
                         is_match=row["is_match"],
+                        can_auto_fix=row.get("can_fix", False),
+                        is_error=row.get("is_error", False),
+                        detail=row.get("detail", ""),
                     ),
                 )
             )
@@ -1369,6 +1386,9 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
                             left_value=item.get("db_value") or "",
                             right_value=item.get("xml_value") or "",
                             is_match=item["is_match"],
+                            can_auto_fix=item.get("can_fix", False),
+                            is_error=item.get("is_error", False),
+                            detail=item.get("detail", ""),
                         ),
                     )
                 )
@@ -1381,6 +1401,7 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     is_match = serializers.SerializerMethodField()
     metadata_compare = serializers.SerializerMethodField()
     status = serializers.CharField()
+    is_error = serializers.SerializerMethodField()
     detail = serializers.CharField()
 
     class Meta:
@@ -1394,6 +1415,7 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "metadata_compare",
             "status",
             "detail",
+            "is_error",
         ]
 
     def _get_comparator(self, obj):
@@ -1423,6 +1445,12 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
         }
         serialized = MetadataComparisonTableSerializer(table_data).data
         return serialized["metadata_compare"]
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_is_error(self, obj):
+        """Check if there are any metadata errors"""
+        comparator = self._get_comparator(obj)
+        return comparator.is_error()
 
 
 class PublishRfcSerializer(serializers.Serializer):

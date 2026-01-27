@@ -35,6 +35,8 @@
   // "runServices": [],
   // Uncomment the next line if you want to keep your containers running after VS Code shuts down.
   "shutdownAction": "stopCompose",
+  // Create the custom compose file before Docker Compose runs
+  "initializeCommand": "[ -f .devcontainer/docker-compose.extend-custom.yml ] || touch .devcontainer/docker-compose.extend-custom.yml",
   // Uncomment the next line to run commands after the container is created.
   "postCreateCommand": "/docker-init.sh",
   "postStartCommand": "/docker-start.sh",

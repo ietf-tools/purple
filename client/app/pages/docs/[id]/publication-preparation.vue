@@ -27,6 +27,15 @@
           </div>
         </div>
       </template>
+      <template v-else-if="step.type === 'error'">
+        <div class="text-center">
+          Error: {{ step.errorText }}
+          <br />
+          <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+            try again
+          </BaseButton>
+        </div>
+      </template>
       <template v-else-if="step.type === 'diff'">
         <Heading :heading-level="2" class="px-8 py-4 text-gray-700 dark:text-gray-300">
           Metadata
@@ -45,7 +54,7 @@
           {{ SPACE }}
           from
           {{ SPACE }}
-          <a :href="step.gitRepoUrl" :class="ANCHOR_STYLE">{{ step.gitRepoUrl }}</a>
+          <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{ step.repository }}</a>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -53,7 +62,7 @@
         <BaseCard>
           <div class="w-full">
             <DiffTable v-if="step.rows.length > 0" :columns="step.columns" :rows="step.rows" />
-            <p class="text-center">(no comparison available)</p>
+            <p v-else class="text-center">(no comparison available)</p>
           </div>
         </BaseCard>
         <div v-if="step.gitHash" class="flex justify-between mt-8 pt-4 border-t border-gray-500 dark:border-gray-300">
@@ -124,6 +133,7 @@
 
 <script setup lang="ts">
 import { useAsyncData } from '#app'
+import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
 
 const route = useRoute()
@@ -138,11 +148,12 @@ type DiffRowValue = { isMatch: boolean, leftValue?: string, rightValue?: string 
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
+  | { type: 'error', errorText: string }
   | {
     type: 'diff'
     error?: string
     gitHash?: string
-    gitRepoUrl?: string
+    repository?: string
     isMatch: boolean
     serverCanFix: boolean
     columns: { nameColumn: string, leftColumn: string, rightColumn: string }
@@ -150,7 +161,7 @@ type Step =
   }
   | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
-  | { type: 'rfcPosted', error?: string }
+  | { type: 'rfcPosted', error?: string,  }
 
 const step = ref<Step>({ type: 'loading' })
 
@@ -168,25 +179,52 @@ watch(rfcToBe, () => {
   if (!rfcToBe.value) {
     return
   }
-  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
-
-  // if (rfcToBe.value.disposition === 'published') {
-  //   step.value = { type: 'rfcPosted' }
-  // } else {
-  // }
+  if (rfcToBe.value.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+  } else {
+    step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+  }
 })
 
+const MAXIMUM_ATTEMPTS_DURATION_MS = 10 * 1000
+const WAIT_BETWEEN_REQUESTS_MS = 1000
+
 const fetchAndVerifyMetadata = async () => {
+  let resultsCreate: MetadataValidationResults | undefined = undefined
+
   step.value = { type: 'loading' }
-  const metadataValidationResult = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+
+  const startTimeMs = Date.now()
+  let hasTimedOut = false
+  const endTimeMs = startTimeMs + MAXIMUM_ATTEMPTS_DURATION_MS
+  let attemptCount = 0
+
+  do {
+    attemptCount++
+    resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+    hasTimedOut = Date.now() > endTimeMs
+    console.log({ hasTimedOut, attemptCount, resultsCreate })
+    await sleep(WAIT_BETWEEN_REQUESTS_MS)
+  } while (!hasTimedOut && resultsCreate.status === 'pending')
+
+  console.log("Finished", { hasTimedOut, resultsCreate })
+
+  if (resultsCreate.status !== 'success') {
+    step.value = {
+      type: 'error',
+      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`
+    }
+    return
+  }
+
   step.value = {
     type: 'diff',
-    isMatch: metadataValidationResult.isMatch ?? false,
-    serverCanFix: metadataValidationResult.canAutofix ?? false,
-    gitHash: metadataValidationResult.headSha ?? undefined,
-    gitRepoUrl: metadataValidationResult.repository,
+    isMatch: resultsCreate.isMatch ?? false,
+    serverCanFix: resultsCreate.canAutofix ?? false,
+    gitHash: resultsCreate.headSha ?? undefined,
+    repository: resultsCreate.repository,
     columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
-    rows: metadataValidationResult.metadataCompare?.map(row => ({
+    rows: resultsCreate.metadataCompare?.map(row => ({
       rowName: row.rowName,
       rowNameListDepth: row.rowNameListDepth,
       value: {

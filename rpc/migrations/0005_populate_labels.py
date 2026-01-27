@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2025-2026, All Rights Reserved
 
 from django.db import migrations
 
@@ -12,10 +12,10 @@ def forward(apps, schema_editor):
         "cluster: easy",
         "cluster: medium",
         "cluster: hard",
-        "abnf code",
-        "mib code",
-        "xml code",
-        "yang code",
+        "code: abnf",
+        "code: mib",
+        "code: xml",
+        "code: yang",
         "iana: easy",
         "iana: medium",
         "iana: hard",
@@ -23,12 +23,15 @@ def forward(apps, schema_editor):
         "xml formatting: easy",
         "xml formatting: medium",
         "xml formatting: hard",
+        "refs: easy",
+        "refs: hard",
+        "Fast Track",
     ]:
         Label.objects.create(
             slug=slug, is_exception=False, is_complexity=True, color=COMPLEXITY_COLOR
         )
     Label.objects.create(
-        slug="expedited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
+        slug="Expedited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
     )
 
 

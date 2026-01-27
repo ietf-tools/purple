@@ -35,3 +35,12 @@ export const isOidcLink = (href?: string): boolean => {
 }
 
 export const teamMemberLink = (personId: number | undefined | null) => personId ? `/team/${personId}` : undefined
+
+export const draftAssignmentsHref = (draftName: string | undefined | null, hashState: 'edit-authors' | 'edit-document-shepherd' | 'edit-stream-manger') => {
+  if (!draftName) {
+    return undefined
+  }
+  return `/docs/${draftName}/assignments#${hashState}`
+}
+
+export const gitHubUrlBuilder = (repository: string): string => `https://github.com/${repository}`

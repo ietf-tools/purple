@@ -50,6 +50,6 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0027_blockingreason_rfctobeblockingreason"),
+        ("rpc", "0007_populate_subseriestypes"),
     ]
     operations = [migrations.RunPython(forward, reverse)]

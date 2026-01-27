@@ -75,7 +75,9 @@ export const parseLevel = (maybeLevel: string): Level => {
   return ""
 }
 
-type Disposition = undefined | 'created' | 'in_progress' | 'published' | 'withdrawn'
+export const dispositionValues = [undefined, 'created', 'in_progress', 'published', 'withdrawn'] as const
+
+type Disposition = (typeof dispositionValues)[number]
 
 export const parseDisposition = (maybeDisposition: string | undefined | null): Disposition => {
   if (!maybeDisposition) return undefined

@@ -23,7 +23,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0018_subseriestypename_historicalsubseriesmember_and_more"),
+        ("rpc", "0006_populate_doc_relationship_names"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]

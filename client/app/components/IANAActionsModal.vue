@@ -3,7 +3,10 @@
     <Heading :heading-level="2" class="pb-3 pt-5">IANA Actions</Heading>
     <IANAActions :heading-level="3" v-model="selectedIANAStatus" />
     <div class="border-t-2 border-gray-400 mt-5 pt-2 flex justify-end">
-      <BaseButton btn-type="default" @click="handleSave">Save</BaseButton>
+      <BaseButton btn-type="default" @click="handleSave">
+        Save
+        <Icon v-show="isSaving" name="ei:spinner-3" size="1.2em" class="animate-spin ml-1" />
+      </BaseButton>
     </div>
   </form>
 </template>
@@ -34,6 +37,8 @@ if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
 }
 
+const isSaving = ref(false)
+
 const api = useApi()
 
 const snackbar = useSnackbar()
@@ -41,6 +46,7 @@ const snackbar = useSnackbar()
 const { closeOverlayModal } = overlayModalKeyInjection
 
 const handleSave = async () => {
+  isSaving.value = true
   try {
     const serverRfcToBe = await api.documentsPartialUpdate({
       draftName: props.name,
@@ -49,7 +55,10 @@ const handleSave = async () => {
       }
     })
     if (serverRfcToBe.ianaStatus?.slug === selectedIANAStatus.value) {
+      snackbar.add({ type: 'success', title: "New IANA Action saved", text: "Please wait while reloading" })
       await props.onSuccess() // trigger data reload
+      snackbar.add({ type: 'success', title: "Reloaded", text: "" })
+      isSaving.value = false
       closeOverlayModal()
     } else {
       snackbar.add({ type: 'error', title: "Unable to save IANA status", text: "Server didn't say why" })
@@ -57,6 +66,6 @@ const handleSave = async () => {
   } catch (error) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Unable to save IANA status" })
   }
-
+  isSaving.value = false
 }
 </script>
