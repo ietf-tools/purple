@@ -561,7 +561,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
-    consensus = serializers.SerializerMethodField()
 
     subseries = SubseriesMemberSerializer(
         source="subseriesmember_set", many=True, read_only=True
@@ -615,9 +614,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "iana_status_slug",
         ]
         read_only_fields = ["id", "draft", "published_at"]
-
-    def get_consensus(self, obj) -> bool:
-        return obj.draft.consensus
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
