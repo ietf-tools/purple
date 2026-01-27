@@ -366,6 +366,7 @@ class FinalApprovalSerializer(serializers.Serializer):
     overriding_approver_person_id = serializers.IntegerField(
         write_only=True, required=False
     )
+    comment = serializers.CharField(allow_blank=True, required=False)
 
     def update(self, instance, validated_data):
         approver_person_id = validated_data.pop("approver_person_id", None)

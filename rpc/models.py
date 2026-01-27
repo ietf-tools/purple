@@ -706,6 +706,7 @@ class FinalApproval(models.Model):
     )
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True)
 
     history = HistoricalRecords()
 
