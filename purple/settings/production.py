@@ -1,8 +1,9 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
 """Production-mode Django settings for RPC project"""
 
 import json
 import os
+from base64 import b64decode
 from email.utils import parseaddr
 from hashlib import sha384
 
@@ -148,3 +149,32 @@ if _admins_str is not None:
     ADMINS = [parseaddr(admin) for admin in _multiline_to_list(_admins_str)]
 else:
     raise RuntimeError("PURPLE_ADMINS must be set")
+
+
+# Guard to ensure insecure development APP_API_TOKENS value is replaced for production
+try:
+    del APP_API_TOKENS
+except NameError:
+    pass
+
+# For APP_API_TOKENS, accept either base64-encoded JSON or raw JSON, but not both.
+# To decode / pretty-print the encoded form, run:
+#    base64 -d | jq .
+# paste the encoded secret into stdin. Copy/paste that into an editor you trust not
+# to leave a copy lying around. When done editing, copy/paste the final JSON through
+#    jq -c | base64
+# and copy/paste the output into the secret store.
+if "PURPLE_APP_API_TOKENS_JSON_B64" in os.environ:
+    if "PURPLE_APP_API_TOKENS_JSON" in os.environ:
+        raise RuntimeError(
+            "Only one of PURPLE_APP_API_TOKENS_JSON and PURPLE_APP_API_TOKENS_JSON_B64 "
+            "may be set"
+        )
+    _APP_API_TOKENS_JSON = b64decode(os.environ.get("PURPLE_APP_API_TOKENS_JSON_B64"))
+else:
+    _APP_API_TOKENS_JSON = os.environ.get("PURPLE_APP_API_TOKENS_JSON", None)
+
+if _APP_API_TOKENS_JSON is not None:
+    APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
+else:
+    APP_API_TOKENS = {}

@@ -37,12 +37,12 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
-from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
+from utils.rest_framework.permissions import HasApiKey
 
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
@@ -538,7 +538,8 @@ class QueueList(ListAPIView):
 class PublicQueueList(QueueList):
     """Queue view for the public queue site"""
 
-    permission_classes = [AllowAny]  # todo permissions
+    permission_classes = [HasApiKey]
+    api_key_endpoint = "api.pubq"
     serializer_class = PublicQueueItemSerializer
 
 

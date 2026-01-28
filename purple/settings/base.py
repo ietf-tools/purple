@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023-2024, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 """Django settings for RPC project common to all environments"""
 
 import os
@@ -88,6 +88,7 @@ LOGOUT_REDIRECT_URL = "/"
 # django-rest-framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "utils.rest_framework.authentication.ApiKeyAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -179,3 +180,8 @@ DOI_AUTHOR_ORGS = [
 
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
+
+# API tokens
+APP_API_TOKENS = {
+    "api.pubq": ["pubq-token"],
+}
