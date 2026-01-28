@@ -40,7 +40,7 @@
 </template>
 
 <script setup lang="ts">
-import { AssignmentFinishedModal, EmailModal, PublishModal } from '#components';
+import { AssignmentFinishedModal, EmailModal } from '#components';
 import { overlayModalKey } from '~/providers/providerKeys';
 import type { MailTemplate, RfcToBe, RpcPerson } from '~/purple_client';
 
