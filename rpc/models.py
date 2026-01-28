@@ -108,6 +108,39 @@ class RfcToBeQuerySet(models.QuerySet):
         )
         return self.annotate(enqueued_at=enqueued_at_subquery)
 
+    def with_active_assignments(self):
+        return self.prefetch_related(
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.exclude(
+                    state__in=ASSIGNMENT_INACTIVE_STATES
+                ).select_related("person__datatracker_person", "role"),
+                to_attr="active_assignments",
+            )
+        )
+
+    def with_active_actionholders(self):
+        return self.prefetch_related(
+            Prefetch(
+                "actionholder_set",
+                queryset=ActionHolder.objects.filter(
+                    completed__isnull=True
+                ).select_related("datatracker_person"),
+                to_attr="active_actionholders",
+            )
+        )
+
+    def with_blocking_reasons(self):
+        return self.prefetch_related(
+            Prefetch(
+                "rfctobeblockingreason_set",
+                queryset=RfcToBeBlockingReason.objects.filter(
+                    resolved__isnull=True
+                ).select_related("reason"),
+                to_attr="blocking_reasons",
+            )
+        )
+
 
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""

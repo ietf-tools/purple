@@ -520,43 +520,24 @@ class QueueFilter(django_filters.FilterSet):
 
 
 class QueueList(ListAPIView):
+    """Queue view for purple application"""
     queryset = (
         RfcToBe.objects.in_queue()
         .with_enqueued_at()
-        .select_related(
-            "draft",
-        )
-        .prefetch_related(
-            "labels",
-            Prefetch(
-                "assignment_set",
-                queryset=Assignment.objects.exclude(
-                    state__in=ASSIGNMENT_INACTIVE_STATES
-                ).select_related("person__datatracker_person", "role"),
-                to_attr="active_assignments",
-            ),
-            Prefetch(
-                "actionholder_set",
-                queryset=ActionHolder.objects.filter(
-                    completed__isnull=True
-                ).select_related("datatracker_person"),
-                to_attr="active_actionholders",
-            ),
-        )
+        .select_related("draft")
+        .prefetch_related("labels")
+        .with_active_assignments()
+        .with_active_actionholders()
+        .with_blocking_reasons()
     )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = QueueFilter
 
 
-class PublicQueueList(ListAPIView):
+class PublicQueueList(QueueList):
+    """Queue view for the public queue site"""
     permission_classes = [AllowAny]  # todo permissions
-    queryset = (
-        RfcToBe.objects.in_queue()
-        .with_enqueued_at()
-        .select_related("draft")
-        .annotate(bytes=Value(0))  # todo model this
-    )
     serializer_class = PublicQueueItemSerializer
 
 
