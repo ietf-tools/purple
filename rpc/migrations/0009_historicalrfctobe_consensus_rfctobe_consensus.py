@@ -13,14 +13,18 @@ class Migration(migrations.Migration):
             model_name="historicalrfctobe",
             name="consensus",
             field=models.BooleanField(
-                default=False, help_text="Whether document has consensus"
+                default=None,
+                help_text="Whether document has consensus (None=unknown)",
+                null=True,
             ),
         ),
         migrations.AddField(
             model_name="rfctobe",
             name="consensus",
             field=models.BooleanField(
-                default=False, help_text="Whether document has consensus"
+                default=None,
+                help_text="Whether document has consensus (None=unknown)",
+                null=True,
             ),
         ),
     ]

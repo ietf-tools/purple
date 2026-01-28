@@ -217,7 +217,9 @@ class RfcToBe(models.Model):
     )
 
     consensus = models.BooleanField(
-        default=False, help_text="Whether document has consensus"
+        default=None,
+        null=True,
+        help_text="Whether document has consensus (None=unknown)",
     )
 
     history = HistoricalRecords(m2m_fields=[labels])
