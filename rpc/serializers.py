@@ -424,7 +424,7 @@ class RfcToBeBlockingReasonSerializer(serializers.Serializer):
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
-    pages = serializers.IntegerField(source="draft.pages", read_only=True)
+    pages = serializers.IntegerField(read_only=True)
     cluster = SimpleClusterSerializer(read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
