@@ -116,6 +116,18 @@ const columns = [
     sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor(
+    'comment', {
+    header: 'Comment',
+    cell: data => {
+      const comment = data.getValue()
+      if (!comment) {
+        return ''
+      }
+      const truncated = comment.length > 30 ? comment.substring(0, 30) + '...' : comment
+      return h('span', { class: 'text-sm', title: comment }, truncated)
+    },
+  }),
+  columnHelper.accessor(
     'requested', {
     header: 'Date Requested',
     cell: data => {
