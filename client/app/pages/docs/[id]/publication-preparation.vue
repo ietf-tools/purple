@@ -6,10 +6,12 @@
 
     <div class="mx-auto max-w-7xl py-8">
       <template v-if="step.type === 'cancelled'">
+        <div class="text-center font-bold mr-1">
+          Cancelled
+        </div>
         <div class="text-center">
-          Cancelled...
           <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
-            try again
+            Try again
           </BaseButton>
         </div>
       </template>
@@ -28,61 +30,93 @@
         </div>
       </template>
       <template v-else-if="step.type === 'error'">
-        <div class="text-center">
-          Error: {{ step.errorText }}
-          <br />
-          <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
-            try again
+        <div class="text-center mb-3 max-w-sm m-auto">
+          <span class="font-bold mr-1">Error:</span> <span class="font-mono">{{ step.errorText }}</span>
+        </div>
+        <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
+          <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
+            @click="deleteMetadataComparisonAndRetry(step.showDeleteAndRetryButton.headSha)">
+            Retry metadata validation
+          </BaseButton>
+          <BaseButton v-else btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+            Try again
           </BaseButton>
         </div>
       </template>
       <template v-else-if="step.type === 'diff'">
-        <Heading :heading-level="2" class="px-8 py-4 text-gray-700 dark:text-gray-300">
+        <Heading :heading-level="2"
+          :class="['px-8 py-4', step.status === 'success' ? 'text-gray-700 dark:text-gray-300' : 'text-red-800 dark:text-red-300']">
+          <span class="font-bold mr-1">Metadata validation status:</span>
+          <span class="font-mono">
+            {{ step.status }}
+          </span>
+        </Heading>
+        <p v-if="step.isError">
+          <span class="text-red-800 dark:text-red-300">
+            <span class="font-bold mr-1">Metadata validation error:</span>
+            <span class="font-mono">{{ step.error }} </span>
+          </span>
+        </p>
+        <p class="ml-8 mb-4 text-sm text-sm text-black dark:text-white">
           Metadata
           {{ SPACE }}
-          <template v-if="!step.isMatch">does not match</template>
-          <template v-else>matches</template>
-        </Heading>
-        <p v-if="step.gitHash" class="ml-8 mb-4 text-sm text-black dark:text-white">
+          <span v-if="!step.isMatch" class="text-red-800 dark:text-red-300">does not match</span>
+          <span v-else class="text-green-800 dark:text-green-300">matches</span>
+        </p>
+        <p v-if="step.headSha" class="ml-8 mb-4 text-sm text-black dark:text-white">
           Fetched git commit
           {{ SPACE }}
           <button
             class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate"
-            @click="() => step.type === 'diff' && step.gitHash ? copyGitHashToClipboard(step.gitHash) : undefined">
-            <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" />{{ step.gitHash }}
+            @click="() => step.type === 'diff' && step.headSha ? copyGitHashToClipboard(step.headSha) : undefined">
+            <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" />{{ step.headSha }}
           </button>
           {{ SPACE }}
           from
           {{ SPACE }}
-          <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{ step.repository }}</a>
+          <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{
+            step.repository
+            }}</a>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
         </p>
+        <p v-if="step.detail && step.detail.length > 0"
+          class="bg-yellow-200 text-yellow-900 dark:bg-yellow-700 text-sm dark:text-white p-2 mx-6 my-2">
+          <Icon name="uil:info-circle" size="1rem" class="mr-2" />
+          {{ step.detail }}
+        </p>
         <BaseCard>
           <div class="w-full">
-            <DiffTable v-if="step.rows.length > 0" :columns="step.columns" :rows="step.rows" />
+            <DiffTable v-if="step.metadataCompare" :columns="diffColumns" :rows="step.metadataCompare" />
             <p v-else class="text-center">(no comparison available)</p>
           </div>
         </BaseCard>
-        <div v-if="step.gitHash" class="flex justify-between mt-8 pt-4 border-t border-gray-500 dark:border-gray-300">
-          <template v-if="step.isMatch">
+        <template v-if="step.status === 'success'">
+          <div v-if="step.headSha" class="flex justify-between mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="cancel" @click="cancel">
               Cancel
             </BaseButton>
-            <BaseButton btn-type="default" @click="postRfc">
+            <BaseButton v-if="step.headSha" btn-type="secondary"
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (1)', step)">
+              Redo metadata comparison
+            </BaseButton>
+            <BaseButton v-if="step.isMatch" btn-type="default" @click="postRfc">
               Post this RFC
             </BaseButton>
-          </template>
-          <template v-else>
-            <BaseButton btn-type="cancel" @click="cancel">
-              Cancel
-            </BaseButton>
-            <BaseButton btn-type="default" @click="updateDatabaseToMatchDocument">
+            <BaseButton v-if="step.canAutofix" btn-type="default" @click="metadataValidationResultsSyncHandler">
               Update database to match document
             </BaseButton>
-          </template>
-        </div>
+          </div>
+        </template>
+        <template v-else>
+          <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
+            <BaseButton btn-type="secondary"
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
+              Redo metadata validation
+            </BaseButton>
+          </div>
+        </template>
       </template>
       <template v-else-if="step.type === 'databaseUpdated'">
         <template v-if="step.error">
@@ -133,6 +167,7 @@
 
 <script setup lang="ts">
 import { useAsyncData } from '#app'
+import BaseButton from '~/components/BaseButton.vue'
 import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
 
@@ -143,25 +178,19 @@ const currentTab: DocTabId = 'publication-preparation'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-type DiffRowValue = { isMatch: boolean, leftValue?: string, rightValue?: string }
+const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" }
 
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
-  | { type: 'error', errorText: string }
+  | { type: 'error', errorText: string, showDeleteAndRetryButton?: { headSha: string } }
   | {
     type: 'diff'
     error?: string
-    gitHash?: string
-    repository?: string
-    isMatch: boolean
-    serverCanFix: boolean
-    columns: { nameColumn: string, leftColumn: string, rightColumn: string }
-    rows: { rowName: string, rowNameListDepth: number, rowValue?: DiffRowValue }[]
-  }
+  } & MetadataValidationResults
   | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
-  | { type: 'rfcPosted', error?: string,  }
+  | { type: 'rfcPosted', error?: string, }
 
 const step = ref<Step>({ type: 'loading' })
 
@@ -199,17 +228,41 @@ const fetchAndVerifyMetadata = async () => {
   const endTimeMs = startTimeMs + MAXIMUM_ATTEMPTS_DURATION_MS
   let attemptCount = 0
 
-  do {
-    attemptCount++
-    resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
-    hasTimedOut = Date.now() > endTimeMs
-    console.log({ hasTimedOut, attemptCount, resultsCreate })
-    await sleep(WAIT_BETWEEN_REQUESTS_MS)
-  } while (!hasTimedOut && resultsCreate.status === 'pending')
+  try {
+    do {
+      attemptCount++
+      resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+      hasTimedOut = Date.now() > endTimeMs
+      console.log({ hasTimedOut, attemptCount, resultsCreate })
+      await sleep(WAIT_BETWEEN_REQUESTS_MS)
+    } while (!hasTimedOut && resultsCreate.status === 'pending')
+  } catch (error) {
+    console.error("Couldn't start/poll for metadata sync results.", { error, resultsCreate })
+    step.value = {
+      type: 'error',
+      errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
+      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined
+    }
+    if (!resultsCreate) {
+      return
+    }
+  }
 
   console.log("Finished", { hasTimedOut, resultsCreate })
 
-  if (resultsCreate.status !== 'success') {
+  if (resultsCreate.status === 'failed') {
+    const { headSha } = resultsCreate
+    if (!headSha) {
+      console.error("Git hash (head sha) not found", resultsCreate)
+      snackbar.add({ type: 'error', title: 'git hash (head sha) was expected but none was provided', text: 'See dev console for more' })
+      return
+    }
+    step.value = {
+      type: 'error',
+      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`,
+      showDeleteAndRetryButton: { headSha },
+    }
+  } else if (resultsCreate.status !== 'success') {
     step.value = {
       type: 'error',
       errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`
@@ -219,51 +272,57 @@ const fetchAndVerifyMetadata = async () => {
 
   step.value = {
     type: 'diff',
-    isMatch: resultsCreate.isMatch ?? false,
-    serverCanFix: resultsCreate.canAutofix ?? false,
-    gitHash: resultsCreate.headSha ?? undefined,
-    repository: resultsCreate.repository,
-    columns: { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" },
-    rows: resultsCreate.metadataCompare?.map(row => ({
-      rowName: row.rowName,
-      rowNameListDepth: row.rowNameListDepth,
-      value: {
-        isMatch: row.rowValue.isMatch,
-        leftValue: row.rowValue.leftValue,
-        rightValue: row.rowValue.rightValue,
-      }
-    })) ?? []
+    ...resultsCreate
+  }
+}
 
-    //   [
-    //     { rowName: "title", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses", rightValue: "Datagram Congestion Control Protocol (DCCP) Extensions for Multipath Operation with Multiple Addresses" } },
-    //     {
-    //       rowName: "abstract", rowNameListDepth: 0, rowValue: { isMatch: false, leftValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
-
-    // Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous disconnections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
-
-    // This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.`, rightValue: `Datagram Congestion Control Protocol (DCCP) communications, as defined in RFC 4340, are inherently restricted to a single path per connection, despite the availability of multiple network paths between peers. The ability to utilize multiple paths simultaneously for a DCCP session can enhance network resource utilization, improve throughput, and increase resilience to network failures, ultimately enhancing the user experience.
-
-    // Use cases for Multipath DCCP (MP-DCCP) include mobile devices (e.g., handsets and vehicles) and residential home gateways that maintain simultaneous connections to distinct network types such as cellular and Wireless Local Area Networks (WLANs) or cellular and fixed access networks. Compared to existing multipath transport protocols, such as Multipath TCP (MPTCP), MP-DCCP is particularly suited for latency-sensitive applications with varying requirements for reliability and in-order delivery.
-
-    // This document specifies a set of protocol extensions to DCCP that enable multipath operations. These extensions maintain the same service model as DCCP while introducing mechanisms to establish and utilize multiple concurrent DCCP flows across different network paths.` } },
-    //     { rowName: "authors:", rowNameListDepth: 0 },
-    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "John", rightValue: "John" } },
-    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jane", rightValue: "Jane" } },
-    //     { rowName: "", rowNameListDepth: 1, rowValue: { isMatch: true, leftValue: "Jake", rightValue: "Jack" } },
-    //     { rowName: "RFC Number", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "9999", rightValue: "9999" } },
-    //     { rowName: "submittedStdLevel", rowNameListDepth: 0, rowValue: { isMatch: true, leftValue: "draft", rightValue: "draft" } },
-    //   ]
+const deleteMetadataComparisonAndRetry = async (headSha?: string) => {
+  if (!headSha) {
+    console.trace()
+    console.error("no git hash (head sha) found at step", step.value)
+    snackbar.add({ type: 'error', title: 'internal error, expected git hash (head sha) param', text: 'See dev console for more' })
+    return
+  }
+  step.value = { type: 'loading' }
+  try {
+    await api.documentsMetadataValidationResultsDestroy({
+      draftName: draftName.value,
+      headSha
+    })
+    fetchAndVerifyMetadata()
+  } catch (error: unknown) {
+    snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't delete validation results" })
+    step.value = {
+      type: 'error',
+      errorText: "Couldn't delete validation results",
+      showDeleteAndRetryButton: { headSha }
+    }
   }
 }
 
 const postRfc = async () => {
+  const currentStep = step.value
+  if (currentStep.type !== 'diff') {
+    throw Error(`Can't publish from step ${currentStep.type}`)
+  }
+  const { headSha } = currentStep
+  if (!headSha) {
+    console.error("Can't publish without git hash (head sha)", currentStep)
+    snackbar.add({ type: 'error', title: "Can't publish without git hash (head sha) but none were provided", text: '' })
+    return
+  }
   step.value = { type: 'loading' }
   try {
-    // BE: result should be success or fail, or is a 500 error (which the js api client throws on) expected?
-    const result = await api.documentsPublish({
-      draftName: draftName.value
-      // BE: this should also take the sha hash so the server can verify that HEAD hasn't changed
+    // API will not return anything when successful
+    // when it's unsuccessful it will return HTTP 500
+    // which the js api client THROWs an error on
+    void await api.documentsPublish({
+      draftName: draftName.value,
+      publishRfcRequest: {
+        headSha,
+      }
     })
+    // if it got this far it was successful
     step.value = {
       type: 'rfcPosted'
     }
@@ -275,15 +334,29 @@ const postRfc = async () => {
   }
 }
 
-const updateDatabaseToMatchDocument = async () => {
+const metadataValidationResultsSyncHandler = async () => {
+  const currentStep = step.value
+  if (currentStep.type !== 'diff') {
+    throw Error(`Can't publish from step ${currentStep.type}`)
+  }
+  const { headSha } = currentStep
+  if (!headSha) {
+    console.error("Can't publish without git hash (head sha) but none were in 'step'", currentStep)
+    snackbar.add({ type: 'error', title: "Can't publish without git hash (head sha) but none were provided", text: 'See dev console for more' })
+    return
+  }
   step.value = { type: 'loading' }
 
-  // BE: how do I tell the server to sync changes (update database to match document)
+  const metadataValidationResults = await api.metadataValidationResultsSync({
+    draftName: draftName.value,
+    syncMetadataRequestRequest: {
+      headSha,
+    }
+  })
 
-  await sleep(1000)
   step.value = {
-    type: 'databaseUpdated',
-    // error: 'a problem occurred'
+    type: 'diff',
+    ...metadataValidationResults,
   }
 }
 

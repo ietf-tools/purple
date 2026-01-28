@@ -388,6 +388,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "shepherd": shepherd.pk if shepherd is not None else None,
             "iesg_contact": iesg_contact.pk if iesg_contact is not None else None,
             "pages": draft.pages,
+            "consensus": draft_info.consensus,
         }
     )
     if serializer.is_valid():

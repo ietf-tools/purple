@@ -10,7 +10,7 @@ import type { HeadingLevel } from '../utils/html'
 
 type Props = {
   headingLevel: HeadingLevel
-  class?: string
+  class?: string | string[]
 }
 
 const props = defineProps<Props>()

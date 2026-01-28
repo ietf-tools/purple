@@ -266,6 +266,12 @@ class RfcToBe(models.Model):
         help_text="Repository name (e.g., ietf-tools/purple)",
     )
 
+    consensus = models.BooleanField(
+        default=None,
+        null=True,
+        help_text="Whether document has consensus (None=unknown)",
+    )
+
     history = HistoricalRecords(m2m_fields=[labels])
 
     class Meta:
@@ -756,6 +762,7 @@ class FinalApproval(models.Model):
     )
     requested = models.DateTimeField(default=timezone.now)
     approved = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True)
 
     history = HistoricalRecords()
 

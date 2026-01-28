@@ -366,6 +366,7 @@ class FinalApprovalSerializer(serializers.Serializer):
     overriding_approver_person_id = serializers.IntegerField(
         write_only=True, required=False
     )
+    comment = serializers.CharField(allow_blank=True, required=False)
 
     def update(self, instance, validated_data):
         approver_person_id = validated_data.pop("approver_person_id", None)
@@ -612,7 +613,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="actionholder_set.active", many=True, read_only=True
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
-    consensus = serializers.SerializerMethodField()
 
     subseries = SubseriesMemberSerializer(
         source="subseriesmember_set", many=True, read_only=True
@@ -666,9 +666,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "iana_status_slug",
         ]
         read_only_fields = ["id", "draft", "published_at"]
-
-    def get_consensus(self, obj) -> bool:
-        return obj.draft.consensus
 
 
 class RfcToBeHistorySerializer(HistorySerializer):
@@ -736,6 +733,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "pages",
             "keywords",
             "iana_status_slug",
+            "consensus",
         ]
 
     def create(self, validated_data):
