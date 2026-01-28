@@ -185,11 +185,12 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
                 comment = (
                     f"blocked because of blocking condition(s): {', '.join(reasons)}; "
                 )
-                Assignment.objects.create(
+                Assignment.objects.get_or_create(
                     rfc_to_be=rfc,
                     role=role,
                     comment=comment,
                     person=assignment.person,
+                    defaults={"state": Assignment.State.IN_PROGRESS},
                 )
 
         # Store blocking reasons in RfcToBeBlockingReason
@@ -255,12 +256,12 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
                     rfc.pk,
                     a.person,
                 )
-                Assignment.objects.create(
+                Assignment.objects.get_or_create(
                     rfc_to_be=rfc,
                     role=latest_assignment.role,
                     person=latest_assignment.person,
                     comment="Re-created after blocked state cleared",
-                    state=Assignment.State.ASSIGNED,
+                    defaults={"state": Assignment.State.ASSIGNED},
                 )
 
     # Resolve all active blocking reasons
