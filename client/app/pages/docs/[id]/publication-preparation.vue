@@ -83,6 +83,7 @@
         </p>
         <p v-if="step.detail && step.detail.length > 0"
           class="bg-yellow-200 text-yellow-900 dark:bg-yellow-700 text-sm dark:text-white p-2 mx-6 my-2">
+          <Icon name="uil:info-circle" size="1rem" class="mr-2" />
           {{ step.detail }}
         </p>
         <BaseCard>
