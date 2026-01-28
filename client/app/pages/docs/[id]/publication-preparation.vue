@@ -38,7 +38,7 @@
             @click="deleteMetadataComparisonAndRetry(step.showDeleteAndRetryButton.headSha)">
             Retry metadata validation
           </BaseButton>
-          <BaseButton v-else btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+          <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
             Try again
           </BaseButton>
         </div>
@@ -76,7 +76,7 @@
           {{ SPACE }}
           <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{
             step.repository
-            }}</a>
+          }}</a>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -183,7 +183,7 @@ const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
-  | { type: 'error', errorText: string, showDeleteAndRetryButton?: { headSha: string } }
+  | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: { headSha: string } }
   | {
     type: 'diff'
     error?: string
@@ -200,12 +200,18 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   {
     server: false,
     lazy: true,
-    deep: true
   }
 )
 
-watch(rfcToBe, () => {
+watch([rfcToBe, rfcToBeError], () => {
   if (!rfcToBe.value) {
+    if (rfcToBeError.value) {
+      console.error('Unable to load RFC. Server error:', rfcToBeError.value)
+      step.value = {
+        type: 'error',
+        errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value.message}`
+      }
+    }
     return
   }
   if (rfcToBe.value.disposition === 'published') {
@@ -213,7 +219,10 @@ watch(rfcToBe, () => {
   } else {
     step.value = { type: 'fetchAndVerifyAndMetadataButton' }
   }
+
 })
+
+
 
 const MAXIMUM_ATTEMPTS_DURATION_MS = 10 * 1000
 const WAIT_BETWEEN_REQUESTS_MS = 1000
@@ -241,7 +250,8 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined
+      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined,
+      showResyncButton: true
     }
     if (!resultsCreate) {
       return
@@ -261,11 +271,13 @@ const fetchAndVerifyMetadata = async () => {
       type: 'error',
       errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`,
       showDeleteAndRetryButton: { headSha },
+      showResyncButton: true
     }
   } else if (resultsCreate.status !== 'success') {
     step.value = {
       type: 'error',
-      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`
+      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`,
+      showResyncButton: true
     }
     return
   }
@@ -295,7 +307,8 @@ const deleteMetadataComparisonAndRetry = async (headSha?: string) => {
     step.value = {
       type: 'error',
       errorText: "Couldn't delete validation results",
-      showDeleteAndRetryButton: { headSha }
+      showDeleteAndRetryButton: { headSha },
+      showResyncButton: true
     }
   }
 }

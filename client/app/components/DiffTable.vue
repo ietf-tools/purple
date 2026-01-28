@@ -35,12 +35,10 @@
           </td>
         </tr>
         <tr v-if="row.rowValue.detail && row.rowValue.detail.length > 0">
-          <tr>
-            <td colspan="3" className="bg-yellow-200 text-yellow-900">
-              <Icon name="uil:info-circle" size="0.8rem" class="mr-2" />
-              {{ row.rowValue.detail }}
-            </td>
-          </tr>
+          <td colspan="3" className="bg-yellow-200 text-yellow-900">
+            <Icon name="uil:info-circle" size="0.8rem" class="mr-2" />
+            {{ row.rowValue.detail }}
+          </td>
         </tr>
       </template>
     </tbody>
