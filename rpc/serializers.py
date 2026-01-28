@@ -681,6 +681,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "pages",
             "keywords",
             "iana_status_slug",
+            "consensus",
         ]
 
     def create(self, validated_data):
