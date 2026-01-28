@@ -493,6 +493,7 @@ class PublicQueueAuthorSerializer(RfcAuthorSerializer):
 
 class PublicAssignmentSerializer(AssignmentSerializer):
     """Assignment serializer for the public queue view"""
+
     class Meta:
         model = AssignmentSerializer.Meta.model
         fields = [

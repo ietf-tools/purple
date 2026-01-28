@@ -10,7 +10,7 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Prefetch, Q, Value
+from django.db.models import Max, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -51,7 +51,6 @@ from .lifecycle.publication import (
 )
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
-    ActionHolder,
     ApprovalLogMessage,
     Assignment,
     Capability,
@@ -521,6 +520,7 @@ class QueueFilter(django_filters.FilterSet):
 
 class QueueList(ListAPIView):
     """Queue view for purple application"""
+
     queryset = (
         RfcToBe.objects.in_queue()
         .with_enqueued_at()
@@ -537,6 +537,7 @@ class QueueList(ListAPIView):
 
 class PublicQueueList(QueueList):
     """Queue view for the public queue site"""
+
     permission_classes = [AllowAny]  # todo permissions
     serializer_class = PublicQueueItemSerializer
 
