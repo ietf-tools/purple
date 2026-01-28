@@ -123,6 +123,9 @@ from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft
 logger = logging.getLogger(__name__)
 
 
+PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
+
+
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
 @api_view(["GET"])
 def version(request):
@@ -540,7 +543,7 @@ class PublicQueueList(QueueList):
     """Queue view for the public queue site"""
 
     permission_classes = [HasApiKey]
-    api_key_endpoint = "api.pubq"
+    api_key_endpoint = PUB_QUEUE_API_KEY_ENDPOINT
     serializer_class = PublicQueueItemSerializer
 
 
@@ -561,6 +564,18 @@ class ClusterFilter(django_filters.FilterSet):
         fields = ["is_active"]
 
 
+class PublicClusterViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [HasApiKey]
+    api_key_endpoint = PUB_QUEUE_API_KEY_ENDPOINT
+    queryset = (
+        Cluster.objects.with_data_annotated()
+        .with_is_active_annotated()
+        .filter(is_active_annotated=True)
+        .order_by("number")
+    )
+    serializer_class = ClusterSerializer
+
+
 class ClusterViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
@@ -568,17 +583,13 @@ class ClusterViewSet(
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Cluster.objects.all()
+    queryset = Cluster.objects.with_data_annotated().with_is_active_annotated()
     serializer_class = ClusterSerializer
     filterset_class = ClusterFilter
     filter_backends = (filters.DjangoFilterBackend, drf_filters.OrderingFilter)
     ordering_fields = ["number"]
     ordering = ["number"]
     lookup_field = "number"
-
-    def get_queryset(self):
-        """Get clusters with RFC number annotations"""
-        return Cluster.objects.with_data_annotated().with_is_active_annotated()
 
     @extend_schema(
         operation_id="clusters_add_document",

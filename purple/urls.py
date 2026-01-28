@@ -49,62 +49,65 @@ class RfcNumberConverter:
 register_converter(DraftNameConverter, "draft-name")
 register_converter(RfcNumberConverter, "rfc-number")
 
-router = routers.DefaultRouter()
-router.register(r"assignments", rpc_api.AssignmentViewSet)
-router.register(r"capabilities", rpc_api.CapabilityViewSet)
-router.register(r"clusters", rpc_api.ClusterViewSet)
-router.register(r"documents", rpc_api.RfcToBeViewSet)
-router.register(
+rpc_router = routers.DefaultRouter()
+rpc_router.register(r"assignments", rpc_api.AssignmentViewSet)
+rpc_router.register(r"capabilities", rpc_api.CapabilityViewSet)
+rpc_router.register(r"clusters", rpc_api.ClusterViewSet)
+rpc_router.register(r"documents", rpc_api.RfcToBeViewSet)
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/comments",
     rpc_api.DocumentCommentViewSet,
     basename="documents-comments",
 )
-router.register(
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/authors",
     rpc_api.RpcAuthorViewSet,
     basename="documents-authors",
 )
-router.register(
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/references",
     rpc_api.RpcRelatedDocumentViewSet,
     basename="documents-references",
 )
-router.register(
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/final_approvals",
     rpc_api.FinalApprovalViewSet,
     basename="documents-final-approvals",
 )
-router.register(
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/approval_logs",
     rpc_api.ApprovalLogMessageViewSet,
     basename="documents-approval-log-messages",
 )
-router.register(
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/metadata_validation_results",
     rpc_api.MetadataValidationResultsViewSet,
     basename="documents-metadata-validation-results",
 )
-router.register(r"labels", rpc_api.LabelViewSet)
-router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
-router.register(
+rpc_router.register(r"labels", rpc_api.LabelViewSet)
+rpc_router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
+rpc_router.register(
     r"rpc_person/(?P<person_id>[^/.]+)/assignments",
     rpc_api.RpcPersonAssignmentViewSet,
     basename="rpcperson-assignment",
 )
-router.register(r"rpc_roles", rpc_api.RpcRoleViewSet)
-router.register(r"doc_relationship_names", rpc_api.DocRelationshipNameViewSet)
-router.register(r"source_format_names", rpc_api.SourceFormatNameViewSet)
-router.register(r"std_level_names", rpc_api.StdLevelNameViewSet)
-router.register(r"stream_names", rpc_api.StreamNameViewSet)
-router.register(
+rpc_router.register(r"rpc_roles", rpc_api.RpcRoleViewSet)
+rpc_router.register(r"doc_relationship_names", rpc_api.DocRelationshipNameViewSet)
+rpc_router.register(r"source_format_names", rpc_api.SourceFormatNameViewSet)
+rpc_router.register(r"std_level_names", rpc_api.StdLevelNameViewSet)
+rpc_router.register(r"stream_names", rpc_api.StreamNameViewSet)
+rpc_router.register(
     r"tlp_boilerplate_choice_names", rpc_api.TlpBoilerplateChoiceNameViewSet
 )
-router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
-router.register(r"subseries_members", rpc_api.SubseriesMemberViewSet)
-router.register(r"subseries", rpc_api.SubseriesViewSet, basename="subseries")
-router.register(
+rpc_router.register(r"unusable_rfc_numbers", rpc_api.UnusableRfcNumberViewSet)
+rpc_router.register(r"subseries_members", rpc_api.SubseriesMemberViewSet)
+rpc_router.register(r"subseries", rpc_api.SubseriesViewSet, basename="subseries")
+rpc_router.register(
     r"subseries_types", rpc_api.SubseriesTypeNameViewSet, basename="subseries-types"
 )
+
+pubq_router = routers.DefaultRouter()
+pubq_router.register(r"clusters", rpc_api.PublicClusterViewSet)
 
 urlpatterns = [
     path("health/", lambda _: HttpResponse(status=204)),  # no content
@@ -131,7 +134,8 @@ urlpatterns = [
     path("api/rpc/submissions/<int:document_id>/", rpc_api.submission),
     path("api/rpc/submissions/<int:document_id>/import/", rpc_api.import_submission),
     path("api/rpc/version/", rpc_api.version),
-    path("api/rpc/", include(router.urls)),
+    path("api/pubq/", include(pubq_router.urls)),
+    path("api/rpc/", include(rpc_router.urls)),
 ]
 
 # Add debug toolbar URLs for development
