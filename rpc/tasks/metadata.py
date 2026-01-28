@@ -1,65 +1,12 @@
-# Copyright The IETF Trust 2025-2026, All Rights Reserved
+# Copyright The IETF Trust 2026, All Rights Reserved
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.models import F
 
-from utils.task_utils import RetryTask
-
-from .lifecycle.metadata import Metadata
-from .lifecycle.publication import (
-    PublicationError,
-    TemporaryPublicationError,
-    publish_rfctobe,
-)
-from .lifecycle.repo import GithubRepository
-from .models import MailMessage, MetadataValidationResults, RfcToBe
+from ..lifecycle.metadata import Metadata
+from ..lifecycle.repo import GithubRepository
+from ..models import MetadataValidationResults, RfcToBe
 
 logger = get_task_logger(__name__)
-
-
-class EmailTask(RetryTask):
-    max_retries = 4 * 24 * 3  # every 15 minutes for 3 days
-    # When retries run out, the admins will be emailed. There's a good chance that
-    # sending that mail will fail also, but it's what we have for now.
-
-
-class SendEmailError(Exception):
-    pass
-
-
-@shared_task(base=EmailTask, autoretry_for=(SendEmailError,))
-def send_mail_task(message_id):
-    message = MailMessage.objects.get(pk=message_id)
-    email = message.as_emailmessage()
-    try:
-        email.send()
-    except Exception as err:
-        logger.error(
-            "Sending with subject '%s' failed: %s",
-            message.subject,
-            str(err),
-        )
-        raise SendEmailError from err
-    else:
-        # Flag that the message was sent in case the task fails before deleting it
-        MailMessage.objects.filter(pk=message_id).update(sent=True)
-    finally:
-        # Always increment this
-        MailMessage.objects.filter(pk=message_id).update(attempts=F("attempts") + 1)
-    # Get friendly name of msgtype
-    message_type = dict(MailMessage.MessageType.choices)[message.msgtype]
-    comment = f"Sent {message_type} email with Message-ID={message.message_id}"
-    if message.rfctobe is not None:
-        message.rfctobe.rpcdocumentcomment_set.create(
-            comment=comment,
-            by=message.sender,
-        )
-    if message.draft is not None:
-        message.draft.rpcdocumentcomment_set.create(
-            comment=comment,
-            by=message.sender,
-        )
-    message.delete()
 
 
 @shared_task(bind=True)
@@ -137,18 +84,3 @@ def validate_metadata_task(self, rfc_to_be_id):
         detail = str(e)
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
-
-
-class PublishRfcToBeTask(RetryTask):
-    pass
-
-
-@shared_task(
-    bind=True,
-    base=PublishRfcToBeTask,
-    throws=(RfcToBe.DoesNotExist, PublicationError),
-    autoretry_for=(TemporaryPublicationError,),
-)
-def publish_rfctobe_task(self, rfctobe_id, expected_head):
-    rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
-    publish_rfctobe(rfctobe, expected_head=expected_head)

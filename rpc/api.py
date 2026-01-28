@@ -117,7 +117,9 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
+from .tasks.mail import send_mail_task
+from .tasks.metadata import validate_metadata_task
+from .tasks.publish import publish_rfctobe_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
 
 logger = logging.getLogger(__name__)
