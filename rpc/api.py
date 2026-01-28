@@ -574,6 +574,7 @@ class PublicClusterViewSet(viewsets.ReadOnlyModelViewSet):
         .order_by("number")
     )
     serializer_class = ClusterSerializer
+    lookup_field = "number"
 
 
 class ClusterViewSet(
