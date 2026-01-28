@@ -33,34 +33,36 @@
         <div class="text-center mb-3 max-w-sm m-auto">
           <span class="font-bold mr-1">Error:</span> <span class="font-mono">{{ step.errorText }}</span>
         </div>
-        <div class="text-center">
-          <component v-if="step.buttonOverride" :is="step.buttonOverride" />
+        <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
+          <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
+            @click="deleteMetadataComparisonAndRetry(step.showDeleteAndRetryButton.headSha)">
+            Retry metadata validation
+          </BaseButton>
           <BaseButton v-else btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
             Try again
           </BaseButton>
         </div>
       </template>
       <template v-else-if="step.type === 'diff'">
-        <Heading :heading-level="2" class="px-8 py-4 text-gray-700 dark:text-gray-300">
-          <template v-if="step.status !== 'success'">
-            <span class="text-red-800 dark:text-red-300">
-              <span class="font-bold mr-1">Metadata sync status:</span>
-              <span class="font-mono">{{ step.status }}</span>
-            </span>
-          </template>
-          <template v-else-if="step.isError">
-            <span class="text-red-800 dark:text-red-300">
-              <span class="font-bold mr-1">Metadata sync error:</span>
-              <span class="font-mono">{{ step.error }} </span>
-            </span>
-          </template>
-          <template v-else>
-            Metadata
-            {{ SPACE }}
-            <template v-if="!step.isMatch">does not match</template>
-            <template v-else>matches</template>
-          </template>
+        <Heading :heading-level="2"
+          :class="['px-8 py-4', step.status === 'success' ? 'text-gray-700 dark:text-gray-300' : 'text-red-800 dark:text-red-300']">
+          <span class="font-bold mr-1">Metadata validation status:</span>
+          <span class="font-mono">
+            {{ step.status }}
+          </span>
         </Heading>
+        <p v-if="step.isError">
+          <span class="text-red-800 dark:text-red-300">
+            <span class="font-bold mr-1">Metadata validation error:</span>
+            <span class="font-mono">{{ step.error }} </span>
+          </span>
+        </p>
+        <p class="ml-8 mb-4 text-sm text-sm text-black dark:text-white">
+          Metadata
+          {{ SPACE }}
+          <span v-if="!step.isMatch" class="text-red-800 dark:text-red-300">does not match</span>
+          <span class="text-green-800 dark:text-green-300">matches</span>
+        </p>
         <p v-if="step.headSha" class="ml-8 mb-4 text-sm text-black dark:text-white">
           Fetched git commit
           {{ SPACE }}
@@ -91,32 +93,26 @@
         </BaseCard>
         <template v-if="step.status === 'success'">
           <div v-if="step.headSha" class="flex justify-between mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
-            <template v-if="!step.isError">
-              <BaseButton btn-type="cancel" @click="cancel">
-                Cancel
-              </BaseButton>
-              <BaseButton btn-type="secondary"
-                @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (1)', step)">
-                Redo metadata comparison</BaseButton>
-              <BaseButton btn-type="default" @click="postRfc">
-                Post this RFC
-              </BaseButton>
-            </template>
-            <template v-else>
-              <BaseButton btn-type="cancel" @click="cancel">
-                Cancel
-              </BaseButton>
-              <BaseButton btn-type="default" @click="metadataValidationResultsSyncHandler">
-                Update database to match document
-              </BaseButton>
-            </template>
+            <BaseButton btn-type="cancel" @click="cancel">
+              Cancel
+            </BaseButton>
+            <BaseButton v-if="step.headSha" btn-type="secondary"
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (1)', step)">
+              Redo metadata comparison
+            </BaseButton>
+            <BaseButton v-if="step.isMatch" btn-type="default" @click="postRfc">
+              Post this RFC
+            </BaseButton>
+            <BaseButton v-if="step.canAutofix" btn-type="default" @click="metadataValidationResultsSyncHandler">
+              Update database to match document
+            </BaseButton>
           </div>
         </template>
         <template v-else>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="secondary"
               @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
-              Redo metadata comparison
+              Redo metadata validation
             </BaseButton>
           </div>
         </template>
@@ -186,7 +182,7 @@ const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "
 type Step =
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
-  | { type: 'error', errorText: string, buttonOverride?: ReturnType<typeof h> }
+  | { type: 'error', errorText: string, showDeleteAndRetryButton?: { headSha: string } }
   | {
     type: 'diff'
     error?: string
@@ -211,11 +207,11 @@ watch(rfcToBe, () => {
   if (!rfcToBe.value) {
     return
   }
-  // if (rfcToBe.value.disposition === 'published') {
-  //   step.value = { type: 'rfcPosted' }
-  // } else {
-  step.value = { type: 'fetchAndVerifyAndMetadataButton' }
-  // }
+  if (rfcToBe.value.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+  } else {
+    step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+  }
 })
 
 const MAXIMUM_ATTEMPTS_DURATION_MS = 10 * 1000
@@ -231,13 +227,25 @@ const fetchAndVerifyMetadata = async () => {
   const endTimeMs = startTimeMs + MAXIMUM_ATTEMPTS_DURATION_MS
   let attemptCount = 0
 
-  do {
-    attemptCount++
-    resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
-    hasTimedOut = Date.now() > endTimeMs
-    console.log({ hasTimedOut, attemptCount, resultsCreate })
-    await sleep(WAIT_BETWEEN_REQUESTS_MS)
-  } while (!hasTimedOut && resultsCreate.status === 'pending')
+  try {
+    do {
+      attemptCount++
+      resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+      hasTimedOut = Date.now() > endTimeMs
+      console.log({ hasTimedOut, attemptCount, resultsCreate })
+      await sleep(WAIT_BETWEEN_REQUESTS_MS)
+    } while (!hasTimedOut && resultsCreate.status === 'pending')
+  } catch (error) {
+    console.error("Couldn't start/poll for metadata sync results.", { error, resultsCreate })
+    step.value = {
+      type: 'error',
+      errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
+      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined
+    }
+    if (!resultsCreate) {
+      return
+    }
+  }
 
   console.log("Finished", { hasTimedOut, resultsCreate })
 
@@ -251,10 +259,7 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`,
-      buttonOverride: h(BaseButton, {
-        'btn-type': 'default',
-        'onClick': () => deleteMetadataComparisonAndRetry(headSha)
-      }, () => 'Delete failed validation attempt')
+      showDeleteAndRetryButton: { headSha },
     }
   } else if (resultsCreate.status !== 'success') {
     step.value = {
@@ -289,11 +294,7 @@ const deleteMetadataComparisonAndRetry = async (headSha?: string) => {
     step.value = {
       type: 'error',
       errorText: "Couldn't delete validation results",
-      buttonOverride:
-        h(BaseButton, {
-          'btn-type': 'default',
-          'onClick': () => deleteMetadataComparisonAndRetry(headSha)
-        }, () => 'Delete failed validation attempt')
+      showDeleteAndRetryButton: { headSha }
     }
   }
 }
