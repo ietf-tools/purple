@@ -252,7 +252,8 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
                     latest_history_date = hist.history_date
             if latest_assignment:
                 logger.info(
-                    "Creating new assignment for last closed_for_hold for rfc %s and person %s",
+                    "Creating new assignment for last closed_for_hold for "
+                    "rfc %s and person %s",
                     rfc.pk,
                     a.person,
                 )
