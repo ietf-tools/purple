@@ -32,9 +32,13 @@
     </template>
     <template v-else-if="props.uiMode.type === 'checkbox'">
       <div class="flex-1 flex flex-row justify-center">
-        <input :aria-label="props.uiMode.label" type="checkbox" :id="props.fieldName" v-model="valueBooleanRef" :class="[
-          'pointer-click border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
-        ]" />
+        <label>
+          {{ props.uiMode.label }}
+          <input :aria-label="props.uiMode.label" type="checkbox" :id="props.fieldName" v-model="valueBooleanRef"
+            :class="[
+              'pointer-click border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
+            ]" />
+        </label>
       </div>
       <div class="flex flex-col gap-1 h-full justify-between">
         <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">

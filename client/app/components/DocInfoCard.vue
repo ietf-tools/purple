@@ -182,36 +182,23 @@
         </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
-            <div class="w-full flex justify-between">
-              <div>
-                <span v-if="rfcToBe.consensus === true" class="text-green-600">
-                  Yes
-                </span>
-                <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
-                  No
-                </span>
-                <span v-else class="text-gray-500">
-                  Unknown
-                </span>
+            <PatchRfcToBeField fieldName="consensus" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'checkbox', label: 'consensus?', initialValue: rfcToBe.consensus ?? false }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="w-full flex justify-between">
+                <div>
+                  <span v-if="rfcToBe.consensus === true" class="text-green-600">
+                    Yes
+                  </span>
+                  <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
+                    No
+                  </span>
+                  <span v-else>
+                    Unknown
+                  </span>
+                </div>
               </div>
-              <TooltipProvider>
-                <TooltipRoot>
-                  <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
-                    <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
-                      <Icon name="fe:disabled" />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipPortal>
-                    <TooltipContent
-                      class="data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade text-grass11 select-none rounded-md bg-white px-[15px] py-[10px] text-sm leading-none shadow-sm border will-change-[transform,opacity]"
-                      :side-offset="5">
-                      Edit on Datatracker
-                      <TooltipArrow class="fill-white stroke-gray-200" :width="12" :height="6" />
-                    </TooltipContent>
-                  </TooltipPortal>
-                </TooltipRoot>
-              </TooltipProvider>
-            </div>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
       </DescriptionList>
