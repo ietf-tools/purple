@@ -190,7 +190,7 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
                     role=role,
                     comment=comment,
                     person=assignment.person,
-                    defaults={"state": Assignment.State.IN_PROGRESS},
+                    state=Assignment.State.IN_PROGRESS,
                 )
 
         # Store blocking reasons in RfcToBeBlockingReason
@@ -262,7 +262,7 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
                     role=latest_assignment.role,
                     person=latest_assignment.person,
                     comment="Re-created after blocked state cleared",
-                    defaults={"state": Assignment.State.ASSIGNED},
+                    state=Assignment.State.ASSIGNED,
                 )
 
     # Resolve all active blocking reasons
