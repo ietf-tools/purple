@@ -530,8 +530,8 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "rfc_number",
             "pages",
             "enqueued_at",
-            "blocking_reasons",
             "iana_status",
+            "blocking_reasons",
             "authors",
         ]
 
