@@ -424,6 +424,10 @@ class RfcToBeBlockingReasonSerializer(serializers.Serializer):
 class QueueItemSerializer(serializers.ModelSerializer):
     """RfcToBe serializer suitable for displaying a queue of many"""
 
+    draft_url = serializers.URLField(
+        source="draft.datatracker_url",
+        allow_null=True,  # might be null for an April 1 RFC
+    )
     pages = serializers.IntegerField(read_only=True)
     cluster = SimpleClusterSerializer(read_only=True)
     labels = LabelSerializer(many=True, read_only=True)
@@ -439,14 +443,15 @@ class QueueItemSerializer(serializers.ModelSerializer):
         source="finalapproval_set", many=True, read_only=True
     )
     iana_status = IanaStatusSerializer(read_only=True)
-    blocking_reasons = serializers.SerializerMethodField()
+    blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
 
     class Meta:
         model = RfcToBe
         fields = [
             "id",
             "name",
-            "pages",
+            "title",
+            "draft_url",
             "disposition",
             "external_deadline",
             "internal_goal",
@@ -479,14 +484,6 @@ class QueueItemSerializer(serializers.ModelSerializer):
             # Fallback if no history exists
             return None
 
-    @extend_schema_field(RfcToBeBlockingReasonSerializer(many=True))
-    def get_blocking_reasons(self, obj):
-        """Get active blocking reasons for this RfcToBe"""
-        active_reasons = obj.rfctobeblockingreason_set.filter(
-            resolved__isnull=True
-        ).select_related("reason")
-        return RfcToBeBlockingReasonSerializer(active_reasons, many=True).data
-
 
 class PublicQueueAuthorSerializer(RfcAuthorSerializer):
     class Meta:
@@ -494,32 +491,48 @@ class PublicQueueAuthorSerializer(RfcAuthorSerializer):
         fields = ["titlepage_name", "is_editor"]
 
 
+class PublicAssignmentSerializer(AssignmentSerializer):
+    """Assignment serializer for the public queue view"""
+    class Meta:
+        model = AssignmentSerializer.Meta.model
+        fields = [
+            "id",
+            "rfc_to_be",
+            "role",
+            "state",
+        ]
+
+
 class PublicQueueItemSerializer(QueueItemSerializer):
     """RfcToBe serializer for the public view of the RFC Editor queue"""
 
     authors = PublicQueueAuthorSerializer(many=True)
-    bytes = serializers.IntegerField(help_text="Not yet modeled")
-    draft_url = serializers.URLField(source="draft.datatracker_url")
     enqueued_at = serializers.DateTimeField(
         help_text="Datetime document entered the queue"
     )
-    cluster = serializers.IntegerField(source="cluster.number", allow_null=True)
+    assignment_set = PublicAssignmentSerializer(
+        source="active_assignments", many=True, read_only=True
+    )
 
     class Meta:
         model = QueueItemSerializer.Meta.model
         fields = [
             "id",
             "name",
-            "rfc_number",
-            "authors",
             "title",
-            "pages",
-            "bytes",
             "draft_url",
-            # "state",
-            # "state_since",
-            "enqueued_at",
+            "disposition",
+            "external_deadline",
+            "labels",
             "cluster",
+            "assignment_set",
+            "pending_activities",
+            "rfc_number",
+            "pages",
+            "enqueued_at",
+            "blocking_reasons",
+            "iana_status",
+            "authors",
         ]
 
 
