@@ -98,8 +98,28 @@ const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   { server: false, lazy: true, default: () => [] as Assignment[] }
 )
 
+// sorting order for assignments
+// this is a temp fix because assignment IDs don't always line up in xfer
+// can most likely be removed once the queue is build in a natural way
+const assignmentOrder = [
+  'enqueuer',
+  'formatting',
+  'ref_checker',
+  'first_editor',
+  'second_editor',
+  'final_review_editor',
+  'publisher',
+  'blocked'
+]
 const rfcToBeAssignments = computed(() =>
-  assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
+  assignments.value
+    .filter((a) => a.rfcToBe === rfcToBe.value?.id)
+    .slice()
+    .sort((a, b) => {
+      const roleDiff = assignmentOrder.indexOf(a.role) - assignmentOrder.indexOf(b.role)
+      if (roleDiff !== 0) return roleDiff
+      return (a.id ?? 0) - (b.id ?? 0)
+    })
 )
 
 const initialSelectedLabelIds = computed(() => {

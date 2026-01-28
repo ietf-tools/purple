@@ -163,38 +163,34 @@ def _has_active_blocked_assignment(rfc: RfcToBe) -> bool:
     return blocked_qs.exists()
 
 
-def _create_blocked_assignment(rfc: RfcToBe, reasons: set[str]) -> bool:
-    """Create a new 'blocked' assignment and store blocking reasons."""
+def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
+    """Create new 'blocked' assignments and store blocking reasons."""
 
     logger.info("Creating blocked assignment for rfc %s, reasons: %s", rfc.pk, reasons)
 
-    # if any active non-blocked assignment exists, set status to "closed_for_hold"
     active_assignment_qs = rfc.assignment_set.exclude(role__slug="blocked").active()
-    previous_assignee = None
-    if active_assignment_qs.exists():
-        logger.info("Setting active assignments to closed_for_hold for rfc %s", rfc.pk)
-        active_assignment_qs.update(
-            state=Assignment.State.CLOSED_FOR_HOLD,
-            comment="Closed due to blocked state",
-        )
-        first_assignment = active_assignment_qs.first()
-        if first_assignment and getattr(first_assignment, "person", None):
-            previous_assignee = first_assignment.person
-
     try:
         role = RpcRole.objects.get(slug="blocked")
 
-        # create assignment without person
-        comment = (
-            f"closed_for_hold previous assignments by {previous_assignee}"
-            if previous_assignee
-            else ""
-        )
-        Assignment.objects.create(
-            rfc_to_be=rfc,
-            role=role,
-            comment=comment,
-        )
+        if active_assignment_qs.exists():
+            logger.info(
+                "Setting active assignments to closed_for_hold for rfc %s", rfc.pk
+            )
+            for assignment in active_assignment_qs:
+                # Close the current assignment
+                assignment.state = Assignment.State.CLOSED_FOR_HOLD
+                assignment.comment = "Closed due to blocked state"
+                assignment.save(update_fields=["state", "comment"])
+
+                comment = (
+                    f"blocked because of blocking condition(s): {', '.join(reasons)}; "
+                )
+                Assignment.objects.create(
+                    rfc_to_be=rfc,
+                    role=role,
+                    comment=comment,
+                    person=assignment.person,
+                )
 
         # Store blocking reasons in RfcToBeBlockingReason
         for reason_slug in reasons:
@@ -219,9 +215,10 @@ def _create_blocked_assignment(rfc: RfcToBe, reasons: set[str]) -> bool:
     return True
 
 
-def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
-    """Mark the latest active 'blocked' assignment as done and resolve blocking
-    reasons."""
+def _close_blocked_assignments(rfc: RfcToBe) -> bool:
+    """Mark active 'blocked' assignments as done and resolve blocking
+    reasons. Re-create any assignments closed_for_hold.
+    """
 
     blocked_qs = (
         rfc.assignment_set.filter(role__slug="blocked").active().order_by("-pk")
@@ -230,9 +227,41 @@ def _close_latest_blocked_assignment(rfc: RfcToBe) -> bool:
     if not blocked_qs.exists():
         return False
 
-    a = blocked_qs.first()
-    a.state = Assignment.State.DONE
-    a.save(update_fields=["state"])
+    for a in blocked_qs:
+        a.state = Assignment.State.DONE
+        a.save(update_fields=["state"])
+
+        # For each previously blocked assignment, find the corresponding
+        # closed_for_hold and create a new assignment with the same person and role
+        closed_for_hold_qs = rfc.assignment_set.filter(
+            state=Assignment.State.CLOSED_FOR_HOLD,
+            person=a.person,
+        )
+        if closed_for_hold_qs.exists():
+            # Find the closed_for_hold assignment with the most recent history_date
+            latest_assignment = None
+            latest_history_date = None
+            for assignment in closed_for_hold_qs:
+                hist = assignment.history.order_by("-history_date").first()
+                if hist and (
+                    latest_history_date is None
+                    or hist.history_date > latest_history_date
+                ):
+                    latest_assignment = assignment
+                    latest_history_date = hist.history_date
+            if latest_assignment:
+                logger.info(
+                    "Creating new assignment for last closed_for_hold for rfc %s and person %s",
+                    rfc.pk,
+                    a.person,
+                )
+                Assignment.objects.create(
+                    rfc_to_be=rfc,
+                    role=latest_assignment.role,
+                    person=latest_assignment.person,
+                    comment="Re-created after blocked state cleared",
+                    state=Assignment.State.ASSIGNED,
+                )
 
     # Resolve all active blocking reasons
     RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc, resolved__isnull=True).update(
@@ -268,12 +297,12 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
             )
 
             if blocked_now and not blocked_before:
-                _create_blocked_assignment(locked, reasons=block_reasons)
+                _create_blocked_assignments(locked, reasons=block_reasons)
                 logger.info("Created blocked assignment for rfc %s", locked.pk)
                 return True
             elif not blocked_now and blocked_before:
                 logger.info("Closing blocked assignment for rfc %s", locked.pk)
-                _close_latest_blocked_assignment(locked)
+                _close_blocked_assignments(locked)
                 return True
 
             return False
