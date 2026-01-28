@@ -61,7 +61,7 @@
           Metadata
           {{ SPACE }}
           <span v-if="!step.isMatch" class="text-red-800 dark:text-red-300">does not match</span>
-          <span class="text-green-800 dark:text-green-300">matches</span>
+          <span v-else class="text-green-800 dark:text-green-300">matches</span>
         </p>
         <p v-if="step.headSha" class="ml-8 mb-4 text-sm text-black dark:text-white">
           Fetched git commit
