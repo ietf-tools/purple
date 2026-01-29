@@ -158,7 +158,7 @@ const columns = [
             isLoadingByRfcToBeId.value[id.toString()] = false
           }
         },
-        [
+        () => [
           "Announce publication",
           isLoadingByRfcToBeId.value[id.toString()]
             ? h(Icon, { name: 'ei:spinner-3', size: '1rem', class: 'animate-spin' })
