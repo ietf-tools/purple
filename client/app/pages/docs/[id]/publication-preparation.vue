@@ -74,7 +74,7 @@
           <button
             class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate"
             @click="() => step.type === 'diff' && step.headSha ? copyGitHashToClipboard(step.headSha) : undefined">
-            <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" />{{ step.headSha }}
+            <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" /><code>{{ step.headSha }}</code>
           </button>
           {{ SPACE }}
           from
