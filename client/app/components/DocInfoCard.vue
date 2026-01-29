@@ -52,14 +52,14 @@
         <DescriptionListItem term="Document Shepherd" :spacing="spacing">
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
-              <span class="flex-1">{{rfcToBe.shepherd?.name}}</span>
+              <span class="flex-1">{{ rfcToBe.shepherd?.name || '(none)' }}</span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="IESG Contact" :spacing="spacing">
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
-              <span class="flex-1">{{rfcToBe.iesgContact?.name}}</span>
+              <span class="flex-1">{{ rfcToBe.iesgContact?.name || '(none)' }}</span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
