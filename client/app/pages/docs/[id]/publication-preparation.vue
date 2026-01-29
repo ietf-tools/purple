@@ -35,7 +35,7 @@
         </div>
         <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
           <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
-            @click="deleteMetadataComparisonAndRetry(step.showDeleteAndRetryButton.headSha)">
+            @click="deleteMetadataValidationAndRetry(step.showDeleteAndRetryButton.headSha)">
             Retry metadata validation
           </BaseButton>
           <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
@@ -57,7 +57,16 @@
           Metadata
           {{ SPACE }}
           <span v-if="!step.isMatch" class="text-red-800 dark:text-red-300">does not match</span>
-          <span v-else class="text-green-800 dark:text-green-300">matches</span>
+          {{ SPACE }}
+          <span v-if="step.isMatch" class="text-green-800 dark:text-green-300">matches</span>
+          {{ SPACE }}
+          <span v-if="!step.isError">
+            but it can be published.
+          </span>
+          {{ SPACE }}
+          <span v-if="step.isError">
+            and it <span class="font-bold">cannot be published</span>.
+          </span>
         </p>
         <p v-if="step.headSha" class="ml-8 mb-4 text-sm text-black dark:text-white">
           Fetched git commit
@@ -85,11 +94,11 @@
         <BaseCard>
           <div class="w-full">
             <DiffTable v-if="step.metadataCompare" :columns="diffColumns" :rows="step.metadataCompare" />
-            <p v-else class="text-center">(no comparison available)</p>
+            <p v-else class="text-center">(no diff available)</p>
           </div>
         </BaseCard>
         <template v-if="step.status === 'success'">
-          <div v-if="step.headSha" class="flex justify-between mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
+          <div v-if="step.headSha" class="flex justify-between mx-6 mt-10 mb-10">
             <div>
               <BaseButton btn-type="cancel" @click="cancel">
                 Cancel
@@ -98,17 +107,17 @@
             <div>
               <template v-if="step.headSha">
                 <BaseButton btn-type="secondary"
-                  @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (1)', step)">
-                  Redo metadata comparison
+                  @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : console.error('internal error unhandled state (1)', step)">
+                  Redo metadata validation
                 </BaseButton>
               </template>
             </div>
-            <div>
-              <BaseButton v-if="step.isMatch" btn-type="default" @click="postRfc">
-                Post this RFC
-              </BaseButton>
+            <div class="flex gap-2 justify-end">
               <BaseButton v-if="step.canAutofix" btn-type="default" @click="metadataValidationResultsSyncHandler">
                 Update database to match document
+              </BaseButton>
+              <BaseButton v-if="!step.isError" btn-type="default" @click="publishRfc">
+                Publish this RFC
               </BaseButton>
             </div>
           </div>
@@ -116,7 +125,7 @@
         <template v-else>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="secondary"
-              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataComparisonAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
               Redo metadata validation
             </BaseButton>
           </div>
@@ -289,7 +298,7 @@ const fetchAndVerifyMetadata = async () => {
   }
 }
 
-const deleteMetadataComparisonAndRetry = async (headSha?: string) => {
+const deleteMetadataValidationAndRetry = async (headSha?: string) => {
   if (!headSha) {
     console.trace()
     console.error("no git hash (head sha) found at step", step.value)
@@ -314,7 +323,7 @@ const deleteMetadataComparisonAndRetry = async (headSha?: string) => {
   }
 }
 
-const postRfc = async () => {
+const publishRfc = async () => {
   const currentStep = step.value
   if (currentStep.type !== 'diff') {
     throw Error(`Can't publish from step ${currentStep.type}`)
