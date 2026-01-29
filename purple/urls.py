@@ -75,6 +75,11 @@ rpc_router.register(
     basename="documents-final-approvals",
 )
 rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/action_holders",
+    rpc_api.ActionHolderViewSet,
+    basename="documents-action-holders",
+)
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/approval_logs",
     rpc_api.ApprovalLogMessageViewSet,
     basename="documents-approval-log-messages",
