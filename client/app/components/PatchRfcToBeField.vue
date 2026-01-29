@@ -3,7 +3,7 @@
     <template v-if="isReadOnly">
       <slot />
     </template>
-    <template v-if="!isEditing">
+    <template v-else-if="!isEditing">
       <div class="flex-1">
         <slot />
       </div>

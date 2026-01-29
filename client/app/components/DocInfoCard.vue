@@ -1,7 +1,7 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader title="Document Info" />
+      <CardHeader :title="`Document Info${props.isReadOnly ? ' (read only)' : ''}`" />
     </template>
     <div v-if="rfcToBe">
       <DescriptionList>
@@ -31,7 +31,7 @@
                   </div>
                 </div>
               </div>
-              <div>
+              <div v-if="!props.isReadOnly">
                 <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')"
                   :class="[classForBtnType.outline, 'px-2 py-1']">
                   <Icon name="uil:pen" />
