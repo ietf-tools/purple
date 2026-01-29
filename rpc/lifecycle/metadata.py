@@ -441,6 +441,7 @@ class MetadataComparator:
                 item["can_fix"] = False
                 item["xml_value"] = xml_name
                 item["db_value"] = db_name
+                item["is_error"] = True
                 overall_match = False
                 overall_can_fix = False
                 items.append(item)
@@ -465,17 +466,18 @@ class MetadataComparator:
                 db_name += f" ({db_org})"
             item["xml_value"] = xml_name
             item["db_value"] = db_name
-            item["name_match"] = True
 
             if org_match and editor_match:
                 # Everything matches
                 item["is_match"] = True
                 item["can_fix"] = True
+                item["is_error"] = False
             else:
                 # Name matches but organization or editor role differs - fixable
                 item["is_match"] = False
                 item["can_fix"] = True
                 overall_match = False
+                item["is_error"] = True
 
             items.append(item)
 
