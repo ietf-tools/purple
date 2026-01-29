@@ -355,8 +355,11 @@ class MetadataComparator:
         # Convert XML publication_date object to YYYY-mm-dd format
         xml_value = None
         is_match = False
+        db_value = None
+        detail = ""
         if xml_date_obj:
             try:
+                today = datetime.date.today()
                 # Parse month name from XML to month number
                 month_name = xml_date_obj.get("month", "")
                 month_num = datetime.datetime.strptime(month_name, "%B").month
@@ -369,7 +372,6 @@ class MetadataComparator:
                     xml_value = f"{year}-{month_num:02d}-{day:02d}"
 
                     # Check if it's today's date
-                    today = datetime.date.today()
                     db_value = today.strftime("%Y-%m-%d")
                     if parsed_date == today:
                         is_match = True
@@ -377,12 +379,20 @@ class MetadataComparator:
                     # Only month and year provided - check if it's current month/year
                     xml_value = f"{year}-{month_num:02d}"
 
-                    today = datetime.date.today()
                     db_value = today.strftime("%Y-%m")
                     if year == today.year and month_num == today.month:
                         is_match = True
             except (ValueError, KeyError, TypeError):
                 xml_value = None
+
+        if not xml_date_obj:
+            detail = "No publication date found in XML metadata."
+        elif not xml_value:
+            detail = "Invalid publication date format in XML metadata."
+        elif not is_match:
+            detail = (
+                f"XML Publication date {xml_value} differs from current date {today}."
+            )
 
         result = {
             "field": "publication_date",
@@ -391,11 +401,7 @@ class MetadataComparator:
             "is_match": is_match or xml_value is None,
             "can_fix": False,
             "is_error": False,
-            "detail": (
-                f"XML Publication date {xml_value} differs from current date {today}."
-                if not is_match
-                else ""
-            ),
+            "detail": detail,
         }
 
         return result
