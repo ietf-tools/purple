@@ -1465,6 +1465,7 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "status",
             "detail",
             "is_error",
+            "received_at",
         ]
 
     def _get_comparator(self, obj):
