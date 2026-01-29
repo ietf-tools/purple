@@ -359,7 +359,7 @@ class MetadataComparator:
         detail = ""
         if xml_date_obj:
             try:
-                today = datetime.date.today()
+                today = datetime.datetime.now(datetime.UTC).date()
                 # Parse month name from XML to month number
                 month_name = xml_date_obj.get("month", "")
                 month_num = datetime.datetime.strptime(month_name, "%B").month
@@ -620,6 +620,8 @@ class MetadataComparator:
             bool: True if all fields match, False otherwise
         """
         comparisons = self.compare_all()
+        if not comparisons:
+            return False
         for comparison in comparisons:
             if not comparison.get("is_match"):
                 return False
