@@ -53,25 +53,6 @@
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
               <span class="flex-1">{{rfcToBe.shepherd?.name}}</span>
-              <span v-if="!props.isReadOnly">
-                <TooltipProvider>
-                  <TooltipRoot>
-                    <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
-                      <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
-                        <Icon name="fe:disabled" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipPortal>
-                      <TooltipContent
-                        class="data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade text-grass11 select-none rounded-md bg-white px-[15px] py-[10px] text-sm leading-none shadow-sm border will-change-[transform,opacity]"
-                        :side-offset="5">
-                        Edit on Datatracker
-                        <TooltipArrow class="fill-white stroke-gray-200" :width="12" :height="6" />
-                      </TooltipContent>
-                    </TooltipPortal>
-                  </TooltipRoot>
-                </TooltipProvider>
-              </span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -79,25 +60,6 @@
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
               <span class="flex-1">{{rfcToBe.iesgContact?.name}}</span>
-              <span v-if="!props.isReadOnly">
-                <TooltipProvider>
-                  <TooltipRoot>
-                    <TooltipTrigger class="hover:bg-stone-50 inline-flex focus:shadow-black">
-                      <span :class="[classForBtnType.outline, 'px-2 py-1 text-xs opacity-50']">
-                        <Icon name="fe:disabled" />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipPortal>
-                      <TooltipContent
-                        class="data-[state=delayed-open]:data-[side=top]:animate-slideDownAndFade data-[state=delayed-open]:data-[side=right]:animate-slideLeftAndFade data-[state=delayed-open]:data-[side=left]:animate-slideRightAndFade data-[state=delayed-open]:data-[side=bottom]:animate-slideUpAndFade text-grass11 select-none rounded-md bg-white px-[15px] py-[10px] text-sm leading-none shadow-sm border will-change-[transform,opacity]"
-                        :side-offset="5">
-                        Edit on Datatracker
-                        <TooltipArrow class="fill-white stroke-gray-200" :width="12" :height="6" />
-                      </TooltipContent>
-                    </TooltipPortal>
-                  </TooltipRoot>
-                </TooltipProvider>
-              </span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
