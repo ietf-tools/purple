@@ -15,6 +15,13 @@
           </BaseButton>
         </div>
       </template>
+      <template v-else-if="step.type === 'getMetadataValidationResults'">
+        <div class="text-center">
+          <BaseButton btn-type="default" @click="getMetadataValidationResults">
+            Fetch and verify metadata
+          </BaseButton>
+        </div>
+      </template>
       <template v-else-if="step.type === 'fetchAndVerifyAndMetadataButton'">
         <div class="text-center">
           <BaseButton btn-type="default" @click="fetchAndVerifyMetadata">
@@ -194,6 +201,7 @@ const draftName = computed(() => route.params.id?.toString() ?? '')
 const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" }
 
 type Step =
+  | { type: 'getMetadataValidationResults' }
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
   | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: { headSha: string } }
@@ -216,21 +224,73 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   }
 )
 
-watch([rfcToBe, rfcToBeError], () => {
-  if (!rfcToBe.value) {
-    if (rfcToBeError.value) {
-      console.error('Unable to load RFC. Server error:', rfcToBeError.value)
-      step.value = {
-        type: 'error',
-        errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value.message}`
-      }
+const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus } = await useAsyncData(
+  () => `draft-${draftName.value}-metadata-validation-results`,
+  () => api.metadataValidationResultsList({
+    draftName: draftName.value,
+  }),
+  {
+    server: false,
+    lazy: true,
+  }
+)
+
+watch(metadataValidationResults, () => {
+  // FIXME: the api client types are wrong. It returns a `rfcToBe` not `MetadataValidationResults[]`
+  if (!metadataValidationResults.value || Array.isArray(metadataValidationResults.value)) {
+    console.log("Interpretting ", metadataValidationResults.value, " as NULL")
+    return
+  }
+  console.log("Interpretting ", metadataValidationResults.value, " as having value")
+
+})
+
+const isMetadataValidationResults = (data: unknown): data is MetadataValidationResults => {
+  return !!data && !Array.isArray(data) && typeof data === 'object' && 'isError' in data && 'isMatch' in data
+}
+
+watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
+  if (rfcToBeStatus.value === 'pending' || metadataValidationResultsStatus.value === 'pending') {
+    return
+  }
+  if (rfcToBeStatus.value === 'error' || rfcToBeError.value) {
+    step.value = {
+      type: 'error',
+      errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? '(unknown error)'}`
     }
     return
   }
-  if (rfcToBe.value.disposition === 'published') {
-    step.value = { type: 'rfcPosted' }
-  } else {
+  if (metadataValidationResultsStatus.value === 'error') {
+    // could be a 404 meaning there were no precomputed validation results, ie not an error
     step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+    return
+  }
+
+  if (rfcToBe.value?.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+  } else if (metadataValidationResultsStatus.value === 'success') {
+    const validationResult = metadataValidationResults.value
+    if (!validationResult) {
+      throw Error('Unhandled state: no validation result despite success')
+    }
+    if (!isMetadataValidationResults(validationResult)) {
+      console.error({ validationResult })
+      throw Error('Unhandled validation result. See console')
+    }
+    console.log({ validationResult })
+    const precomputedResult = validationResult
+    step.value = { type: 'diff', ...precomputedResult }
+  } else {
+    console.error({
+      metadataValidationResultsStatus: metadataValidationResultsStatus.value,
+      metadataValidationResults: metadataValidationResults.value,
+      rfcToBeStatus: rfcToBeStatus.value,
+      rfcToBe: rfcToBe.value
+    })
+    step.value = {
+      type: 'error',
+      errorText: `Unhandled error. See dev console`
+    }
   }
 })
 
@@ -271,7 +331,12 @@ const fetchAndVerifyMetadata = async () => {
   console.log("Finished", { hasTimedOut, resultsCreate })
 
   if (resultsCreate.status === 'failed') {
-    const { headSha } = resultsCreate
+    const { headSha, detail } = resultsCreate
+    if(detail) {
+      console.error("Metadata validation failed", resultsCreate)
+      snackbar.add({ type: 'error', title: 'Metadata validation failed' , text: `Details: ${JSON.stringify(detail)}` })
+      return
+    }
     if (!headSha) {
       console.error("Git hash (head sha) not found", resultsCreate)
       snackbar.add({ type: 'error', title: 'git hash (head sha) was expected but none was provided', text: 'See dev console for more' })
