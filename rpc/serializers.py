@@ -202,17 +202,28 @@ class HistoryLastEditSerializer(serializers.Serializer):
 
 
 class ActionHolderSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    """Serialize an ActionHolder with person name"""
+
+    name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ActionHolder
         fields = [
+            "id",
             "name",
             "deadline",
             "since_when",
+            "completed",
             "comment",
             "body",
         ]
+        read_only_fields = ["since_when"]
+        extra_kwargs = {
+            "completed": {
+                "help_text": "The action is considered done when the completed field "
+                "is set with a datetime."
+            }
+        }
 
     def get_name(self, actionholder) -> str:
         return actionholder.datatracker_person.plain_name  # allow prefetched name map?

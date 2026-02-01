@@ -51,6 +51,7 @@ from .lifecycle.publication import (
 )
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
+    ActionHolder,
     ApprovalLogMessage,
     Assignment,
     Capability,
@@ -76,6 +77,7 @@ from .models import (
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
+    ActionHolderSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
     AuthorOrderSerializer,
@@ -1417,6 +1419,32 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
         if self.action == "create":
             return CreateFinalApprovalSerializer
         return FinalApprovalSerializer
+
+
+@extend_schema_with_draft_name()
+class ActionHolderViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """ViewSet for ActionHolder entries related to a draft"""
+
+    queryset = ActionHolder.objects.all()
+    serializer_class = ActionHolderSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    ordering = ["since_when"]
+
+    def get_queryset(self):
+        draft_name = self.kwargs["draft_name"]
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                Q(target_rfctobe__draft__name=draft_name)
+                | Q(target_document__name=draft_name)
+            )
+        )
 
 
 @extend_schema_with_draft_name()
