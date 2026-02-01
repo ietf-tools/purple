@@ -334,7 +334,7 @@ const fetchAndVerifyMetadata = async () => {
     const { headSha, detail } = resultsCreate
     if(detail) {
       console.error("Metadata validation failed", resultsCreate)
-      snackbar.add({ type: 'error', title: 'Metadata validation failed' , text: `Details: ${JSON.stringify(detail)}` })
+      snackbar.add({ type: 'error', title: 'Metadata validation failed' , text: `Details: ${detail}` })
       return
     }
     if (!headSha) {
