@@ -15,13 +15,6 @@
           </BaseButton>
         </div>
       </template>
-      <template v-else-if="step.type === 'getMetadataValidationResults'">
-        <div class="text-center">
-          <BaseButton btn-type="default" @click="getMetadataValidationResults">
-            Fetch and verify metadata
-          </BaseButton>
-        </div>
-      </template>
       <template v-else-if="step.type === 'fetchAndVerifyAndMetadataButton'">
         <div class="text-center">
           <BaseButton btn-type="default" @click="fetchAndVerifyMetadata">
@@ -88,7 +81,23 @@
           {{ SPACE }}
           <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{
             step.repository
-            }}</a>
+          }}</a>
+          {{ SPACE }}
+          <TooltipProvider  v-if="step.receivedAt" >
+            <TooltipRoot>
+              <TooltipTrigger>
+                <time :datetime="DateTime.fromJSDate(step.receivedAt).toISOTime() ?? undefined">
+                  {{ DateTime.fromJSDate(step.receivedAt).toRelative()  }}
+                </time>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent class="shadow-md bg-white text-black dark:bg-black dark:text-white rounded px-2 py-1">
+                  {{ DateTime.fromJSDate(step.receivedAt).toISO()?.replace(/T/gi, ' ') }}
+                </TooltipContent>
+              </TooltipPortal>
+            </TooltipRoot>
+          </TooltipProvider>
+
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -186,7 +195,9 @@
 </template>
 
 <script setup lang="ts">
+import { TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 import { useAsyncData } from '#app'
+import { DateTime } from 'luxon'
 import BaseButton from '~/components/BaseButton.vue'
 import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
@@ -250,13 +261,23 @@ const isMetadataValidationResults = (data: unknown): data is MetadataValidationR
 }
 
 watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
-  if (rfcToBeStatus.value === 'pending' || metadataValidationResultsStatus.value === 'pending') {
+  if (
+    rfcToBeStatus.value === 'pending' ||
+    metadataValidationResultsStatus.value === 'pending' ||
+    rfcToBeStatus.value === 'idle' ||
+    metadataValidationResultsStatus.value === 'idle'
+  ) {
     return
   }
-  if (rfcToBeStatus.value === 'error' || rfcToBeError.value) {
+  if (
+    rfcToBeStatus.value === 'error'
+  ) {
+    let precomputedResult = metadataValidationResults.value as unknown
     step.value = {
       type: 'error',
-      errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? '(unknown error)'}`
+      errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
+      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) && precomputedResult?.headSha ? { headSha: precomputedResult.headSha } : undefined,
+      showResyncButton: true
     }
     return
   }
@@ -266,20 +287,19 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
     return
   }
 
-  if (rfcToBe.value?.disposition === 'published') {
-    step.value = { type: 'rfcPosted' }
-  } else if (metadataValidationResultsStatus.value === 'success') {
-    const validationResult = metadataValidationResults.value
-    if (!validationResult) {
-      throw Error('Unhandled state: no validation result despite success')
-    }
-    if (!isMetadataValidationResults(validationResult)) {
-      console.error({ validationResult })
+  if (metadataValidationResults.value) {
+    let precomputedResult = metadataValidationResults.value as unknown
+    if (!isMetadataValidationResults(precomputedResult)) {
+      console.error({ precomputedResult })
       throw Error('Unhandled validation result. See console')
     }
-    console.log({ validationResult })
-    const precomputedResult = validationResult
     step.value = { type: 'diff', ...precomputedResult }
+    return
+  }
+
+  if (rfcToBe.value?.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+    return
   } else {
     console.error({
       metadataValidationResultsStatus: metadataValidationResultsStatus.value,
@@ -289,8 +309,10 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
     })
     step.value = {
       type: 'error',
-      errorText: `Unhandled error. See dev console`
+      errorText: `Unhandled error. See dev console`,
+      showResyncButton: true,
     }
+    return
   }
 })
 
@@ -332,9 +354,9 @@ const fetchAndVerifyMetadata = async () => {
 
   if (resultsCreate.status === 'failed') {
     const { headSha, detail } = resultsCreate
-    if(detail) {
+    if (detail) {
       console.error("Metadata validation failed", resultsCreate)
-      snackbar.add({ type: 'error', title: 'Metadata validation failed' , text: `Details: ${detail}` })
+      snackbar.add({ type: 'error', title: 'Metadata validation failed', text: `Details: ${detail}` })
       return
     }
     if (!headSha) {

@@ -206,7 +206,6 @@
 </template>
 
 <script setup lang="ts">
-import { TooltipArrow, TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 import { type RfcToBe } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'

@@ -16,9 +16,9 @@
       </template>
       <template v-for="(row, index) in computedRows" :key="index">
         <tr :class="{
-          [badgeColors.green]: row.rowValue.isMatch,
-          [yellowBackground]: !row.rowValue.isMatch && !row.rowValue.isError,
-          [badgeColors.red]: !row.rowValue.isMatch && row.rowValue.isError,
+          [badgeColors.green]: row.rowValue.isMatch && !row.rowValue.isError,
+          [yellowBackground]: row.rowValue.isMatch && row.rowValue.isError || row.rowValue.detail && row.rowValue.detail.length > 0,
+          [badgeColors.red]: !row.rowValue.isMatch && row.rowValue.isError && (!row.rowValue.detail || row.rowValue.detail.length === 0),
         }">
           <td class="p-2" :style="row.rowNameListDepth > 0 && `padding-left: ${row.rowNameListDepth}rem`">
             <template v-if="row.rowNameListDepth > 0">&bull;</template>
