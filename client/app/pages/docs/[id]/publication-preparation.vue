@@ -83,11 +83,11 @@
             step.repository
           }}</a>
           {{ SPACE }}
-          <TooltipProvider  v-if="step.receivedAt" >
+          <TooltipProvider v-if="step.receivedAt">
             <TooltipRoot>
               <TooltipTrigger>
                 <time :datetime="DateTime.fromJSDate(step.receivedAt).toISOTime() ?? undefined">
-                  {{ DateTime.fromJSDate(step.receivedAt).toRelative()  }}
+                  {{ DateTime.fromJSDate(step.receivedAt).toRelative() }}
                 </time>
               </TooltipTrigger>
               <TooltipPortal>
@@ -97,7 +97,6 @@
               </TooltipPortal>
             </TooltipRoot>
           </TooltipProvider>
-
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -141,7 +140,7 @@
         <template v-else>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="secondary"
-              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : fetchAndVerifyMetadata()">
               Redo metadata validation
             </BaseButton>
           </div>
@@ -246,16 +245,6 @@ const { data: metadataValidationResults, error: metadataValidationResultsError, 
   }
 )
 
-watch(metadataValidationResults, () => {
-  // FIXME: the api client types are wrong. It returns a `rfcToBe` not `MetadataValidationResults[]`
-  if (!metadataValidationResults.value || Array.isArray(metadataValidationResults.value)) {
-    console.log("Interpretting ", metadataValidationResults.value, " as NULL")
-    return
-  }
-  console.log("Interpretting ", metadataValidationResults.value, " as having value")
-
-})
-
 const isMetadataValidationResults = (data: unknown): data is MetadataValidationResults => {
   return !!data && !Array.isArray(data) && typeof data === 'object' && 'isError' in data && 'isMatch' in data
 }
@@ -288,13 +277,21 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
   }
 
   if (metadataValidationResults.value) {
-    let precomputedResult = metadataValidationResults.value as unknown
-    if (!isMetadataValidationResults(precomputedResult)) {
-      console.error({ precomputedResult })
+    let precomputedResults = metadataValidationResults.value as unknown
+    if (!Array.isArray(precomputedResults)) {
+      console.error({ precomputedResults })
       throw Error('Unhandled validation result. See console')
     }
-    step.value = { type: 'diff', ...precomputedResult }
-    return
+    if (precomputedResults.length === 1) {
+      const firstResult = precomputedResults[0]
+      if (isMetadataValidationResults(firstResult)) {
+        step.value = { type: 'diff', ...firstResult }
+        return
+      }
+    } else if (precomputedResults.length === 0) {
+      step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+      return
+    }
   }
 
   if (rfcToBe.value?.disposition === 'published') {
@@ -333,6 +330,9 @@ const fetchAndVerifyMetadata = async () => {
     do {
       attemptCount++
       resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+      if (!isMetadataValidationResults(resultsCreate)) {
+        break;
+      }
       hasTimedOut = Date.now() > endTimeMs
       console.log({ hasTimedOut, attemptCount, resultsCreate })
       await sleep(WAIT_BETWEEN_REQUESTS_MS)
@@ -356,7 +356,7 @@ const fetchAndVerifyMetadata = async () => {
     const { headSha, detail } = resultsCreate
     if (detail) {
       console.error("Metadata validation failed", resultsCreate)
-      snackbar.add({ type: 'error', title: 'Metadata validation failed', text: `Details: ${detail}` })
+      step.value = { type: 'error', errorText: `Details: ${detail}`, showResyncButton: true }
       return
     }
     if (!headSha) {
