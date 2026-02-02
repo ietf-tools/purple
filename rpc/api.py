@@ -1529,9 +1529,9 @@ class RfcMailTemplatesList(views.APIView):
             raise NotFound("Unknown rfctobe_id") from None
 
         message_templates = (
-            ("blank", "mail/blank.txt", "Blank Message"),
-            ("finalreview", "mail/finalreview.txt", "Final Review"),
-            ("publication", "mail/publication.txt", "Announce Publication"),
+            ("blank", "rpc/mail/blank.txt", "Blank Message"),
+            ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
+            ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
 
         serializer = MailTemplateSerializer(
