@@ -30,7 +30,7 @@ RUN apt-get update --fix-missing && apt-get install -qy \
 	nano \
 	netcat-openbsd \
 	nodejs \
-	postgresql-client-14 \
+	postgresql-client-17 \
 	unzip \
 	wget \
 	zsh
