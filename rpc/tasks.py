@@ -166,7 +166,7 @@ def create_index(self):
     created_on = timezone.now().strftime(DATE_FMT)
     logger.info("Creating rfc-index.txt")
     index = render_to_string(
-        "indices/rfc-index.txt",
+        "rpc/index/rfc-index.txt",
         {
             "created_on": created_on,
             "rfcs": get_rfc_text_index_entries(),
