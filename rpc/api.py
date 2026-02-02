@@ -1608,35 +1608,6 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         )
 
     @extend_schema(
-        operation_id="metadata_validation_results_list",
-        parameters=[
-            OpenApiParameter(
-                name="draft_name",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.PATH,
-                description="Draft name",
-            ),
-        ],
-        responses={
-            200: MetadataValidationResultsSerializer,
-        },
-    )
-    def list(self, request, *args, **kwargs):
-        """Return single metadata validation result for this draft"""
-        draft_name = kwargs.get("draft_name")
-        try:
-            mvr = MetadataValidationResults.objects.get(
-                rfc_to_be__draft__name=draft_name
-            )
-            serializer = self.get_serializer(mvr)
-            return Response(serializer.data)
-        except MetadataValidationResults.DoesNotExist:
-            return Response(
-                {"error": "No MetadataValidationResults for draft found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-    @extend_schema(
         operation_id="metadata_validation_results_create",
         parameters=[
             OpenApiParameter(
