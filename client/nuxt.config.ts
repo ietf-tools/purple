@@ -3,7 +3,7 @@ export default defineNuxtConfig({
   compatibilityDate: '2024-09-06', // today's date, nothing special otherwise
   ssr: false,
   colorMode: {
-    preference: 'light',
+    preference: 'preference',
     classSuffix: '',
     fallback: 'light'
   },
