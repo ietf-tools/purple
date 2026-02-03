@@ -29,5 +29,5 @@ type Props = {
   placeholder?: string
 }
 
-const props = withDefaults(defineProps<Props>(), { isMultiline: false })
+const props = defineProps<Props>()
 </script>

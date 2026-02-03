@@ -151,6 +151,7 @@ import humanizeDuration from 'humanize-duration'
 import type { PaginatedDocumentCommentList, Name } from '~/purple_client'
 import { computed } from 'vue'
 import { type IANAActionsEnum } from '../../utils/iana'
+import { title } from 'process'
 
 const route = useRoute()
 const api = useApi()
@@ -176,7 +177,7 @@ const state = reactive<State>({
   stream: null,
   deadline: today.value.plus({ weeks: 6 }).toISODate(),
   labels: [],
-  ianaAction: 'iana-no-actions'
+  ianaAction: 'no_actions'
 })
 
 // COMPUTED
@@ -224,6 +225,7 @@ async function importSubmission () {
     imported = await api.submissionsImport({
       documentId: submission.value.id,
       createRfcToBeRequest: {
+        title: '',
         boilerplate: state.boilerplate.slug,
         submittedFormat: state.sourceFormat.slug,
         stdLevel: state.stdLevel.slug,
@@ -250,8 +252,6 @@ async function importSubmission () {
 }
 
 // DATA
-
-const { data: labels } = await useLabels()
 
 const documentId = computed(() => Number(route.query.documentId))
 

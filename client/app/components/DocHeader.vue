@@ -40,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import { AssignmentFinishedModal, EmailModal } from '#components';
+import { AssignmentFinishedModal } from '#components';
 import { overlayModalKey } from '~/providers/providerKeys';
-import type { MailTemplate, RfcToBe, RpcPerson } from '~/purple_client';
+import type { RfcToBe, RpcPerson } from '~/purple_client';
 
 type Props = {
   draftName: string,
@@ -64,7 +64,6 @@ const snackbar = useSnackbar()
 
 const isLoadingNewEmailModal = ref(false)
 const isLoadingFinishAssignmentsModal = ref(false)
-const isLoadingPublishModal = ref(false)
 
 // Cache API responses for slow APIs and/or APIs that don't change much
 const personsRef = ref<RpcPerson[] | undefined>(undefined)
@@ -75,8 +74,6 @@ watch(() => props.people, () => {
   }
   personsRef.value = props.people
 })
-
-const mailTemplateList = ref<MailTemplate[] | undefined>(undefined)
 
 const openAssignmentFinishedModal = async () => {
   if (!props.rfcToBe || !props.rfcToBe.id) {
@@ -98,7 +95,7 @@ const openAssignmentFinishedModal = async () => {
       personsRef.value ? personsRef.value : api.rpcPersonList()
     ])
 
-    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe.id)
+    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe?.id)
 
     personsRef.value = rpcPersonList
 
