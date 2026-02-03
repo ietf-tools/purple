@@ -237,7 +237,7 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
 
 const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus } = await useAsyncData(
   () => `draft-${draftName.value}-metadata-validation-results`,
-  () => api.metadataValidationResultsList({
+  () => api.documentsMetadataValidationResultsList({
     draftName: draftName.value,
   }),
   {
