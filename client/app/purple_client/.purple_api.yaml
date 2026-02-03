@@ -1463,8 +1463,7 @@ paths:
           description: ''
   /api/rpc/documents/{draft_name}/metadata_validation_results/:
     get:
-      operationId: metadata_validation_results_list
-      description: Return single metadata validation result for this draft
+      operationId: documents_metadata_validation_results_list
       parameters:
       - in: path
         name: draft_name

@@ -493,6 +493,10 @@ export interface DocumentsMetadataValidationResultsDestroyRequest {
     headSha: string;
 }
 
+export interface DocumentsMetadataValidationResultsListRequest {
+    draftName: string;
+}
+
 export interface DocumentsMetadataValidationResultsRetrieveRequest {
     draftName: string;
     headSha: string;
@@ -579,10 +583,6 @@ export interface MailtemplateListRequest {
 }
 
 export interface MetadataValidationResultsCreateRequest {
-    draftName: string;
-}
-
-export interface MetadataValidationResultsListRequest {
     draftName: string;
 }
 
@@ -2466,6 +2466,34 @@ export class PurpleApi extends runtime.BaseAPI {
 
     /**
      */
+    async documentsMetadataValidationResultsListRaw(requestParameters: DocumentsMetadataValidationResultsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MetadataValidationResults>>> {
+        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
+            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsMetadataValidationResultsList.');
+        }
+
+        const queryParameters: any = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        const response = await this.request({
+            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            method: 'GET',
+            headers: headerParameters,
+            query: queryParameters,
+        }, initOverrides);
+
+        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(MetadataValidationResultsFromJSON));
+    }
+
+    /**
+     */
+    async documentsMetadataValidationResultsList(requestParameters: DocumentsMetadataValidationResultsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MetadataValidationResults>> {
+        const response = await this.documentsMetadataValidationResultsListRaw(requestParameters, initOverrides);
+        return await response.value();
+    }
+
+    /**
+     */
     async documentsMetadataValidationResultsRetrieveRaw(requestParameters: DocumentsMetadataValidationResultsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MetadataValidationResults>> {
         if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
             throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsMetadataValidationResultsRetrieve.');
@@ -3086,36 +3114,6 @@ export class PurpleApi extends runtime.BaseAPI {
      */
     async metadataValidationResultsCreate(requestParameters: MetadataValidationResultsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<MetadataValidationResults> {
         const response = await this.metadataValidationResultsCreateRaw(requestParameters, initOverrides);
-        return await response.value();
-    }
-
-    /**
-     * Return single metadata validation result for this draft
-     */
-    async metadataValidationResultsListRaw(requestParameters: MetadataValidationResultsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MetadataValidationResults>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling metadataValidationResultsList.');
-        }
-
-        const queryParameters: any = {};
-
-        const headerParameters: runtime.HTTPHeaders = {};
-
-        const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
-            method: 'GET',
-            headers: headerParameters,
-            query: queryParameters,
-        }, initOverrides);
-
-        return new runtime.JSONApiResponse(response, (jsonValue) => jsonValue.map(MetadataValidationResultsFromJSON));
-    }
-
-    /**
-     * Return single metadata validation result for this draft
-     */
-    async metadataValidationResultsList(requestParameters: MetadataValidationResultsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<Array<MetadataValidationResults>> {
-        const response = await this.metadataValidationResultsListRaw(requestParameters, initOverrides);
         return await response.value();
     }
 
