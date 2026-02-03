@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { type RfcToBe, type Cluster } from '~/purple_client'
+import { type RfcToBe, type Cluster } from '../purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import BaseButton from './BaseButton.vue'
 
