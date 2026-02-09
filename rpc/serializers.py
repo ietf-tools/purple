@@ -1510,6 +1510,8 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.BooleanField())
     def get_is_error(self, obj):
         """Check if there are any metadata errors"""
+        if obj.status == MetadataValidationResults.Status.FAILED:
+            return True
         comparator = self._get_comparator(obj)
         return comparator.is_error()
 
