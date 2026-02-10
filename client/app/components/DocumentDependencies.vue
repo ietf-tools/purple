@@ -8,7 +8,7 @@
           </template>
         </CardHeader>
       </template>
-      <div class="flex items-center gap-2 mb-4">
+      <div v-if="props.disposition != 'published'" class="flex items-center gap-2 mb-4">
         <span class="font-medium">Cluster: </span>
         <span class="mr-2">
           <span v-if="props.clusterNumber">
@@ -52,18 +52,19 @@ const columns: Column[] = [
   },
   {
     key: 'targetDraftName',
-    label: 'Target Draft Name',
+    label: 'Target Document',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
+      const info = relatedDocsInfo.value?.[row] || {}
       return h(Anchor, {
         href: `/docs/${row}`,
         class: 'inline-flex items-center gap-1 text-blue-600'
-      }, row)
+      }, (info.rfcNumber && info.disposition == 'published') ? `RFC ${info.rfcNumber}` : row)
     }
   },
   {
-    key: 'pendingActivities',
+    key: 'currentAssignments',
     label: 'Current Assignments',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
@@ -131,7 +132,8 @@ type Props = {
   draftName: string
   id: number,
   people?: RpcPerson[],
-  clusterNumber?: number
+  clusterNumber?: number,
+  disposition?: string
 }
 
 const api = useApi()
@@ -168,6 +170,7 @@ watch(
         const refqueueCount = relDocs.filter(doc => doc.relationship === 'refqueue').length
         const notReceivedCount = relDocs.filter(doc => doc.relationship === 'not-received').length
         relatedDocsInfo.value[name] = {
+          ...info,
           assignment_set: info.assignmentSet,
           pending_activities: info.pendingActivities,
           refqueue_count: refqueueCount,

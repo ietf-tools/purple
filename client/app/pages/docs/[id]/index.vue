@@ -28,7 +28,7 @@
 
         <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
           <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName" :people="people"
-            :cluster-number="rawRfcToBe.cluster?.number">
+            :cluster-number="rawRfcToBe.cluster?.number" :disposition="rawRfcToBe.disposition">
           </DocumentDependencies>
         </div>
 
