@@ -72,6 +72,13 @@
       </fieldset>
     </div>
 
+    <div class="flex justify-between items-center mb-2">
+      <div></div>
+      <div class="text-sm text-gray-500 dark:text-neutral-400">
+        {{ table.getRowModel().rows.length }} records
+      </div>
+    </div>
+
     <RpcTable>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
