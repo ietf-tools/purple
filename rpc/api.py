@@ -968,6 +968,8 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
 class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["relationship__slug"]
 
     def get_queryset(self):
         return (
@@ -976,7 +978,8 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
 
     @extend_schema(
         description="Returns only relations for this draft that are pre-publishing "
-        "dependencies"
+        "dependencies",
+        responses=RpcRelatedDocumentSerializer(many=True),
     )
     @action(detail=False, methods=["get"], url_path="deps")
     def deps(self, request, draft_name=None):
@@ -992,27 +995,6 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                     "refqueue",
                     "withdrawnref",
                 ],
-            )
-        )
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(qs, many=True)
-        return Response(serializer.data)
-
-    @extend_schema(
-        description="Returns only relations with 'obs' or 'updates' types for this "
-        "draft."
-    )
-    @action(detail=False, methods=["get"], url_path="relationships")
-    def relationships(self, request, draft_name=None):
-        qs = (
-            super()
-            .get_queryset()
-            .filter(
-                source__draft__name=self.kwargs["draft_name"],
-                relationship__slug__in=["obs", "updates"],
             )
         )
         page = self.paginate_queryset(qs)

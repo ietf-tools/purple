@@ -244,6 +244,30 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Obsoletes" :spacing="spacing">
+          <DescriptionListDetails>
+            <div v-if="obsoletes && obsoletes.length > 0" class="text-sm font-medium">
+              <span v-for="(doc, idx) in obsoletes" :key="doc.id">
+                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                  RFC {{ doc.targetRfcNumber }}
+                </NuxtLink><span v-if="idx < obsoletes.length - 1">, </span>
+              </span>
+            </div>
+            <div v-else class="text-sm text-gray-500">(none)</div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
+        <DescriptionListItem term="Updates" :spacing="spacing">
+          <DescriptionListDetails>
+            <div v-if="updates && updates.length > 0" class="text-sm font-medium">
+              <span v-for="(doc, idx) in updates" :key="doc.id">
+                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                  RFC {{ doc.targetRfcNumber }}
+                </NuxtLink><span v-if="idx < updates.length - 1">, </span>
+              </span>
+            </div>
+            <div v-else class="text-sm text-gray-500">(none)</div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>
@@ -330,6 +354,16 @@ const removeEmail = async (id: number) => {
     console.error('Failed to remove email:', error)
   }
 }
+
+const { data: obsoletes } = await useAsyncData(
+  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'obs' }) : Promise.resolve([]),
+  { server: false, lazy: true, default: () => [], watch: [() => props.draftName] }
+)
+
+const { data: updates } = await useAsyncData(
+  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'updates' }) : Promise.resolve([]),
+  { server: false, lazy: true, default: () => [], watch: [() => props.draftName] }
+)
 
 const loadStreams = async (): Promise<SelectOption[]> => {
   const streamNames = await api.streamNamesList()

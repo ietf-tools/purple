@@ -1767,6 +1767,10 @@ paths:
         schema:
           type: string
         required: true
+      - in: query
+        name: relationship__slug
+        schema:
+          type: string
       tags:
       - purple
       security:
@@ -1929,7 +1933,7 @@ paths:
           description: No response body
   /api/rpc/documents/{draft_name}/references/deps/:
     get:
-      operationId: documents_references_deps_retrieve
+      operationId: documents_references_deps_list
       description: Returns only relations for this draft that are pre-publishing dependencies
       parameters:
       - in: path
@@ -1937,27 +1941,10 @@ paths:
         schema:
           type: string
         required: true
-      tags:
-      - purple
-      security:
-      - cookieAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/RpcRelatedDocument'
-          description: ''
-  /api/rpc/documents/{draft_name}/references/relationships/:
-    get:
-      operationId: documents_references_relationships_retrieve
-      description: Returns only relations with 'obs' or 'updates' types for this draft.
-      parameters:
-      - in: path
-        name: draft_name
+      - in: query
+        name: relationship__slug
         schema:
           type: string
-        required: true
       tags:
       - purple
       security:
@@ -1967,7 +1954,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RpcRelatedDocument'
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRelatedDocument'
           description: ''
   /api/rpc/labels/:
     get:
@@ -4928,6 +4917,9 @@ components:
           readOnly: true
         target_draft_name:
           type: string
+          readOnly: true
+        target_rfc_number:
+          type: integer
           readOnly: true
       required:
       - relationship
