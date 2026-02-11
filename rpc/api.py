@@ -823,11 +823,11 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     pagination_class = DefaultLimitOffsetPagination
 
     def get_object(self):
-            lookup_value = self.kwargs.get(self.lookup_field)
-            if lookup_value and str(lookup_value).startswith("rfc"):
-                return RfcToBe.objects.get(rfc_number=int(lookup_value[3:]))
-            else:
-                return RfcToBe.objects.get(draft__name=lookup_value)
+        lookup_value = self.kwargs.get(self.lookup_field)
+        if lookup_value and str(lookup_value).startswith("rfc"):
+            return RfcToBe.objects.get(rfc_number=int(lookup_value[3:]))
+        else:
+            return RfcToBe.objects.get(draft__name=lookup_value)
 
     def get_queryset(self):
         queryset = super().get_queryset()
