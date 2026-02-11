@@ -813,6 +813,7 @@ class RfcToBeQueryParamsForm(forms.Form):
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
+    lookup_field = "draft__name"
     filter_backends = (
         filters.DjangoFilterBackend,
         drf_filters.OrderingFilter,
@@ -825,9 +826,9 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     def get_object(self):
         lookup_value = self.kwargs.get(self.lookup_field)
         if lookup_value and str(lookup_value).startswith("rfc"):
-            return RfcToBe.objects.get(rfc_number=int(lookup_value[3:]))
-        else:
-            return RfcToBe.objects.get(draft__name=lookup_value)
+            self.lookup_field = "rfc_number"
+            self.kwargs[self.lookup_field] = int(lookup_value[3:])
+        return super().get_object()
 
     def get_queryset(self):
         queryset = super().get_queryset()
