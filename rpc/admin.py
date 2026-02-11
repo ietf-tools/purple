@@ -207,3 +207,4 @@ class MetadataValidationResultsAdmin(admin.ModelAdmin):
     list_display = ["rfc_to_be", "status", "received_at"]
     list_filter = ["status"]
     search_fields = ["rfc_to_be__rfc_number", "rfc_to_be__draft__name"]
+    raw_id_fields = ["rfc_to_be"]
