@@ -588,8 +588,8 @@ class MetadataComparator:
 
     def compare_abstract(self):
         """Compare abstract field"""
-        xml_value = self.xml_metadata.get("abstract", "").strip()
-        db_value = (self.rfc_to_be.abstract or "").strip()
+        xml_value = " ".join(self.xml_metadata.get("abstract", "").split())
+        db_value = " ".join((self.rfc_to_be.abstract or "").split())
 
         return {
             "field": "abstract",
