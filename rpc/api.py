@@ -813,7 +813,6 @@ class RfcToBeQueryParamsForm(forms.Form):
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = RfcToBe.objects.all()
     serializer_class = RfcToBeSerializer
-    lookup_field = "draft__name"
     filter_backends = (
         filters.DjangoFilterBackend,
         drf_filters.OrderingFilter,
@@ -822,6 +821,13 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id", "published_at", "draft__name"]
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
+
+    def get_object(self):
+            lookup_value = self.kwargs.get(self.lookup_field)
+            if lookup_value and str(lookup_value).startswith("rfc"):
+                return RfcToBe.objects.get(rfc_number=int(lookup_value[3:]))
+            else:
+                return RfcToBe.objects.get(draft__name=lookup_value)
 
     def get_queryset(self):
         queryset = super().get_queryset()
