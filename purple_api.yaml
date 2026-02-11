@@ -1927,6 +1927,48 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/rpc/documents/{draft_name}/references/deps/:
+    get:
+      operationId: documents_references_deps_retrieve
+      description: Returns only relations for this draft that are pre-publishing dependencies
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+  /api/rpc/documents/{draft_name}/references/relationships/:
+    get:
+      operationId: documents_references_relationships_retrieve
+      description: Returns only relations with 'obs' or 'updates' types for this draft.
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
   /api/rpc/labels/:
     get:
       operationId: labels_list

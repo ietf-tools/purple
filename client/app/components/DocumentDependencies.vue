@@ -2,7 +2,7 @@
   <div>
     <BaseCard>
       <template #header>
-        <CardHeader title="Document Dependencies">
+        <CardHeader title="Publishing Dependencies">
           <template #actions>
             <BaseButton btn-type="default" @click="isOpenDependencyModal = true">Add Dependency</BaseButton>
           </template>
