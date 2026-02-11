@@ -15,7 +15,7 @@
             <Icon name="solar:document-text-line-duotone" class="w-10 h-10" />
             <h1>
               <span class="mt-1 text-xl font-semibold leading-6">
-                <span v-if="props.draftName">{{ props.draftName }}</span>
+                <span v-if="props.draftName">{{ formattedTitle }}</span>
               </span>
             </h1>
           </div>
@@ -64,6 +64,17 @@ const snackbar = useSnackbar()
 
 const isLoadingNewEmailModal = ref(false)
 const isLoadingFinishAssignmentsModal = ref(false)
+
+const formattedTitle = computed(() => {
+  if (!props.draftName) return ''
+
+  const match = props.draftName.match(/^rfc(\d+)$/i)
+  if (match) {
+    return `RFC ${match[1]}`
+  }
+
+  return props.draftName
+})
 
 // Cache API responses for slow APIs and/or APIs that don't change much
 const personsRef = ref<RpcPerson[] | undefined>(undefined)
