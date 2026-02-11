@@ -1189,6 +1189,7 @@ class MetadataValidationResults(models.Model):
 
     class Meta:
         ordering = ["-received_at"]
+        verbose_name_plural = "Metadata validation results"
         constraints = [
             models.UniqueConstraint(
                 fields=["rfc_to_be"],

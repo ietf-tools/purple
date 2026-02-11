@@ -17,6 +17,7 @@ from .models import (
     FinalApproval,
     Label,
     MailMessage,
+    MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
     RfcToBeLabel,
@@ -199,3 +200,10 @@ class MailMessageAdmin(admin.ModelAdmin):
     list_display = ["subject", "msgtype", "to", "message_id", "attempts", "sent"]
     search_fields = ["to", "cc", "subject", "message_id"]
     list_filter = ["msgtype", "sent"]
+
+
+@admin.register(MetadataValidationResults)
+class MetadataValidationResultsAdmin(admin.ModelAdmin):
+    list_display = ["rfc_to_be", "status", "received_at"]
+    list_filter = ["status"]
+    search_fields = ["rfc_to_be__rfc_number", "rfc_to_be__draft__name"]
