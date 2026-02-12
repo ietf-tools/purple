@@ -9,7 +9,7 @@
         "inputSpec": "#{cwd}/rpcapi.yaml",
         "output": "#{cwd}/openapi/rpcapi_client",
         "additionalProperties": {
-          "packageName": "purple_client",
+          "packageName": "rpcapi_client",
           "disallowAdditionalPropertiesIfNotPresent": false
         }
       },
