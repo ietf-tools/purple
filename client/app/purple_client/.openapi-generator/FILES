@@ -1,3 +1,4 @@
+.openapi-generator-ignore
 apis/PurpleApi.ts
 apis/index.ts
 docs/ActionHolder.md
