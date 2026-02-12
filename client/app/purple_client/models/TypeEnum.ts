@@ -19,8 +19,8 @@
  * @export
  */
 export const TypeEnum = {
-    success: 'success',
-    error: 'error'
+    Success: 'success',
+    Error: 'error'
 } as const;
 export type TypeEnum = typeof TypeEnum[keyof typeof TypeEnum];
 

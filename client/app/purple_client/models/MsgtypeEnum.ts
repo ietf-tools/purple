@@ -20,9 +20,9 @@
  * @export
  */
 export const MsgtypeEnum = {
-    blank: 'blank',
-    finalapproval: 'finalapproval',
-    publication: 'publication'
+    Blank: 'blank',
+    Finalapproval: 'finalapproval',
+    Publication: 'publication'
 } as const;
 export type MsgtypeEnum = typeof MsgtypeEnum[keyof typeof MsgtypeEnum];
 

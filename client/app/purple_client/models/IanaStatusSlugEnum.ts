@@ -22,11 +22,11 @@
  * @export
  */
 export const IanaStatusSlugEnum = {
-    no_actions: 'no_actions',
-    not_completed: 'not_completed',
-    completed: 'completed',
-    changes_required: 'changes_required',
-    reconciled: 'reconciled'
+    NoActions: 'no_actions',
+    NotCompleted: 'not_completed',
+    Completed: 'completed',
+    ChangesRequired: 'changes_required',
+    Reconciled: 'reconciled'
 } as const;
 export type IanaStatusSlugEnum = typeof IanaStatusSlugEnum[keyof typeof IanaStatusSlugEnum];
 

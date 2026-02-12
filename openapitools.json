@@ -9,11 +9,7 @@
         "inputSpec": "#{cwd}/rpcapi.yaml",
         "output": "#{cwd}/openapi/rpcapi_client",
         "additionalProperties": {
-          "packageName": "purple_client",
-          "supportsES6": true,
-          "useOverride": true,
-          "typescriptThreePlus": true,
-          "enumPropertyNaming": "original"
+          "packageName": "purple_client"
         }
       },
       "purple": {
@@ -24,8 +20,7 @@
           "packageName": "purple_client",
           "supportsES6": true,
           "useOverride": true,
-          "typescriptThreePlus": true,
-          "enumPropertyNaming": "original"
+          "typescriptThreePlus": true
         }
       }
     }

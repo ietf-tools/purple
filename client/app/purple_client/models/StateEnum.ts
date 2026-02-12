@@ -22,11 +22,11 @@
  * @export
  */
 export const StateEnum = {
-    assigned: 'assigned',
-    in_progress: 'in_progress',
-    done: 'done',
-    withdrawn: 'withdrawn',
-    closed_for_hold: 'closed_for_hold'
+    Assigned: 'assigned',
+    InProgress: 'in_progress',
+    Done: 'done',
+    Withdrawn: 'withdrawn',
+    ClosedForHold: 'closed_for_hold'
 } as const;
 export type StateEnum = typeof StateEnum[keyof typeof StateEnum];
 
