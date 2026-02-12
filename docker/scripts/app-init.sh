@@ -8,17 +8,6 @@ git config --global --add safe.directory /workspace
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 
-# Try to fetch datatracker API schema and build the client
-echo "Fetching datatracker API schema..."
-if wget -O rpcapi.yaml http://host.docker.internal:8000/api/schema/; then
-    echo "Building datatracker API client..."
-    client/node_modules/.bin/openapi-generator-cli generate  --generator-key datatracker # config in openapitools.json
-    /bin/cp rpcapi.yaml openapi/rpcapi_client/.rpcapi.yaml
-    BUILT_API=yes
-else
-    echo "...API schema fetch failed"
-fi
-
 # Install requirements.txt dependencies
 echo "Installing dependencies from requirements.txt..."
 pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
@@ -45,6 +34,17 @@ echo "Populating initial history..."
 
 # Collect statics
 ./manage.py collectstatic --no-input || true
+
+# Try to fetch datatracker API schema and build the client
+echo "Fetching datatracker API schema..."
+if wget -O rpcapi.yaml http://host.docker.internal:8000/api/schema/; then
+    echo "Building datatracker API client..."
+    client/node_modules/.bin/openapi-generator-cli generate  --generator-key datatracker # config in openapitools.json
+    /bin/cp rpcapi.yaml openapi/rpcapi_client/.rpcapi.yaml
+    BUILT_API=yes
+else
+    echo "...API schema fetch failed"
+fi
 
 # Django should be operational now. Build purple API client.
 ./manage.py spectacular --file purple_api.yaml && \
