@@ -50,7 +50,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
             reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
         # any related documents not received (incl. 2g/3g), return only first
         if rfc.rpcrelateddocument_set.filter(
-            relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
+            relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
         ).exists():
             if rfc.rpcrelateddocument_set.filter(
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
