@@ -12,18 +12,20 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { DatatrackerPerson } from './DatatrackerPerson';
 import {
     DatatrackerPersonFromJSON,
     DatatrackerPersonFromJSONTyped,
     DatatrackerPersonToJSON,
+    DatatrackerPersonToJSONTyped,
 } from './DatatrackerPerson';
 import type { HistoryLastEdit } from './HistoryLastEdit';
 import {
     HistoryLastEditFromJSON,
     HistoryLastEditFromJSONTyped,
     HistoryLastEditToJSON,
+    HistoryLastEditToJSONTyped,
 } from './HistoryLastEdit';
 
 /**
@@ -67,11 +69,9 @@ export interface DocumentComment {
 /**
  * Check if a given object implements the DocumentComment interface.
  */
-export function instanceOfDocumentComment(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "comment" in value;
-
-    return isInstance;
+export function instanceOfDocumentComment(value: object): value is DocumentComment {
+    if (!('comment' in value) || value['comment'] === undefined) return false;
+    return true;
 }
 
 export function DocumentCommentFromJSON(json: any): DocumentComment {
@@ -79,29 +79,31 @@ export function DocumentCommentFromJSON(json: any): DocumentComment {
 }
 
 export function DocumentCommentFromJSONTyped(json: any, ignoreDiscriminator: boolean): DocumentComment {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'comment': json['comment'],
-        'by': !exists(json, 'by') ? undefined : DatatrackerPersonFromJSON(json['by']),
-        'time': !exists(json, 'time') ? undefined : (new Date(json['time'])),
-        'lastEdit': !exists(json, 'last_edit') ? undefined : HistoryLastEditFromJSON(json['last_edit']),
+        'by': json['by'] == null ? undefined : DatatrackerPersonFromJSON(json['by']),
+        'time': json['time'] == null ? undefined : (new Date(json['time'])),
+        'lastEdit': json['last_edit'] == null ? undefined : HistoryLastEditFromJSON(json['last_edit']),
     };
 }
 
-export function DocumentCommentToJSON(value?: DocumentComment | null): any {
-    if (value === undefined) {
-        return undefined;
+export function DocumentCommentToJSON(json: any): DocumentComment {
+    return DocumentCommentToJSONTyped(json, false);
+}
+
+export function DocumentCommentToJSONTyped(value?: Omit<DocumentComment, 'id'|'by'|'time'|'last_edit'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'comment': value.comment,
+        'comment': value['comment'],
     };
 }
 

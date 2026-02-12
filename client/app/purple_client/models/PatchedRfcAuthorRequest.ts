@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,10 +42,8 @@ export interface PatchedRfcAuthorRequest {
 /**
  * Check if a given object implements the PatchedRfcAuthorRequest interface.
  */
-export function instanceOfPatchedRfcAuthorRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedRfcAuthorRequest(value: object): value is PatchedRfcAuthorRequest {
+    return true;
 }
 
 export function PatchedRfcAuthorRequestFromJSON(json: any): PatchedRfcAuthorRequest {
@@ -53,29 +51,31 @@ export function PatchedRfcAuthorRequestFromJSON(json: any): PatchedRfcAuthorRequ
 }
 
 export function PatchedRfcAuthorRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedRfcAuthorRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'titlepageName': !exists(json, 'titlepage_name') ? undefined : json['titlepage_name'],
-        'isEditor': !exists(json, 'is_editor') ? undefined : json['is_editor'],
-        'affiliation': !exists(json, 'affiliation') ? undefined : json['affiliation'],
+        'titlepageName': json['titlepage_name'] == null ? undefined : json['titlepage_name'],
+        'isEditor': json['is_editor'] == null ? undefined : json['is_editor'],
+        'affiliation': json['affiliation'] == null ? undefined : json['affiliation'],
     };
 }
 
-export function PatchedRfcAuthorRequestToJSON(value?: PatchedRfcAuthorRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedRfcAuthorRequestToJSON(json: any): PatchedRfcAuthorRequest {
+    return PatchedRfcAuthorRequestToJSONTyped(json, false);
+}
+
+export function PatchedRfcAuthorRequestToJSONTyped(value?: PatchedRfcAuthorRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'titlepage_name': value.titlepageName,
-        'is_editor': value.isEditor,
-        'affiliation': value.affiliation,
+        'titlepage_name': value['titlepageName'],
+        'is_editor': value['isEditor'],
+        'affiliation': value['affiliation'],
     };
 }
 

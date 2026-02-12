@@ -12,19 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
-import type { BaseDatatrackerPerson } from './BaseDatatrackerPerson';
-import {
-    BaseDatatrackerPersonFromJSON,
-    BaseDatatrackerPersonFromJSONTyped,
-    BaseDatatrackerPersonToJSON,
-} from './BaseDatatrackerPerson';
+import { mapValues } from '../runtime';
 import type { MinimalRfcToBe } from './MinimalRfcToBe';
 import {
     MinimalRfcToBeFromJSON,
     MinimalRfcToBeFromJSONTyped,
     MinimalRfcToBeToJSON,
+    MinimalRfcToBeToJSONTyped,
 } from './MinimalRfcToBe';
+import type { BaseDatatrackerPerson } from './BaseDatatrackerPerson';
+import {
+    BaseDatatrackerPersonFromJSON,
+    BaseDatatrackerPersonFromJSONTyped,
+    BaseDatatrackerPersonToJSON,
+    BaseDatatrackerPersonToJSONTyped,
+} from './BaseDatatrackerPerson';
 
 /**
  * Serialize final approval information for an RfcToBe
@@ -79,10 +81,8 @@ export interface FinalApproval {
 /**
  * Check if a given object implements the FinalApproval interface.
  */
-export function instanceOfFinalApproval(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfFinalApproval(value: object): value is FinalApproval {
+    return true;
 }
 
 export function FinalApprovalFromJSON(json: any): FinalApproval {
@@ -90,32 +90,34 @@ export function FinalApprovalFromJSON(json: any): FinalApproval {
 }
 
 export function FinalApprovalFromJSONTyped(json: any, ignoreDiscriminator: boolean): FinalApproval {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'rfcToBe': !exists(json, 'rfc_to_be') ? undefined : MinimalRfcToBeFromJSON(json['rfc_to_be']),
-        'requested': !exists(json, 'requested') ? undefined : (new Date(json['requested'])),
-        'approver': !exists(json, 'approver') ? undefined : BaseDatatrackerPersonFromJSON(json['approver']),
-        'approved': !exists(json, 'approved') ? undefined : (json['approved'] === null ? null : new Date(json['approved'])),
-        'overridingApprover': !exists(json, 'overriding_approver') ? undefined : BaseDatatrackerPersonFromJSON(json['overriding_approver']),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'rfcToBe': json['rfc_to_be'] == null ? undefined : MinimalRfcToBeFromJSON(json['rfc_to_be']),
+        'requested': json['requested'] == null ? undefined : (new Date(json['requested'])),
+        'approver': json['approver'] == null ? undefined : BaseDatatrackerPersonFromJSON(json['approver']),
+        'approved': json['approved'] == null ? undefined : (new Date(json['approved'])),
+        'overridingApprover': json['overriding_approver'] == null ? undefined : BaseDatatrackerPersonFromJSON(json['overriding_approver']),
+        'comment': json['comment'] == null ? undefined : json['comment'],
     };
 }
 
-export function FinalApprovalToJSON(value?: FinalApproval | null): any {
-    if (value === undefined) {
-        return undefined;
+export function FinalApprovalToJSON(json: any): FinalApproval {
+    return FinalApprovalToJSONTyped(json, false);
+}
+
+export function FinalApprovalToJSONTyped(value?: Omit<FinalApproval, 'id'|'rfc_to_be'|'requested'|'approver'|'overriding_approver'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'approved': value.approved === undefined ? undefined : (value.approved === null ? null : value.approved.toISOString()),
-        'comment': value.comment,
+        'approved': value['approved'] == null ? value['approved'] : value['approved'].toISOString(),
+        'comment': value['comment'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,12 +42,10 @@ export interface RpcRoleRequest {
 /**
  * Check if a given object implements the RpcRoleRequest interface.
  */
-export function instanceOfRpcRoleRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfRpcRoleRequest(value: object): value is RpcRoleRequest {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function RpcRoleRequestFromJSON(json: any): RpcRoleRequest {
@@ -55,29 +53,31 @@ export function RpcRoleRequestFromJSON(json: any): RpcRoleRequest {
 }
 
 export function RpcRoleRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RpcRoleRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'slug': json['slug'],
         'name': json['name'],
-        'desc': !exists(json, 'desc') ? undefined : json['desc'],
+        'desc': json['desc'] == null ? undefined : json['desc'],
     };
 }
 
-export function RpcRoleRequestToJSON(value?: RpcRoleRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RpcRoleRequestToJSON(json: any): RpcRoleRequest {
+    return RpcRoleRequestToJSONTyped(json, false);
+}
+
+export function RpcRoleRequestToJSONTyped(value?: RpcRoleRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a minimal DatatrackerPerson
  * 
@@ -57,11 +57,9 @@ export interface BaseDatatrackerPerson {
 /**
  * Check if a given object implements the BaseDatatrackerPerson interface.
  */
-export function instanceOfBaseDatatrackerPerson(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "personId" in value;
-
-    return isInstance;
+export function instanceOfBaseDatatrackerPerson(value: object): value is BaseDatatrackerPerson {
+    if (!('personId' in value) || value['personId'] === undefined) return false;
+    return true;
 }
 
 export function BaseDatatrackerPersonFromJSON(json: any): BaseDatatrackerPerson {
@@ -69,29 +67,31 @@ export function BaseDatatrackerPersonFromJSON(json: any): BaseDatatrackerPerson 
 }
 
 export function BaseDatatrackerPersonFromJSONTyped(json: any, ignoreDiscriminator: boolean): BaseDatatrackerPerson {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'personId': json['person_id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'email': !exists(json, 'email') ? undefined : json['email'],
-        'picture': !exists(json, 'picture') ? undefined : json['picture'],
-        'datatrackerUrl': !exists(json, 'datatracker_url') ? undefined : json['datatracker_url'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'email': json['email'] == null ? undefined : json['email'],
+        'picture': json['picture'] == null ? undefined : json['picture'],
+        'datatrackerUrl': json['datatracker_url'] == null ? undefined : json['datatracker_url'],
     };
 }
 
-export function BaseDatatrackerPersonToJSON(value?: BaseDatatrackerPerson | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BaseDatatrackerPersonToJSON(json: any): BaseDatatrackerPerson {
+    return BaseDatatrackerPersonToJSONTyped(json, false);
+}
+
+export function BaseDatatrackerPersonToJSONTyped(value?: Omit<BaseDatatrackerPerson, 'name'|'email'|'picture'|'datatracker_url'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'person_id': value.personId,
+        'person_id': value['personId'],
     };
 }
 

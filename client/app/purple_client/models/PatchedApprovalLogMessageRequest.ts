@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,10 +30,8 @@ export interface PatchedApprovalLogMessageRequest {
 /**
  * Check if a given object implements the PatchedApprovalLogMessageRequest interface.
  */
-export function instanceOfPatchedApprovalLogMessageRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedApprovalLogMessageRequest(value: object): value is PatchedApprovalLogMessageRequest {
+    return true;
 }
 
 export function PatchedApprovalLogMessageRequestFromJSON(json: any): PatchedApprovalLogMessageRequest {
@@ -41,25 +39,27 @@ export function PatchedApprovalLogMessageRequestFromJSON(json: any): PatchedAppr
 }
 
 export function PatchedApprovalLogMessageRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedApprovalLogMessageRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'logMessage': !exists(json, 'log_message') ? undefined : json['log_message'],
+        'logMessage': json['log_message'] == null ? undefined : json['log_message'],
     };
 }
 
-export function PatchedApprovalLogMessageRequestToJSON(value?: PatchedApprovalLogMessageRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedApprovalLogMessageRequestToJSON(json: any): PatchedApprovalLogMessageRequest {
+    return PatchedApprovalLogMessageRequestToJSONTyped(json, false);
+}
+
+export function PatchedApprovalLogMessageRequestToJSONTyped(value?: PatchedApprovalLogMessageRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'log_message': value.logMessage,
+        'log_message': value['logMessage'],
     };
 }
 

@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { RpcRelatedDocument } from './RpcRelatedDocument';
 import {
     RpcRelatedDocumentFromJSON,
     RpcRelatedDocumentFromJSONTyped,
     RpcRelatedDocumentToJSON,
+    RpcRelatedDocumentToJSONTyped,
 } from './RpcRelatedDocument';
 
 /**
@@ -67,12 +68,10 @@ export interface ClusterMember {
 /**
  * Check if a given object implements the ClusterMember interface.
  */
-export function instanceOfClusterMember(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "order" in value;
-
-    return isInstance;
+export function instanceOfClusterMember(value: object): value is ClusterMember {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('order' in value) || value['order'] === undefined) return false;
+    return true;
 }
 
 export function ClusterMemberFromJSON(json: any): ClusterMember {
@@ -80,31 +79,33 @@ export function ClusterMemberFromJSON(json: any): ClusterMember {
 }
 
 export function ClusterMemberFromJSONTyped(json: any, ignoreDiscriminator: boolean): ClusterMember {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'name': json['name'],
-        'rfcNumber': !exists(json, 'rfc_number') ? undefined : json['rfc_number'],
-        'disposition': !exists(json, 'disposition') ? undefined : json['disposition'],
-        'references': !exists(json, 'references') ? undefined : ((json['references'] as Array<any>).map(RpcRelatedDocumentFromJSON)),
-        'isReceived': !exists(json, 'is_received') ? undefined : json['is_received'],
+        'rfcNumber': json['rfc_number'] == null ? undefined : json['rfc_number'],
+        'disposition': json['disposition'] == null ? undefined : json['disposition'],
+        'references': json['references'] == null ? undefined : ((json['references'] as Array<any>).map(RpcRelatedDocumentFromJSON)),
+        'isReceived': json['is_received'] == null ? undefined : json['is_received'],
         'order': json['order'],
     };
 }
 
-export function ClusterMemberToJSON(value?: ClusterMember | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterMemberToJSON(json: any): ClusterMember {
+    return ClusterMemberToJSONTyped(json, false);
+}
+
+export function ClusterMemberToJSONTyped(value?: Omit<ClusterMember, 'rfc_number'|'disposition'|'references'|'is_received'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'name': value.name,
-        'order': value.order,
+        'name': value['name'],
+        'order': value['order'],
     };
 }
 

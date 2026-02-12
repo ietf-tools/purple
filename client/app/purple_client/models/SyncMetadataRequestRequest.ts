@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface SyncMetadataRequestRequest {
 /**
  * Check if a given object implements the SyncMetadataRequestRequest interface.
  */
-export function instanceOfSyncMetadataRequestRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "headSha" in value;
-
-    return isInstance;
+export function instanceOfSyncMetadataRequestRequest(value: object): value is SyncMetadataRequestRequest {
+    if (!('headSha' in value) || value['headSha'] === undefined) return false;
+    return true;
 }
 
 export function SyncMetadataRequestRequestFromJSON(json: any): SyncMetadataRequestRequest {
@@ -42,7 +40,7 @@ export function SyncMetadataRequestRequestFromJSON(json: any): SyncMetadataReque
 }
 
 export function SyncMetadataRequestRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): SyncMetadataRequestRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function SyncMetadataRequestRequestFromJSONTyped(json: any, ignoreDiscrim
     };
 }
 
-export function SyncMetadataRequestRequestToJSON(value?: SyncMetadataRequestRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SyncMetadataRequestRequestToJSON(json: any): SyncMetadataRequestRequest {
+    return SyncMetadataRequestRequestToJSONTyped(json, false);
+}
+
+export function SyncMetadataRequestRequestToJSONTyped(value?: SyncMetadataRequestRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'head_sha': value.headSha,
+        'head_sha': value['headSha'],
     };
 }
 

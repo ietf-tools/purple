@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -60,16 +60,14 @@ export interface MetadataTableRowValue {
 /**
  * Check if a given object implements the MetadataTableRowValue interface.
  */
-export function instanceOfMetadataTableRowValue(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "leftValue" in value;
-    isInstance = isInstance && "rightValue" in value;
-    isInstance = isInstance && "isMatch" in value;
-    isInstance = isInstance && "canAutoFix" in value;
-    isInstance = isInstance && "isError" in value;
-    isInstance = isInstance && "detail" in value;
-
-    return isInstance;
+export function instanceOfMetadataTableRowValue(value: object): value is MetadataTableRowValue {
+    if (!('leftValue' in value) || value['leftValue'] === undefined) return false;
+    if (!('rightValue' in value) || value['rightValue'] === undefined) return false;
+    if (!('isMatch' in value) || value['isMatch'] === undefined) return false;
+    if (!('canAutoFix' in value) || value['canAutoFix'] === undefined) return false;
+    if (!('isError' in value) || value['isError'] === undefined) return false;
+    if (!('detail' in value) || value['detail'] === undefined) return false;
+    return true;
 }
 
 export function MetadataTableRowValueFromJSON(json: any): MetadataTableRowValue {
@@ -77,7 +75,7 @@ export function MetadataTableRowValueFromJSON(json: any): MetadataTableRowValue 
 }
 
 export function MetadataTableRowValueFromJSONTyped(json: any, ignoreDiscriminator: boolean): MetadataTableRowValue {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -91,21 +89,23 @@ export function MetadataTableRowValueFromJSONTyped(json: any, ignoreDiscriminato
     };
 }
 
-export function MetadataTableRowValueToJSON(value?: MetadataTableRowValue | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MetadataTableRowValueToJSON(json: any): MetadataTableRowValue {
+    return MetadataTableRowValueToJSONTyped(json, false);
+}
+
+export function MetadataTableRowValueToJSONTyped(value?: MetadataTableRowValue | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'left_value': value.leftValue,
-        'right_value': value.rightValue,
-        'is_match': value.isMatch,
-        'can_auto_fix': value.canAutoFix,
-        'is_error': value.isError,
-        'detail': value.detail,
+        'left_value': value['leftValue'],
+        'right_value': value['rightValue'],
+        'is_match': value['isMatch'],
+        'can_auto_fix': value['canAutoFix'],
+        'is_error': value['isError'],
+        'detail': value['detail'],
     };
 }
 

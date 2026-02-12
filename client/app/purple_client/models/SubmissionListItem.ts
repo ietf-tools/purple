@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a submission list item
  * 
@@ -50,14 +50,12 @@ export interface SubmissionListItem {
 /**
  * Check if a given object implements the SubmissionListItem interface.
  */
-export function instanceOfSubmissionListItem(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "stream" in value;
-    isInstance = isInstance && "submitted" in value;
-
-    return isInstance;
+export function instanceOfSubmissionListItem(value: object): value is SubmissionListItem {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('stream' in value) || value['stream'] === undefined) return false;
+    if (!('submitted' in value) || value['submitted'] === undefined) return false;
+    return true;
 }
 
 export function SubmissionListItemFromJSON(json: any): SubmissionListItem {
@@ -65,7 +63,7 @@ export function SubmissionListItemFromJSON(json: any): SubmissionListItem {
 }
 
 export function SubmissionListItemFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubmissionListItem {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -77,19 +75,21 @@ export function SubmissionListItemFromJSONTyped(json: any, ignoreDiscriminator: 
     };
 }
 
-export function SubmissionListItemToJSON(value?: SubmissionListItem | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubmissionListItemToJSON(json: any): SubmissionListItem {
+    return SubmissionListItemToJSONTyped(json, false);
+}
+
+export function SubmissionListItemToJSONTyped(value?: SubmissionListItem | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'name': value.name,
-        'stream': value.stream,
-        'submitted': (value.submitted.toISOString()),
+        'id': value['id'],
+        'name': value['name'],
+        'stream': value['stream'],
+        'submitted': value['submitted'].toISOString(),
     };
 }
 

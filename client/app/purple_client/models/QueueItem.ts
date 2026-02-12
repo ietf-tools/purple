@@ -12,55 +12,63 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
-import type { ActionHolder } from './ActionHolder';
-import {
-    ActionHolderFromJSON,
-    ActionHolderFromJSONTyped,
-    ActionHolderToJSON,
-} from './ActionHolder';
+import { mapValues } from '../runtime';
 import type { Assignment } from './Assignment';
 import {
     AssignmentFromJSON,
     AssignmentFromJSONTyped,
     AssignmentToJSON,
+    AssignmentToJSONTyped,
 } from './Assignment';
-import type { FinalApproval } from './FinalApproval';
+import type { ActionHolder } from './ActionHolder';
 import {
-    FinalApprovalFromJSON,
-    FinalApprovalFromJSONTyped,
-    FinalApprovalToJSON,
-} from './FinalApproval';
+    ActionHolderFromJSON,
+    ActionHolderFromJSONTyped,
+    ActionHolderToJSON,
+    ActionHolderToJSONTyped,
+} from './ActionHolder';
 import type { IanaStatus } from './IanaStatus';
 import {
     IanaStatusFromJSON,
     IanaStatusFromJSONTyped,
     IanaStatusToJSON,
+    IanaStatusToJSONTyped,
 } from './IanaStatus';
 import type { Label } from './Label';
 import {
     LabelFromJSON,
     LabelFromJSONTyped,
     LabelToJSON,
+    LabelToJSONTyped,
 } from './Label';
+import type { SimpleCluster } from './SimpleCluster';
+import {
+    SimpleClusterFromJSON,
+    SimpleClusterFromJSONTyped,
+    SimpleClusterToJSON,
+    SimpleClusterToJSONTyped,
+} from './SimpleCluster';
 import type { RfcToBeBlockingReason } from './RfcToBeBlockingReason';
 import {
     RfcToBeBlockingReasonFromJSON,
     RfcToBeBlockingReasonFromJSONTyped,
     RfcToBeBlockingReasonToJSON,
+    RfcToBeBlockingReasonToJSONTyped,
 } from './RfcToBeBlockingReason';
 import type { RpcRole } from './RpcRole';
 import {
     RpcRoleFromJSON,
     RpcRoleFromJSONTyped,
     RpcRoleToJSON,
+    RpcRoleToJSONTyped,
 } from './RpcRole';
-import type { SimpleCluster } from './SimpleCluster';
+import type { FinalApproval } from './FinalApproval';
 import {
-    SimpleClusterFromJSON,
-    SimpleClusterFromJSONTyped,
-    SimpleClusterToJSON,
-} from './SimpleCluster';
+    FinalApprovalFromJSON,
+    FinalApprovalFromJSONTyped,
+    FinalApprovalToJSON,
+    FinalApprovalToJSONTyped,
+} from './FinalApproval';
 
 /**
  * RfcToBe serializer suitable for displaying a queue of many
@@ -181,13 +189,11 @@ export interface QueueItem {
 /**
  * Check if a given object implements the QueueItem interface.
  */
-export function instanceOfQueueItem(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "title" in value;
-    isInstance = isInstance && "draftUrl" in value;
-    isInstance = isInstance && "disposition" in value;
-
-    return isInstance;
+export function instanceOfQueueItem(value: object): value is QueueItem {
+    if (!('title' in value) || value['title'] === undefined) return false;
+    if (!('draftUrl' in value) || value['draftUrl'] === undefined) return false;
+    if (!('disposition' in value) || value['disposition'] === undefined) return false;
+    return true;
 }
 
 export function QueueItemFromJSON(json: any): QueueItem {
@@ -195,47 +201,49 @@ export function QueueItemFromJSON(json: any): QueueItem {
 }
 
 export function QueueItemFromJSONTyped(json: any, ignoreDiscriminator: boolean): QueueItem {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'] == null ? undefined : json['name'],
         'title': json['title'],
         'draftUrl': json['draft_url'],
         'disposition': json['disposition'],
-        'externalDeadline': !exists(json, 'external_deadline') ? undefined : (json['external_deadline'] === null ? null : new Date(json['external_deadline'])),
-        'internalGoal': !exists(json, 'internal_goal') ? undefined : (json['internal_goal'] === null ? null : new Date(json['internal_goal'])),
-        'labels': !exists(json, 'labels') ? undefined : ((json['labels'] as Array<any>).map(LabelFromJSON)),
-        'cluster': !exists(json, 'cluster') ? undefined : SimpleClusterFromJSON(json['cluster']),
-        'assignmentSet': !exists(json, 'assignment_set') ? undefined : ((json['assignment_set'] as Array<any>).map(AssignmentFromJSON)),
-        'actionholderSet': !exists(json, 'actionholder_set') ? undefined : ((json['actionholder_set'] as Array<any>).map(ActionHolderFromJSON)),
-        'pendingActivities': !exists(json, 'pending_activities') ? undefined : ((json['pending_activities'] as Array<any>).map(RpcRoleFromJSON)),
-        'rfcNumber': !exists(json, 'rfc_number') ? undefined : json['rfc_number'],
-        'pages': !exists(json, 'pages') ? undefined : json['pages'],
-        'enqueuedAt': !exists(json, 'enqueued_at') ? undefined : (new Date(json['enqueued_at'])),
-        'finalApproval': !exists(json, 'final_approval') ? undefined : ((json['final_approval'] as Array<any>).map(FinalApprovalFromJSON)),
-        'ianaStatus': !exists(json, 'iana_status') ? undefined : IanaStatusFromJSON(json['iana_status']),
-        'blockingReasons': !exists(json, 'blocking_reasons') ? undefined : ((json['blocking_reasons'] as Array<any>).map(RfcToBeBlockingReasonFromJSON)),
+        'externalDeadline': json['external_deadline'] == null ? undefined : (new Date(json['external_deadline'])),
+        'internalGoal': json['internal_goal'] == null ? undefined : (new Date(json['internal_goal'])),
+        'labels': json['labels'] == null ? undefined : ((json['labels'] as Array<any>).map(LabelFromJSON)),
+        'cluster': json['cluster'] == null ? undefined : SimpleClusterFromJSON(json['cluster']),
+        'assignmentSet': json['assignment_set'] == null ? undefined : ((json['assignment_set'] as Array<any>).map(AssignmentFromJSON)),
+        'actionholderSet': json['actionholder_set'] == null ? undefined : ((json['actionholder_set'] as Array<any>).map(ActionHolderFromJSON)),
+        'pendingActivities': json['pending_activities'] == null ? undefined : ((json['pending_activities'] as Array<any>).map(RpcRoleFromJSON)),
+        'rfcNumber': json['rfc_number'] == null ? undefined : json['rfc_number'],
+        'pages': json['pages'] == null ? undefined : json['pages'],
+        'enqueuedAt': json['enqueued_at'] == null ? undefined : (new Date(json['enqueued_at'])),
+        'finalApproval': json['final_approval'] == null ? undefined : ((json['final_approval'] as Array<any>).map(FinalApprovalFromJSON)),
+        'ianaStatus': json['iana_status'] == null ? undefined : IanaStatusFromJSON(json['iana_status']),
+        'blockingReasons': json['blocking_reasons'] == null ? undefined : ((json['blocking_reasons'] as Array<any>).map(RfcToBeBlockingReasonFromJSON)),
     };
 }
 
-export function QueueItemToJSON(value?: QueueItem | null): any {
-    if (value === undefined) {
-        return undefined;
+export function QueueItemToJSON(json: any): QueueItem {
+    return QueueItemToJSONTyped(json, false);
+}
+
+export function QueueItemToJSONTyped(value?: Omit<QueueItem, 'id'|'name'|'labels'|'cluster'|'assignment_set'|'actionholder_set'|'pending_activities'|'pages'|'enqueued_at'|'final_approval'|'iana_status'|'blocking_reasons'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'title': value.title,
-        'draft_url': value.draftUrl,
-        'disposition': value.disposition,
-        'external_deadline': value.externalDeadline === undefined ? undefined : (value.externalDeadline === null ? null : value.externalDeadline.toISOString()),
-        'internal_goal': value.internalGoal === undefined ? undefined : (value.internalGoal === null ? null : value.internalGoal.toISOString()),
-        'rfc_number': value.rfcNumber,
+        'title': value['title'],
+        'draft_url': value['draftUrl'],
+        'disposition': value['disposition'],
+        'external_deadline': value['externalDeadline'] == null ? value['externalDeadline'] : value['externalDeadline'].toISOString(),
+        'internal_goal': value['internalGoal'] == null ? value['internalGoal'] : value['internalGoal'].toISOString(),
+        'rfc_number': value['rfcNumber'],
     };
 }
 

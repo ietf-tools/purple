@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { LabelStat } from './LabelStat';
 import {
     LabelStatFromJSON,
     LabelStatFromJSONTyped,
     LabelStatToJSON,
+    LabelStatToJSONTyped,
 } from './LabelStat';
 
 /**
@@ -37,11 +38,9 @@ export interface LabelStats {
 /**
  * Check if a given object implements the LabelStats interface.
  */
-export function instanceOfLabelStats(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "labelStats" in value;
-
-    return isInstance;
+export function instanceOfLabelStats(value: object): value is LabelStats {
+    if (!('labelStats' in value) || value['labelStats'] === undefined) return false;
+    return true;
 }
 
 export function LabelStatsFromJSON(json: any): LabelStats {
@@ -49,7 +48,7 @@ export function LabelStatsFromJSON(json: any): LabelStats {
 }
 
 export function LabelStatsFromJSONTyped(json: any, ignoreDiscriminator: boolean): LabelStats {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -58,16 +57,18 @@ export function LabelStatsFromJSONTyped(json: any, ignoreDiscriminator: boolean)
     };
 }
 
-export function LabelStatsToJSON(value?: LabelStats | null): any {
-    if (value === undefined) {
-        return undefined;
+export function LabelStatsToJSON(json: any): LabelStats {
+    return LabelStatsToJSONTyped(json, false);
+}
+
+export function LabelStatsToJSONTyped(value?: LabelStats | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'label_stats': ((value.labelStats as Array<any>).map(LabelStatToJSON)),
+        'label_stats': ((value['labelStats'] as Array<any>).map(LabelStatToJSON)),
     };
 }
 

@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { ClusterMember } from './ClusterMember';
 import {
     ClusterMemberFromJSON,
     ClusterMemberFromJSONTyped,
     ClusterMemberToJSON,
+    ClusterMemberToJSONTyped,
 } from './ClusterMember';
 
 /**
@@ -54,11 +55,9 @@ export interface Cluster {
 /**
  * Check if a given object implements the Cluster interface.
  */
-export function instanceOfCluster(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfCluster(value: object): value is Cluster {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function ClusterFromJSON(json: any): Cluster {
@@ -66,27 +65,29 @@ export function ClusterFromJSON(json: any): Cluster {
 }
 
 export function ClusterFromJSONTyped(json: any, ignoreDiscriminator: boolean): Cluster {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'number': json['number'],
-        'documents': !exists(json, 'documents') ? undefined : ((json['documents'] as Array<any>).map(ClusterMemberFromJSON)),
-        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
+        'documents': json['documents'] == null ? undefined : ((json['documents'] as Array<any>).map(ClusterMemberFromJSON)),
+        'isActive': json['is_active'] == null ? undefined : json['is_active'],
     };
 }
 
-export function ClusterToJSON(value?: Cluster | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterToJSON(json: any): Cluster {
+    return ClusterToJSONTyped(json, false);
+}
+
+export function ClusterToJSONTyped(value?: Omit<Cluster, 'documents'|'is_active'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
+        'number': value['number'],
     };
 }
 

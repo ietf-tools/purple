@@ -707,8 +707,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/pubq/clusters/`;
+
         const response = await this.request({
-            path: `/api/pubq/clusters/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -727,16 +730,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async apiPubqClustersRetrieveRaw(requestParameters: ApiPubqClustersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling apiPubqClustersRetrieve.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling apiPubqClustersRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/pubq/clusters/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/pubq/clusters/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -758,18 +768,21 @@ export class PurpleApi extends runtime.BaseAPI {
     async apiPubqQueueListRaw(requestParameters: ApiPubqQueueListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<PublicQueueItem>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.disposition !== undefined) {
-            queryParameters['disposition'] = requestParameters.disposition;
+        if (requestParameters['disposition'] != null) {
+            queryParameters['disposition'] = requestParameters['disposition'];
         }
 
-        if (requestParameters.pendingFinalApproval !== undefined) {
-            queryParameters['pending_final_approval'] = requestParameters.pendingFinalApproval;
+        if (requestParameters['pendingFinalApproval'] != null) {
+            queryParameters['pending_final_approval'] = requestParameters['pendingFinalApproval'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/pubq/queue/`;
+
         const response = await this.request({
-            path: `/api/pubq/queue/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -789,8 +802,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async assignmentsCreateRaw(requestParameters: AssignmentsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Assignment>> {
-        if (requestParameters.assignmentRequest === null || requestParameters.assignmentRequest === undefined) {
-            throw new runtime.RequiredError('assignmentRequest','Required parameter requestParameters.assignmentRequest was null or undefined when calling assignmentsCreate.');
+        if (requestParameters['assignmentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'assignmentRequest',
+                'Required parameter "assignmentRequest" was null or undefined when calling assignmentsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -799,12 +815,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/assignments/`;
+
         const response = await this.request({
-            path: `/api/rpc/assignments/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: AssignmentRequestToJSON(requestParameters.assignmentRequest),
+            body: AssignmentRequestToJSON(requestParameters['assignmentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => AssignmentFromJSON(jsonValue));
@@ -820,16 +839,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async assignmentsDestroyRaw(requestParameters: AssignmentsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling assignmentsDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling assignmentsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/assignments/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/assignments/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -849,14 +875,17 @@ export class PurpleApi extends runtime.BaseAPI {
     async assignmentsListRaw(requestParameters: AssignmentsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Assignment>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.ordering !== undefined) {
-            queryParameters['ordering'] = requestParameters.ordering;
+        if (requestParameters['ordering'] != null) {
+            queryParameters['ordering'] = requestParameters['ordering'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/assignments/`;
+
         const response = await this.request({
-            path: `/api/rpc/assignments/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -875,8 +904,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async assignmentsPartialUpdateRaw(requestParameters: AssignmentsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Assignment>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling assignmentsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling assignmentsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -885,12 +917,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/assignments/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/assignments/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedAssignmentRequestToJSON(requestParameters.patchedAssignmentRequest),
+            body: PatchedAssignmentRequestToJSON(requestParameters['patchedAssignmentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => AssignmentFromJSON(jsonValue));
@@ -906,16 +942,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async assignmentsRetrieveRaw(requestParameters: AssignmentsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Assignment>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling assignmentsRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling assignmentsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/assignments/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/assignments/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -934,12 +977,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async assignmentsUpdateRaw(requestParameters: AssignmentsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Assignment>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling assignmentsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling assignmentsUpdate().'
+            );
         }
 
-        if (requestParameters.assignmentRequest === null || requestParameters.assignmentRequest === undefined) {
-            throw new runtime.RequiredError('assignmentRequest','Required parameter requestParameters.assignmentRequest was null or undefined when calling assignmentsUpdate.');
+        if (requestParameters['assignmentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'assignmentRequest',
+                'Required parameter "assignmentRequest" was null or undefined when calling assignmentsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -948,12 +997,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/assignments/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/assignments/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: AssignmentRequestToJSON(requestParameters.assignmentRequest),
+            body: AssignmentRequestToJSON(requestParameters['assignmentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => AssignmentFromJSON(jsonValue));
@@ -973,8 +1026,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/capabilities/`;
+
         const response = await this.request({
-            path: `/api/rpc/capabilities/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -993,16 +1049,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async capabilitiesRetrieveRaw(requestParameters: CapabilitiesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Capability>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling capabilitiesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling capabilitiesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/capabilities/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/capabilities/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1022,12 +1085,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * Add a document to a cluster
      */
     async clustersAddDocumentRaw(requestParameters: ClustersAddDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersAddDocument.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersAddDocument().'
+            );
         }
 
-        if (requestParameters.clusterAddRemoveDocumentRequest === null || requestParameters.clusterAddRemoveDocumentRequest === undefined) {
-            throw new runtime.RequiredError('clusterAddRemoveDocumentRequest','Required parameter requestParameters.clusterAddRemoveDocumentRequest was null or undefined when calling clustersAddDocument.');
+        if (requestParameters['clusterAddRemoveDocumentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'clusterAddRemoveDocumentRequest',
+                'Required parameter "clusterAddRemoveDocumentRequest" was null or undefined when calling clustersAddDocument().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1036,12 +1105,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/{number}/add-document/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/add-document/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ClusterAddRemoveDocumentRequestToJSON(requestParameters.clusterAddRemoveDocumentRequest),
+            body: ClusterAddRemoveDocumentRequestToJSON(requestParameters['clusterAddRemoveDocumentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1058,8 +1131,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async clustersCreateRaw(requestParameters: ClustersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.clusterRequest === null || requestParameters.clusterRequest === undefined) {
-            throw new runtime.RequiredError('clusterRequest','Required parameter requestParameters.clusterRequest was null or undefined when calling clustersCreate.');
+        if (requestParameters['clusterRequest'] == null) {
+            throw new runtime.RequiredError(
+                'clusterRequest',
+                'Required parameter "clusterRequest" was null or undefined when calling clustersCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1068,12 +1144,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/`;
+
         const response = await this.request({
-            path: `/api/rpc/clusters/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ClusterRequestToJSON(requestParameters.clusterRequest),
+            body: ClusterRequestToJSON(requestParameters['clusterRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1091,18 +1170,21 @@ export class PurpleApi extends runtime.BaseAPI {
     async clustersListRaw(requestParameters: ClustersListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<Cluster>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.isActive !== undefined) {
-            queryParameters['is_active'] = requestParameters.isActive;
+        if (requestParameters['isActive'] != null) {
+            queryParameters['is_active'] = requestParameters['isActive'];
         }
 
-        if (requestParameters.ordering !== undefined) {
-            queryParameters['ordering'] = requestParameters.ordering;
+        if (requestParameters['ordering'] != null) {
+            queryParameters['ordering'] = requestParameters['ordering'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/clusters/`;
+
         const response = await this.request({
-            path: `/api/rpc/clusters/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1121,8 +1203,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async clustersPartialUpdateRaw(requestParameters: ClustersPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersPartialUpdate.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1131,12 +1216,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedClusterRequestToJSON(requestParameters.patchedClusterRequest),
+            body: PatchedClusterRequestToJSON(requestParameters['patchedClusterRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1153,12 +1242,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * Remove a document from a cluster
      */
     async clustersRemoveDocumentRaw(requestParameters: ClustersRemoveDocumentRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersRemoveDocument.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersRemoveDocument().'
+            );
         }
 
-        if (requestParameters.clusterAddRemoveDocumentRequest === null || requestParameters.clusterAddRemoveDocumentRequest === undefined) {
-            throw new runtime.RequiredError('clusterAddRemoveDocumentRequest','Required parameter requestParameters.clusterAddRemoveDocumentRequest was null or undefined when calling clustersRemoveDocument.');
+        if (requestParameters['clusterAddRemoveDocumentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'clusterAddRemoveDocumentRequest',
+                'Required parameter "clusterAddRemoveDocumentRequest" was null or undefined when calling clustersRemoveDocument().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1167,12 +1262,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/{number}/remove-document/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/remove-document/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ClusterAddRemoveDocumentRequestToJSON(requestParameters.clusterAddRemoveDocumentRequest),
+            body: ClusterAddRemoveDocumentRequestToJSON(requestParameters['clusterAddRemoveDocumentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1190,12 +1289,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * Reorder documents in a cluster
      */
     async clustersReorderDocumentsRaw(requestParameters: ClustersReorderDocumentsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersReorderDocuments.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersReorderDocuments().'
+            );
         }
 
-        if (requestParameters.clusterReorderDocumentsRequest === null || requestParameters.clusterReorderDocumentsRequest === undefined) {
-            throw new runtime.RequiredError('clusterReorderDocumentsRequest','Required parameter requestParameters.clusterReorderDocumentsRequest was null or undefined when calling clustersReorderDocuments.');
+        if (requestParameters['clusterReorderDocumentsRequest'] == null) {
+            throw new runtime.RequiredError(
+                'clusterReorderDocumentsRequest',
+                'Required parameter "clusterReorderDocumentsRequest" was null or undefined when calling clustersReorderDocuments().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1204,12 +1309,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/{number}/order/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/order/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ClusterReorderDocumentsRequestToJSON(requestParameters.clusterReorderDocumentsRequest),
+            body: ClusterReorderDocumentsRequestToJSON(requestParameters['clusterReorderDocumentsRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1226,16 +1335,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async clustersRetrieveRaw(requestParameters: ClustersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersRetrieve.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/clusters/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1254,12 +1370,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async clustersUpdateRaw(requestParameters: ClustersUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Cluster>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling clustersUpdate.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling clustersUpdate().'
+            );
         }
 
-        if (requestParameters.clusterRequest === null || requestParameters.clusterRequest === undefined) {
-            throw new runtime.RequiredError('clusterRequest','Required parameter requestParameters.clusterRequest was null or undefined when calling clustersUpdate.');
+        if (requestParameters['clusterRequest'] == null) {
+            throw new runtime.RequiredError(
+                'clusterRequest',
+                'Required parameter "clusterRequest" was null or undefined when calling clustersUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1268,12 +1390,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/clusters/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/clusters/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: ClusterRequestToJSON(requestParameters.clusterRequest),
+            body: ClusterRequestToJSON(requestParameters['clusterRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ClusterFromJSON(jsonValue));
@@ -1293,8 +1419,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/doc_relationship_names/`;
+
         const response = await this.request({
-            path: `/api/rpc/doc_relationship_names/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1313,16 +1442,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async docRelationshipNamesRetrieveRaw(requestParameters: DocRelationshipNamesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Name>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling docRelationshipNamesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling docRelationshipNamesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/doc_relationship_names/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/doc_relationship_names/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1341,12 +1477,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentMailSendRaw(requestParameters: DocumentMailSendRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MailResponse>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentMailSend.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentMailSend().'
+            );
         }
 
-        if (requestParameters.mailMessageRequest === null || requestParameters.mailMessageRequest === undefined) {
-            throw new runtime.RequiredError('mailMessageRequest','Required parameter requestParameters.mailMessageRequest was null or undefined when calling documentMailSend.');
+        if (requestParameters['mailMessageRequest'] == null) {
+            throw new runtime.RequiredError(
+                'mailMessageRequest',
+                'Required parameter "mailMessageRequest" was null or undefined when calling documentMailSend().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1355,12 +1497,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/mail`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/mail`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: MailMessageRequestToJSON(requestParameters.mailMessageRequest),
+            body: MailMessageRequestToJSON(requestParameters['mailMessageRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => MailResponseFromJSON(jsonValue));
@@ -1377,16 +1523,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for ActionHolder entries related to a draft
      */
     async documentsActionHoldersListRaw(requestParameters: DocumentsActionHoldersListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ActionHolder>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsActionHoldersList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsActionHoldersList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/action_holders/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/action_holders/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1407,12 +1560,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for ActionHolder entries related to a draft
      */
     async documentsActionHoldersPartialUpdateRaw(requestParameters: DocumentsActionHoldersPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ActionHolder>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsActionHoldersPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsActionHoldersPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsActionHoldersPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsActionHoldersPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1421,12 +1580,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/action_holders/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/action_holders/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedActionHolderRequestToJSON(requestParameters.patchedActionHolderRequest),
+            body: PatchedActionHolderRequestToJSON(requestParameters['patchedActionHolderRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ActionHolderFromJSON(jsonValue));
@@ -1444,20 +1608,31 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for ActionHolder entries related to a draft
      */
     async documentsActionHoldersRetrieveRaw(requestParameters: DocumentsActionHoldersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ActionHolder>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsActionHoldersRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsActionHoldersRetrieve().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsActionHoldersRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsActionHoldersRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/action_holders/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/action_holders/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1478,12 +1653,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for ActionHolder entries related to a draft
      */
     async documentsActionHoldersUpdateRaw(requestParameters: DocumentsActionHoldersUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ActionHolder>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsActionHoldersUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsActionHoldersUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsActionHoldersUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsActionHoldersUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1492,12 +1673,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/action_holders/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/action_holders/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: ActionHolderRequestToJSON(requestParameters.actionHolderRequest),
+            body: ActionHolderRequestToJSON(requestParameters['actionHolderRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ActionHolderFromJSON(jsonValue));
@@ -1514,12 +1700,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsCreateRaw(requestParameters: DocumentsApprovalLogsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApprovalLogMessage>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsCreate().'
+            );
         }
 
-        if (requestParameters.approvalLogMessageRequest === null || requestParameters.approvalLogMessageRequest === undefined) {
-            throw new runtime.RequiredError('approvalLogMessageRequest','Required parameter requestParameters.approvalLogMessageRequest was null or undefined when calling documentsApprovalLogsCreate.');
+        if (requestParameters['approvalLogMessageRequest'] == null) {
+            throw new runtime.RequiredError(
+                'approvalLogMessageRequest',
+                'Required parameter "approvalLogMessageRequest" was null or undefined when calling documentsApprovalLogsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1528,12 +1720,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: ApprovalLogMessageRequestToJSON(requestParameters.approvalLogMessageRequest),
+            body: ApprovalLogMessageRequestToJSON(requestParameters['approvalLogMessageRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ApprovalLogMessageFromJSON(jsonValue));
@@ -1549,20 +1745,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsDestroyRaw(requestParameters: DocumentsApprovalLogsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsDestroy().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsApprovalLogsDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsApprovalLogsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -1580,16 +1787,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsListRaw(requestParameters: DocumentsApprovalLogsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<ApprovalLogMessage>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1608,12 +1822,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsPartialUpdateRaw(requestParameters: DocumentsApprovalLogsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApprovalLogMessage>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsApprovalLogsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsApprovalLogsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1622,12 +1842,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedApprovalLogMessageRequestToJSON(requestParameters.patchedApprovalLogMessageRequest),
+            body: PatchedApprovalLogMessageRequestToJSON(requestParameters['patchedApprovalLogMessageRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ApprovalLogMessageFromJSON(jsonValue));
@@ -1643,20 +1868,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsRetrieveRaw(requestParameters: DocumentsApprovalLogsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApprovalLogMessage>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsRetrieve().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsApprovalLogsRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsApprovalLogsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1675,16 +1911,25 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsApprovalLogsUpdateRaw(requestParameters: DocumentsApprovalLogsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<ApprovalLogMessage>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsApprovalLogsUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsApprovalLogsUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsApprovalLogsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsApprovalLogsUpdate().'
+            );
         }
 
-        if (requestParameters.approvalLogMessageRequest === null || requestParameters.approvalLogMessageRequest === undefined) {
-            throw new runtime.RequiredError('approvalLogMessageRequest','Required parameter requestParameters.approvalLogMessageRequest was null or undefined when calling documentsApprovalLogsUpdate.');
+        if (requestParameters['approvalLogMessageRequest'] == null) {
+            throw new runtime.RequiredError(
+                'approvalLogMessageRequest',
+                'Required parameter "approvalLogMessageRequest" was null or undefined when calling documentsApprovalLogsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1693,12 +1938,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/approval_logs/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/approval_logs/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: ApprovalLogMessageRequestToJSON(requestParameters.approvalLogMessageRequest),
+            body: ApprovalLogMessageRequestToJSON(requestParameters['approvalLogMessageRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => ApprovalLogMessageFromJSON(jsonValue));
@@ -1714,12 +1964,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsCreateRaw(requestParameters: DocumentsAuthorsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CreateRfcAuthor>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsCreate().'
+            );
         }
 
-        if (requestParameters.createRfcAuthorRequest === null || requestParameters.createRfcAuthorRequest === undefined) {
-            throw new runtime.RequiredError('createRfcAuthorRequest','Required parameter requestParameters.createRfcAuthorRequest was null or undefined when calling documentsAuthorsCreate.');
+        if (requestParameters['createRfcAuthorRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createRfcAuthorRequest',
+                'Required parameter "createRfcAuthorRequest" was null or undefined when calling documentsAuthorsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1728,12 +1984,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CreateRfcAuthorRequestToJSON(requestParameters.createRfcAuthorRequest),
+            body: CreateRfcAuthorRequestToJSON(requestParameters['createRfcAuthorRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CreateRfcAuthorFromJSON(jsonValue));
@@ -1749,20 +2009,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsDestroyRaw(requestParameters: DocumentsAuthorsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsDestroy().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsAuthorsDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsAuthorsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -1780,16 +2051,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsListRaw(requestParameters: DocumentsAuthorsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RfcAuthor>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1808,12 +2086,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsOrderRaw(requestParameters: DocumentsAuthorsOrderRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<AuthorOrderStatus>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsOrder.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsOrder().'
+            );
         }
 
-        if (requestParameters.authorOrderRequest === null || requestParameters.authorOrderRequest === undefined) {
-            throw new runtime.RequiredError('authorOrderRequest','Required parameter requestParameters.authorOrderRequest was null or undefined when calling documentsAuthorsOrder.');
+        if (requestParameters['authorOrderRequest'] == null) {
+            throw new runtime.RequiredError(
+                'authorOrderRequest',
+                'Required parameter "authorOrderRequest" was null or undefined when calling documentsAuthorsOrder().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1822,12 +2106,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/order/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/order/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: AuthorOrderRequestToJSON(requestParameters.authorOrderRequest),
+            body: AuthorOrderRequestToJSON(requestParameters['authorOrderRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => AuthorOrderStatusFromJSON(jsonValue));
@@ -1843,12 +2131,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsPartialUpdateRaw(requestParameters: DocumentsAuthorsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcAuthor>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsAuthorsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsAuthorsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1857,12 +2151,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedRfcAuthorRequestToJSON(requestParameters.patchedRfcAuthorRequest),
+            body: PatchedRfcAuthorRequestToJSON(requestParameters['patchedRfcAuthorRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcAuthorFromJSON(jsonValue));
@@ -1878,20 +2177,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsRetrieveRaw(requestParameters: DocumentsAuthorsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcAuthor>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsRetrieve().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsAuthorsRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsAuthorsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -1910,16 +2220,25 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsAuthorsUpdateRaw(requestParameters: DocumentsAuthorsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcAuthor>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsAuthorsUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsAuthorsUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsAuthorsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsAuthorsUpdate().'
+            );
         }
 
-        if (requestParameters.rfcAuthorRequest === null || requestParameters.rfcAuthorRequest === undefined) {
-            throw new runtime.RequiredError('rfcAuthorRequest','Required parameter requestParameters.rfcAuthorRequest was null or undefined when calling documentsAuthorsUpdate.');
+        if (requestParameters['rfcAuthorRequest'] == null) {
+            throw new runtime.RequiredError(
+                'rfcAuthorRequest',
+                'Required parameter "rfcAuthorRequest" was null or undefined when calling documentsAuthorsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1928,12 +2247,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/authors/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/authors/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: RfcAuthorRequestToJSON(requestParameters.rfcAuthorRequest),
+            body: RfcAuthorRequestToJSON(requestParameters['rfcAuthorRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcAuthorFromJSON(jsonValue));
@@ -1950,12 +2274,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for comments on an RfcToBe or datatracker Document
      */
     async documentsCommentsCreateRaw(requestParameters: DocumentsCommentsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DocumentComment>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsCommentsCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsCommentsCreate().'
+            );
         }
 
-        if (requestParameters.documentCommentRequest === null || requestParameters.documentCommentRequest === undefined) {
-            throw new runtime.RequiredError('documentCommentRequest','Required parameter requestParameters.documentCommentRequest was null or undefined when calling documentsCommentsCreate.');
+        if (requestParameters['documentCommentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'documentCommentRequest',
+                'Required parameter "documentCommentRequest" was null or undefined when calling documentsCommentsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -1964,12 +2294,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/comments/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/comments/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: DocumentCommentRequestToJSON(requestParameters.documentCommentRequest),
+            body: DocumentCommentRequestToJSON(requestParameters['documentCommentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => DocumentCommentFromJSON(jsonValue));
@@ -1987,24 +2321,31 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for comments on an RfcToBe or datatracker Document
      */
     async documentsCommentsListRaw(requestParameters: DocumentsCommentsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedDocumentCommentList>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsCommentsList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsCommentsList().'
+            );
         }
 
         const queryParameters: any = {};
 
-        if (requestParameters.limit !== undefined) {
-            queryParameters['limit'] = requestParameters.limit;
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
-        if (requestParameters.offset !== undefined) {
-            queryParameters['offset'] = requestParameters.offset;
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/comments/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/comments/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2025,12 +2366,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for comments on an RfcToBe or datatracker Document
      */
     async documentsCommentsPartialUpdateRaw(requestParameters: DocumentsCommentsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DocumentComment>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsCommentsPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsCommentsPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsCommentsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsCommentsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2039,12 +2386,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/comments/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/comments/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedDocumentCommentRequestToJSON(requestParameters.patchedDocumentCommentRequest),
+            body: PatchedDocumentCommentRequestToJSON(requestParameters['patchedDocumentCommentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => DocumentCommentFromJSON(jsonValue));
@@ -2062,16 +2414,25 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for comments on an RfcToBe or datatracker Document
      */
     async documentsCommentsUpdateRaw(requestParameters: DocumentsCommentsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<DocumentComment>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsCommentsUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsCommentsUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsCommentsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsCommentsUpdate().'
+            );
         }
 
-        if (requestParameters.documentCommentRequest === null || requestParameters.documentCommentRequest === undefined) {
-            throw new runtime.RequiredError('documentCommentRequest','Required parameter requestParameters.documentCommentRequest was null or undefined when calling documentsCommentsUpdate.');
+        if (requestParameters['documentCommentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'documentCommentRequest',
+                'Required parameter "documentCommentRequest" was null or undefined when calling documentsCommentsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2080,12 +2441,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/comments/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/comments/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: DocumentCommentRequestToJSON(requestParameters.documentCommentRequest),
+            body: DocumentCommentRequestToJSON(requestParameters['documentCommentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => DocumentCommentFromJSON(jsonValue));
@@ -2102,8 +2468,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsCreateRaw(requestParameters: DocumentsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcToBe>> {
-        if (requestParameters.rfcToBeRequest === null || requestParameters.rfcToBeRequest === undefined) {
-            throw new runtime.RequiredError('rfcToBeRequest','Required parameter requestParameters.rfcToBeRequest was null or undefined when calling documentsCreate.');
+        if (requestParameters['rfcToBeRequest'] == null) {
+            throw new runtime.RequiredError(
+                'rfcToBeRequest',
+                'Required parameter "rfcToBeRequest" was null or undefined when calling documentsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2112,12 +2481,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/`;
+
         const response = await this.request({
-            path: `/api/rpc/documents/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: RfcToBeRequestToJSON(requestParameters.rfcToBeRequest),
+            body: RfcToBeRequestToJSON(requestParameters['rfcToBeRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcToBeFromJSON(jsonValue));
@@ -2133,16 +2505,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsDestroyRaw(requestParameters: DocumentsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2160,12 +2539,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsCreateRaw(requestParameters: DocumentsFinalApprovalsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<CreateFinalApproval>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsCreate().'
+            );
         }
 
-        if (requestParameters.createFinalApprovalRequest === null || requestParameters.createFinalApprovalRequest === undefined) {
-            throw new runtime.RequiredError('createFinalApprovalRequest','Required parameter requestParameters.createFinalApprovalRequest was null or undefined when calling documentsFinalApprovalsCreate.');
+        if (requestParameters['createFinalApprovalRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createFinalApprovalRequest',
+                'Required parameter "createFinalApprovalRequest" was null or undefined when calling documentsFinalApprovalsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2174,12 +2559,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CreateFinalApprovalRequestToJSON(requestParameters.createFinalApprovalRequest),
+            body: CreateFinalApprovalRequestToJSON(requestParameters['createFinalApprovalRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => CreateFinalApprovalFromJSON(jsonValue));
@@ -2195,20 +2584,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsDestroyRaw(requestParameters: DocumentsFinalApprovalsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsDestroy().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsFinalApprovalsDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsFinalApprovalsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2226,24 +2626,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsListRaw(requestParameters: DocumentsFinalApprovalsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<FinalApproval>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsList().'
+            );
         }
 
         const queryParameters: any = {};
 
-        if (requestParameters.approverDatatrackerId !== undefined) {
-            queryParameters['approver__datatracker_id'] = requestParameters.approverDatatrackerId;
+        if (requestParameters['approverDatatrackerId'] != null) {
+            queryParameters['approver__datatracker_id'] = requestParameters['approverDatatrackerId'];
         }
 
-        if (requestParameters.rfcToBeRfcNumber !== undefined) {
-            queryParameters['rfc_to_be__rfc_number'] = requestParameters.rfcToBeRfcNumber;
+        if (requestParameters['rfcToBeRfcNumber'] != null) {
+            queryParameters['rfc_to_be__rfc_number'] = requestParameters['rfcToBeRfcNumber'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2262,12 +2669,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsPartialUpdateRaw(requestParameters: DocumentsFinalApprovalsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FinalApproval>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsFinalApprovalsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsFinalApprovalsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2276,12 +2689,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedFinalApprovalRequestToJSON(requestParameters.patchedFinalApprovalRequest),
+            body: PatchedFinalApprovalRequestToJSON(requestParameters['patchedFinalApprovalRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => FinalApprovalFromJSON(jsonValue));
@@ -2297,20 +2715,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsRetrieveRaw(requestParameters: DocumentsFinalApprovalsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FinalApproval>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsRetrieve().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsFinalApprovalsRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsFinalApprovalsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2329,12 +2758,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsFinalApprovalsUpdateRaw(requestParameters: DocumentsFinalApprovalsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<FinalApproval>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsFinalApprovalsUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsFinalApprovalsUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsFinalApprovalsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsFinalApprovalsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2343,12 +2778,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/final_approvals/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/final_approvals/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: FinalApprovalRequestToJSON(requestParameters.finalApprovalRequest),
+            body: FinalApprovalRequestToJSON(requestParameters['finalApprovalRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => FinalApprovalFromJSON(jsonValue));
@@ -2364,16 +2804,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsHistoryListRaw(requestParameters: DocumentsHistoryListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RfcToBeHistory>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsHistoryList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsHistoryList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/history/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/history/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2394,30 +2841,33 @@ export class PurpleApi extends runtime.BaseAPI {
     async documentsListRaw(requestParameters: DocumentsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedRfcToBeList>> {
         const queryParameters: any = {};
 
-        if (requestParameters.disposition !== undefined) {
-            queryParameters['disposition'] = requestParameters.disposition;
+        if (requestParameters['disposition'] != null) {
+            queryParameters['disposition'] = requestParameters['disposition'];
         }
 
-        if (requestParameters.limit !== undefined) {
-            queryParameters['limit'] = requestParameters.limit;
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
-        if (requestParameters.offset !== undefined) {
-            queryParameters['offset'] = requestParameters.offset;
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
         }
 
-        if (requestParameters.ordering !== undefined) {
-            queryParameters['ordering'] = requestParameters.ordering;
+        if (requestParameters['ordering'] != null) {
+            queryParameters['ordering'] = requestParameters['ordering'];
         }
 
-        if (requestParameters.publishedWithinDays !== undefined) {
-            queryParameters['published_within_days'] = requestParameters.publishedWithinDays;
+        if (requestParameters['publishedWithinDays'] != null) {
+            queryParameters['published_within_days'] = requestParameters['publishedWithinDays'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/`;
+
         const response = await this.request({
-            path: `/api/rpc/documents/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2436,20 +2886,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsMetadataValidationResultsDestroyRaw(requestParameters: DocumentsMetadataValidationResultsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsMetadataValidationResultsDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsMetadataValidationResultsDestroy().'
+            );
         }
 
-        if (requestParameters.headSha === null || requestParameters.headSha === undefined) {
-            throw new runtime.RequiredError('headSha','Required parameter requestParameters.headSha was null or undefined when calling documentsMetadataValidationResultsDestroy.');
+        if (requestParameters['headSha'] == null) {
+            throw new runtime.RequiredError(
+                'headSha',
+                'Required parameter "headSha" was null or undefined when calling documentsMetadataValidationResultsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/metadata_validation_results/{head_sha}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"head_sha"}}`, encodeURIComponent(String(requestParameters['headSha'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/{head_sha}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"head_sha"}}`, encodeURIComponent(String(requestParameters.headSha))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2467,16 +2928,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsMetadataValidationResultsListRaw(requestParameters: DocumentsMetadataValidationResultsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MetadataValidationResults>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsMetadataValidationResultsList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsMetadataValidationResultsList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/metadata_validation_results/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2495,20 +2963,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsMetadataValidationResultsRetrieveRaw(requestParameters: DocumentsMetadataValidationResultsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MetadataValidationResults>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsMetadataValidationResultsRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsMetadataValidationResultsRetrieve().'
+            );
         }
 
-        if (requestParameters.headSha === null || requestParameters.headSha === undefined) {
-            throw new runtime.RequiredError('headSha','Required parameter requestParameters.headSha was null or undefined when calling documentsMetadataValidationResultsRetrieve.');
+        if (requestParameters['headSha'] == null) {
+            throw new runtime.RequiredError(
+                'headSha',
+                'Required parameter "headSha" was null or undefined when calling documentsMetadataValidationResultsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/metadata_validation_results/{head_sha}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"head_sha"}}`, encodeURIComponent(String(requestParameters['headSha'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/{head_sha}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"head_sha"}}`, encodeURIComponent(String(requestParameters.headSha))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2527,8 +3006,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsPartialUpdateRaw(requestParameters: DocumentsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcToBe>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2537,12 +3019,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedRfcToBeRequestToJSON(requestParameters.patchedRfcToBeRequest),
+            body: PatchedRfcToBeRequestToJSON(requestParameters['patchedRfcToBeRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcToBeFromJSON(jsonValue));
@@ -2558,12 +3044,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsPublishRaw(requestParameters: DocumentsPublishRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsPublish.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsPublish().'
+            );
         }
 
-        if (requestParameters.publishRfcRequest === null || requestParameters.publishRfcRequest === undefined) {
-            throw new runtime.RequiredError('publishRfcRequest','Required parameter requestParameters.publishRfcRequest was null or undefined when calling documentsPublish.');
+        if (requestParameters['publishRfcRequest'] == null) {
+            throw new runtime.RequiredError(
+                'publishRfcRequest',
+                'Required parameter "publishRfcRequest" was null or undefined when calling documentsPublish().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2572,12 +3064,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/publish/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/publish/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: PublishRfcRequestToJSON(requestParameters.publishRfcRequest),
+            body: PublishRfcRequestToJSON(requestParameters['publishRfcRequest']),
         }, initOverrides);
 
         return new runtime.VoidApiResponse(response);
@@ -2592,12 +3088,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesCreateRaw(requestParameters: DocumentsReferencesCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcRelatedDocument>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesCreate().'
+            );
         }
 
-        if (requestParameters.createRpcRelatedDocumentRequest === null || requestParameters.createRpcRelatedDocumentRequest === undefined) {
-            throw new runtime.RequiredError('createRpcRelatedDocumentRequest','Required parameter requestParameters.createRpcRelatedDocumentRequest was null or undefined when calling documentsReferencesCreate.');
+        if (requestParameters['createRpcRelatedDocumentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createRpcRelatedDocumentRequest',
+                'Required parameter "createRpcRelatedDocumentRequest" was null or undefined when calling documentsReferencesCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2606,12 +3108,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CreateRpcRelatedDocumentRequestToJSON(requestParameters.createRpcRelatedDocumentRequest),
+            body: CreateRpcRelatedDocumentRequestToJSON(requestParameters['createRpcRelatedDocumentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RpcRelatedDocumentFromJSON(jsonValue));
@@ -2627,20 +3133,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesDestroyRaw(requestParameters: DocumentsReferencesDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesDestroy.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesDestroy().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsReferencesDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsReferencesDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2658,16 +3175,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesListRaw(requestParameters: DocumentsReferencesListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RpcRelatedDocument>>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesList.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2686,12 +3210,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesPartialUpdateRaw(requestParameters: DocumentsReferencesPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcRelatedDocument>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesPartialUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesPartialUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsReferencesPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsReferencesPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2700,12 +3230,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedRpcRelatedDocumentRequestToJSON(requestParameters.patchedRpcRelatedDocumentRequest),
+            body: PatchedRpcRelatedDocumentRequestToJSON(requestParameters['patchedRpcRelatedDocumentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RpcRelatedDocumentFromJSON(jsonValue));
@@ -2721,20 +3256,31 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesRetrieveRaw(requestParameters: DocumentsReferencesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcRelatedDocument>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesRetrieve().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsReferencesRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsReferencesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2753,16 +3299,25 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsReferencesUpdateRaw(requestParameters: DocumentsReferencesUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcRelatedDocument>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsReferencesUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsReferencesUpdate().'
+            );
         }
 
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling documentsReferencesUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling documentsReferencesUpdate().'
+            );
         }
 
-        if (requestParameters.rpcRelatedDocumentRequest === null || requestParameters.rpcRelatedDocumentRequest === undefined) {
-            throw new runtime.RequiredError('rpcRelatedDocumentRequest','Required parameter requestParameters.rpcRelatedDocumentRequest was null or undefined when calling documentsReferencesUpdate.');
+        if (requestParameters['rpcRelatedDocumentRequest'] == null) {
+            throw new runtime.RequiredError(
+                'rpcRelatedDocumentRequest',
+                'Required parameter "rpcRelatedDocumentRequest" was null or undefined when calling documentsReferencesUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2771,12 +3326,17 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/references/{id}/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/references/{id}/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: RpcRelatedDocumentRequestToJSON(requestParameters.rpcRelatedDocumentRequest),
+            body: RpcRelatedDocumentRequestToJSON(requestParameters['rpcRelatedDocumentRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RpcRelatedDocumentFromJSON(jsonValue));
@@ -2792,16 +3352,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsRetrieveRaw(requestParameters: DocumentsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcToBe>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsRetrieve.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2820,12 +3387,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async documentsUpdateRaw(requestParameters: DocumentsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcToBe>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling documentsUpdate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling documentsUpdate().'
+            );
         }
 
-        if (requestParameters.rfcToBeRequest === null || requestParameters.rfcToBeRequest === undefined) {
-            throw new runtime.RequiredError('rfcToBeRequest','Required parameter requestParameters.rfcToBeRequest was null or undefined when calling documentsUpdate.');
+        if (requestParameters['rfcToBeRequest'] == null) {
+            throw new runtime.RequiredError(
+                'rfcToBeRequest',
+                'Required parameter "rfcToBeRequest" was null or undefined when calling documentsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2834,12 +3407,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft__name}/`;
+        urlPath = urlPath.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft__name}/`.replace(`{${"draft__name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: RfcToBeRequestToJSON(requestParameters.rfcToBeRequest),
+            body: RfcToBeRequestToJSON(requestParameters['rfcToBeRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcToBeFromJSON(jsonValue));
@@ -2855,8 +3432,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async labelsCreateRaw(requestParameters: LabelsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Label>> {
-        if (requestParameters.labelRequest === null || requestParameters.labelRequest === undefined) {
-            throw new runtime.RequiredError('labelRequest','Required parameter requestParameters.labelRequest was null or undefined when calling labelsCreate.');
+        if (requestParameters['labelRequest'] == null) {
+            throw new runtime.RequiredError(
+                'labelRequest',
+                'Required parameter "labelRequest" was null or undefined when calling labelsCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2865,12 +3445,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/labels/`;
+
         const response = await this.request({
-            path: `/api/rpc/labels/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: LabelRequestToJSON(requestParameters.labelRequest),
+            body: LabelRequestToJSON(requestParameters['labelRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => LabelFromJSON(jsonValue));
@@ -2886,16 +3469,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async labelsDestroyRaw(requestParameters: LabelsDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling labelsDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling labelsDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/labels/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/labels/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -2917,8 +3507,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/labels/`;
+
         const response = await this.request({
-            path: `/api/rpc/labels/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2937,8 +3530,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async labelsPartialUpdateRaw(requestParameters: LabelsPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Label>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling labelsPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling labelsPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -2947,12 +3543,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/labels/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/labels/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedLabelRequestToJSON(requestParameters.patchedLabelRequest),
+            body: PatchedLabelRequestToJSON(requestParameters['patchedLabelRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => LabelFromJSON(jsonValue));
@@ -2968,16 +3568,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async labelsRetrieveRaw(requestParameters: LabelsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Label>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling labelsRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling labelsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/labels/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/labels/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -2996,12 +3603,18 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async labelsUpdateRaw(requestParameters: LabelsUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Label>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling labelsUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling labelsUpdate().'
+            );
         }
 
-        if (requestParameters.labelRequest === null || requestParameters.labelRequest === undefined) {
-            throw new runtime.RequiredError('labelRequest','Required parameter requestParameters.labelRequest was null or undefined when calling labelsUpdate.');
+        if (requestParameters['labelRequest'] == null) {
+            throw new runtime.RequiredError(
+                'labelRequest',
+                'Required parameter "labelRequest" was null or undefined when calling labelsUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3010,12 +3623,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/labels/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/labels/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
-            body: LabelRequestToJSON(requestParameters.labelRequest),
+            body: LabelRequestToJSON(requestParameters['labelRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => LabelFromJSON(jsonValue));
@@ -3031,8 +3648,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async mailSendRaw(requestParameters: MailSendRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MailResponse>> {
-        if (requestParameters.mailMessageRequest === null || requestParameters.mailMessageRequest === undefined) {
-            throw new runtime.RequiredError('mailMessageRequest','Required parameter requestParameters.mailMessageRequest was null or undefined when calling mailSend.');
+        if (requestParameters['mailMessageRequest'] == null) {
+            throw new runtime.RequiredError(
+                'mailMessageRequest',
+                'Required parameter "mailMessageRequest" was null or undefined when calling mailSend().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3041,12 +3661,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/mail`;
+
         const response = await this.request({
-            path: `/api/rpc/mail`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: MailMessageRequestToJSON(requestParameters.mailMessageRequest),
+            body: MailMessageRequestToJSON(requestParameters['mailMessageRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => MailResponseFromJSON(jsonValue));
@@ -3062,16 +3685,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async mailtemplateListRaw(requestParameters: MailtemplateListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<MailTemplate>>> {
-        if (requestParameters.rfctobeId === null || requestParameters.rfctobeId === undefined) {
-            throw new runtime.RequiredError('rfctobeId','Required parameter requestParameters.rfctobeId was null or undefined when calling mailtemplateList.');
+        if (requestParameters['rfctobeId'] == null) {
+            throw new runtime.RequiredError(
+                'rfctobeId',
+                'Required parameter "rfctobeId" was null or undefined when calling mailtemplateList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/mailtemplate/{rfctobe_id}/`;
+        urlPath = urlPath.replace(`{${"rfctobe_id"}}`, encodeURIComponent(String(requestParameters['rfctobeId'])));
+
         const response = await this.request({
-            path: `/api/rpc/mailtemplate/{rfctobe_id}/`.replace(`{${"rfctobe_id"}}`, encodeURIComponent(String(requestParameters.rfctobeId))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3091,16 +3721,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * Create a pending metadata validation result and enqueue task
      */
     async metadataValidationResultsCreateRaw(requestParameters: MetadataValidationResultsCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MetadataValidationResults>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling metadataValidationResultsCreate.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling metadataValidationResultsCreate().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/metadata_validation_results/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
@@ -3121,12 +3758,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * Sync metadata validation results - update DB fields from XML. Requires head_sha in request body to make sure the right metadata is synced.
      */
     async metadataValidationResultsSyncRaw(requestParameters: MetadataValidationResultsSyncRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<MetadataValidationResults>> {
-        if (requestParameters.draftName === null || requestParameters.draftName === undefined) {
-            throw new runtime.RequiredError('draftName','Required parameter requestParameters.draftName was null or undefined when calling metadataValidationResultsSync.');
+        if (requestParameters['draftName'] == null) {
+            throw new runtime.RequiredError(
+                'draftName',
+                'Required parameter "draftName" was null or undefined when calling metadataValidationResultsSync().'
+            );
         }
 
-        if (requestParameters.syncMetadataRequestRequest === null || requestParameters.syncMetadataRequestRequest === undefined) {
-            throw new runtime.RequiredError('syncMetadataRequestRequest','Required parameter requestParameters.syncMetadataRequestRequest was null or undefined when calling metadataValidationResultsSync.');
+        if (requestParameters['syncMetadataRequestRequest'] == null) {
+            throw new runtime.RequiredError(
+                'syncMetadataRequestRequest',
+                'Required parameter "syncMetadataRequestRequest" was null or undefined when calling metadataValidationResultsSync().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3135,12 +3778,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/documents/{draft_name}/metadata_validation_results/sync/`;
+        urlPath = urlPath.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters['draftName'])));
+
         const response = await this.request({
-            path: `/api/rpc/documents/{draft_name}/metadata_validation_results/sync/`.replace(`{${"draft_name"}}`, encodeURIComponent(String(requestParameters.draftName))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: SyncMetadataRequestRequestToJSON(requestParameters.syncMetadataRequestRequest),
+            body: SyncMetadataRequestRequestToJSON(requestParameters['syncMetadataRequestRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => MetadataValidationResultsFromJSON(jsonValue));
@@ -3162,8 +3809,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/profile/`;
+
         const response = await this.request({
-            path: `/api/rpc/profile/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3183,16 +3833,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async profileRetrieveDemoOnlyRaw(requestParameters: ProfileRetrieveDemoOnlyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<{ [key: string]: any; }>> {
-        if (requestParameters.rpcPersonId === null || requestParameters.rpcPersonId === undefined) {
-            throw new runtime.RequiredError('rpcPersonId','Required parameter requestParameters.rpcPersonId was null or undefined when calling profileRetrieveDemoOnly.');
+        if (requestParameters['rpcPersonId'] == null) {
+            throw new runtime.RequiredError(
+                'rpcPersonId',
+                'Required parameter "rpcPersonId" was null or undefined when calling profileRetrieveDemoOnly().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/profile/{rpc_person_id}`;
+        urlPath = urlPath.replace(`{${"rpc_person_id"}}`, encodeURIComponent(String(requestParameters['rpcPersonId'])));
+
         const response = await this.request({
-            path: `/api/rpc/profile/{rpc_person_id}`.replace(`{${"rpc_person_id"}}`, encodeURIComponent(String(requestParameters.rpcPersonId))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3214,18 +3871,21 @@ export class PurpleApi extends runtime.BaseAPI {
     async queueListRaw(requestParameters: QueueListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<QueueItem>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.disposition !== undefined) {
-            queryParameters['disposition'] = requestParameters.disposition;
+        if (requestParameters['disposition'] != null) {
+            queryParameters['disposition'] = requestParameters['disposition'];
         }
 
-        if (requestParameters.pendingFinalApproval !== undefined) {
-            queryParameters['pending_final_approval'] = requestParameters.pendingFinalApproval;
+        if (requestParameters['pendingFinalApproval'] != null) {
+            queryParameters['pending_final_approval'] = requestParameters['pendingFinalApproval'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/queue/`;
+
         const response = await this.request({
-            path: `/api/rpc/queue/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3246,16 +3906,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * Assignments for a specific RPC Person  URL router must provide the `person_id` kwarg
      */
     async rpcPersonAssignmentsListRaw(requestParameters: RpcPersonAssignmentsListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<NestedAssignment>>> {
-        if (requestParameters.personId === null || requestParameters.personId === undefined) {
-            throw new runtime.RequiredError('personId','Required parameter requestParameters.personId was null or undefined when calling rpcPersonAssignmentsList.');
+        if (requestParameters['personId'] == null) {
+            throw new runtime.RequiredError(
+                'personId',
+                'Required parameter "personId" was null or undefined when calling rpcPersonAssignmentsList().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/rpc_person/{person_id}/assignments/`;
+        urlPath = urlPath.replace(`{${"person_id"}}`, encodeURIComponent(String(requestParameters['personId'])));
+
         const response = await this.request({
-            path: `/api/rpc/rpc_person/{person_id}/assignments/`.replace(`{${"person_id"}}`, encodeURIComponent(String(requestParameters.personId))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3277,14 +3944,17 @@ export class PurpleApi extends runtime.BaseAPI {
     async rpcPersonListRaw(requestParameters: RpcPersonListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<RpcPerson>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.isActive !== undefined) {
-            queryParameters['is_active'] = requestParameters.isActive;
+        if (requestParameters['isActive'] != null) {
+            queryParameters['is_active'] = requestParameters['isActive'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/rpc_person/`;
+
         const response = await this.request({
-            path: `/api/rpc/rpc_person/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3303,16 +3973,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async rpcPersonRetrieveRaw(requestParameters: RpcPersonRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcPerson>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling rpcPersonRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling rpcPersonRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/rpc_person/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/rpc_person/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3335,8 +4012,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/rpc_roles/`;
+
         const response = await this.request({
-            path: `/api/rpc/rpc_roles/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3355,16 +4035,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async rpcRolesRetrieveRaw(requestParameters: RpcRolesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RpcRole>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling rpcRolesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling rpcRolesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/rpc_roles/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/rpc_roles/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3386,22 +4073,25 @@ export class PurpleApi extends runtime.BaseAPI {
     async searchDatatrackerpersonsRaw(requestParameters: SearchDatatrackerpersonsRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<PaginatedBaseDatatrackerPersonList>> {
         const queryParameters: any = {};
 
-        if (requestParameters.limit !== undefined) {
-            queryParameters['limit'] = requestParameters.limit;
+        if (requestParameters['limit'] != null) {
+            queryParameters['limit'] = requestParameters['limit'];
         }
 
-        if (requestParameters.offset !== undefined) {
-            queryParameters['offset'] = requestParameters.offset;
+        if (requestParameters['offset'] != null) {
+            queryParameters['offset'] = requestParameters['offset'];
         }
 
-        if (requestParameters.search !== undefined) {
-            queryParameters['search'] = requestParameters.search;
+        if (requestParameters['search'] != null) {
+            queryParameters['search'] = requestParameters['search'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/search/datatrackerpersons/`;
+
         const response = await this.request({
-            path: `/api/rpc/search/datatrackerpersons/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3425,8 +4115,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/source_format_names/`;
+
         const response = await this.request({
-            path: `/api/rpc/source_format_names/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3445,16 +4138,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async sourceFormatNamesRetrieveRaw(requestParameters: SourceFormatNamesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Name>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling sourceFormatNamesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling sourceFormatNamesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/source_format_names/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/source_format_names/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3477,8 +4177,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/stats/label/`;
+
         const response = await this.request({
-            path: `/api/rpc/stats/label/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3501,8 +4204,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/std_level_names/`;
+
         const response = await this.request({
-            path: `/api/rpc/std_level_names/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3521,16 +4227,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async stdLevelNamesRetrieveRaw(requestParameters: StdLevelNamesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Name>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling stdLevelNamesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling stdLevelNamesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/std_level_names/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/std_level_names/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3553,8 +4266,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/stream_names/`;
+
         const response = await this.request({
-            path: `/api/rpc/stream_names/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3573,16 +4289,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async streamNamesRetrieveRaw(requestParameters: StreamNamesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Name>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling streamNamesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling streamNamesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/stream_names/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/stream_names/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3602,12 +4325,18 @@ export class PurpleApi extends runtime.BaseAPI {
      * View to import a submission and create an RfcToBe
      */
     async submissionsImportRaw(requestParameters: SubmissionsImportRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<RfcToBe>> {
-        if (requestParameters.documentId === null || requestParameters.documentId === undefined) {
-            throw new runtime.RequiredError('documentId','Required parameter requestParameters.documentId was null or undefined when calling submissionsImport.');
+        if (requestParameters['documentId'] == null) {
+            throw new runtime.RequiredError(
+                'documentId',
+                'Required parameter "documentId" was null or undefined when calling submissionsImport().'
+            );
         }
 
-        if (requestParameters.createRfcToBeRequest === null || requestParameters.createRfcToBeRequest === undefined) {
-            throw new runtime.RequiredError('createRfcToBeRequest','Required parameter requestParameters.createRfcToBeRequest was null or undefined when calling submissionsImport.');
+        if (requestParameters['createRfcToBeRequest'] == null) {
+            throw new runtime.RequiredError(
+                'createRfcToBeRequest',
+                'Required parameter "createRfcToBeRequest" was null or undefined when calling submissionsImport().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3616,12 +4345,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/submissions/{document_id}/import/`;
+        urlPath = urlPath.replace(`{${"document_id"}}`, encodeURIComponent(String(requestParameters['documentId'])));
+
         const response = await this.request({
-            path: `/api/rpc/submissions/{document_id}/import/`.replace(`{${"document_id"}}`, encodeURIComponent(String(requestParameters.documentId))),
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: CreateRfcToBeRequestToJSON(requestParameters.createRfcToBeRequest),
+            body: CreateRfcToBeRequestToJSON(requestParameters['createRfcToBeRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => RfcToBeFromJSON(jsonValue));
@@ -3643,8 +4376,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/submissions/`;
+
         const response = await this.request({
-            path: `/api/rpc/submissions/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3664,16 +4400,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async submissionsRetrieveRaw(requestParameters: SubmissionsRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Submission>> {
-        if (requestParameters.documentId === null || requestParameters.documentId === undefined) {
-            throw new runtime.RequiredError('documentId','Required parameter requestParameters.documentId was null or undefined when calling submissionsRetrieve.');
+        if (requestParameters['documentId'] == null) {
+            throw new runtime.RequiredError(
+                'documentId',
+                'Required parameter "documentId" was null or undefined when calling submissionsRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/submissions/{document_id}/`;
+        urlPath = urlPath.replace(`{${"document_id"}}`, encodeURIComponent(String(requestParameters['documentId'])));
+
         const response = await this.request({
-            path: `/api/rpc/submissions/{document_id}/`.replace(`{${"document_id"}}`, encodeURIComponent(String(requestParameters.documentId))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3697,8 +4440,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries/`;
+
         const response = await this.request({
-            path: `/api/rpc/subseries/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3719,8 +4465,11 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet to track which RfcToBes have been assigned to which subseries
      */
     async subseriesMembersCreateRaw(requestParameters: SubseriesMembersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubseriesMember>> {
-        if (requestParameters.subseriesMemberRequest === null || requestParameters.subseriesMemberRequest === undefined) {
-            throw new runtime.RequiredError('subseriesMemberRequest','Required parameter requestParameters.subseriesMemberRequest was null or undefined when calling subseriesMembersCreate.');
+        if (requestParameters['subseriesMemberRequest'] == null) {
+            throw new runtime.RequiredError(
+                'subseriesMemberRequest',
+                'Required parameter "subseriesMemberRequest" was null or undefined when calling subseriesMembersCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3729,12 +4478,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/subseries_members/`;
+
         const response = await this.request({
-            path: `/api/rpc/subseries_members/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: SubseriesMemberRequestToJSON(requestParameters.subseriesMemberRequest),
+            body: SubseriesMemberRequestToJSON(requestParameters['subseriesMemberRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SubseriesMemberFromJSON(jsonValue));
@@ -3752,16 +4504,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet to track which RfcToBes have been assigned to which subseries
      */
     async subseriesMembersDestroyRaw(requestParameters: SubseriesMembersDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling subseriesMembersDestroy.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling subseriesMembersDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries_members/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/subseries_members/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -3783,22 +4542,25 @@ export class PurpleApi extends runtime.BaseAPI {
     async subseriesMembersListRaw(requestParameters: SubseriesMembersListRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Array<SubseriesMember>>> {
         const queryParameters: any = {};
 
-        if (requestParameters.number !== undefined) {
-            queryParameters['number'] = requestParameters.number;
+        if (requestParameters['number'] != null) {
+            queryParameters['number'] = requestParameters['number'];
         }
 
-        if (requestParameters.rfcToBe !== undefined) {
-            queryParameters['rfc_to_be'] = requestParameters.rfcToBe;
+        if (requestParameters['rfcToBe'] != null) {
+            queryParameters['rfc_to_be'] = requestParameters['rfcToBe'];
         }
 
-        if (requestParameters.type !== undefined) {
-            queryParameters['type'] = requestParameters.type;
+        if (requestParameters['type'] != null) {
+            queryParameters['type'] = requestParameters['type'];
         }
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries_members/`;
+
         const response = await this.request({
-            path: `/api/rpc/subseries_members/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3819,8 +4581,11 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet to track which RfcToBes have been assigned to which subseries
      */
     async subseriesMembersPartialUpdateRaw(requestParameters: SubseriesMembersPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubseriesMember>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling subseriesMembersPartialUpdate.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling subseriesMembersPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -3829,12 +4594,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/subseries_members/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/subseries_members/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedSubseriesMemberRequestToJSON(requestParameters.patchedSubseriesMemberRequest),
+            body: PatchedSubseriesMemberRequestToJSON(requestParameters['patchedSubseriesMemberRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => SubseriesMemberFromJSON(jsonValue));
@@ -3852,16 +4621,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet to track which RfcToBes have been assigned to which subseries
      */
     async subseriesMembersRetrieveRaw(requestParameters: SubseriesMembersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubseriesMember>> {
-        if (requestParameters.id === null || requestParameters.id === undefined) {
-            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling subseriesMembersRetrieve.');
+        if (requestParameters['id'] == null) {
+            throw new runtime.RequiredError(
+                'id',
+                'Required parameter "id" was null or undefined when calling subseriesMembersRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries_members/{id}/`;
+        urlPath = urlPath.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters['id'])));
+
         const response = await this.request({
-            path: `/api/rpc/subseries_members/{id}/`.replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3882,16 +4658,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * Get all RfcToBe items in a specific subseries
      */
     async subseriesRetrieveRaw(requestParameters: SubseriesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubseriesDoc>> {
-        if (requestParameters.subseriesSlug === null || requestParameters.subseriesSlug === undefined) {
-            throw new runtime.RequiredError('subseriesSlug','Required parameter requestParameters.subseriesSlug was null or undefined when calling subseriesRetrieve.');
+        if (requestParameters['subseriesSlug'] == null) {
+            throw new runtime.RequiredError(
+                'subseriesSlug',
+                'Required parameter "subseriesSlug" was null or undefined when calling subseriesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries/{subseries_slug}/`;
+        urlPath = urlPath.replace(`{${"subseries_slug"}}`, encodeURIComponent(String(requestParameters['subseriesSlug'])));
+
         const response = await this.request({
-            path: `/api/rpc/subseries/{subseries_slug}/`.replace(`{${"subseries_slug"}}`, encodeURIComponent(String(requestParameters.subseriesSlug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3916,8 +4699,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries_types/`;
+
         const response = await this.request({
-            path: `/api/rpc/subseries_types/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3938,16 +4724,23 @@ export class PurpleApi extends runtime.BaseAPI {
      * ViewSet for SubseriesTypeName entries (read-only)
      */
     async subseriesTypesRetrieveRaw(requestParameters: SubseriesTypesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<SubseriesTypeName>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling subseriesTypesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling subseriesTypesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/subseries_types/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/subseries_types/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3971,8 +4764,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/tlp_boilerplate_choice_names/`;
+
         const response = await this.request({
-            path: `/api/rpc/tlp_boilerplate_choice_names/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -3991,16 +4787,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async tlpBoilerplateChoiceNamesRetrieveRaw(requestParameters: TlpBoilerplateChoiceNamesRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<Name>> {
-        if (requestParameters.slug === null || requestParameters.slug === undefined) {
-            throw new runtime.RequiredError('slug','Required parameter requestParameters.slug was null or undefined when calling tlpBoilerplateChoiceNamesRetrieve.');
+        if (requestParameters['slug'] == null) {
+            throw new runtime.RequiredError(
+                'slug',
+                'Required parameter "slug" was null or undefined when calling tlpBoilerplateChoiceNamesRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/tlp_boilerplate_choice_names/{slug}/`;
+        urlPath = urlPath.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters['slug'])));
+
         const response = await this.request({
-            path: `/api/rpc/tlp_boilerplate_choice_names/{slug}/`.replace(`{${"slug"}}`, encodeURIComponent(String(requestParameters.slug))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -4019,8 +4822,11 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async unusableRfcNumbersCreateRaw(requestParameters: UnusableRfcNumbersCreateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnusableRfcNumber>> {
-        if (requestParameters.unusableRfcNumberRequest === null || requestParameters.unusableRfcNumberRequest === undefined) {
-            throw new runtime.RequiredError('unusableRfcNumberRequest','Required parameter requestParameters.unusableRfcNumberRequest was null or undefined when calling unusableRfcNumbersCreate.');
+        if (requestParameters['unusableRfcNumberRequest'] == null) {
+            throw new runtime.RequiredError(
+                'unusableRfcNumberRequest',
+                'Required parameter "unusableRfcNumberRequest" was null or undefined when calling unusableRfcNumbersCreate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -4029,12 +4835,15 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/unusable_rfc_numbers/`;
+
         const response = await this.request({
-            path: `/api/rpc/unusable_rfc_numbers/`,
+            path: urlPath,
             method: 'POST',
             headers: headerParameters,
             query: queryParameters,
-            body: UnusableRfcNumberRequestToJSON(requestParameters.unusableRfcNumberRequest),
+            body: UnusableRfcNumberRequestToJSON(requestParameters['unusableRfcNumberRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => UnusableRfcNumberFromJSON(jsonValue));
@@ -4050,16 +4859,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async unusableRfcNumbersDestroyRaw(requestParameters: UnusableRfcNumbersDestroyRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<void>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling unusableRfcNumbersDestroy.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling unusableRfcNumbersDestroy().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/unusable_rfc_numbers/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/unusable_rfc_numbers/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'DELETE',
             headers: headerParameters,
             query: queryParameters,
@@ -4081,8 +4897,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/unusable_rfc_numbers/`;
+
         const response = await this.request({
-            path: `/api/rpc/unusable_rfc_numbers/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -4102,8 +4921,11 @@ export class PurpleApi extends runtime.BaseAPI {
      * Allow PATCH operations only for the comment field
      */
     async unusableRfcNumbersPartialUpdateRaw(requestParameters: UnusableRfcNumbersPartialUpdateRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnusableRfcNumber>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling unusableRfcNumbersPartialUpdate.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling unusableRfcNumbersPartialUpdate().'
+            );
         }
 
         const queryParameters: any = {};
@@ -4112,12 +4934,16 @@ export class PurpleApi extends runtime.BaseAPI {
 
         headerParameters['Content-Type'] = 'application/json';
 
+
+        let urlPath = `/api/rpc/unusable_rfc_numbers/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/unusable_rfc_numbers/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'PATCH',
             headers: headerParameters,
             query: queryParameters,
-            body: PatchedUnusableRfcNumberRequestToJSON(requestParameters.patchedUnusableRfcNumberRequest),
+            body: PatchedUnusableRfcNumberRequestToJSON(requestParameters['patchedUnusableRfcNumberRequest']),
         }, initOverrides);
 
         return new runtime.JSONApiResponse(response, (jsonValue) => UnusableRfcNumberFromJSON(jsonValue));
@@ -4134,16 +4960,23 @@ export class PurpleApi extends runtime.BaseAPI {
     /**
      */
     async unusableRfcNumbersRetrieveRaw(requestParameters: UnusableRfcNumbersRetrieveRequest, initOverrides?: RequestInit | runtime.InitOverrideFunction): Promise<runtime.ApiResponse<UnusableRfcNumber>> {
-        if (requestParameters.number === null || requestParameters.number === undefined) {
-            throw new runtime.RequiredError('number','Required parameter requestParameters.number was null or undefined when calling unusableRfcNumbersRetrieve.');
+        if (requestParameters['number'] == null) {
+            throw new runtime.RequiredError(
+                'number',
+                'Required parameter "number" was null or undefined when calling unusableRfcNumbersRetrieve().'
+            );
         }
 
         const queryParameters: any = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/unusable_rfc_numbers/{number}/`;
+        urlPath = urlPath.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters['number'])));
+
         const response = await this.request({
-            path: `/api/rpc/unusable_rfc_numbers/{number}/`.replace(`{${"number"}}`, encodeURIComponent(String(requestParameters.number))),
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,
@@ -4167,8 +5000,11 @@ export class PurpleApi extends runtime.BaseAPI {
 
         const headerParameters: runtime.HTTPHeaders = {};
 
+
+        let urlPath = `/api/rpc/version/`;
+
         const response = await this.request({
-            path: `/api/rpc/version/`,
+            path: urlPath,
             method: 'GET',
             headers: headerParameters,
             query: queryParameters,

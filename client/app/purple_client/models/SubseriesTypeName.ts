@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -48,12 +48,10 @@ export interface SubseriesTypeName {
 /**
  * Check if a given object implements the SubseriesTypeName interface.
  */
-export function instanceOfSubseriesTypeName(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfSubseriesTypeName(value: object): value is SubseriesTypeName {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function SubseriesTypeNameFromJSON(json: any): SubseriesTypeName {
@@ -61,31 +59,33 @@ export function SubseriesTypeNameFromJSON(json: any): SubseriesTypeName {
 }
 
 export function SubseriesTypeNameFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubseriesTypeName {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'slug': json['slug'],
         'name': json['name'],
-        'desc': !exists(json, 'desc') ? undefined : json['desc'],
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'desc': json['desc'] == null ? undefined : json['desc'],
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function SubseriesTypeNameToJSON(value?: SubseriesTypeName | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubseriesTypeNameToJSON(json: any): SubseriesTypeName {
+    return SubseriesTypeNameToJSONTyped(json, false);
+}
+
+export function SubseriesTypeNameToJSONTyped(value?: SubseriesTypeName | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
-        'used': value.used,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
+        'used': value['used'],
     };
 }
 

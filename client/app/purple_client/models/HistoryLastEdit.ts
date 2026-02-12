@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { DatatrackerPerson } from './DatatrackerPerson';
 import {
     DatatrackerPersonFromJSON,
     DatatrackerPersonFromJSONTyped,
     DatatrackerPersonToJSON,
+    DatatrackerPersonToJSONTyped,
 } from './DatatrackerPerson';
 
 /**
@@ -43,10 +44,8 @@ export interface HistoryLastEdit {
 /**
  * Check if a given object implements the HistoryLastEdit interface.
  */
-export function instanceOfHistoryLastEdit(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfHistoryLastEdit(value: object): value is HistoryLastEdit {
+    return true;
 }
 
 export function HistoryLastEditFromJSON(json: any): HistoryLastEdit {
@@ -54,23 +53,25 @@ export function HistoryLastEditFromJSON(json: any): HistoryLastEdit {
 }
 
 export function HistoryLastEditFromJSONTyped(json: any, ignoreDiscriminator: boolean): HistoryLastEdit {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'by': !exists(json, 'by') ? undefined : DatatrackerPersonFromJSON(json['by']),
-        'time': !exists(json, 'time') ? undefined : (new Date(json['time'])),
+        'by': json['by'] == null ? undefined : DatatrackerPersonFromJSON(json['by']),
+        'time': json['time'] == null ? undefined : (new Date(json['time'])),
     };
 }
 
-export function HistoryLastEditToJSON(value?: HistoryLastEdit | null): any {
-    if (value === undefined) {
-        return undefined;
+export function HistoryLastEditToJSON(json: any): HistoryLastEdit {
+    return HistoryLastEditToJSONTyped(json, false);
+}
+
+export function HistoryLastEditToJSONTyped(value?: Omit<HistoryLastEdit, 'by'|'time'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
     };

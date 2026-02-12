@@ -20,12 +20,23 @@
  * @export
  */
 export const MsgtypeEnum = {
-    Blank: 'blank',
-    Finalapproval: 'finalapproval',
-    Publication: 'publication'
+    blank: 'blank',
+    finalapproval: 'finalapproval',
+    publication: 'publication'
 } as const;
 export type MsgtypeEnum = typeof MsgtypeEnum[keyof typeof MsgtypeEnum];
 
+
+export function instanceOfMsgtypeEnum(value: any): boolean {
+    for (const key in MsgtypeEnum) {
+        if (Object.prototype.hasOwnProperty.call(MsgtypeEnum, key)) {
+            if (MsgtypeEnum[key as keyof typeof MsgtypeEnum] === value) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 export function MsgtypeEnumFromJSON(json: any): MsgtypeEnum {
     return MsgtypeEnumFromJSONTyped(json, false);
@@ -37,5 +48,9 @@ export function MsgtypeEnumFromJSONTyped(json: any, ignoreDiscriminator: boolean
 
 export function MsgtypeEnumToJSON(value?: MsgtypeEnum | null): any {
     return value as any;
+}
+
+export function MsgtypeEnumToJSONTyped(value: any, ignoreDiscriminator: boolean): MsgtypeEnum {
+    return value as MsgtypeEnum;
 }
 

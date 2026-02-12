@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a Cluster instance
  * 
@@ -40,11 +40,9 @@ export interface ClusterRequest {
 /**
  * Check if a given object implements the ClusterRequest interface.
  */
-export function instanceOfClusterRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfClusterRequest(value: object): value is ClusterRequest {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function ClusterRequestFromJSON(json: any): ClusterRequest {
@@ -52,27 +50,29 @@ export function ClusterRequestFromJSON(json: any): ClusterRequest {
 }
 
 export function ClusterRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ClusterRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'number': json['number'],
-        'draftNames': !exists(json, 'draft_names') ? undefined : json['draft_names'],
+        'draftNames': json['draft_names'] == null ? undefined : json['draft_names'],
     };
 }
 
-export function ClusterRequestToJSON(value?: ClusterRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterRequestToJSON(json: any): ClusterRequest {
+    return ClusterRequestToJSONTyped(json, false);
+}
+
+export function ClusterRequestToJSONTyped(value?: ClusterRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
-        'draft_names': value.draftNames,
+        'number': value['number'],
+        'draft_names': value['draftNames'],
     };
 }
 

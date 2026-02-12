@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a cluster without its contents
  * @export
@@ -30,11 +30,9 @@ export interface SimpleCluster {
 /**
  * Check if a given object implements the SimpleCluster interface.
  */
-export function instanceOfSimpleCluster(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfSimpleCluster(value: object): value is SimpleCluster {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function SimpleClusterFromJSON(json: any): SimpleCluster {
@@ -42,7 +40,7 @@ export function SimpleClusterFromJSON(json: any): SimpleCluster {
 }
 
 export function SimpleClusterFromJSONTyped(json: any, ignoreDiscriminator: boolean): SimpleCluster {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function SimpleClusterFromJSONTyped(json: any, ignoreDiscriminator: boole
     };
 }
 
-export function SimpleClusterToJSON(value?: SimpleCluster | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SimpleClusterToJSON(json: any): SimpleCluster {
+    return SimpleClusterToJSONTyped(json, false);
+}
+
+export function SimpleClusterToJSONTyped(value?: SimpleCluster | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
+        'number': value['number'],
     };
 }
 

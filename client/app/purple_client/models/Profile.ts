@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -60,16 +60,14 @@ export interface Profile {
 /**
  * Check if a given object implements the Profile interface.
  */
-export function instanceOfProfile(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "authenticated" in value;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "avatar" in value;
-    isInstance = isInstance && "rpcPersonId" in value;
-    isInstance = isInstance && "isManager" in value;
-
-    return isInstance;
+export function instanceOfProfile(value: object): value is Profile {
+    if (!('authenticated' in value) || value['authenticated'] === undefined) return false;
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('avatar' in value) || value['avatar'] === undefined) return false;
+    if (!('rpcPersonId' in value) || value['rpcPersonId'] === undefined) return false;
+    if (!('isManager' in value) || value['isManager'] === undefined) return false;
+    return true;
 }
 
 export function ProfileFromJSON(json: any): Profile {
@@ -77,7 +75,7 @@ export function ProfileFromJSON(json: any): Profile {
 }
 
 export function ProfileFromJSONTyped(json: any, ignoreDiscriminator: boolean): Profile {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -91,21 +89,23 @@ export function ProfileFromJSONTyped(json: any, ignoreDiscriminator: boolean): P
     };
 }
 
-export function ProfileToJSON(value?: Profile | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ProfileToJSON(json: any): Profile {
+    return ProfileToJSONTyped(json, false);
+}
+
+export function ProfileToJSONTyped(value?: Profile | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'authenticated': value.authenticated,
-        'id': value.id,
-        'name': value.name,
-        'avatar': value.avatar,
-        'rpcPersonId': value.rpcPersonId,
-        'isManager': value.isManager,
+        'authenticated': value['authenticated'],
+        'id': value['id'],
+        'name': value['name'],
+        'avatar': value['avatar'],
+        'rpcPersonId': value['rpcPersonId'],
+        'isManager': value['isManager'],
     };
 }
 

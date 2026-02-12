@@ -22,14 +22,25 @@
  * @export
  */
 export const IanaStatusSlugEnum = {
-    NoActions: 'no_actions',
-    NotCompleted: 'not_completed',
-    Completed: 'completed',
-    ChangesRequired: 'changes_required',
-    Reconciled: 'reconciled'
+    no_actions: 'no_actions',
+    not_completed: 'not_completed',
+    completed: 'completed',
+    changes_required: 'changes_required',
+    reconciled: 'reconciled'
 } as const;
 export type IanaStatusSlugEnum = typeof IanaStatusSlugEnum[keyof typeof IanaStatusSlugEnum];
 
+
+export function instanceOfIanaStatusSlugEnum(value: any): boolean {
+    for (const key in IanaStatusSlugEnum) {
+        if (Object.prototype.hasOwnProperty.call(IanaStatusSlugEnum, key)) {
+            if (IanaStatusSlugEnum[key as keyof typeof IanaStatusSlugEnum] === value) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 export function IanaStatusSlugEnumFromJSON(json: any): IanaStatusSlugEnum {
     return IanaStatusSlugEnumFromJSONTyped(json, false);
@@ -41,5 +52,9 @@ export function IanaStatusSlugEnumFromJSONTyped(json: any, ignoreDiscriminator: 
 
 export function IanaStatusSlugEnumToJSON(value?: IanaStatusSlugEnum | null): any {
     return value as any;
+}
+
+export function IanaStatusSlugEnumToJSONTyped(value: any, ignoreDiscriminator: boolean): IanaStatusSlugEnum {
+    return value as IanaStatusSlugEnum;
 }
 

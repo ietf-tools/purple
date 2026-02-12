@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize an ActionHolder with person name
  * @export
@@ -48,10 +48,8 @@ export interface ActionHolderRequest {
 /**
  * Check if a given object implements the ActionHolderRequest interface.
  */
-export function instanceOfActionHolderRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfActionHolderRequest(value: object): value is ActionHolderRequest {
+    return true;
 }
 
 export function ActionHolderRequestFromJSON(json: any): ActionHolderRequest {
@@ -59,31 +57,33 @@ export function ActionHolderRequestFromJSON(json: any): ActionHolderRequest {
 }
 
 export function ActionHolderRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ActionHolderRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'deadline': !exists(json, 'deadline') ? undefined : (json['deadline'] === null ? null : new Date(json['deadline'])),
-        'completed': !exists(json, 'completed') ? undefined : (json['completed'] === null ? null : new Date(json['completed'])),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'body': !exists(json, 'body') ? undefined : json['body'],
+        'deadline': json['deadline'] == null ? undefined : (new Date(json['deadline'])),
+        'completed': json['completed'] == null ? undefined : (new Date(json['completed'])),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'body': json['body'] == null ? undefined : json['body'],
     };
 }
 
-export function ActionHolderRequestToJSON(value?: ActionHolderRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ActionHolderRequestToJSON(json: any): ActionHolderRequest {
+    return ActionHolderRequestToJSONTyped(json, false);
+}
+
+export function ActionHolderRequestToJSONTyped(value?: ActionHolderRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'deadline': value.deadline === undefined ? undefined : (value.deadline === null ? null : value.deadline.toISOString()),
-        'completed': value.completed === undefined ? undefined : (value.completed === null ? null : value.completed.toISOString()),
-        'comment': value.comment,
-        'body': value.body,
+        'deadline': value['deadline'] == null ? value['deadline'] : value['deadline'].toISOString(),
+        'completed': value['completed'] == null ? value['completed'] : value['completed'].toISOString(),
+        'comment': value['comment'],
+        'body': value['body'],
     };
 }
 

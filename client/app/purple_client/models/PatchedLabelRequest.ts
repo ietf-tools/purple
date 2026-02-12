@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { ColorEnum } from './ColorEnum';
 import {
     ColorEnumFromJSON,
     ColorEnumFromJSONTyped,
     ColorEnumToJSON,
+    ColorEnumToJSONTyped,
 } from './ColorEnum';
 
 /**
@@ -58,13 +59,13 @@ export interface PatchedLabelRequest {
     used?: boolean;
 }
 
+
+
 /**
  * Check if a given object implements the PatchedLabelRequest interface.
  */
-export function instanceOfPatchedLabelRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedLabelRequest(value: object): value is PatchedLabelRequest {
+    return true;
 }
 
 export function PatchedLabelRequestFromJSON(json: any): PatchedLabelRequest {
@@ -72,33 +73,35 @@ export function PatchedLabelRequestFromJSON(json: any): PatchedLabelRequest {
 }
 
 export function PatchedLabelRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedLabelRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'slug': !exists(json, 'slug') ? undefined : json['slug'],
-        'isException': !exists(json, 'is_exception') ? undefined : json['is_exception'],
-        'isComplexity': !exists(json, 'is_complexity') ? undefined : json['is_complexity'],
-        'color': !exists(json, 'color') ? undefined : ColorEnumFromJSON(json['color']),
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'slug': json['slug'] == null ? undefined : json['slug'],
+        'isException': json['is_exception'] == null ? undefined : json['is_exception'],
+        'isComplexity': json['is_complexity'] == null ? undefined : json['is_complexity'],
+        'color': json['color'] == null ? undefined : ColorEnumFromJSON(json['color']),
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function PatchedLabelRequestToJSON(value?: PatchedLabelRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedLabelRequestToJSON(json: any): PatchedLabelRequest {
+    return PatchedLabelRequestToJSONTyped(json, false);
+}
+
+export function PatchedLabelRequestToJSONTyped(value?: PatchedLabelRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'is_exception': value.isException,
-        'is_complexity': value.isComplexity,
-        'color': ColorEnumToJSON(value.color),
-        'used': value.used,
+        'slug': value['slug'],
+        'is_exception': value['isException'],
+        'is_complexity': value['isComplexity'],
+        'color': ColorEnumToJSON(value['color']),
+        'used': value['used'],
     };
 }
 

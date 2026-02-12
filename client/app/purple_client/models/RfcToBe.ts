@@ -12,61 +12,70 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
-import type { ActionHolder } from './ActionHolder';
-import {
-    ActionHolderFromJSON,
-    ActionHolderFromJSONTyped,
-    ActionHolderToJSON,
-} from './ActionHolder';
+import { mapValues } from '../runtime';
 import type { Assignment } from './Assignment';
 import {
     AssignmentFromJSON,
     AssignmentFromJSONTyped,
     AssignmentToJSON,
+    AssignmentToJSONTyped,
 } from './Assignment';
-import type { BaseDatatrackerPerson } from './BaseDatatrackerPerson';
+import type { SubseriesMember } from './SubseriesMember';
 import {
-    BaseDatatrackerPersonFromJSON,
-    BaseDatatrackerPersonFromJSONTyped,
-    BaseDatatrackerPersonToJSON,
-} from './BaseDatatrackerPerson';
+    SubseriesMemberFromJSON,
+    SubseriesMemberFromJSONTyped,
+    SubseriesMemberToJSON,
+    SubseriesMemberToJSONTyped,
+} from './SubseriesMember';
+import type { ActionHolder } from './ActionHolder';
+import {
+    ActionHolderFromJSON,
+    ActionHolderFromJSONTyped,
+    ActionHolderToJSON,
+    ActionHolderToJSONTyped,
+} from './ActionHolder';
 import type { Draft } from './Draft';
 import {
     DraftFromJSON,
     DraftFromJSONTyped,
     DraftToJSON,
+    DraftToJSONTyped,
 } from './Draft';
 import type { IanaStatus } from './IanaStatus';
 import {
     IanaStatusFromJSON,
     IanaStatusFromJSONTyped,
     IanaStatusToJSON,
+    IanaStatusToJSONTyped,
 } from './IanaStatus';
 import type { RfcAuthor } from './RfcAuthor';
 import {
     RfcAuthorFromJSON,
     RfcAuthorFromJSONTyped,
     RfcAuthorToJSON,
+    RfcAuthorToJSONTyped,
 } from './RfcAuthor';
-import type { RpcRole } from './RpcRole';
-import {
-    RpcRoleFromJSON,
-    RpcRoleFromJSONTyped,
-    RpcRoleToJSON,
-} from './RpcRole';
 import type { SimpleCluster } from './SimpleCluster';
 import {
     SimpleClusterFromJSON,
     SimpleClusterFromJSONTyped,
     SimpleClusterToJSON,
+    SimpleClusterToJSONTyped,
 } from './SimpleCluster';
-import type { SubseriesMember } from './SubseriesMember';
+import type { RpcRole } from './RpcRole';
 import {
-    SubseriesMemberFromJSON,
-    SubseriesMemberFromJSONTyped,
-    SubseriesMemberToJSON,
-} from './SubseriesMember';
+    RpcRoleFromJSON,
+    RpcRoleFromJSONTyped,
+    RpcRoleToJSON,
+    RpcRoleToJSONTyped,
+} from './RpcRole';
+import type { BaseDatatrackerPerson } from './BaseDatatrackerPerson';
+import {
+    BaseDatatrackerPersonFromJSON,
+    BaseDatatrackerPersonFromJSONTyped,
+    BaseDatatrackerPersonToJSON,
+    BaseDatatrackerPersonToJSONTyped,
+} from './BaseDatatrackerPerson';
 
 /**
  * RfcToBeSerializer suitable for displaying full details of a single instance
@@ -259,18 +268,16 @@ export interface RfcToBe {
 /**
  * Check if a given object implements the RfcToBe interface.
  */
-export function instanceOfRfcToBe(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "title" in value;
-    isInstance = isInstance && "disposition" in value;
-    isInstance = isInstance && "labels" in value;
-    isInstance = isInstance && "submittedFormat" in value;
-    isInstance = isInstance && "boilerplate" in value;
-    isInstance = isInstance && "stdLevel" in value;
-    isInstance = isInstance && "stream" in value;
-    isInstance = isInstance && "authors" in value;
-
-    return isInstance;
+export function instanceOfRfcToBe(value: object): value is RfcToBe {
+    if (!('title' in value) || value['title'] === undefined) return false;
+    if (!('disposition' in value) || value['disposition'] === undefined) return false;
+    if (!('labels' in value) || value['labels'] === undefined) return false;
+    if (!('submittedFormat' in value) || value['submittedFormat'] === undefined) return false;
+    if (!('boilerplate' in value) || value['boilerplate'] === undefined) return false;
+    if (!('stdLevel' in value) || value['stdLevel'] === undefined) return false;
+    if (!('stream' in value) || value['stream'] === undefined) return false;
+    if (!('authors' in value) || value['authors'] === undefined) return false;
+    return true;
 }
 
 export function RfcToBeFromJSON(json: any): RfcToBe {
@@ -278,71 +285,73 @@ export function RfcToBeFromJSON(json: any): RfcToBe {
 }
 
 export function RfcToBeFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcToBe {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'] == null ? undefined : json['name'],
         'title': json['title'],
-        '_abstract': !exists(json, 'abstract') ? undefined : json['abstract'],
-        'group': !exists(json, 'group') ? undefined : json['group'],
-        'draft': !exists(json, 'draft') ? undefined : DraftFromJSON(json['draft']),
+        '_abstract': json['abstract'] == null ? undefined : json['abstract'],
+        'group': json['group'] == null ? undefined : json['group'],
+        'draft': json['draft'] == null ? undefined : DraftFromJSON(json['draft']),
         'disposition': json['disposition'],
-        'externalDeadline': !exists(json, 'external_deadline') ? undefined : (json['external_deadline'] === null ? null : new Date(json['external_deadline'])),
-        'internalGoal': !exists(json, 'internal_goal') ? undefined : (json['internal_goal'] === null ? null : new Date(json['internal_goal'])),
+        'externalDeadline': json['external_deadline'] == null ? undefined : (new Date(json['external_deadline'])),
+        'internalGoal': json['internal_goal'] == null ? undefined : (new Date(json['internal_goal'])),
         'labels': json['labels'],
-        'cluster': !exists(json, 'cluster') ? undefined : SimpleClusterFromJSON(json['cluster']),
+        'cluster': json['cluster'] == null ? undefined : SimpleClusterFromJSON(json['cluster']),
         'submittedFormat': json['submitted_format'],
-        'pages': !exists(json, 'pages') ? undefined : json['pages'],
-        'keywords': !exists(json, 'keywords') ? undefined : json['keywords'],
+        'pages': json['pages'] == null ? undefined : json['pages'],
+        'keywords': json['keywords'] == null ? undefined : json['keywords'],
         'boilerplate': json['boilerplate'],
         'stdLevel': json['std_level'],
-        'publicationStdLevel': !exists(json, 'publication_std_level') ? undefined : json['publication_std_level'],
+        'publicationStdLevel': json['publication_std_level'] == null ? undefined : json['publication_std_level'],
         'stream': json['stream'],
-        'publicationStream': !exists(json, 'publication_stream') ? undefined : json['publication_stream'],
+        'publicationStream': json['publication_stream'] == null ? undefined : json['publication_stream'],
         'authors': ((json['authors'] as Array<any>).map(RfcAuthorFromJSON)),
-        'shepherd': !exists(json, 'shepherd') ? undefined : BaseDatatrackerPersonFromJSON(json['shepherd']),
-        'iesgContact': !exists(json, 'iesg_contact') ? undefined : BaseDatatrackerPersonFromJSON(json['iesg_contact']),
-        'assignmentSet': !exists(json, 'assignment_set') ? undefined : ((json['assignment_set'] as Array<any>).map(AssignmentFromJSON)),
-        'actionholderSet': !exists(json, 'actionholder_set') ? undefined : ((json['actionholder_set'] as Array<any>).map(ActionHolderFromJSON)),
-        'pendingActivities': !exists(json, 'pending_activities') ? undefined : ((json['pending_activities'] as Array<any>).map(RpcRoleFromJSON)),
-        'rfcNumber': !exists(json, 'rfc_number') ? undefined : json['rfc_number'],
-        'publishedAt': !exists(json, 'published_at') ? undefined : (json['published_at'] === null ? null : new Date(json['published_at'])),
-        'consensus': !exists(json, 'consensus') ? undefined : json['consensus'],
-        'subseries': !exists(json, 'subseries') ? undefined : ((json['subseries'] as Array<any>).map(SubseriesMemberFromJSON)),
-        'ianaStatus': !exists(json, 'iana_status') ? undefined : IanaStatusFromJSON(json['iana_status']),
+        'shepherd': json['shepherd'] == null ? undefined : BaseDatatrackerPersonFromJSON(json['shepherd']),
+        'iesgContact': json['iesg_contact'] == null ? undefined : BaseDatatrackerPersonFromJSON(json['iesg_contact']),
+        'assignmentSet': json['assignment_set'] == null ? undefined : ((json['assignment_set'] as Array<any>).map(AssignmentFromJSON)),
+        'actionholderSet': json['actionholder_set'] == null ? undefined : ((json['actionholder_set'] as Array<any>).map(ActionHolderFromJSON)),
+        'pendingActivities': json['pending_activities'] == null ? undefined : ((json['pending_activities'] as Array<any>).map(RpcRoleFromJSON)),
+        'rfcNumber': json['rfc_number'] == null ? undefined : json['rfc_number'],
+        'publishedAt': json['published_at'] == null ? undefined : (new Date(json['published_at'])),
+        'consensus': json['consensus'] == null ? undefined : json['consensus'],
+        'subseries': json['subseries'] == null ? undefined : ((json['subseries'] as Array<any>).map(SubseriesMemberFromJSON)),
+        'ianaStatus': json['iana_status'] == null ? undefined : IanaStatusFromJSON(json['iana_status']),
     };
 }
 
-export function RfcToBeToJSON(value?: RfcToBe | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcToBeToJSON(json: any): RfcToBe {
+    return RfcToBeToJSONTyped(json, false);
+}
+
+export function RfcToBeToJSONTyped(value?: Omit<RfcToBe, 'id'|'name'|'draft'|'cluster'|'shepherd'|'iesg_contact'|'assignment_set'|'actionholder_set'|'pending_activities'|'published_at'|'subseries'|'iana_status'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'title': value.title,
-        'abstract': value._abstract,
-        'group': value.group,
-        'disposition': value.disposition,
-        'external_deadline': value.externalDeadline === undefined ? undefined : (value.externalDeadline === null ? null : value.externalDeadline.toISOString()),
-        'internal_goal': value.internalGoal === undefined ? undefined : (value.internalGoal === null ? null : value.internalGoal.toISOString()),
-        'labels': value.labels,
-        'submitted_format': value.submittedFormat,
-        'pages': value.pages,
-        'keywords': value.keywords,
-        'boilerplate': value.boilerplate,
-        'std_level': value.stdLevel,
-        'publication_std_level': value.publicationStdLevel,
-        'stream': value.stream,
-        'publication_stream': value.publicationStream,
-        'authors': ((value.authors as Array<any>).map(RfcAuthorToJSON)),
-        'rfc_number': value.rfcNumber,
-        'consensus': value.consensus,
+        'title': value['title'],
+        'abstract': value['_abstract'],
+        'group': value['group'],
+        'disposition': value['disposition'],
+        'external_deadline': value['externalDeadline'] == null ? value['externalDeadline'] : value['externalDeadline'].toISOString(),
+        'internal_goal': value['internalGoal'] == null ? value['internalGoal'] : value['internalGoal'].toISOString(),
+        'labels': value['labels'],
+        'submitted_format': value['submittedFormat'],
+        'pages': value['pages'],
+        'keywords': value['keywords'],
+        'boilerplate': value['boilerplate'],
+        'std_level': value['stdLevel'],
+        'publication_std_level': value['publicationStdLevel'],
+        'stream': value['stream'],
+        'publication_stream': value['publicationStream'],
+        'authors': ((value['authors'] as Array<any>).map(RfcAuthorToJSON)),
+        'rfc_number': value['rfcNumber'],
+        'consensus': value['consensus'],
     };
 }
 

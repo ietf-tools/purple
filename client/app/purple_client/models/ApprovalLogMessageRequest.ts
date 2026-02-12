@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface ApprovalLogMessageRequest {
 /**
  * Check if a given object implements the ApprovalLogMessageRequest interface.
  */
-export function instanceOfApprovalLogMessageRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "logMessage" in value;
-
-    return isInstance;
+export function instanceOfApprovalLogMessageRequest(value: object): value is ApprovalLogMessageRequest {
+    if (!('logMessage' in value) || value['logMessage'] === undefined) return false;
+    return true;
 }
 
 export function ApprovalLogMessageRequestFromJSON(json: any): ApprovalLogMessageRequest {
@@ -42,7 +40,7 @@ export function ApprovalLogMessageRequestFromJSON(json: any): ApprovalLogMessage
 }
 
 export function ApprovalLogMessageRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApprovalLogMessageRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function ApprovalLogMessageRequestFromJSONTyped(json: any, ignoreDiscrimi
     };
 }
 
-export function ApprovalLogMessageRequestToJSON(value?: ApprovalLogMessageRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ApprovalLogMessageRequestToJSON(json: any): ApprovalLogMessageRequest {
+    return ApprovalLogMessageRequestToJSONTyped(json, false);
+}
+
+export function ApprovalLogMessageRequestToJSONTyped(value?: ApprovalLogMessageRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'log_message': value.logMessage,
+        'log_message': value['logMessage'],
     };
 }
 

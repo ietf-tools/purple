@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for adding or removing a document in a cluster
  * @export
@@ -30,11 +30,9 @@ export interface ClusterAddRemoveDocumentRequest {
 /**
  * Check if a given object implements the ClusterAddRemoveDocumentRequest interface.
  */
-export function instanceOfClusterAddRemoveDocumentRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "draftName" in value;
-
-    return isInstance;
+export function instanceOfClusterAddRemoveDocumentRequest(value: object): value is ClusterAddRemoveDocumentRequest {
+    if (!('draftName' in value) || value['draftName'] === undefined) return false;
+    return true;
 }
 
 export function ClusterAddRemoveDocumentRequestFromJSON(json: any): ClusterAddRemoveDocumentRequest {
@@ -42,7 +40,7 @@ export function ClusterAddRemoveDocumentRequestFromJSON(json: any): ClusterAddRe
 }
 
 export function ClusterAddRemoveDocumentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ClusterAddRemoveDocumentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function ClusterAddRemoveDocumentRequestFromJSONTyped(json: any, ignoreDi
     };
 }
 
-export function ClusterAddRemoveDocumentRequestToJSON(value?: ClusterAddRemoveDocumentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterAddRemoveDocumentRequestToJSON(json: any): ClusterAddRemoveDocumentRequest {
+    return ClusterAddRemoveDocumentRequestToJSONTyped(json, false);
+}
+
+export function ClusterAddRemoveDocumentRequestToJSONTyped(value?: ClusterAddRemoveDocumentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'draft_name': value.draftName,
+        'draft_name': value['draftName'],
     };
 }
 

@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { StateEnum } from './StateEnum';
 import {
     StateEnumFromJSON,
     StateEnumFromJSONTyped,
     StateEnumToJSON,
+    StateEnumToJSONTyped,
 } from './StateEnum';
 
 /**
@@ -52,15 +53,15 @@ export interface PublicAssignment {
     state?: StateEnum;
 }
 
+
+
 /**
  * Check if a given object implements the PublicAssignment interface.
  */
-export function instanceOfPublicAssignment(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "rfcToBe" in value;
-    isInstance = isInstance && "role" in value;
-
-    return isInstance;
+export function instanceOfPublicAssignment(value: object): value is PublicAssignment {
+    if (!('rfcToBe' in value) || value['rfcToBe'] === undefined) return false;
+    if (!('role' in value) || value['role'] === undefined) return false;
+    return true;
 }
 
 export function PublicAssignmentFromJSON(json: any): PublicAssignment {
@@ -68,30 +69,32 @@ export function PublicAssignmentFromJSON(json: any): PublicAssignment {
 }
 
 export function PublicAssignmentFromJSONTyped(json: any, ignoreDiscriminator: boolean): PublicAssignment {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'rfcToBe': json['rfc_to_be'],
         'role': json['role'],
-        'state': !exists(json, 'state') ? undefined : StateEnumFromJSON(json['state']),
+        'state': json['state'] == null ? undefined : StateEnumFromJSON(json['state']),
     };
 }
 
-export function PublicAssignmentToJSON(value?: PublicAssignment | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PublicAssignmentToJSON(json: any): PublicAssignment {
+    return PublicAssignmentToJSONTyped(json, false);
+}
+
+export function PublicAssignmentToJSONTyped(value?: Omit<PublicAssignment, 'id'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'role': value.role,
-        'state': StateEnumToJSON(value.state),
+        'rfc_to_be': value['rfcToBe'],
+        'role': value['role'],
+        'state': StateEnumToJSON(value['state']),
     };
 }
 

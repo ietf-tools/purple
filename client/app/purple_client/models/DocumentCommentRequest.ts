@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a comment on an RfcToBe
  * @export
@@ -30,11 +30,9 @@ export interface DocumentCommentRequest {
 /**
  * Check if a given object implements the DocumentCommentRequest interface.
  */
-export function instanceOfDocumentCommentRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "comment" in value;
-
-    return isInstance;
+export function instanceOfDocumentCommentRequest(value: object): value is DocumentCommentRequest {
+    if (!('comment' in value) || value['comment'] === undefined) return false;
+    return true;
 }
 
 export function DocumentCommentRequestFromJSON(json: any): DocumentCommentRequest {
@@ -42,7 +40,7 @@ export function DocumentCommentRequestFromJSON(json: any): DocumentCommentReques
 }
 
 export function DocumentCommentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): DocumentCommentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function DocumentCommentRequestFromJSONTyped(json: any, ignoreDiscriminat
     };
 }
 
-export function DocumentCommentRequestToJSON(value?: DocumentCommentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function DocumentCommentRequestToJSON(json: any): DocumentCommentRequest {
+    return DocumentCommentRequestToJSONTyped(json, false);
+}
+
+export function DocumentCommentRequestToJSONTyped(value?: DocumentCommentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'comment': value.comment,
+        'comment': value['comment'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface RfcToBeNotFoundResponse {
 /**
  * Check if a given object implements the RfcToBeNotFoundResponse interface.
  */
-export function instanceOfRfcToBeNotFoundResponse(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "error" in value;
-
-    return isInstance;
+export function instanceOfRfcToBeNotFoundResponse(value: object): value is RfcToBeNotFoundResponse {
+    if (!('error' in value) || value['error'] === undefined) return false;
+    return true;
 }
 
 export function RfcToBeNotFoundResponseFromJSON(json: any): RfcToBeNotFoundResponse {
@@ -42,7 +40,7 @@ export function RfcToBeNotFoundResponseFromJSON(json: any): RfcToBeNotFoundRespo
 }
 
 export function RfcToBeNotFoundResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcToBeNotFoundResponse {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function RfcToBeNotFoundResponseFromJSONTyped(json: any, ignoreDiscrimina
     };
 }
 
-export function RfcToBeNotFoundResponseToJSON(value?: RfcToBeNotFoundResponse | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcToBeNotFoundResponseToJSON(json: any): RfcToBeNotFoundResponse {
+    return RfcToBeNotFoundResponseToJSONTyped(json, false);
+}
+
+export function RfcToBeNotFoundResponseToJSONTyped(value?: RfcToBeNotFoundResponse | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'error': value.error,
+        'error': value['error'],
     };
 }
 

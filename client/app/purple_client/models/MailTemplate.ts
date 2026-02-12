@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { MailMessage } from './MailMessage';
 import {
     MailMessageFromJSON,
     MailMessageFromJSONTyped,
     MailMessageToJSON,
+    MailMessageToJSONTyped,
 } from './MailMessage';
 
 /**
@@ -43,12 +44,10 @@ export interface MailTemplate {
 /**
  * Check if a given object implements the MailTemplate interface.
  */
-export function instanceOfMailTemplate(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "label" in value;
-    isInstance = isInstance && "template" in value;
-
-    return isInstance;
+export function instanceOfMailTemplate(value: object): value is MailTemplate {
+    if (!('label' in value) || value['label'] === undefined) return false;
+    if (!('template' in value) || value['template'] === undefined) return false;
+    return true;
 }
 
 export function MailTemplateFromJSON(json: any): MailTemplate {
@@ -56,7 +55,7 @@ export function MailTemplateFromJSON(json: any): MailTemplate {
 }
 
 export function MailTemplateFromJSONTyped(json: any, ignoreDiscriminator: boolean): MailTemplate {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -66,17 +65,19 @@ export function MailTemplateFromJSONTyped(json: any, ignoreDiscriminator: boolea
     };
 }
 
-export function MailTemplateToJSON(value?: MailTemplate | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MailTemplateToJSON(json: any): MailTemplate {
+    return MailTemplateToJSONTyped(json, false);
+}
+
+export function MailTemplateToJSONTyped(value?: MailTemplate | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'label': value.label,
-        'template': MailMessageToJSON(value.template),
+        'label': value['label'],
+        'template': MailMessageToJSON(value['template']),
     };
 }
 

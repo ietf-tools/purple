@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { DocumentComment } from './DocumentComment';
 import {
     DocumentCommentFromJSON,
     DocumentCommentFromJSONTyped,
     DocumentCommentToJSON,
+    DocumentCommentToJSONTyped,
 } from './DocumentComment';
 
 /**
@@ -55,12 +56,10 @@ export interface PaginatedDocumentCommentList {
 /**
  * Check if a given object implements the PaginatedDocumentCommentList interface.
  */
-export function instanceOfPaginatedDocumentCommentList(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "count" in value;
-    isInstance = isInstance && "results" in value;
-
-    return isInstance;
+export function instanceOfPaginatedDocumentCommentList(value: object): value is PaginatedDocumentCommentList {
+    if (!('count' in value) || value['count'] === undefined) return false;
+    if (!('results' in value) || value['results'] === undefined) return false;
+    return true;
 }
 
 export function PaginatedDocumentCommentListFromJSON(json: any): PaginatedDocumentCommentList {
@@ -68,31 +67,33 @@ export function PaginatedDocumentCommentListFromJSON(json: any): PaginatedDocume
 }
 
 export function PaginatedDocumentCommentListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedDocumentCommentList {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'count': json['count'],
-        'next': !exists(json, 'next') ? undefined : json['next'],
-        'previous': !exists(json, 'previous') ? undefined : json['previous'],
+        'next': json['next'] == null ? undefined : json['next'],
+        'previous': json['previous'] == null ? undefined : json['previous'],
         'results': ((json['results'] as Array<any>).map(DocumentCommentFromJSON)),
     };
 }
 
-export function PaginatedDocumentCommentListToJSON(value?: PaginatedDocumentCommentList | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PaginatedDocumentCommentListToJSON(json: any): PaginatedDocumentCommentList {
+    return PaginatedDocumentCommentListToJSONTyped(json, false);
+}
+
+export function PaginatedDocumentCommentListToJSONTyped(value?: PaginatedDocumentCommentList | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'count': value.count,
-        'next': value.next,
-        'previous': value.previous,
-        'results': ((value.results as Array<any>).map(DocumentCommentToJSON)),
+        'count': value['count'],
+        'next': value['next'],
+        'previous': value['previous'],
+        'results': ((value['results'] as Array<any>).map(DocumentCommentToJSON)),
     };
 }
 

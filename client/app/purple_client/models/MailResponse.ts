@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { TypeEnum } from './TypeEnum';
 import {
     TypeEnumFromJSON,
     TypeEnumFromJSONTyped,
     TypeEnumToJSON,
+    TypeEnumToJSONTyped,
 } from './TypeEnum';
 
 /**
@@ -40,15 +41,15 @@ export interface MailResponse {
     message: string;
 }
 
+
+
 /**
  * Check if a given object implements the MailResponse interface.
  */
-export function instanceOfMailResponse(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "type" in value;
-    isInstance = isInstance && "message" in value;
-
-    return isInstance;
+export function instanceOfMailResponse(value: object): value is MailResponse {
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('message' in value) || value['message'] === undefined) return false;
+    return true;
 }
 
 export function MailResponseFromJSON(json: any): MailResponse {
@@ -56,7 +57,7 @@ export function MailResponseFromJSON(json: any): MailResponse {
 }
 
 export function MailResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): MailResponse {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -66,17 +67,19 @@ export function MailResponseFromJSONTyped(json: any, ignoreDiscriminator: boolea
     };
 }
 
-export function MailResponseToJSON(value?: MailResponse | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MailResponseToJSON(json: any): MailResponse {
+    return MailResponseToJSONTyped(json, false);
+}
+
+export function MailResponseToJSONTyped(value?: MailResponse | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'type': TypeEnumToJSON(value.type),
-        'message': value.message,
+        'type': TypeEnumToJSON(value['type']),
+        'message': value['message'],
     };
 }
 

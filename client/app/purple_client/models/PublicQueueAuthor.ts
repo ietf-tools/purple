@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -36,11 +36,9 @@ export interface PublicQueueAuthor {
 /**
  * Check if a given object implements the PublicQueueAuthor interface.
  */
-export function instanceOfPublicQueueAuthor(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "titlepageName" in value;
-
-    return isInstance;
+export function instanceOfPublicQueueAuthor(value: object): value is PublicQueueAuthor {
+    if (!('titlepageName' in value) || value['titlepageName'] === undefined) return false;
+    return true;
 }
 
 export function PublicQueueAuthorFromJSON(json: any): PublicQueueAuthor {
@@ -48,27 +46,29 @@ export function PublicQueueAuthorFromJSON(json: any): PublicQueueAuthor {
 }
 
 export function PublicQueueAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean): PublicQueueAuthor {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'titlepageName': json['titlepage_name'],
-        'isEditor': !exists(json, 'is_editor') ? undefined : json['is_editor'],
+        'isEditor': json['is_editor'] == null ? undefined : json['is_editor'],
     };
 }
 
-export function PublicQueueAuthorToJSON(value?: PublicQueueAuthor | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PublicQueueAuthorToJSON(json: any): PublicQueueAuthor {
+    return PublicQueueAuthorToJSONTyped(json, false);
+}
+
+export function PublicQueueAuthorToJSONTyped(value?: PublicQueueAuthor | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'titlepage_name': value.titlepageName,
-        'is_editor': value.isEditor,
+        'titlepage_name': value['titlepageName'],
+        'is_editor': value['isEditor'],
     };
 }
 

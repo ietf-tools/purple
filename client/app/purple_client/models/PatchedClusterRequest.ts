@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a Cluster instance
  * 
@@ -40,10 +40,8 @@ export interface PatchedClusterRequest {
 /**
  * Check if a given object implements the PatchedClusterRequest interface.
  */
-export function instanceOfPatchedClusterRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedClusterRequest(value: object): value is PatchedClusterRequest {
+    return true;
 }
 
 export function PatchedClusterRequestFromJSON(json: any): PatchedClusterRequest {
@@ -51,27 +49,29 @@ export function PatchedClusterRequestFromJSON(json: any): PatchedClusterRequest 
 }
 
 export function PatchedClusterRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedClusterRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'number': !exists(json, 'number') ? undefined : json['number'],
-        'draftNames': !exists(json, 'draft_names') ? undefined : json['draft_names'],
+        'number': json['number'] == null ? undefined : json['number'],
+        'draftNames': json['draft_names'] == null ? undefined : json['draft_names'],
     };
 }
 
-export function PatchedClusterRequestToJSON(value?: PatchedClusterRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedClusterRequestToJSON(json: any): PatchedClusterRequest {
+    return PatchedClusterRequestToJSONTyped(json, false);
+}
+
+export function PatchedClusterRequestToJSONTyped(value?: PatchedClusterRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
-        'draft_names': value.draftNames,
+        'number': value['number'],
+        'draft_names': value['draftNames'],
     };
 }
 

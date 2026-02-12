@@ -12,18 +12,20 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { Capability } from './Capability';
 import {
     CapabilityFromJSON,
     CapabilityFromJSONTyped,
     CapabilityToJSON,
+    CapabilityToJSONTyped,
 } from './Capability';
 import type { RpcRole } from './RpcRole';
 import {
     RpcRoleFromJSON,
     RpcRoleFromJSONTyped,
     RpcRoleToJSON,
+    RpcRoleToJSONTyped,
 } from './RpcRole';
 
 /**
@@ -95,12 +97,10 @@ export interface RpcPerson {
 /**
  * Check if a given object implements the RpcPerson interface.
  */
-export function instanceOfRpcPerson(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "capabilities" in value;
-    isInstance = isInstance && "roles" in value;
-
-    return isInstance;
+export function instanceOfRpcPerson(value: object): value is RpcPerson {
+    if (!('capabilities' in value) || value['capabilities'] === undefined) return false;
+    if (!('roles' in value) || value['roles'] === undefined) return false;
+    return true;
 }
 
 export function RpcPersonFromJSON(json: any): RpcPerson {
@@ -108,36 +108,38 @@ export function RpcPersonFromJSON(json: any): RpcPerson {
 }
 
 export function RpcPersonFromJSONTyped(json: any, ignoreDiscriminator: boolean): RpcPerson {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'hoursPerWeek': !exists(json, 'hours_per_week') ? undefined : json['hours_per_week'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'hoursPerWeek': json['hours_per_week'] == null ? undefined : json['hours_per_week'],
         'capabilities': ((json['capabilities'] as Array<any>).map(CapabilityFromJSON)),
         'roles': ((json['roles'] as Array<any>).map(RpcRoleFromJSON)),
-        'isActive': !exists(json, 'is_active') ? undefined : json['is_active'],
-        'email': !exists(json, 'email') ? undefined : json['email'],
-        'picture': !exists(json, 'picture') ? undefined : json['picture'],
-        'datatrackerUrl': !exists(json, 'datatracker_url') ? undefined : json['datatracker_url'],
+        'isActive': json['is_active'] == null ? undefined : json['is_active'],
+        'email': json['email'] == null ? undefined : json['email'],
+        'picture': json['picture'] == null ? undefined : json['picture'],
+        'datatrackerUrl': json['datatracker_url'] == null ? undefined : json['datatracker_url'],
     };
 }
 
-export function RpcPersonToJSON(value?: RpcPerson | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RpcPersonToJSON(json: any): RpcPerson {
+    return RpcPersonToJSONTyped(json, false);
+}
+
+export function RpcPersonToJSONTyped(value?: Omit<RpcPerson, 'id'|'name'|'email'|'picture'|'datatracker_url'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'hours_per_week': value.hoursPerWeek,
-        'capabilities': ((value.capabilities as Array<any>).map(CapabilityToJSON)),
-        'roles': ((value.roles as Array<any>).map(RpcRoleToJSON)),
-        'is_active': value.isActive,
+        'hours_per_week': value['hoursPerWeek'],
+        'capabilities': ((value['capabilities'] as Array<any>).map(CapabilityToJSON)),
+        'roles': ((value['roles'] as Array<any>).map(RpcRoleToJSON)),
+        'is_active': value['isActive'],
     };
 }
 

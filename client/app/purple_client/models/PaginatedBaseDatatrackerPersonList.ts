@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { BaseDatatrackerPerson } from './BaseDatatrackerPerson';
 import {
     BaseDatatrackerPersonFromJSON,
     BaseDatatrackerPersonFromJSONTyped,
     BaseDatatrackerPersonToJSON,
+    BaseDatatrackerPersonToJSONTyped,
 } from './BaseDatatrackerPerson';
 
 /**
@@ -55,12 +56,10 @@ export interface PaginatedBaseDatatrackerPersonList {
 /**
  * Check if a given object implements the PaginatedBaseDatatrackerPersonList interface.
  */
-export function instanceOfPaginatedBaseDatatrackerPersonList(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "count" in value;
-    isInstance = isInstance && "results" in value;
-
-    return isInstance;
+export function instanceOfPaginatedBaseDatatrackerPersonList(value: object): value is PaginatedBaseDatatrackerPersonList {
+    if (!('count' in value) || value['count'] === undefined) return false;
+    if (!('results' in value) || value['results'] === undefined) return false;
+    return true;
 }
 
 export function PaginatedBaseDatatrackerPersonListFromJSON(json: any): PaginatedBaseDatatrackerPersonList {
@@ -68,31 +67,33 @@ export function PaginatedBaseDatatrackerPersonListFromJSON(json: any): Paginated
 }
 
 export function PaginatedBaseDatatrackerPersonListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedBaseDatatrackerPersonList {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'count': json['count'],
-        'next': !exists(json, 'next') ? undefined : json['next'],
-        'previous': !exists(json, 'previous') ? undefined : json['previous'],
+        'next': json['next'] == null ? undefined : json['next'],
+        'previous': json['previous'] == null ? undefined : json['previous'],
         'results': ((json['results'] as Array<any>).map(BaseDatatrackerPersonFromJSON)),
     };
 }
 
-export function PaginatedBaseDatatrackerPersonListToJSON(value?: PaginatedBaseDatatrackerPersonList | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PaginatedBaseDatatrackerPersonListToJSON(json: any): PaginatedBaseDatatrackerPersonList {
+    return PaginatedBaseDatatrackerPersonListToJSONTyped(json, false);
+}
+
+export function PaginatedBaseDatatrackerPersonListToJSONTyped(value?: PaginatedBaseDatatrackerPersonList | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'count': value.count,
-        'next': value.next,
-        'previous': value.previous,
-        'results': ((value.results as Array<any>).map(BaseDatatrackerPersonToJSON)),
+        'count': value['count'],
+        'next': value['next'],
+        'previous': value['previous'],
+        'results': ((value['results'] as Array<any>).map(BaseDatatrackerPersonToJSON)),
     };
 }
 

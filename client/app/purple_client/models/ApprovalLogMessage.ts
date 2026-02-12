@@ -12,18 +12,20 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { DatatrackerPerson } from './DatatrackerPerson';
 import {
     DatatrackerPersonFromJSON,
     DatatrackerPersonFromJSONTyped,
     DatatrackerPersonToJSON,
+    DatatrackerPersonToJSONTyped,
 } from './DatatrackerPerson';
 import type { MinimalRfcToBe } from './MinimalRfcToBe';
 import {
     MinimalRfcToBeFromJSON,
     MinimalRfcToBeFromJSONTyped,
     MinimalRfcToBeToJSON,
+    MinimalRfcToBeToJSONTyped,
 } from './MinimalRfcToBe';
 
 /**
@@ -67,11 +69,9 @@ export interface ApprovalLogMessage {
 /**
  * Check if a given object implements the ApprovalLogMessage interface.
  */
-export function instanceOfApprovalLogMessage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "logMessage" in value;
-
-    return isInstance;
+export function instanceOfApprovalLogMessage(value: object): value is ApprovalLogMessage {
+    if (!('logMessage' in value) || value['logMessage'] === undefined) return false;
+    return true;
 }
 
 export function ApprovalLogMessageFromJSON(json: any): ApprovalLogMessage {
@@ -79,29 +79,31 @@ export function ApprovalLogMessageFromJSON(json: any): ApprovalLogMessage {
 }
 
 export function ApprovalLogMessageFromJSONTyped(json: any, ignoreDiscriminator: boolean): ApprovalLogMessage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'by': !exists(json, 'by') ? undefined : DatatrackerPersonFromJSON(json['by']),
-        'rfcToBe': !exists(json, 'rfc_to_be') ? undefined : MinimalRfcToBeFromJSON(json['rfc_to_be']),
+        'id': json['id'] == null ? undefined : json['id'],
+        'by': json['by'] == null ? undefined : DatatrackerPersonFromJSON(json['by']),
+        'rfcToBe': json['rfc_to_be'] == null ? undefined : MinimalRfcToBeFromJSON(json['rfc_to_be']),
         'logMessage': json['log_message'],
-        'time': !exists(json, 'time') ? undefined : (new Date(json['time'])),
+        'time': json['time'] == null ? undefined : (new Date(json['time'])),
     };
 }
 
-export function ApprovalLogMessageToJSON(value?: ApprovalLogMessage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ApprovalLogMessageToJSON(json: any): ApprovalLogMessage {
+    return ApprovalLogMessageToJSONTyped(json, false);
+}
+
+export function ApprovalLogMessageToJSONTyped(value?: Omit<ApprovalLogMessage, 'id'|'by'|'rfc_to_be'|'time'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'log_message': value.logMessage,
+        'log_message': value['logMessage'],
     };
 }
 

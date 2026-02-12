@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,11 +42,9 @@ export interface RfcAuthorRequest {
 /**
  * Check if a given object implements the RfcAuthorRequest interface.
  */
-export function instanceOfRfcAuthorRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "titlepageName" in value;
-
-    return isInstance;
+export function instanceOfRfcAuthorRequest(value: object): value is RfcAuthorRequest {
+    if (!('titlepageName' in value) || value['titlepageName'] === undefined) return false;
+    return true;
 }
 
 export function RfcAuthorRequestFromJSON(json: any): RfcAuthorRequest {
@@ -54,29 +52,31 @@ export function RfcAuthorRequestFromJSON(json: any): RfcAuthorRequest {
 }
 
 export function RfcAuthorRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcAuthorRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'titlepageName': json['titlepage_name'],
-        'isEditor': !exists(json, 'is_editor') ? undefined : json['is_editor'],
-        'affiliation': !exists(json, 'affiliation') ? undefined : json['affiliation'],
+        'isEditor': json['is_editor'] == null ? undefined : json['is_editor'],
+        'affiliation': json['affiliation'] == null ? undefined : json['affiliation'],
     };
 }
 
-export function RfcAuthorRequestToJSON(value?: RfcAuthorRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcAuthorRequestToJSON(json: any): RfcAuthorRequest {
+    return RfcAuthorRequestToJSONTyped(json, false);
+}
+
+export function RfcAuthorRequestToJSONTyped(value?: RfcAuthorRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'titlepage_name': value.titlepageName,
-        'is_editor': value.isEditor,
-        'affiliation': value.affiliation,
+        'titlepage_name': value['titlepageName'],
+        'is_editor': value['isEditor'],
+        'affiliation': value['affiliation'],
     };
 }
 

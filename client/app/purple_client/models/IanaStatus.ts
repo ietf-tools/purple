@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize IANA status with slug and display text
  * @export
@@ -48,13 +48,11 @@ export interface IanaStatus {
 /**
  * Check if a given object implements the IanaStatus interface.
  */
-export function instanceOfIanaStatus(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "desc" in value;
-
-    return isInstance;
+export function instanceOfIanaStatus(value: object): value is IanaStatus {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('desc' in value) || value['desc'] === undefined) return false;
+    return true;
 }
 
 export function IanaStatusFromJSON(json: any): IanaStatus {
@@ -62,7 +60,7 @@ export function IanaStatusFromJSON(json: any): IanaStatus {
 }
 
 export function IanaStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): IanaStatus {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -70,23 +68,25 @@ export function IanaStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'slug': json['slug'],
         'name': json['name'],
         'desc': json['desc'],
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function IanaStatusToJSON(value?: IanaStatus | null): any {
-    if (value === undefined) {
-        return undefined;
+export function IanaStatusToJSON(json: any): IanaStatus {
+    return IanaStatusToJSONTyped(json, false);
+}
+
+export function IanaStatusToJSONTyped(value?: IanaStatus | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
-        'used': value.used,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
+        'used': value['used'],
     };
 }
 

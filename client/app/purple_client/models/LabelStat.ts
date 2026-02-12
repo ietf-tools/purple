@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,13 +42,11 @@ export interface LabelStat {
 /**
  * Check if a given object implements the LabelStat interface.
  */
-export function instanceOfLabelStat(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "documentId" in value;
-    isInstance = isInstance && "labelId" in value;
-    isInstance = isInstance && "seconds" in value;
-
-    return isInstance;
+export function instanceOfLabelStat(value: object): value is LabelStat {
+    if (!('documentId' in value) || value['documentId'] === undefined) return false;
+    if (!('labelId' in value) || value['labelId'] === undefined) return false;
+    if (!('seconds' in value) || value['seconds'] === undefined) return false;
+    return true;
 }
 
 export function LabelStatFromJSON(json: any): LabelStat {
@@ -56,7 +54,7 @@ export function LabelStatFromJSON(json: any): LabelStat {
 }
 
 export function LabelStatFromJSONTyped(json: any, ignoreDiscriminator: boolean): LabelStat {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -67,18 +65,20 @@ export function LabelStatFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     };
 }
 
-export function LabelStatToJSON(value?: LabelStat | null): any {
-    if (value === undefined) {
-        return undefined;
+export function LabelStatToJSON(json: any): LabelStat {
+    return LabelStatToJSONTyped(json, false);
+}
+
+export function LabelStatToJSONTyped(value?: LabelStat | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'document_id': value.documentId,
-        'label_id': value.labelId,
-        'seconds': value.seconds,
+        'document_id': value['documentId'],
+        'label_id': value['labelId'],
+        'seconds': value['seconds'],
     };
 }
 

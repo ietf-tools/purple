@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { MetadataTableRow } from './MetadataTableRow';
 import {
     MetadataTableRowFromJSON,
     MetadataTableRowFromJSONTyped,
     MetadataTableRowToJSON,
+    MetadataTableRowToJSONTyped,
 } from './MetadataTableRow';
 
 /**
@@ -91,13 +92,11 @@ export interface MetadataValidationResults {
 /**
  * Check if a given object implements the MetadataValidationResults interface.
  */
-export function instanceOfMetadataValidationResults(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "rfcToBe" in value;
-    isInstance = isInstance && "status" in value;
-    isInstance = isInstance && "detail" in value;
-
-    return isInstance;
+export function instanceOfMetadataValidationResults(value: object): value is MetadataValidationResults {
+    if (!('rfcToBe' in value) || value['rfcToBe'] === undefined) return false;
+    if (!('status' in value) || value['status'] === undefined) return false;
+    if (!('detail' in value) || value['detail'] === undefined) return false;
+    return true;
 }
 
 export function MetadataValidationResultsFromJSON(json: any): MetadataValidationResults {
@@ -105,37 +104,39 @@ export function MetadataValidationResultsFromJSON(json: any): MetadataValidation
 }
 
 export function MetadataValidationResultsFromJSONTyped(json: any, ignoreDiscriminator: boolean): MetadataValidationResults {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'rfcToBe': json['rfc_to_be'],
-        'repository': !exists(json, 'repository') ? undefined : json['repository'],
-        'headSha': !exists(json, 'head_sha') ? undefined : json['head_sha'],
-        'canAutofix': !exists(json, 'can_autofix') ? undefined : json['can_autofix'],
-        'isMatch': !exists(json, 'is_match') ? undefined : json['is_match'],
-        'metadataCompare': !exists(json, 'metadata_compare') ? undefined : ((json['metadata_compare'] as Array<any>).map(MetadataTableRowFromJSON)),
+        'repository': json['repository'] == null ? undefined : json['repository'],
+        'headSha': json['head_sha'] == null ? undefined : json['head_sha'],
+        'canAutofix': json['can_autofix'] == null ? undefined : json['can_autofix'],
+        'isMatch': json['is_match'] == null ? undefined : json['is_match'],
+        'metadataCompare': json['metadata_compare'] == null ? undefined : ((json['metadata_compare'] as Array<any>).map(MetadataTableRowFromJSON)),
         'status': json['status'],
         'detail': json['detail'],
-        'isError': !exists(json, 'is_error') ? undefined : json['is_error'],
-        'receivedAt': !exists(json, 'received_at') ? undefined : (new Date(json['received_at'])),
+        'isError': json['is_error'] == null ? undefined : json['is_error'],
+        'receivedAt': json['received_at'] == null ? undefined : (new Date(json['received_at'])),
     };
 }
 
-export function MetadataValidationResultsToJSON(value?: MetadataValidationResults | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MetadataValidationResultsToJSON(json: any): MetadataValidationResults {
+    return MetadataValidationResultsToJSONTyped(json, false);
+}
+
+export function MetadataValidationResultsToJSONTyped(value?: Omit<MetadataValidationResults, 'repository'|'can_autofix'|'is_match'|'metadata_compare'|'is_error'|'received_at'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'head_sha': value.headSha,
-        'status': value.status,
-        'detail': value.detail,
+        'rfc_to_be': value['rfcToBe'],
+        'head_sha': value['headSha'],
+        'status': value['status'],
+        'detail': value['detail'],
     };
 }
 

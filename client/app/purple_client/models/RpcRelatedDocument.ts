@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for related document for an RfcToBe
  * @export
@@ -48,11 +48,9 @@ export interface RpcRelatedDocument {
 /**
  * Check if a given object implements the RpcRelatedDocument interface.
  */
-export function instanceOfRpcRelatedDocument(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "relationship" in value;
-
-    return isInstance;
+export function instanceOfRpcRelatedDocument(value: object): value is RpcRelatedDocument {
+    if (!('relationship' in value) || value['relationship'] === undefined) return false;
+    return true;
 }
 
 export function RpcRelatedDocumentFromJSON(json: any): RpcRelatedDocument {
@@ -60,28 +58,30 @@ export function RpcRelatedDocumentFromJSON(json: any): RpcRelatedDocument {
 }
 
 export function RpcRelatedDocumentFromJSONTyped(json: any, ignoreDiscriminator: boolean): RpcRelatedDocument {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'relationship': json['relationship'],
-        'draftName': !exists(json, 'draft_name') ? undefined : json['draft_name'],
-        'targetDraftName': !exists(json, 'target_draft_name') ? undefined : json['target_draft_name'],
+        'draftName': json['draft_name'] == null ? undefined : json['draft_name'],
+        'targetDraftName': json['target_draft_name'] == null ? undefined : json['target_draft_name'],
     };
 }
 
-export function RpcRelatedDocumentToJSON(value?: RpcRelatedDocument | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RpcRelatedDocumentToJSON(json: any): RpcRelatedDocument {
+    return RpcRelatedDocumentToJSONTyped(json, false);
+}
+
+export function RpcRelatedDocumentToJSONTyped(value?: Omit<RpcRelatedDocument, 'id'|'draft_name'|'target_draft_name'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'relationship': value.relationship,
+        'relationship': value['relationship'],
     };
 }
 

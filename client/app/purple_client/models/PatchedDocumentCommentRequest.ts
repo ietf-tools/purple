@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a comment on an RfcToBe
  * @export
@@ -30,10 +30,8 @@ export interface PatchedDocumentCommentRequest {
 /**
  * Check if a given object implements the PatchedDocumentCommentRequest interface.
  */
-export function instanceOfPatchedDocumentCommentRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedDocumentCommentRequest(value: object): value is PatchedDocumentCommentRequest {
+    return true;
 }
 
 export function PatchedDocumentCommentRequestFromJSON(json: any): PatchedDocumentCommentRequest {
@@ -41,25 +39,27 @@ export function PatchedDocumentCommentRequestFromJSON(json: any): PatchedDocumen
 }
 
 export function PatchedDocumentCommentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedDocumentCommentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
+        'comment': json['comment'] == null ? undefined : json['comment'],
     };
 }
 
-export function PatchedDocumentCommentRequestToJSON(value?: PatchedDocumentCommentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedDocumentCommentRequestToJSON(json: any): PatchedDocumentCommentRequest {
+    return PatchedDocumentCommentRequestToJSONTyped(json, false);
+}
+
+export function PatchedDocumentCommentRequestToJSONTyped(value?: PatchedDocumentCommentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'comment': value.comment,
+        'comment': value['comment'],
     };
 }
 

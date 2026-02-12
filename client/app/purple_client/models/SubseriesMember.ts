@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a SubseriesMember
  * @export
@@ -60,13 +60,11 @@ export interface SubseriesMember {
 /**
  * Check if a given object implements the SubseriesMember interface.
  */
-export function instanceOfSubseriesMember(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "rfcToBe" in value;
-    isInstance = isInstance && "type" in value;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfSubseriesMember(value: object): value is SubseriesMember {
+    if (!('rfcToBe' in value) || value['rfcToBe'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function SubseriesMemberFromJSON(json: any): SubseriesMember {
@@ -74,32 +72,34 @@ export function SubseriesMemberFromJSON(json: any): SubseriesMember {
 }
 
 export function SubseriesMemberFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubseriesMember {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
+        'id': json['id'] == null ? undefined : json['id'],
         'rfcToBe': json['rfc_to_be'],
         'type': json['type'],
         'number': json['number'],
-        'displayName': !exists(json, 'display_name') ? undefined : json['display_name'],
-        'slug': !exists(json, 'slug') ? undefined : json['slug'],
+        'displayName': json['display_name'] == null ? undefined : json['display_name'],
+        'slug': json['slug'] == null ? undefined : json['slug'],
     };
 }
 
-export function SubseriesMemberToJSON(value?: SubseriesMember | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubseriesMemberToJSON(json: any): SubseriesMember {
+    return SubseriesMemberToJSONTyped(json, false);
+}
+
+export function SubseriesMemberToJSONTyped(value?: Omit<SubseriesMember, 'id'|'display_name'|'slug'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'type': value.type,
-        'number': value.number,
+        'rfc_to_be': value['rfcToBe'],
+        'type': value['type'],
+        'number': value['number'],
     };
 }
 

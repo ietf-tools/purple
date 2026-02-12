@@ -12,18 +12,20 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { RfcToBe } from './RfcToBe';
 import {
     RfcToBeFromJSON,
     RfcToBeFromJSONTyped,
     RfcToBeToJSON,
+    RfcToBeToJSONTyped,
 } from './RfcToBe';
 import type { StateEnum } from './StateEnum';
 import {
     StateEnumFromJSON,
     StateEnumFromJSONTyped,
     StateEnumToJSON,
+    StateEnumToJSONTyped,
 } from './StateEnum';
 
 /**
@@ -76,14 +78,14 @@ export interface NestedAssignment {
     timeSpent?: string;
 }
 
+
+
 /**
  * Check if a given object implements the NestedAssignment interface.
  */
-export function instanceOfNestedAssignment(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "role" in value;
-
-    return isInstance;
+export function instanceOfNestedAssignment(value: object): value is NestedAssignment {
+    if (!('role' in value) || value['role'] === undefined) return false;
+    return true;
 }
 
 export function NestedAssignmentFromJSON(json: any): NestedAssignment {
@@ -91,35 +93,37 @@ export function NestedAssignmentFromJSON(json: any): NestedAssignment {
 }
 
 export function NestedAssignmentFromJSONTyped(json: any, ignoreDiscriminator: boolean): NestedAssignment {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'rfcToBe': !exists(json, 'rfc_to_be') ? undefined : RfcToBeFromJSON(json['rfc_to_be']),
-        'person': !exists(json, 'person') ? undefined : json['person'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'rfcToBe': json['rfc_to_be'] == null ? undefined : RfcToBeFromJSON(json['rfc_to_be']),
+        'person': json['person'] == null ? undefined : json['person'],
         'role': json['role'],
-        'state': !exists(json, 'state') ? undefined : StateEnumFromJSON(json['state']),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'timeSpent': !exists(json, 'time_spent') ? undefined : json['time_spent'],
+        'state': json['state'] == null ? undefined : StateEnumFromJSON(json['state']),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'timeSpent': json['time_spent'] == null ? undefined : json['time_spent'],
     };
 }
 
-export function NestedAssignmentToJSON(value?: NestedAssignment | null): any {
-    if (value === undefined) {
-        return undefined;
+export function NestedAssignmentToJSON(json: any): NestedAssignment {
+    return NestedAssignmentToJSONTyped(json, false);
+}
+
+export function NestedAssignmentToJSONTyped(value?: Omit<NestedAssignment, 'id'|'rfc_to_be'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'person': value.person,
-        'role': value.role,
-        'state': StateEnumToJSON(value.state),
-        'comment': value.comment,
-        'time_spent': value.timeSpent,
+        'person': value['person'],
+        'role': value['role'],
+        'state': StateEnumToJSON(value['state']),
+        'comment': value['comment'],
+        'time_spent': value['timeSpent'],
     };
 }
 

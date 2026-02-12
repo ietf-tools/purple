@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface SyncMetadataBadRequestResponse {
 /**
  * Check if a given object implements the SyncMetadataBadRequestResponse interface.
  */
-export function instanceOfSyncMetadataBadRequestResponse(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "error" in value;
-
-    return isInstance;
+export function instanceOfSyncMetadataBadRequestResponse(value: object): value is SyncMetadataBadRequestResponse {
+    if (!('error' in value) || value['error'] === undefined) return false;
+    return true;
 }
 
 export function SyncMetadataBadRequestResponseFromJSON(json: any): SyncMetadataBadRequestResponse {
@@ -42,7 +40,7 @@ export function SyncMetadataBadRequestResponseFromJSON(json: any): SyncMetadataB
 }
 
 export function SyncMetadataBadRequestResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): SyncMetadataBadRequestResponse {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function SyncMetadataBadRequestResponseFromJSONTyped(json: any, ignoreDis
     };
 }
 
-export function SyncMetadataBadRequestResponseToJSON(value?: SyncMetadataBadRequestResponse | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SyncMetadataBadRequestResponseToJSON(json: any): SyncMetadataBadRequestResponse {
+    return SyncMetadataBadRequestResponseToJSONTyped(json, false);
+}
+
+export function SyncMetadataBadRequestResponseToJSONTyped(value?: SyncMetadataBadRequestResponse | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'error': value.error,
+        'error': value['error'],
     };
 }
 

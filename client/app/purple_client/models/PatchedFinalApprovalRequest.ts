@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize final approval information for an RfcToBe
  * @export
@@ -48,10 +48,8 @@ export interface PatchedFinalApprovalRequest {
 /**
  * Check if a given object implements the PatchedFinalApprovalRequest interface.
  */
-export function instanceOfPatchedFinalApprovalRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedFinalApprovalRequest(value: object): value is PatchedFinalApprovalRequest {
+    return true;
 }
 
 export function PatchedFinalApprovalRequestFromJSON(json: any): PatchedFinalApprovalRequest {
@@ -59,31 +57,33 @@ export function PatchedFinalApprovalRequestFromJSON(json: any): PatchedFinalAppr
 }
 
 export function PatchedFinalApprovalRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedFinalApprovalRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'approved': !exists(json, 'approved') ? undefined : (json['approved'] === null ? null : new Date(json['approved'])),
-        'approverPersonId': !exists(json, 'approver_person_id') ? undefined : json['approver_person_id'],
-        'overridingApproverPersonId': !exists(json, 'overriding_approver_person_id') ? undefined : json['overriding_approver_person_id'],
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
+        'approved': json['approved'] == null ? undefined : (new Date(json['approved'])),
+        'approverPersonId': json['approver_person_id'] == null ? undefined : json['approver_person_id'],
+        'overridingApproverPersonId': json['overriding_approver_person_id'] == null ? undefined : json['overriding_approver_person_id'],
+        'comment': json['comment'] == null ? undefined : json['comment'],
     };
 }
 
-export function PatchedFinalApprovalRequestToJSON(value?: PatchedFinalApprovalRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedFinalApprovalRequestToJSON(json: any): PatchedFinalApprovalRequest {
+    return PatchedFinalApprovalRequestToJSONTyped(json, false);
+}
+
+export function PatchedFinalApprovalRequestToJSONTyped(value?: PatchedFinalApprovalRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'approved': value.approved === undefined ? undefined : (value.approved === null ? null : value.approved.toISOString()),
-        'approver_person_id': value.approverPersonId,
-        'overriding_approver_person_id': value.overridingApproverPersonId,
-        'comment': value.comment,
+        'approved': value['approved'] == null ? value['approved'] : value['approved'].toISOString(),
+        'approver_person_id': value['approverPersonId'],
+        'overriding_approver_person_id': value['overridingApproverPersonId'],
+        'comment': value['comment'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a SubseriesMember
  * @export
@@ -42,13 +42,11 @@ export interface SubseriesMemberRequest {
 /**
  * Check if a given object implements the SubseriesMemberRequest interface.
  */
-export function instanceOfSubseriesMemberRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "rfcToBe" in value;
-    isInstance = isInstance && "type" in value;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfSubseriesMemberRequest(value: object): value is SubseriesMemberRequest {
+    if (!('rfcToBe' in value) || value['rfcToBe'] === undefined) return false;
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function SubseriesMemberRequestFromJSON(json: any): SubseriesMemberRequest {
@@ -56,7 +54,7 @@ export function SubseriesMemberRequestFromJSON(json: any): SubseriesMemberReques
 }
 
 export function SubseriesMemberRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubseriesMemberRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -67,18 +65,20 @@ export function SubseriesMemberRequestFromJSONTyped(json: any, ignoreDiscriminat
     };
 }
 
-export function SubseriesMemberRequestToJSON(value?: SubseriesMemberRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubseriesMemberRequestToJSON(json: any): SubseriesMemberRequest {
+    return SubseriesMemberRequestToJSONTyped(json, false);
+}
+
+export function SubseriesMemberRequestToJSONTyped(value?: SubseriesMemberRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'type': value.type,
-        'number': value.number,
+        'rfc_to_be': value['rfcToBe'],
+        'type': value['type'],
+        'number': value['number'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -72,11 +72,9 @@ export interface RfcAuthor {
 /**
  * Check if a given object implements the RfcAuthor interface.
  */
-export function instanceOfRfcAuthor(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "titlepageName" in value;
-
-    return isInstance;
+export function instanceOfRfcAuthor(value: object): value is RfcAuthor {
+    if (!('titlepageName' in value) || value['titlepageName'] === undefined) return false;
+    return true;
 }
 
 export function RfcAuthorFromJSON(json: any): RfcAuthor {
@@ -84,34 +82,36 @@ export function RfcAuthorFromJSON(json: any): RfcAuthor {
 }
 
 export function RfcAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcAuthor {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'email': !exists(json, 'email') ? undefined : json['email'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'email': json['email'] == null ? undefined : json['email'],
         'titlepageName': json['titlepage_name'],
-        'isEditor': !exists(json, 'is_editor') ? undefined : json['is_editor'],
-        'picture': !exists(json, 'picture') ? undefined : json['picture'],
-        'datatrackerUrl': !exists(json, 'datatracker_url') ? undefined : json['datatracker_url'],
-        'affiliation': !exists(json, 'affiliation') ? undefined : json['affiliation'],
+        'isEditor': json['is_editor'] == null ? undefined : json['is_editor'],
+        'picture': json['picture'] == null ? undefined : json['picture'],
+        'datatrackerUrl': json['datatracker_url'] == null ? undefined : json['datatracker_url'],
+        'affiliation': json['affiliation'] == null ? undefined : json['affiliation'],
     };
 }
 
-export function RfcAuthorToJSON(value?: RfcAuthor | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcAuthorToJSON(json: any): RfcAuthor {
+    return RfcAuthorToJSONTyped(json, false);
+}
+
+export function RfcAuthorToJSONTyped(value?: Omit<RfcAuthor, 'id'|'name'|'email'|'picture'|'datatracker_url'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'titlepage_name': value.titlepageName,
-        'is_editor': value.isEditor,
-        'affiliation': value.affiliation,
+        'titlepage_name': value['titlepageName'],
+        'is_editor': value['isEditor'],
+        'affiliation': value['affiliation'],
     };
 }
 

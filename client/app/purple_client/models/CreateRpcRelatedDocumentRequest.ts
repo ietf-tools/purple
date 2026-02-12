@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for creating a related document for an RfcToBe
  * @export
@@ -42,13 +42,11 @@ export interface CreateRpcRelatedDocumentRequest {
 /**
  * Check if a given object implements the CreateRpcRelatedDocumentRequest interface.
  */
-export function instanceOfCreateRpcRelatedDocumentRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "relationship" in value;
-    isInstance = isInstance && "source" in value;
-    isInstance = isInstance && "targetDraftName" in value;
-
-    return isInstance;
+export function instanceOfCreateRpcRelatedDocumentRequest(value: object): value is CreateRpcRelatedDocumentRequest {
+    if (!('relationship' in value) || value['relationship'] === undefined) return false;
+    if (!('source' in value) || value['source'] === undefined) return false;
+    if (!('targetDraftName' in value) || value['targetDraftName'] === undefined) return false;
+    return true;
 }
 
 export function CreateRpcRelatedDocumentRequestFromJSON(json: any): CreateRpcRelatedDocumentRequest {
@@ -56,7 +54,7 @@ export function CreateRpcRelatedDocumentRequestFromJSON(json: any): CreateRpcRel
 }
 
 export function CreateRpcRelatedDocumentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateRpcRelatedDocumentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -67,18 +65,20 @@ export function CreateRpcRelatedDocumentRequestFromJSONTyped(json: any, ignoreDi
     };
 }
 
-export function CreateRpcRelatedDocumentRequestToJSON(value?: CreateRpcRelatedDocumentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CreateRpcRelatedDocumentRequestToJSON(json: any): CreateRpcRelatedDocumentRequest {
+    return CreateRpcRelatedDocumentRequestToJSONTyped(json, false);
+}
+
+export function CreateRpcRelatedDocumentRequestToJSONTyped(value?: CreateRpcRelatedDocumentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'relationship': value.relationship,
-        'source': value.source,
-        'target_draft_name': value.targetDraftName,
+        'relationship': value['relationship'],
+        'source': value['source'],
+        'target_draft_name': value['targetDraftName'],
     };
 }
 

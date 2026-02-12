@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { StateEnum } from './StateEnum';
 import {
     StateEnumFromJSON,
     StateEnumFromJSONTyped,
     StateEnumToJSON,
+    StateEnumToJSONTyped,
 } from './StateEnum';
 
 /**
@@ -64,13 +65,13 @@ export interface PatchedAssignmentRequest {
     timeSpent?: string;
 }
 
+
+
 /**
  * Check if a given object implements the PatchedAssignmentRequest interface.
  */
-export function instanceOfPatchedAssignmentRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedAssignmentRequest(value: object): value is PatchedAssignmentRequest {
+    return true;
 }
 
 export function PatchedAssignmentRequestFromJSON(json: any): PatchedAssignmentRequest {
@@ -78,35 +79,37 @@ export function PatchedAssignmentRequestFromJSON(json: any): PatchedAssignmentRe
 }
 
 export function PatchedAssignmentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedAssignmentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'rfcToBe': !exists(json, 'rfc_to_be') ? undefined : json['rfc_to_be'],
-        'person': !exists(json, 'person') ? undefined : json['person'],
-        'role': !exists(json, 'role') ? undefined : json['role'],
-        'state': !exists(json, 'state') ? undefined : StateEnumFromJSON(json['state']),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'timeSpent': !exists(json, 'time_spent') ? undefined : json['time_spent'],
+        'rfcToBe': json['rfc_to_be'] == null ? undefined : json['rfc_to_be'],
+        'person': json['person'] == null ? undefined : json['person'],
+        'role': json['role'] == null ? undefined : json['role'],
+        'state': json['state'] == null ? undefined : StateEnumFromJSON(json['state']),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'timeSpent': json['time_spent'] == null ? undefined : json['time_spent'],
     };
 }
 
-export function PatchedAssignmentRequestToJSON(value?: PatchedAssignmentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedAssignmentRequestToJSON(json: any): PatchedAssignmentRequest {
+    return PatchedAssignmentRequestToJSONTyped(json, false);
+}
+
+export function PatchedAssignmentRequestToJSONTyped(value?: PatchedAssignmentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'person': value.person,
-        'role': value.role,
-        'state': StateEnumToJSON(value.state),
-        'comment': value.comment,
-        'time_spent': value.timeSpent,
+        'rfc_to_be': value['rfcToBe'],
+        'person': value['person'],
+        'role': value['role'],
+        'state': StateEnumToJSON(value['state']),
+        'comment': value['comment'],
+        'time_spent': value['timeSpent'],
     };
 }
 

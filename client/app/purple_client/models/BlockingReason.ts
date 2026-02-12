@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize BlockingReason model
  * @export
@@ -48,13 +48,11 @@ export interface BlockingReason {
 /**
  * Check if a given object implements the BlockingReason interface.
  */
-export function instanceOfBlockingReason(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "desc" in value;
-
-    return isInstance;
+export function instanceOfBlockingReason(value: object): value is BlockingReason {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('desc' in value) || value['desc'] === undefined) return false;
+    return true;
 }
 
 export function BlockingReasonFromJSON(json: any): BlockingReason {
@@ -62,7 +60,7 @@ export function BlockingReasonFromJSON(json: any): BlockingReason {
 }
 
 export function BlockingReasonFromJSONTyped(json: any, ignoreDiscriminator: boolean): BlockingReason {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -70,23 +68,25 @@ export function BlockingReasonFromJSONTyped(json: any, ignoreDiscriminator: bool
         'slug': json['slug'],
         'name': json['name'],
         'desc': json['desc'],
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function BlockingReasonToJSON(value?: BlockingReason | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BlockingReasonToJSON(json: any): BlockingReason {
+    return BlockingReasonToJSONTyped(json, false);
+}
+
+export function BlockingReasonToJSONTyped(value?: BlockingReason | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
-        'used': value.used,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
+        'used': value['used'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize an ActionHolder with person name
  * @export
@@ -48,10 +48,8 @@ export interface PatchedActionHolderRequest {
 /**
  * Check if a given object implements the PatchedActionHolderRequest interface.
  */
-export function instanceOfPatchedActionHolderRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedActionHolderRequest(value: object): value is PatchedActionHolderRequest {
+    return true;
 }
 
 export function PatchedActionHolderRequestFromJSON(json: any): PatchedActionHolderRequest {
@@ -59,31 +57,33 @@ export function PatchedActionHolderRequestFromJSON(json: any): PatchedActionHold
 }
 
 export function PatchedActionHolderRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedActionHolderRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'deadline': !exists(json, 'deadline') ? undefined : (json['deadline'] === null ? null : new Date(json['deadline'])),
-        'completed': !exists(json, 'completed') ? undefined : (json['completed'] === null ? null : new Date(json['completed'])),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'body': !exists(json, 'body') ? undefined : json['body'],
+        'deadline': json['deadline'] == null ? undefined : (new Date(json['deadline'])),
+        'completed': json['completed'] == null ? undefined : (new Date(json['completed'])),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'body': json['body'] == null ? undefined : json['body'],
     };
 }
 
-export function PatchedActionHolderRequestToJSON(value?: PatchedActionHolderRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedActionHolderRequestToJSON(json: any): PatchedActionHolderRequest {
+    return PatchedActionHolderRequestToJSONTyped(json, false);
+}
+
+export function PatchedActionHolderRequestToJSONTyped(value?: PatchedActionHolderRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'deadline': value.deadline === undefined ? undefined : (value.deadline === null ? null : value.deadline.toISOString()),
-        'completed': value.completed === undefined ? undefined : (value.completed === null ? null : value.completed.toISOString()),
-        'comment': value.comment,
-        'body': value.body,
+        'deadline': value['deadline'] == null ? value['deadline'] : value['deadline'].toISOString(),
+        'completed': value['completed'] == null ? value['completed'] : value['completed'].toISOString(),
+        'comment': value['comment'],
+        'body': value['body'],
     };
 }
 

@@ -22,14 +22,25 @@
  * @export
  */
 export const StateEnum = {
-    Assigned: 'assigned',
-    InProgress: 'in_progress',
-    Done: 'done',
-    Withdrawn: 'withdrawn',
-    ClosedForHold: 'closed_for_hold'
+    assigned: 'assigned',
+    in_progress: 'in_progress',
+    done: 'done',
+    withdrawn: 'withdrawn',
+    closed_for_hold: 'closed_for_hold'
 } as const;
 export type StateEnum = typeof StateEnum[keyof typeof StateEnum];
 
+
+export function instanceOfStateEnum(value: any): boolean {
+    for (const key in StateEnum) {
+        if (Object.prototype.hasOwnProperty.call(StateEnum, key)) {
+            if (StateEnum[key as keyof typeof StateEnum] === value) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 export function StateEnumFromJSON(json: any): StateEnum {
     return StateEnumFromJSONTyped(json, false);
@@ -41,5 +52,9 @@ export function StateEnumFromJSONTyped(json: any, ignoreDiscriminator: boolean):
 
 export function StateEnumToJSON(value?: StateEnum | null): any {
     return value as any;
+}
+
+export function StateEnumToJSONTyped(value: any, ignoreDiscriminator: boolean): StateEnum {
+    return value as StateEnum;
 }
 

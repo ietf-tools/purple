@@ -12,19 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
-import type { Name } from './Name';
-import {
-    NameFromJSON,
-    NameFromJSONTyped,
-    NameToJSON,
-} from './Name';
+import { mapValues } from '../runtime';
 import type { SubmissionAuthor } from './SubmissionAuthor';
 import {
     SubmissionAuthorFromJSON,
     SubmissionAuthorFromJSONTyped,
     SubmissionAuthorToJSON,
+    SubmissionAuthorToJSONTyped,
 } from './SubmissionAuthor';
+import type { Name } from './Name';
+import {
+    NameFromJSON,
+    NameFromJSONTyped,
+    NameToJSON,
+    NameToJSONTyped,
+} from './Name';
 
 /**
  * Serialize a submission
@@ -109,21 +111,19 @@ export interface Submission {
 /**
  * Check if a given object implements the Submission interface.
  */
-export function instanceOfSubmission(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "rev" in value;
-    isInstance = isInstance && "stream" in value;
-    isInstance = isInstance && "title" in value;
-    isInstance = isInstance && "pages" in value;
-    isInstance = isInstance && "sourceFormat" in value;
-    isInstance = isInstance && "authors" in value;
-    isInstance = isInstance && "shepherd" in value;
-    isInstance = isInstance && "datatrackerUrl" in value;
-    isInstance = isInstance && "consensus" in value;
-
-    return isInstance;
+export function instanceOfSubmission(value: object): value is Submission {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('rev' in value) || value['rev'] === undefined) return false;
+    if (!('stream' in value) || value['stream'] === undefined) return false;
+    if (!('title' in value) || value['title'] === undefined) return false;
+    if (!('pages' in value) || value['pages'] === undefined) return false;
+    if (!('sourceFormat' in value) || value['sourceFormat'] === undefined) return false;
+    if (!('authors' in value) || value['authors'] === undefined) return false;
+    if (!('shepherd' in value) || value['shepherd'] === undefined) return false;
+    if (!('datatrackerUrl' in value) || value['datatrackerUrl'] === undefined) return false;
+    if (!('consensus' in value) || value['consensus'] === undefined) return false;
+    return true;
 }
 
 export function SubmissionFromJSON(json: any): Submission {
@@ -131,7 +131,7 @@ export function SubmissionFromJSON(json: any): Submission {
 }
 
 export function SubmissionFromJSONTyped(json: any, ignoreDiscriminator: boolean): Submission {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -145,33 +145,35 @@ export function SubmissionFromJSONTyped(json: any, ignoreDiscriminator: boolean)
         'sourceFormat': NameFromJSON(json['source_format']),
         'authors': ((json['authors'] as Array<any>).map(SubmissionAuthorFromJSON)),
         'shepherd': json['shepherd'],
-        'stdLevel': !exists(json, 'std_level') ? undefined : NameFromJSON(json['std_level']),
+        'stdLevel': json['std_level'] == null ? undefined : NameFromJSON(json['std_level']),
         'datatrackerUrl': json['datatracker_url'],
         'consensus': json['consensus'],
     };
 }
 
-export function SubmissionToJSON(value?: Submission | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubmissionToJSON(json: any): Submission {
+    return SubmissionToJSONTyped(json, false);
+}
+
+export function SubmissionToJSONTyped(value?: Submission | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'name': value.name,
-        'rev': value.rev,
-        'stream': NameToJSON(value.stream),
-        'title': value.title,
-        'pages': value.pages,
-        'source_format': NameToJSON(value.sourceFormat),
-        'authors': ((value.authors as Array<any>).map(SubmissionAuthorToJSON)),
-        'shepherd': value.shepherd,
-        'std_level': NameToJSON(value.stdLevel),
-        'datatracker_url': value.datatrackerUrl,
-        'consensus': value.consensus,
+        'id': value['id'],
+        'name': value['name'],
+        'rev': value['rev'],
+        'stream': NameToJSON(value['stream']),
+        'title': value['title'],
+        'pages': value['pages'],
+        'source_format': NameToJSON(value['sourceFormat']),
+        'authors': ((value['authors'] as Array<any>).map(SubmissionAuthorToJSON)),
+        'shepherd': value['shepherd'],
+        'std_level': NameToJSON(value['stdLevel']),
+        'datatracker_url': value['datatrackerUrl'],
+        'consensus': value['consensus'],
     };
 }
 

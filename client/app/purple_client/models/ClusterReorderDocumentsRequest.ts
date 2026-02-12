@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for reordering documents in a cluster
  * @export
@@ -30,11 +30,9 @@ export interface ClusterReorderDocumentsRequest {
 /**
  * Check if a given object implements the ClusterReorderDocumentsRequest interface.
  */
-export function instanceOfClusterReorderDocumentsRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "draftNames" in value;
-
-    return isInstance;
+export function instanceOfClusterReorderDocumentsRequest(value: object): value is ClusterReorderDocumentsRequest {
+    if (!('draftNames' in value) || value['draftNames'] === undefined) return false;
+    return true;
 }
 
 export function ClusterReorderDocumentsRequestFromJSON(json: any): ClusterReorderDocumentsRequest {
@@ -42,7 +40,7 @@ export function ClusterReorderDocumentsRequestFromJSON(json: any): ClusterReorde
 }
 
 export function ClusterReorderDocumentsRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ClusterReorderDocumentsRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function ClusterReorderDocumentsRequestFromJSONTyped(json: any, ignoreDis
     };
 }
 
-export function ClusterReorderDocumentsRequestToJSON(value?: ClusterReorderDocumentsRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterReorderDocumentsRequestToJSON(json: any): ClusterReorderDocumentsRequest {
+    return ClusterReorderDocumentsRequestToJSONTyped(json, false);
+}
+
+export function ClusterReorderDocumentsRequestToJSONTyped(value?: ClusterReorderDocumentsRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'draft_names': value.draftNames,
+        'draft_names': value['draftNames'],
     };
 }
 

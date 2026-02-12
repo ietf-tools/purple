@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a SubseriesMember
  * @export
@@ -42,10 +42,8 @@ export interface PatchedSubseriesMemberRequest {
 /**
  * Check if a given object implements the PatchedSubseriesMemberRequest interface.
  */
-export function instanceOfPatchedSubseriesMemberRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedSubseriesMemberRequest(value: object): value is PatchedSubseriesMemberRequest {
+    return true;
 }
 
 export function PatchedSubseriesMemberRequestFromJSON(json: any): PatchedSubseriesMemberRequest {
@@ -53,29 +51,31 @@ export function PatchedSubseriesMemberRequestFromJSON(json: any): PatchedSubseri
 }
 
 export function PatchedSubseriesMemberRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedSubseriesMemberRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'rfcToBe': !exists(json, 'rfc_to_be') ? undefined : json['rfc_to_be'],
-        'type': !exists(json, 'type') ? undefined : json['type'],
-        'number': !exists(json, 'number') ? undefined : json['number'],
+        'rfcToBe': json['rfc_to_be'] == null ? undefined : json['rfc_to_be'],
+        'type': json['type'] == null ? undefined : json['type'],
+        'number': json['number'] == null ? undefined : json['number'],
     };
 }
 
-export function PatchedSubseriesMemberRequestToJSON(value?: PatchedSubseriesMemberRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedSubseriesMemberRequestToJSON(json: any): PatchedSubseriesMemberRequest {
+    return PatchedSubseriesMemberRequestToJSONTyped(json, false);
+}
+
+export function PatchedSubseriesMemberRequestToJSONTyped(value?: PatchedSubseriesMemberRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_to_be': value.rfcToBe,
-        'type': value.type,
-        'number': value.number,
+        'rfc_to_be': value['rfcToBe'],
+        'type': value['type'],
+        'number': value['number'],
     };
 }
 

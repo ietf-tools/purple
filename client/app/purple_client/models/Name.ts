@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize any Name subclass
  * @export
@@ -48,13 +48,11 @@ export interface Name {
 /**
  * Check if a given object implements the Name interface.
  */
-export function instanceOfName(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "desc" in value;
-
-    return isInstance;
+export function instanceOfName(value: object): value is Name {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('desc' in value) || value['desc'] === undefined) return false;
+    return true;
 }
 
 export function NameFromJSON(json: any): Name {
@@ -62,7 +60,7 @@ export function NameFromJSON(json: any): Name {
 }
 
 export function NameFromJSONTyped(json: any, ignoreDiscriminator: boolean): Name {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -70,23 +68,25 @@ export function NameFromJSONTyped(json: any, ignoreDiscriminator: boolean): Name
         'slug': json['slug'],
         'name': json['name'],
         'desc': json['desc'],
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function NameToJSON(value?: Name | null): any {
-    if (value === undefined) {
-        return undefined;
+export function NameToJSON(json: any): Name {
+    return NameToJSONTyped(json, false);
+}
+
+export function NameToJSONTyped(value?: Name | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
-        'used': value.used,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
+        'used': value['used'],
     };
 }
 

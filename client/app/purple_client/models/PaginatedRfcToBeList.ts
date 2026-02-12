@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { RfcToBe } from './RfcToBe';
 import {
     RfcToBeFromJSON,
     RfcToBeFromJSONTyped,
     RfcToBeToJSON,
+    RfcToBeToJSONTyped,
 } from './RfcToBe';
 
 /**
@@ -55,12 +56,10 @@ export interface PaginatedRfcToBeList {
 /**
  * Check if a given object implements the PaginatedRfcToBeList interface.
  */
-export function instanceOfPaginatedRfcToBeList(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "count" in value;
-    isInstance = isInstance && "results" in value;
-
-    return isInstance;
+export function instanceOfPaginatedRfcToBeList(value: object): value is PaginatedRfcToBeList {
+    if (!('count' in value) || value['count'] === undefined) return false;
+    if (!('results' in value) || value['results'] === undefined) return false;
+    return true;
 }
 
 export function PaginatedRfcToBeListFromJSON(json: any): PaginatedRfcToBeList {
@@ -68,31 +67,33 @@ export function PaginatedRfcToBeListFromJSON(json: any): PaginatedRfcToBeList {
 }
 
 export function PaginatedRfcToBeListFromJSONTyped(json: any, ignoreDiscriminator: boolean): PaginatedRfcToBeList {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'count': json['count'],
-        'next': !exists(json, 'next') ? undefined : json['next'],
-        'previous': !exists(json, 'previous') ? undefined : json['previous'],
+        'next': json['next'] == null ? undefined : json['next'],
+        'previous': json['previous'] == null ? undefined : json['previous'],
         'results': ((json['results'] as Array<any>).map(RfcToBeFromJSON)),
     };
 }
 
-export function PaginatedRfcToBeListToJSON(value?: PaginatedRfcToBeList | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PaginatedRfcToBeListToJSON(json: any): PaginatedRfcToBeList {
+    return PaginatedRfcToBeListToJSONTyped(json, false);
+}
+
+export function PaginatedRfcToBeListToJSONTyped(value?: PaginatedRfcToBeList | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'count': value.count,
-        'next': value.next,
-        'previous': value.previous,
-        'results': ((value.results as Array<any>).map(RfcToBeToJSON)),
+        'count': value['count'],
+        'next': value['next'],
+        'previous': value['previous'],
+        'results': ((value['results'] as Array<any>).map(RfcToBeToJSON)),
     };
 }
 

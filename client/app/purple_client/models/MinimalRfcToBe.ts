@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -36,10 +36,8 @@ export interface MinimalRfcToBe {
 /**
  * Check if a given object implements the MinimalRfcToBe interface.
  */
-export function instanceOfMinimalRfcToBe(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfMinimalRfcToBe(value: object): value is MinimalRfcToBe {
+    return true;
 }
 
 export function MinimalRfcToBeFromJSON(json: any): MinimalRfcToBe {
@@ -47,26 +45,28 @@ export function MinimalRfcToBeFromJSON(json: any): MinimalRfcToBe {
 }
 
 export function MinimalRfcToBeFromJSONTyped(json: any, ignoreDiscriminator: boolean): MinimalRfcToBe {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'rfcNumber': !exists(json, 'rfc_number') ? undefined : json['rfc_number'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'rfcNumber': json['rfc_number'] == null ? undefined : json['rfc_number'],
     };
 }
 
-export function MinimalRfcToBeToJSON(value?: MinimalRfcToBe | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MinimalRfcToBeToJSON(json: any): MinimalRfcToBe {
+    return MinimalRfcToBeToJSONTyped(json, false);
+}
+
+export function MinimalRfcToBeToJSONTyped(value?: Omit<MinimalRfcToBe, 'name'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'rfc_number': value.rfcNumber,
+        'rfc_number': value['rfcNumber'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a cluster without its contents
  * @export
@@ -30,11 +30,9 @@ export interface SimpleClusterRequest {
 /**
  * Check if a given object implements the SimpleClusterRequest interface.
  */
-export function instanceOfSimpleClusterRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfSimpleClusterRequest(value: object): value is SimpleClusterRequest {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function SimpleClusterRequestFromJSON(json: any): SimpleClusterRequest {
@@ -42,7 +40,7 @@ export function SimpleClusterRequestFromJSON(json: any): SimpleClusterRequest {
 }
 
 export function SimpleClusterRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): SimpleClusterRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function SimpleClusterRequestFromJSONTyped(json: any, ignoreDiscriminator
     };
 }
 
-export function SimpleClusterRequestToJSON(value?: SimpleClusterRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SimpleClusterRequestToJSON(json: any): SimpleClusterRequest {
+    return SimpleClusterRequestToJSONTyped(json, false);
+}
+
+export function SimpleClusterRequestToJSONTyped(value?: SimpleClusterRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
+        'number': value['number'],
     };
 }
 

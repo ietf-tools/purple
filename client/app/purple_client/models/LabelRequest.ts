@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { ColorEnum } from './ColorEnum';
 import {
     ColorEnumFromJSON,
     ColorEnumFromJSONTyped,
     ColorEnumToJSON,
+    ColorEnumToJSONTyped,
 } from './ColorEnum';
 
 /**
@@ -58,14 +59,14 @@ export interface LabelRequest {
     used?: boolean;
 }
 
+
+
 /**
  * Check if a given object implements the LabelRequest interface.
  */
-export function instanceOfLabelRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-
-    return isInstance;
+export function instanceOfLabelRequest(value: object): value is LabelRequest {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    return true;
 }
 
 export function LabelRequestFromJSON(json: any): LabelRequest {
@@ -73,33 +74,35 @@ export function LabelRequestFromJSON(json: any): LabelRequest {
 }
 
 export function LabelRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): LabelRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'slug': json['slug'],
-        'isException': !exists(json, 'is_exception') ? undefined : json['is_exception'],
-        'isComplexity': !exists(json, 'is_complexity') ? undefined : json['is_complexity'],
-        'color': !exists(json, 'color') ? undefined : ColorEnumFromJSON(json['color']),
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'isException': json['is_exception'] == null ? undefined : json['is_exception'],
+        'isComplexity': json['is_complexity'] == null ? undefined : json['is_complexity'],
+        'color': json['color'] == null ? undefined : ColorEnumFromJSON(json['color']),
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function LabelRequestToJSON(value?: LabelRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function LabelRequestToJSON(json: any): LabelRequest {
+    return LabelRequestToJSONTyped(json, false);
+}
+
+export function LabelRequestToJSONTyped(value?: LabelRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'is_exception': value.isException,
-        'is_complexity': value.isComplexity,
-        'color': ColorEnumToJSON(value.color),
-        'used': value.used,
+        'slug': value['slug'],
+        'is_exception': value['isException'],
+        'is_complexity': value['isComplexity'],
+        'color': ColorEnumToJSON(value['color']),
+        'used': value['used'],
     };
 }
 

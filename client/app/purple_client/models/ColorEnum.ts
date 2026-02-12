@@ -39,31 +39,42 @@
  * @export
  */
 export const ColorEnum = {
-    Slate: 'slate',
-    Gray: 'gray',
-    Zinc: 'zinc',
-    Neutral: 'neutral',
-    Stone: 'stone',
-    Red: 'red',
-    Orange: 'orange',
-    Amber: 'amber',
-    Yellow: 'yellow',
-    Lime: 'lime',
-    Green: 'green',
-    Emerald: 'emerald',
-    Teal: 'teal',
-    Cyan: 'cyan',
-    Sky: 'sky',
-    Blue: 'blue',
-    Indigo: 'indigo',
-    Violet: 'violet',
-    Purple: 'purple',
-    Fuchsia: 'fuchsia',
-    Pink: 'pink',
-    Rose: 'rose'
+    slate: 'slate',
+    gray: 'gray',
+    zinc: 'zinc',
+    neutral: 'neutral',
+    stone: 'stone',
+    red: 'red',
+    orange: 'orange',
+    amber: 'amber',
+    yellow: 'yellow',
+    lime: 'lime',
+    green: 'green',
+    emerald: 'emerald',
+    teal: 'teal',
+    cyan: 'cyan',
+    sky: 'sky',
+    blue: 'blue',
+    indigo: 'indigo',
+    violet: 'violet',
+    purple: 'purple',
+    fuchsia: 'fuchsia',
+    pink: 'pink',
+    rose: 'rose'
 } as const;
 export type ColorEnum = typeof ColorEnum[keyof typeof ColorEnum];
 
+
+export function instanceOfColorEnum(value: any): boolean {
+    for (const key in ColorEnum) {
+        if (Object.prototype.hasOwnProperty.call(ColorEnum, key)) {
+            if (ColorEnum[key as keyof typeof ColorEnum] === value) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
 
 export function ColorEnumFromJSON(json: any): ColorEnum {
     return ColorEnumFromJSONTyped(json, false);
@@ -75,5 +86,9 @@ export function ColorEnumFromJSONTyped(json: any, ignoreDiscriminator: boolean):
 
 export function ColorEnumToJSON(value?: ColorEnum | null): any {
     return value as any;
+}
+
+export function ColorEnumToJSONTyped(value: any, ignoreDiscriminator: boolean): ColorEnum {
+    return value as ColorEnum;
 }
 

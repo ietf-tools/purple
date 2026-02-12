@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface SyncMetadataNotFoundResponse {
 /**
  * Check if a given object implements the SyncMetadataNotFoundResponse interface.
  */
-export function instanceOfSyncMetadataNotFoundResponse(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "error" in value;
-
-    return isInstance;
+export function instanceOfSyncMetadataNotFoundResponse(value: object): value is SyncMetadataNotFoundResponse {
+    if (!('error' in value) || value['error'] === undefined) return false;
+    return true;
 }
 
 export function SyncMetadataNotFoundResponseFromJSON(json: any): SyncMetadataNotFoundResponse {
@@ -42,7 +40,7 @@ export function SyncMetadataNotFoundResponseFromJSON(json: any): SyncMetadataNot
 }
 
 export function SyncMetadataNotFoundResponseFromJSONTyped(json: any, ignoreDiscriminator: boolean): SyncMetadataNotFoundResponse {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function SyncMetadataNotFoundResponseFromJSONTyped(json: any, ignoreDiscr
     };
 }
 
-export function SyncMetadataNotFoundResponseToJSON(value?: SyncMetadataNotFoundResponse | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SyncMetadataNotFoundResponseToJSON(json: any): SyncMetadataNotFoundResponse {
+    return SyncMetadataNotFoundResponseToJSONTyped(json, false);
+}
+
+export function SyncMetadataNotFoundResponseToJSONTyped(value?: SyncMetadataNotFoundResponse | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'error': value.error,
+        'error': value['error'],
     };
 }
 

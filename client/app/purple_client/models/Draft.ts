@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -48,10 +48,8 @@ export interface Draft {
 /**
  * Check if a given object implements the Draft interface.
  */
-export function instanceOfDraft(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfDraft(value: object): value is Draft {
+    return true;
 }
 
 export function DraftFromJSON(json: any): Draft {
@@ -59,25 +57,27 @@ export function DraftFromJSON(json: any): Draft {
 }
 
 export function DraftFromJSONTyped(json: any, ignoreDiscriminator: boolean): Draft {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'rev': !exists(json, 'rev') ? undefined : json['rev'],
-        'title': !exists(json, 'title') ? undefined : json['title'],
-        'pages': !exists(json, 'pages') ? undefined : json['pages'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'rev': json['rev'] == null ? undefined : json['rev'],
+        'title': json['title'] == null ? undefined : json['title'],
+        'pages': json['pages'] == null ? undefined : json['pages'],
     };
 }
 
-export function DraftToJSON(value?: Draft | null): any {
-    if (value === undefined) {
-        return undefined;
+export function DraftToJSON(json: any): Draft {
+    return DraftToJSONTyped(json, false);
+}
+
+export function DraftToJSONTyped(value?: Omit<Draft, 'name'|'rev'|'title'|'pages'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
     };

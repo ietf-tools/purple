@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -36,12 +36,10 @@ export interface SubmissionAuthor {
 /**
  * Check if a given object implements the SubmissionAuthor interface.
  */
-export function instanceOfSubmissionAuthor(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "plainName" in value;
-
-    return isInstance;
+export function instanceOfSubmissionAuthor(value: object): value is SubmissionAuthor {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('plainName' in value) || value['plainName'] === undefined) return false;
+    return true;
 }
 
 export function SubmissionAuthorFromJSON(json: any): SubmissionAuthor {
@@ -49,7 +47,7 @@ export function SubmissionAuthorFromJSON(json: any): SubmissionAuthor {
 }
 
 export function SubmissionAuthorFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubmissionAuthor {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -59,17 +57,19 @@ export function SubmissionAuthorFromJSONTyped(json: any, ignoreDiscriminator: bo
     };
 }
 
-export function SubmissionAuthorToJSON(value?: SubmissionAuthor | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubmissionAuthorToJSON(json: any): SubmissionAuthor {
+    return SubmissionAuthorToJSONTyped(json, false);
+}
+
+export function SubmissionAuthorToJSONTyped(value?: SubmissionAuthor | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'plain_name': value.plainName,
+        'id': value['id'],
+        'plain_name': value['plainName'],
     };
 }
 

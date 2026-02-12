@@ -2,15 +2,18 @@
   "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
   "spaces": 4,
   "generator-cli": {
-    "version": "7.0.1",
+    "version": "7.19.0",
     "generators": {
       "datatracker": {
         "generatorName": "python",
         "inputSpec": "#{cwd}/rpcapi.yaml",
         "output": "#{cwd}/openapi/rpcapi_client",
         "additionalProperties": {
-          "packageName": "rpcapi_client",
-          "disallowAdditionalPropertiesIfNotPresent": false
+          "packageName": "purple_client",
+          "supportsES6": true,
+          "useOverride": true,
+          "typescriptThreePlus": true,
+          "enumPropertyNaming": "original"
         }
       },
       "purple": {
@@ -19,7 +22,10 @@
         "output": "#{cwd}/client/app/purple_client",
         "additionalProperties": {
           "packageName": "purple_client",
-          "disallowAdditionalPropertiesIfNotPresent": false
+          "supportsES6": true,
+          "useOverride": true,
+          "typescriptThreePlus": true,
+          "enumPropertyNaming": "original"
         }
       }
     }

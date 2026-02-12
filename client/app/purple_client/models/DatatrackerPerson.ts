@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer a DatatrackerPerson, including all the bells and whistles
  * @export
@@ -60,11 +60,9 @@ export interface DatatrackerPerson {
 /**
  * Check if a given object implements the DatatrackerPerson interface.
  */
-export function instanceOfDatatrackerPerson(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "personId" in value;
-
-    return isInstance;
+export function instanceOfDatatrackerPerson(value: object): value is DatatrackerPerson {
+    if (!('personId' in value) || value['personId'] === undefined) return false;
+    return true;
 }
 
 export function DatatrackerPersonFromJSON(json: any): DatatrackerPerson {
@@ -72,30 +70,32 @@ export function DatatrackerPersonFromJSON(json: any): DatatrackerPerson {
 }
 
 export function DatatrackerPersonFromJSONTyped(json: any, ignoreDiscriminator: boolean): DatatrackerPerson {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'personId': json['person_id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'email': !exists(json, 'email') ? undefined : json['email'],
-        'picture': !exists(json, 'picture') ? undefined : json['picture'],
-        'datatrackerUrl': !exists(json, 'datatracker_url') ? undefined : json['datatracker_url'],
-        'rpcperson': !exists(json, 'rpcperson') ? undefined : json['rpcperson'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'email': json['email'] == null ? undefined : json['email'],
+        'picture': json['picture'] == null ? undefined : json['picture'],
+        'datatrackerUrl': json['datatracker_url'] == null ? undefined : json['datatracker_url'],
+        'rpcperson': json['rpcperson'] == null ? undefined : json['rpcperson'],
     };
 }
 
-export function DatatrackerPersonToJSON(value?: DatatrackerPerson | null): any {
-    if (value === undefined) {
-        return undefined;
+export function DatatrackerPersonToJSON(json: any): DatatrackerPerson {
+    return DatatrackerPersonToJSONTyped(json, false);
+}
+
+export function DatatrackerPersonToJSONTyped(value?: Omit<DatatrackerPerson, 'name'|'email'|'picture'|'datatracker_url'|'rpcperson'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'person_id': value.personId,
+        'person_id': value['personId'],
     };
 }
 

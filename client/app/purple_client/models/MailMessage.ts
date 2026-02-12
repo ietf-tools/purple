@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { MsgtypeEnum } from './MsgtypeEnum';
 import {
     MsgtypeEnumFromJSON,
     MsgtypeEnumFromJSONTyped,
     MsgtypeEnumToJSON,
+    MsgtypeEnumToJSONTyped,
 } from './MsgtypeEnum';
 
 /**
@@ -58,17 +59,17 @@ export interface MailMessage {
     body: string;
 }
 
+
+
 /**
  * Check if a given object implements the MailMessage interface.
  */
-export function instanceOfMailMessage(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "msgtype" in value;
-    isInstance = isInstance && "to" in value;
-    isInstance = isInstance && "subject" in value;
-    isInstance = isInstance && "body" in value;
-
-    return isInstance;
+export function instanceOfMailMessage(value: object): value is MailMessage {
+    if (!('msgtype' in value) || value['msgtype'] === undefined) return false;
+    if (!('to' in value) || value['to'] === undefined) return false;
+    if (!('subject' in value) || value['subject'] === undefined) return false;
+    if (!('body' in value) || value['body'] === undefined) return false;
+    return true;
 }
 
 export function MailMessageFromJSON(json: any): MailMessage {
@@ -76,33 +77,35 @@ export function MailMessageFromJSON(json: any): MailMessage {
 }
 
 export function MailMessageFromJSONTyped(json: any, ignoreDiscriminator: boolean): MailMessage {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'msgtype': MsgtypeEnumFromJSON(json['msgtype']),
         'to': json['to'],
-        'cc': !exists(json, 'cc') ? undefined : json['cc'],
+        'cc': json['cc'] == null ? undefined : json['cc'],
         'subject': json['subject'],
         'body': json['body'],
     };
 }
 
-export function MailMessageToJSON(value?: MailMessage | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MailMessageToJSON(json: any): MailMessage {
+    return MailMessageToJSONTyped(json, false);
+}
+
+export function MailMessageToJSONTyped(value?: MailMessage | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'msgtype': MsgtypeEnumToJSON(value.msgtype),
-        'to': value.to,
-        'cc': value.cc,
-        'subject': value.subject,
-        'body': value.body,
+        'msgtype': MsgtypeEnumToJSON(value['msgtype']),
+        'to': value['to'],
+        'cc': value['cc'],
+        'subject': value['subject'],
+        'body': value['body'],
     };
 }
 

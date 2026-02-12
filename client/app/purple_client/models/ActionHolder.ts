@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize an ActionHolder with person name
  * @export
@@ -66,10 +66,8 @@ export interface ActionHolder {
 /**
  * Check if a given object implements the ActionHolder interface.
  */
-export function instanceOfActionHolder(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfActionHolder(value: object): value is ActionHolder {
+    return true;
 }
 
 export function ActionHolderFromJSON(json: any): ActionHolder {
@@ -77,34 +75,36 @@ export function ActionHolderFromJSON(json: any): ActionHolder {
 }
 
 export function ActionHolderFromJSONTyped(json: any, ignoreDiscriminator: boolean): ActionHolder {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'id': !exists(json, 'id') ? undefined : json['id'],
-        'name': !exists(json, 'name') ? undefined : json['name'],
-        'deadline': !exists(json, 'deadline') ? undefined : (json['deadline'] === null ? null : new Date(json['deadline'])),
-        'sinceWhen': !exists(json, 'since_when') ? undefined : (new Date(json['since_when'])),
-        'completed': !exists(json, 'completed') ? undefined : (json['completed'] === null ? null : new Date(json['completed'])),
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'body': !exists(json, 'body') ? undefined : json['body'],
+        'id': json['id'] == null ? undefined : json['id'],
+        'name': json['name'] == null ? undefined : json['name'],
+        'deadline': json['deadline'] == null ? undefined : (new Date(json['deadline'])),
+        'sinceWhen': json['since_when'] == null ? undefined : (new Date(json['since_when'])),
+        'completed': json['completed'] == null ? undefined : (new Date(json['completed'])),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'body': json['body'] == null ? undefined : json['body'],
     };
 }
 
-export function ActionHolderToJSON(value?: ActionHolder | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ActionHolderToJSON(json: any): ActionHolder {
+    return ActionHolderToJSONTyped(json, false);
+}
+
+export function ActionHolderToJSONTyped(value?: Omit<ActionHolder, 'id'|'name'|'since_when'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'deadline': value.deadline === undefined ? undefined : (value.deadline === null ? null : value.deadline.toISOString()),
-        'completed': value.completed === undefined ? undefined : (value.completed === null ? null : value.completed.toISOString()),
-        'comment': value.comment,
-        'body': value.body,
+        'deadline': value['deadline'] == null ? value['deadline'] : value['deadline'].toISOString(),
+        'completed': value['completed'] == null ? value['completed'] : value['completed'].toISOString(),
+        'comment': value['comment'],
+        'body': value['body'],
     };
 }
 

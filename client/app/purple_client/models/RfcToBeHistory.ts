@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { DatatrackerPerson } from './DatatrackerPerson';
 import {
     DatatrackerPersonFromJSON,
     DatatrackerPersonFromJSONTyped,
     DatatrackerPersonToJSON,
+    DatatrackerPersonToJSONTyped,
 } from './DatatrackerPerson';
 
 /**
@@ -55,14 +56,12 @@ export interface RfcToBeHistory {
 /**
  * Check if a given object implements the RfcToBeHistory interface.
  */
-export function instanceOfRfcToBeHistory(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "id" in value;
-    isInstance = isInstance && "time" in value;
-    isInstance = isInstance && "by" in value;
-    isInstance = isInstance && "desc" in value;
-
-    return isInstance;
+export function instanceOfRfcToBeHistory(value: object): value is RfcToBeHistory {
+    if (!('id' in value) || value['id'] === undefined) return false;
+    if (!('time' in value) || value['time'] === undefined) return false;
+    if (!('by' in value) || value['by'] === undefined) return false;
+    if (!('desc' in value) || value['desc'] === undefined) return false;
+    return true;
 }
 
 export function RfcToBeHistoryFromJSON(json: any): RfcToBeHistory {
@@ -70,7 +69,7 @@ export function RfcToBeHistoryFromJSON(json: any): RfcToBeHistory {
 }
 
 export function RfcToBeHistoryFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcToBeHistory {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -82,19 +81,21 @@ export function RfcToBeHistoryFromJSONTyped(json: any, ignoreDiscriminator: bool
     };
 }
 
-export function RfcToBeHistoryToJSON(value?: RfcToBeHistory | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcToBeHistoryToJSON(json: any): RfcToBeHistory {
+    return RfcToBeHistoryToJSONTyped(json, false);
+}
+
+export function RfcToBeHistoryToJSONTyped(value?: RfcToBeHistory | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'id': value.id,
-        'time': (value.time.toISOString()),
-        'by': DatatrackerPersonToJSON(value.by),
-        'desc': value.desc,
+        'id': value['id'],
+        'time': value['time'].toISOString(),
+        'by': DatatrackerPersonToJSON(value['by']),
+        'desc': value['desc'],
     };
 }
 

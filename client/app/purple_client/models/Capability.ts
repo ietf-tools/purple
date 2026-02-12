@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,12 +42,10 @@ export interface Capability {
 /**
  * Check if a given object implements the Capability interface.
  */
-export function instanceOfCapability(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfCapability(value: object): value is Capability {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function CapabilityFromJSON(json: any): Capability {
@@ -55,29 +53,31 @@ export function CapabilityFromJSON(json: any): Capability {
 }
 
 export function CapabilityFromJSONTyped(json: any, ignoreDiscriminator: boolean): Capability {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'slug': json['slug'],
         'name': json['name'],
-        'desc': !exists(json, 'desc') ? undefined : json['desc'],
+        'desc': json['desc'] == null ? undefined : json['desc'],
     };
 }
 
-export function CapabilityToJSON(value?: Capability | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CapabilityToJSON(json: any): Capability {
+    return CapabilityToJSONTyped(json, false);
+}
+
+export function CapabilityToJSONTyped(value?: Capability | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
     };
 }
 

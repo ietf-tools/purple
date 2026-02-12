@@ -46,8 +46,10 @@ echo "Populating initial history..."
 # Collect statics
 ./manage.py collectstatic --no-input || true
 
-# Build API clients
-./update-rpcapi
+# Django should be operational now. Build purple API client.
+./manage.py spectacular --file purple_api.yaml && \
+    npx --yes @openapitools/openapi-generator-cli generate --generator-key purple  || true
+    /bin/cp purple_api.yaml client/app/purple_client/.purple_api.yaml
 
 sudo touch /.dev-ready
 

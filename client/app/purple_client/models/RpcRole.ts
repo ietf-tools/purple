@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -42,12 +42,10 @@ export interface RpcRole {
 /**
  * Check if a given object implements the RpcRole interface.
  */
-export function instanceOfRpcRole(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-
-    return isInstance;
+export function instanceOfRpcRole(value: object): value is RpcRole {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    return true;
 }
 
 export function RpcRoleFromJSON(json: any): RpcRole {
@@ -55,29 +53,31 @@ export function RpcRoleFromJSON(json: any): RpcRole {
 }
 
 export function RpcRoleFromJSONTyped(json: any, ignoreDiscriminator: boolean): RpcRole {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'slug': json['slug'],
         'name': json['name'],
-        'desc': !exists(json, 'desc') ? undefined : json['desc'],
+        'desc': json['desc'] == null ? undefined : json['desc'],
     };
 }
 
-export function RpcRoleToJSON(value?: RpcRole | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RpcRoleToJSON(json: any): RpcRole {
+    return RpcRoleToJSONTyped(json, false);
+}
+
+export function RpcRoleToJSONTyped(value?: RpcRole | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
     };
 }
 

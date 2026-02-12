@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for creating FinalApproval instances
  * @export
@@ -48,11 +48,9 @@ export interface CreateFinalApprovalRequest {
 /**
  * Check if a given object implements the CreateFinalApprovalRequest interface.
  */
-export function instanceOfCreateFinalApprovalRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "approverPersonId" in value;
-
-    return isInstance;
+export function instanceOfCreateFinalApprovalRequest(value: object): value is CreateFinalApprovalRequest {
+    if (!('approverPersonId' in value) || value['approverPersonId'] === undefined) return false;
+    return true;
 }
 
 export function CreateFinalApprovalRequestFromJSON(json: any): CreateFinalApprovalRequest {
@@ -60,31 +58,33 @@ export function CreateFinalApprovalRequestFromJSON(json: any): CreateFinalApprov
 }
 
 export function CreateFinalApprovalRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateFinalApprovalRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'approved': !exists(json, 'approved') ? undefined : (json['approved'] === null ? null : new Date(json['approved'])),
+        'approved': json['approved'] == null ? undefined : (new Date(json['approved'])),
         'approverPersonId': json['approver_person_id'],
-        'overridingApproverPersonId': !exists(json, 'overriding_approver_person_id') ? undefined : json['overriding_approver_person_id'],
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
+        'overridingApproverPersonId': json['overriding_approver_person_id'] == null ? undefined : json['overriding_approver_person_id'],
+        'comment': json['comment'] == null ? undefined : json['comment'],
     };
 }
 
-export function CreateFinalApprovalRequestToJSON(value?: CreateFinalApprovalRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CreateFinalApprovalRequestToJSON(json: any): CreateFinalApprovalRequest {
+    return CreateFinalApprovalRequestToJSONTyped(json, false);
+}
+
+export function CreateFinalApprovalRequestToJSONTyped(value?: CreateFinalApprovalRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'approved': value.approved === undefined ? undefined : (value.approved === null ? null : value.approved.toISOString()),
-        'approver_person_id': value.approverPersonId,
-        'overriding_approver_person_id': value.overridingApproverPersonId,
-        'comment': value.comment,
+        'approved': value['approved'] == null ? value['approved'] : value['approved'].toISOString(),
+        'approver_person_id': value['approverPersonId'],
+        'overriding_approver_person_id': value['overridingApproverPersonId'],
+        'comment': value['comment'],
     };
 }
 

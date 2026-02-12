@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for related document for an RfcToBe
  * @export
@@ -30,11 +30,9 @@ export interface RpcRelatedDocumentRequest {
 /**
  * Check if a given object implements the RpcRelatedDocumentRequest interface.
  */
-export function instanceOfRpcRelatedDocumentRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "relationship" in value;
-
-    return isInstance;
+export function instanceOfRpcRelatedDocumentRequest(value: object): value is RpcRelatedDocumentRequest {
+    if (!('relationship' in value) || value['relationship'] === undefined) return false;
+    return true;
 }
 
 export function RpcRelatedDocumentRequestFromJSON(json: any): RpcRelatedDocumentRequest {
@@ -42,7 +40,7 @@ export function RpcRelatedDocumentRequestFromJSON(json: any): RpcRelatedDocument
 }
 
 export function RpcRelatedDocumentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RpcRelatedDocumentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function RpcRelatedDocumentRequestFromJSONTyped(json: any, ignoreDiscrimi
     };
 }
 
-export function RpcRelatedDocumentRequestToJSON(value?: RpcRelatedDocumentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RpcRelatedDocumentRequestToJSON(json: any): RpcRelatedDocumentRequest {
+    return RpcRelatedDocumentRequestToJSONTyped(json, false);
+}
+
+export function RpcRelatedDocumentRequestToJSONTyped(value?: RpcRelatedDocumentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'relationship': value.relationship,
+        'relationship': value['relationship'],
     };
 }
 

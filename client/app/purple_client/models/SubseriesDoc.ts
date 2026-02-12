@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { MinimalRfcToBe } from './MinimalRfcToBe';
 import {
     MinimalRfcToBeFromJSON,
     MinimalRfcToBeFromJSONTyped,
     MinimalRfcToBeToJSON,
+    MinimalRfcToBeToJSONTyped,
 } from './MinimalRfcToBe';
 
 /**
@@ -67,13 +68,11 @@ export interface SubseriesDoc {
 /**
  * Check if a given object implements the SubseriesDoc interface.
  */
-export function instanceOfSubseriesDoc(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "type" in value;
-    isInstance = isInstance && "number" in value;
-    isInstance = isInstance && "documents" in value;
-
-    return isInstance;
+export function instanceOfSubseriesDoc(value: object): value is SubseriesDoc {
+    if (!('type' in value) || value['type'] === undefined) return false;
+    if (!('number' in value) || value['number'] === undefined) return false;
+    if (!('documents' in value) || value['documents'] === undefined) return false;
+    return true;
 }
 
 export function SubseriesDocFromJSON(json: any): SubseriesDoc {
@@ -81,7 +80,7 @@ export function SubseriesDocFromJSON(json: any): SubseriesDoc {
 }
 
 export function SubseriesDocFromJSONTyped(json: any, ignoreDiscriminator: boolean): SubseriesDoc {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -89,24 +88,26 @@ export function SubseriesDocFromJSONTyped(json: any, ignoreDiscriminator: boolea
         'type': json['type'],
         'number': json['number'],
         'documents': ((json['documents'] as Array<any>).map(MinimalRfcToBeFromJSON)),
-        'rfcCount': !exists(json, 'rfc_count') ? undefined : json['rfc_count'],
-        'slug': !exists(json, 'slug') ? undefined : json['slug'],
-        'displayName': !exists(json, 'display_name') ? undefined : json['display_name'],
+        'rfcCount': json['rfc_count'] == null ? undefined : json['rfc_count'],
+        'slug': json['slug'] == null ? undefined : json['slug'],
+        'displayName': json['display_name'] == null ? undefined : json['display_name'],
     };
 }
 
-export function SubseriesDocToJSON(value?: SubseriesDoc | null): any {
-    if (value === undefined) {
-        return undefined;
+export function SubseriesDocToJSON(json: any): SubseriesDoc {
+    return SubseriesDocToJSONTyped(json, false);
+}
+
+export function SubseriesDocToJSONTyped(value?: Omit<SubseriesDoc, 'rfc_count'|'slug'|'display_name'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'type': value.type,
-        'number': value.number,
-        'documents': ((value.documents as Array<any>).map(MinimalRfcToBeToJSON)),
+        'type': value['type'],
+        'number': value['number'],
+        'documents': ((value['documents'] as Array<any>).map(MinimalRfcToBeToJSON)),
     };
 }
 

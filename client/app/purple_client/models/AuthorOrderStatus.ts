@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface AuthorOrderStatus {
 /**
  * Check if a given object implements the AuthorOrderStatus interface.
  */
-export function instanceOfAuthorOrderStatus(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "status" in value;
-
-    return isInstance;
+export function instanceOfAuthorOrderStatus(value: object): value is AuthorOrderStatus {
+    if (!('status' in value) || value['status'] === undefined) return false;
+    return true;
 }
 
 export function AuthorOrderStatusFromJSON(json: any): AuthorOrderStatus {
@@ -42,7 +40,7 @@ export function AuthorOrderStatusFromJSON(json: any): AuthorOrderStatus {
 }
 
 export function AuthorOrderStatusFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuthorOrderStatus {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function AuthorOrderStatusFromJSONTyped(json: any, ignoreDiscriminator: b
     };
 }
 
-export function AuthorOrderStatusToJSON(value?: AuthorOrderStatus | null): any {
-    if (value === undefined) {
-        return undefined;
+export function AuthorOrderStatusToJSON(json: any): AuthorOrderStatus {
+    return AuthorOrderStatusToJSONTyped(json, false);
+}
+
+export function AuthorOrderStatusToJSONTyped(value?: AuthorOrderStatus | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'status': value.status,
+        'status': value['status'],
     };
 }
 

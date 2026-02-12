@@ -12,19 +12,21 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
-import type { IanaStatusSlugEnum } from './IanaStatusSlugEnum';
-import {
-    IanaStatusSlugEnumFromJSON,
-    IanaStatusSlugEnumFromJSONTyped,
-    IanaStatusSlugEnumToJSON,
-} from './IanaStatusSlugEnum';
+import { mapValues } from '../runtime';
 import type { RfcAuthorRequest } from './RfcAuthorRequest';
 import {
     RfcAuthorRequestFromJSON,
     RfcAuthorRequestFromJSONTyped,
     RfcAuthorRequestToJSON,
+    RfcAuthorRequestToJSONTyped,
 } from './RfcAuthorRequest';
+import type { IanaStatusSlugEnum } from './IanaStatusSlugEnum';
+import {
+    IanaStatusSlugEnumFromJSON,
+    IanaStatusSlugEnumFromJSONTyped,
+    IanaStatusSlugEnumToJSON,
+    IanaStatusSlugEnumToJSONTyped,
+} from './IanaStatusSlugEnum';
 
 /**
  * RfcToBeSerializer suitable for displaying full details of a single instance
@@ -141,28 +143,34 @@ export interface RfcToBeRequest {
      */
     consensus?: boolean | null;
     /**
+     * Set the IANA status by providing the slug identifier.
      * 
+     * * `no_actions` - This document has no IANA actions
+     * * `not_completed` - IANA has not completed actions in draft
+     * * `completed` - IANA has completed actions in draft
+     * * `changes_required` - Changes to registries are required due to RFC edits
+     * * `reconciled` - IANA has reconciled changes between draft and RFC
      * @type {IanaStatusSlugEnum}
      * @memberof RfcToBeRequest
      */
     ianaStatusSlug?: IanaStatusSlugEnum;
 }
 
+
+
 /**
  * Check if a given object implements the RfcToBeRequest interface.
  */
-export function instanceOfRfcToBeRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "title" in value;
-    isInstance = isInstance && "disposition" in value;
-    isInstance = isInstance && "labels" in value;
-    isInstance = isInstance && "submittedFormat" in value;
-    isInstance = isInstance && "boilerplate" in value;
-    isInstance = isInstance && "stdLevel" in value;
-    isInstance = isInstance && "stream" in value;
-    isInstance = isInstance && "authors" in value;
-
-    return isInstance;
+export function instanceOfRfcToBeRequest(value: object): value is RfcToBeRequest {
+    if (!('title' in value) || value['title'] === undefined) return false;
+    if (!('disposition' in value) || value['disposition'] === undefined) return false;
+    if (!('labels' in value) || value['labels'] === undefined) return false;
+    if (!('submittedFormat' in value) || value['submittedFormat'] === undefined) return false;
+    if (!('boilerplate' in value) || value['boilerplate'] === undefined) return false;
+    if (!('stdLevel' in value) || value['stdLevel'] === undefined) return false;
+    if (!('stream' in value) || value['stream'] === undefined) return false;
+    if (!('authors' in value) || value['authors'] === undefined) return false;
+    return true;
 }
 
 export function RfcToBeRequestFromJSON(json: any): RfcToBeRequest {
@@ -170,61 +178,63 @@ export function RfcToBeRequestFromJSON(json: any): RfcToBeRequest {
 }
 
 export function RfcToBeRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcToBeRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'title': json['title'],
-        '_abstract': !exists(json, 'abstract') ? undefined : json['abstract'],
-        'group': !exists(json, 'group') ? undefined : json['group'],
+        '_abstract': json['abstract'] == null ? undefined : json['abstract'],
+        'group': json['group'] == null ? undefined : json['group'],
         'disposition': json['disposition'],
-        'externalDeadline': !exists(json, 'external_deadline') ? undefined : (json['external_deadline'] === null ? null : new Date(json['external_deadline'])),
-        'internalGoal': !exists(json, 'internal_goal') ? undefined : (json['internal_goal'] === null ? null : new Date(json['internal_goal'])),
+        'externalDeadline': json['external_deadline'] == null ? undefined : (new Date(json['external_deadline'])),
+        'internalGoal': json['internal_goal'] == null ? undefined : (new Date(json['internal_goal'])),
         'labels': json['labels'],
         'submittedFormat': json['submitted_format'],
-        'pages': !exists(json, 'pages') ? undefined : json['pages'],
-        'keywords': !exists(json, 'keywords') ? undefined : json['keywords'],
+        'pages': json['pages'] == null ? undefined : json['pages'],
+        'keywords': json['keywords'] == null ? undefined : json['keywords'],
         'boilerplate': json['boilerplate'],
         'stdLevel': json['std_level'],
-        'publicationStdLevel': !exists(json, 'publication_std_level') ? undefined : json['publication_std_level'],
+        'publicationStdLevel': json['publication_std_level'] == null ? undefined : json['publication_std_level'],
         'stream': json['stream'],
-        'publicationStream': !exists(json, 'publication_stream') ? undefined : json['publication_stream'],
+        'publicationStream': json['publication_stream'] == null ? undefined : json['publication_stream'],
         'authors': ((json['authors'] as Array<any>).map(RfcAuthorRequestFromJSON)),
-        'rfcNumber': !exists(json, 'rfc_number') ? undefined : json['rfc_number'],
-        'consensus': !exists(json, 'consensus') ? undefined : json['consensus'],
-        'ianaStatusSlug': !exists(json, 'iana_status_slug') ? undefined : IanaStatusSlugEnumFromJSON(json['iana_status_slug']),
+        'rfcNumber': json['rfc_number'] == null ? undefined : json['rfc_number'],
+        'consensus': json['consensus'] == null ? undefined : json['consensus'],
+        'ianaStatusSlug': json['iana_status_slug'] == null ? undefined : IanaStatusSlugEnumFromJSON(json['iana_status_slug']),
     };
 }
 
-export function RfcToBeRequestToJSON(value?: RfcToBeRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcToBeRequestToJSON(json: any): RfcToBeRequest {
+    return RfcToBeRequestToJSONTyped(json, false);
+}
+
+export function RfcToBeRequestToJSONTyped(value?: RfcToBeRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'title': value.title,
-        'abstract': value._abstract,
-        'group': value.group,
-        'disposition': value.disposition,
-        'external_deadline': value.externalDeadline === undefined ? undefined : (value.externalDeadline === null ? null : value.externalDeadline.toISOString()),
-        'internal_goal': value.internalGoal === undefined ? undefined : (value.internalGoal === null ? null : value.internalGoal.toISOString()),
-        'labels': value.labels,
-        'submitted_format': value.submittedFormat,
-        'pages': value.pages,
-        'keywords': value.keywords,
-        'boilerplate': value.boilerplate,
-        'std_level': value.stdLevel,
-        'publication_std_level': value.publicationStdLevel,
-        'stream': value.stream,
-        'publication_stream': value.publicationStream,
-        'authors': ((value.authors as Array<any>).map(RfcAuthorRequestToJSON)),
-        'rfc_number': value.rfcNumber,
-        'consensus': value.consensus,
-        'iana_status_slug': IanaStatusSlugEnumToJSON(value.ianaStatusSlug),
+        'title': value['title'],
+        'abstract': value['_abstract'],
+        'group': value['group'],
+        'disposition': value['disposition'],
+        'external_deadline': value['externalDeadline'] == null ? value['externalDeadline'] : value['externalDeadline'].toISOString(),
+        'internal_goal': value['internalGoal'] == null ? value['internalGoal'] : value['internalGoal'].toISOString(),
+        'labels': value['labels'],
+        'submitted_format': value['submittedFormat'],
+        'pages': value['pages'],
+        'keywords': value['keywords'],
+        'boilerplate': value['boilerplate'],
+        'std_level': value['stdLevel'],
+        'publication_std_level': value['publicationStdLevel'],
+        'stream': value['stream'],
+        'publication_stream': value['publicationStream'],
+        'authors': ((value['authors'] as Array<any>).map(RfcAuthorRequestToJSON)),
+        'rfc_number': value['rfcNumber'],
+        'consensus': value['consensus'],
+        'iana_status_slug': IanaStatusSlugEnumToJSON(value['ianaStatusSlug']),
     };
 }
 

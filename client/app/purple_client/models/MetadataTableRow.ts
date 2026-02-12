@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { MetadataTableRowValue } from './MetadataTableRowValue';
 import {
     MetadataTableRowValueFromJSON,
     MetadataTableRowValueFromJSONTyped,
     MetadataTableRowValueToJSON,
+    MetadataTableRowValueToJSONTyped,
 } from './MetadataTableRowValue';
 
 /**
@@ -49,13 +50,11 @@ export interface MetadataTableRow {
 /**
  * Check if a given object implements the MetadataTableRow interface.
  */
-export function instanceOfMetadataTableRow(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "rowName" in value;
-    isInstance = isInstance && "rowNameListDepth" in value;
-    isInstance = isInstance && "rowValue" in value;
-
-    return isInstance;
+export function instanceOfMetadataTableRow(value: object): value is MetadataTableRow {
+    if (!('rowName' in value) || value['rowName'] === undefined) return false;
+    if (!('rowNameListDepth' in value) || value['rowNameListDepth'] === undefined) return false;
+    if (!('rowValue' in value) || value['rowValue'] === undefined) return false;
+    return true;
 }
 
 export function MetadataTableRowFromJSON(json: any): MetadataTableRow {
@@ -63,7 +62,7 @@ export function MetadataTableRowFromJSON(json: any): MetadataTableRow {
 }
 
 export function MetadataTableRowFromJSONTyped(json: any, ignoreDiscriminator: boolean): MetadataTableRow {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -74,18 +73,20 @@ export function MetadataTableRowFromJSONTyped(json: any, ignoreDiscriminator: bo
     };
 }
 
-export function MetadataTableRowToJSON(value?: MetadataTableRow | null): any {
-    if (value === undefined) {
-        return undefined;
+export function MetadataTableRowToJSON(json: any): MetadataTableRow {
+    return MetadataTableRowToJSONTyped(json, false);
+}
+
+export function MetadataTableRowToJSONTyped(value?: MetadataTableRow | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'row_name': value.rowName,
-        'row_name_list_depth': value.rowNameListDepth,
-        'row_value': MetadataTableRowValueToJSON(value.rowValue),
+        'row_name': value['rowName'],
+        'row_name_list_depth': value['rowNameListDepth'],
+        'row_value': MetadataTableRowValueToJSON(value['rowValue']),
     };
 }
 

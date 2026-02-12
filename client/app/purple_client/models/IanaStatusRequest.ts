@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize IANA status with slug and display text
  * @export
@@ -48,13 +48,11 @@ export interface IanaStatusRequest {
 /**
  * Check if a given object implements the IanaStatusRequest interface.
  */
-export function instanceOfIanaStatusRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "slug" in value;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "desc" in value;
-
-    return isInstance;
+export function instanceOfIanaStatusRequest(value: object): value is IanaStatusRequest {
+    if (!('slug' in value) || value['slug'] === undefined) return false;
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('desc' in value) || value['desc'] === undefined) return false;
+    return true;
 }
 
 export function IanaStatusRequestFromJSON(json: any): IanaStatusRequest {
@@ -62,7 +60,7 @@ export function IanaStatusRequestFromJSON(json: any): IanaStatusRequest {
 }
 
 export function IanaStatusRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): IanaStatusRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -70,23 +68,25 @@ export function IanaStatusRequestFromJSONTyped(json: any, ignoreDiscriminator: b
         'slug': json['slug'],
         'name': json['name'],
         'desc': json['desc'],
-        'used': !exists(json, 'used') ? undefined : json['used'],
+        'used': json['used'] == null ? undefined : json['used'],
     };
 }
 
-export function IanaStatusRequestToJSON(value?: IanaStatusRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function IanaStatusRequestToJSON(json: any): IanaStatusRequest {
+    return IanaStatusRequestToJSONTyped(json, false);
+}
+
+export function IanaStatusRequestToJSONTyped(value?: IanaStatusRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'slug': value.slug,
-        'name': value.name,
-        'desc': value.desc,
-        'used': value.used,
+        'slug': value['slug'],
+        'name': value['name'],
+        'desc': value['desc'],
+        'used': value['used'],
     };
 }
 

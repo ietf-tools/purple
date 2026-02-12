@@ -43,11 +43,6 @@ if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.ya
   # Configure the generator in openapitools.json
   npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
 
-  # Add @ts-nocheck only if it's not already present
-  if ! head -n 1 "$WORKSPACE/client/app/purple_client/runtime.ts" | grep -q "@ts-nocheck"; then
-    sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
-  fi
-
   cd client
   npm run build
   cd ..

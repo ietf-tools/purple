@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface PublishRfcRequest {
 /**
  * Check if a given object implements the PublishRfcRequest interface.
  */
-export function instanceOfPublishRfcRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "headSha" in value;
-
-    return isInstance;
+export function instanceOfPublishRfcRequest(value: object): value is PublishRfcRequest {
+    if (!('headSha' in value) || value['headSha'] === undefined) return false;
+    return true;
 }
 
 export function PublishRfcRequestFromJSON(json: any): PublishRfcRequest {
@@ -42,7 +40,7 @@ export function PublishRfcRequestFromJSON(json: any): PublishRfcRequest {
 }
 
 export function PublishRfcRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PublishRfcRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function PublishRfcRequestFromJSONTyped(json: any, ignoreDiscriminator: b
     };
 }
 
-export function PublishRfcRequestToJSON(value?: PublishRfcRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PublishRfcRequestToJSON(json: any): PublishRfcRequest {
+    return PublishRfcRequestToJSONTyped(json, false);
+}
+
+export function PublishRfcRequestToJSONTyped(value?: PublishRfcRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'head_sha': value.headSha,
+        'head_sha': value['headSha'],
     };
 }
 

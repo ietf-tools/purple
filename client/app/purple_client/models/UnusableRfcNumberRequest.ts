@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize an Unusable Rfc Number
  * @export
@@ -36,11 +36,9 @@ export interface UnusableRfcNumberRequest {
 /**
  * Check if a given object implements the UnusableRfcNumberRequest interface.
  */
-export function instanceOfUnusableRfcNumberRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfUnusableRfcNumberRequest(value: object): value is UnusableRfcNumberRequest {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function UnusableRfcNumberRequestFromJSON(json: any): UnusableRfcNumberRequest {
@@ -48,27 +46,29 @@ export function UnusableRfcNumberRequestFromJSON(json: any): UnusableRfcNumberRe
 }
 
 export function UnusableRfcNumberRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): UnusableRfcNumberRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'number': json['number'],
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
+        'comment': json['comment'] == null ? undefined : json['comment'],
     };
 }
 
-export function UnusableRfcNumberRequestToJSON(value?: UnusableRfcNumberRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function UnusableRfcNumberRequestToJSON(json: any): UnusableRfcNumberRequest {
+    return UnusableRfcNumberRequestToJSONTyped(json, false);
+}
+
+export function UnusableRfcNumberRequestToJSONTyped(value?: UnusableRfcNumberRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
-        'comment': value.comment,
+        'number': value['number'],
+        'comment': value['comment'],
     };
 }
 

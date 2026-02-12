@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { BlockingReason } from './BlockingReason';
 import {
     BlockingReasonFromJSON,
     BlockingReasonFromJSONTyped,
     BlockingReasonToJSON,
+    BlockingReasonToJSONTyped,
 } from './BlockingReason';
 
 /**
@@ -49,10 +50,8 @@ export interface RfcToBeBlockingReason {
 /**
  * Check if a given object implements the RfcToBeBlockingReason interface.
  */
-export function instanceOfRfcToBeBlockingReason(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfRfcToBeBlockingReason(value: object): value is RfcToBeBlockingReason {
+    return true;
 }
 
 export function RfcToBeBlockingReasonFromJSON(json: any): RfcToBeBlockingReason {
@@ -60,24 +59,26 @@ export function RfcToBeBlockingReasonFromJSON(json: any): RfcToBeBlockingReason 
 }
 
 export function RfcToBeBlockingReasonFromJSONTyped(json: any, ignoreDiscriminator: boolean): RfcToBeBlockingReason {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'reason': !exists(json, 'reason') ? undefined : BlockingReasonFromJSON(json['reason']),
-        'sinceWhen': !exists(json, 'since_when') ? undefined : (new Date(json['since_when'])),
-        'resolved': !exists(json, 'resolved') ? undefined : (new Date(json['resolved'])),
+        'reason': json['reason'] == null ? undefined : BlockingReasonFromJSON(json['reason']),
+        'sinceWhen': json['since_when'] == null ? undefined : (new Date(json['since_when'])),
+        'resolved': json['resolved'] == null ? undefined : (new Date(json['resolved'])),
     };
 }
 
-export function RfcToBeBlockingReasonToJSON(value?: RfcToBeBlockingReason | null): any {
-    if (value === undefined) {
-        return undefined;
+export function RfcToBeBlockingReasonToJSON(json: any): RfcToBeBlockingReason {
+    return RfcToBeBlockingReasonToJSONTyped(json, false);
+}
+
+export function RfcToBeBlockingReasonToJSONTyped(value?: Omit<RfcToBeBlockingReason, 'reason'|'since_when'|'resolved'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
     };

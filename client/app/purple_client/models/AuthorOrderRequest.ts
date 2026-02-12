@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -30,11 +30,9 @@ export interface AuthorOrderRequest {
 /**
  * Check if a given object implements the AuthorOrderRequest interface.
  */
-export function instanceOfAuthorOrderRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "order" in value;
-
-    return isInstance;
+export function instanceOfAuthorOrderRequest(value: object): value is AuthorOrderRequest {
+    if (!('order' in value) || value['order'] === undefined) return false;
+    return true;
 }
 
 export function AuthorOrderRequestFromJSON(json: any): AuthorOrderRequest {
@@ -42,7 +40,7 @@ export function AuthorOrderRequestFromJSON(json: any): AuthorOrderRequest {
 }
 
 export function AuthorOrderRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): AuthorOrderRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -51,16 +49,18 @@ export function AuthorOrderRequestFromJSONTyped(json: any, ignoreDiscriminator: 
     };
 }
 
-export function AuthorOrderRequestToJSON(value?: AuthorOrderRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function AuthorOrderRequestToJSON(json: any): AuthorOrderRequest {
+    return AuthorOrderRequestToJSONTyped(json, false);
+}
+
+export function AuthorOrderRequestToJSONTyped(value?: AuthorOrderRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'order': value.order,
+        'order': value['order'],
     };
 }
 

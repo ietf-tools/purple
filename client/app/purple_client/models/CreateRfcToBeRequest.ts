@@ -12,12 +12,13 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 import type { IanaStatusSlugEnum } from './IanaStatusSlugEnum';
 import {
     IanaStatusSlugEnumFromJSON,
     IanaStatusSlugEnumFromJSONTyped,
     IanaStatusSlugEnumToJSON,
+    IanaStatusSlugEnumToJSONTyped,
 } from './IanaStatusSlugEnum';
 
 /**
@@ -111,7 +112,13 @@ export interface CreateRfcToBeRequest {
      */
     keywords?: string;
     /**
+     * Set the IANA status by providing the slug identifier. Defaults to 'not_completed' if not provided.
      * 
+     * * `no_actions` - This document has no IANA actions
+     * * `not_completed` - IANA has not completed actions in draft
+     * * `completed` - IANA has completed actions in draft
+     * * `changes_required` - Changes to registries are required due to RFC edits
+     * * `reconciled` - IANA has reconciled changes between draft and RFC
      * @type {IanaStatusSlugEnum}
      * @memberof CreateRfcToBeRequest
      */
@@ -124,19 +131,19 @@ export interface CreateRfcToBeRequest {
     consensus?: boolean | null;
 }
 
+
+
 /**
  * Check if a given object implements the CreateRfcToBeRequest interface.
  */
-export function instanceOfCreateRfcToBeRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "submittedFormat" in value;
-    isInstance = isInstance && "boilerplate" in value;
-    isInstance = isInstance && "stdLevel" in value;
-    isInstance = isInstance && "stream" in value;
-    isInstance = isInstance && "labels" in value;
-    isInstance = isInstance && "title" in value;
-
-    return isInstance;
+export function instanceOfCreateRfcToBeRequest(value: object): value is CreateRfcToBeRequest {
+    if (!('submittedFormat' in value) || value['submittedFormat'] === undefined) return false;
+    if (!('boilerplate' in value) || value['boilerplate'] === undefined) return false;
+    if (!('stdLevel' in value) || value['stdLevel'] === undefined) return false;
+    if (!('stream' in value) || value['stream'] === undefined) return false;
+    if (!('labels' in value) || value['labels'] === undefined) return false;
+    if (!('title' in value) || value['title'] === undefined) return false;
+    return true;
 }
 
 export function CreateRfcToBeRequestFromJSON(json: any): CreateRfcToBeRequest {
@@ -144,7 +151,7 @@ export function CreateRfcToBeRequestFromJSON(json: any): CreateRfcToBeRequest {
 }
 
 export function CreateRfcToBeRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateRfcToBeRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -153,46 +160,48 @@ export function CreateRfcToBeRequestFromJSONTyped(json: any, ignoreDiscriminator
         'boilerplate': json['boilerplate'],
         'stdLevel': json['std_level'],
         'stream': json['stream'],
-        'externalDeadline': !exists(json, 'external_deadline') ? undefined : (json['external_deadline'] === null ? null : new Date(json['external_deadline'])),
+        'externalDeadline': json['external_deadline'] == null ? undefined : (new Date(json['external_deadline'])),
         'labels': json['labels'],
-        'draft': !exists(json, 'draft') ? undefined : json['draft'],
+        'draft': json['draft'] == null ? undefined : json['draft'],
         'title': json['title'],
-        'group': !exists(json, 'group') ? undefined : json['group'],
-        '_abstract': !exists(json, 'abstract') ? undefined : json['abstract'],
-        'shepherd': !exists(json, 'shepherd') ? undefined : json['shepherd'],
-        'iesgContact': !exists(json, 'iesg_contact') ? undefined : json['iesg_contact'],
-        'pages': !exists(json, 'pages') ? undefined : json['pages'],
-        'keywords': !exists(json, 'keywords') ? undefined : json['keywords'],
-        'ianaStatusSlug': !exists(json, 'iana_status_slug') ? undefined : IanaStatusSlugEnumFromJSON(json['iana_status_slug']),
-        'consensus': !exists(json, 'consensus') ? undefined : json['consensus'],
+        'group': json['group'] == null ? undefined : json['group'],
+        '_abstract': json['abstract'] == null ? undefined : json['abstract'],
+        'shepherd': json['shepherd'] == null ? undefined : json['shepherd'],
+        'iesgContact': json['iesg_contact'] == null ? undefined : json['iesg_contact'],
+        'pages': json['pages'] == null ? undefined : json['pages'],
+        'keywords': json['keywords'] == null ? undefined : json['keywords'],
+        'ianaStatusSlug': json['iana_status_slug'] == null ? undefined : IanaStatusSlugEnumFromJSON(json['iana_status_slug']),
+        'consensus': json['consensus'] == null ? undefined : json['consensus'],
     };
 }
 
-export function CreateRfcToBeRequestToJSON(value?: CreateRfcToBeRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CreateRfcToBeRequestToJSON(json: any): CreateRfcToBeRequest {
+    return CreateRfcToBeRequestToJSONTyped(json, false);
+}
+
+export function CreateRfcToBeRequestToJSONTyped(value?: CreateRfcToBeRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'submitted_format': value.submittedFormat,
-        'boilerplate': value.boilerplate,
-        'std_level': value.stdLevel,
-        'stream': value.stream,
-        'external_deadline': value.externalDeadline === undefined ? undefined : (value.externalDeadline === null ? null : value.externalDeadline.toISOString()),
-        'labels': value.labels,
-        'draft': value.draft,
-        'title': value.title,
-        'group': value.group,
-        'abstract': value._abstract,
-        'shepherd': value.shepherd,
-        'iesg_contact': value.iesgContact,
-        'pages': value.pages,
-        'keywords': value.keywords,
-        'iana_status_slug': IanaStatusSlugEnumToJSON(value.ianaStatusSlug),
-        'consensus': value.consensus,
+        'submitted_format': value['submittedFormat'],
+        'boilerplate': value['boilerplate'],
+        'std_level': value['stdLevel'],
+        'stream': value['stream'],
+        'external_deadline': value['externalDeadline'] == null ? value['externalDeadline'] : value['externalDeadline'].toISOString(),
+        'labels': value['labels'],
+        'draft': value['draft'],
+        'title': value['title'],
+        'group': value['group'],
+        'abstract': value['_abstract'],
+        'shepherd': value['shepherd'],
+        'iesg_contact': value['iesgContact'],
+        'pages': value['pages'],
+        'keywords': value['keywords'],
+        'iana_status_slug': IanaStatusSlugEnumToJSON(value['ianaStatusSlug']),
+        'consensus': value['consensus'],
     };
 }
 

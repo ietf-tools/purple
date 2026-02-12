@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize an Unusable Rfc Number
  * @export
@@ -42,11 +42,9 @@ export interface UnusableRfcNumber {
 /**
  * Check if a given object implements the UnusableRfcNumber interface.
  */
-export function instanceOfUnusableRfcNumber(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "number" in value;
-
-    return isInstance;
+export function instanceOfUnusableRfcNumber(value: object): value is UnusableRfcNumber {
+    if (!('number' in value) || value['number'] === undefined) return false;
+    return true;
 }
 
 export function UnusableRfcNumberFromJSON(json: any): UnusableRfcNumber {
@@ -54,28 +52,30 @@ export function UnusableRfcNumberFromJSON(json: any): UnusableRfcNumber {
 }
 
 export function UnusableRfcNumberFromJSONTyped(json: any, ignoreDiscriminator: boolean): UnusableRfcNumber {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'number': json['number'],
-        'comment': !exists(json, 'comment') ? undefined : json['comment'],
-        'createdAt': !exists(json, 'created_at') ? undefined : (new Date(json['created_at'])),
+        'comment': json['comment'] == null ? undefined : json['comment'],
+        'createdAt': json['created_at'] == null ? undefined : (new Date(json['created_at'])),
     };
 }
 
-export function UnusableRfcNumberToJSON(value?: UnusableRfcNumber | null): any {
-    if (value === undefined) {
-        return undefined;
+export function UnusableRfcNumberToJSON(json: any): UnusableRfcNumber {
+    return UnusableRfcNumberToJSONTyped(json, false);
+}
+
+export function UnusableRfcNumberToJSONTyped(value?: Omit<UnusableRfcNumber, 'created_at'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'number': value.number,
-        'comment': value.comment,
+        'number': value['number'],
+        'comment': value['comment'],
     };
 }
 

@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize a minimal DatatrackerPerson
  * 
@@ -33,11 +33,9 @@ export interface BaseDatatrackerPersonRequest {
 /**
  * Check if a given object implements the BaseDatatrackerPersonRequest interface.
  */
-export function instanceOfBaseDatatrackerPersonRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "personId" in value;
-
-    return isInstance;
+export function instanceOfBaseDatatrackerPersonRequest(value: object): value is BaseDatatrackerPersonRequest {
+    if (!('personId' in value) || value['personId'] === undefined) return false;
+    return true;
 }
 
 export function BaseDatatrackerPersonRequestFromJSON(json: any): BaseDatatrackerPersonRequest {
@@ -45,7 +43,7 @@ export function BaseDatatrackerPersonRequestFromJSON(json: any): BaseDatatracker
 }
 
 export function BaseDatatrackerPersonRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): BaseDatatrackerPersonRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -54,16 +52,18 @@ export function BaseDatatrackerPersonRequestFromJSONTyped(json: any, ignoreDiscr
     };
 }
 
-export function BaseDatatrackerPersonRequestToJSON(value?: BaseDatatrackerPersonRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function BaseDatatrackerPersonRequestToJSON(json: any): BaseDatatrackerPersonRequest {
+    return BaseDatatrackerPersonRequestToJSONTyped(json, false);
+}
+
+export function BaseDatatrackerPersonRequestToJSONTyped(value?: BaseDatatrackerPersonRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'person_id': value.personId,
+        'person_id': value['personId'],
     };
 }
 

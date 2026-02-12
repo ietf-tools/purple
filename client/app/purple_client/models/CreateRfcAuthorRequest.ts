@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -48,11 +48,9 @@ export interface CreateRfcAuthorRequest {
 /**
  * Check if a given object implements the CreateRfcAuthorRequest interface.
  */
-export function instanceOfCreateRfcAuthorRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "titlepageName" in value;
-
-    return isInstance;
+export function instanceOfCreateRfcAuthorRequest(value: object): value is CreateRfcAuthorRequest {
+    if (!('titlepageName' in value) || value['titlepageName'] === undefined) return false;
+    return true;
 }
 
 export function CreateRfcAuthorRequestFromJSON(json: any): CreateRfcAuthorRequest {
@@ -60,31 +58,33 @@ export function CreateRfcAuthorRequestFromJSON(json: any): CreateRfcAuthorReques
 }
 
 export function CreateRfcAuthorRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): CreateRfcAuthorRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
         'titlepageName': json['titlepage_name'],
-        'isEditor': !exists(json, 'is_editor') ? undefined : json['is_editor'],
-        'affiliation': !exists(json, 'affiliation') ? undefined : json['affiliation'],
-        'personId': !exists(json, 'person_id') ? undefined : json['person_id'],
+        'isEditor': json['is_editor'] == null ? undefined : json['is_editor'],
+        'affiliation': json['affiliation'] == null ? undefined : json['affiliation'],
+        'personId': json['person_id'] == null ? undefined : json['person_id'],
     };
 }
 
-export function CreateRfcAuthorRequestToJSON(value?: CreateRfcAuthorRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function CreateRfcAuthorRequestToJSON(json: any): CreateRfcAuthorRequest {
+    return CreateRfcAuthorRequestToJSONTyped(json, false);
+}
+
+export function CreateRfcAuthorRequestToJSONTyped(value?: CreateRfcAuthorRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'titlepage_name': value.titlepageName,
-        'is_editor': value.isEditor,
-        'affiliation': value.affiliation,
-        'person_id': value.personId,
+        'titlepage_name': value['titlepageName'],
+        'is_editor': value['isEditor'],
+        'affiliation': value['affiliation'],
+        'person_id': value['personId'],
     };
 }
 

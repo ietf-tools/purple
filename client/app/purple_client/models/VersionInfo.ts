@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serialize version information
  * @export
@@ -36,10 +36,8 @@ export interface VersionInfo {
 /**
  * Check if a given object implements the VersionInfo interface.
  */
-export function instanceOfVersionInfo(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfVersionInfo(value: object): value is VersionInfo {
+    return true;
 }
 
 export function VersionInfoFromJSON(json: any): VersionInfo {
@@ -47,23 +45,25 @@ export function VersionInfoFromJSON(json: any): VersionInfo {
 }
 
 export function VersionInfoFromJSONTyped(json: any, ignoreDiscriminator: boolean): VersionInfo {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'version': !exists(json, 'version') ? undefined : json['version'],
-        'dumpTimestamp': !exists(json, 'dump_timestamp') ? undefined : (new Date(json['dump_timestamp'])),
+        'version': json['version'] == null ? undefined : json['version'],
+        'dumpTimestamp': json['dump_timestamp'] == null ? undefined : (new Date(json['dump_timestamp'])),
     };
 }
 
-export function VersionInfoToJSON(value?: VersionInfo | null): any {
-    if (value === undefined) {
-        return undefined;
+export function VersionInfoToJSON(json: any): VersionInfo {
+    return VersionInfoToJSONTyped(json, false);
+}
+
+export function VersionInfoToJSONTyped(value?: Omit<VersionInfo, 'version'|'dump_timestamp'> | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
     };

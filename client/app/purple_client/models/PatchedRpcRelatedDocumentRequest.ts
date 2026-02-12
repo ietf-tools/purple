@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * Serializer for related document for an RfcToBe
  * @export
@@ -30,10 +30,8 @@ export interface PatchedRpcRelatedDocumentRequest {
 /**
  * Check if a given object implements the PatchedRpcRelatedDocumentRequest interface.
  */
-export function instanceOfPatchedRpcRelatedDocumentRequest(value: object): boolean {
-    let isInstance = true;
-
-    return isInstance;
+export function instanceOfPatchedRpcRelatedDocumentRequest(value: object): value is PatchedRpcRelatedDocumentRequest {
+    return true;
 }
 
 export function PatchedRpcRelatedDocumentRequestFromJSON(json: any): PatchedRpcRelatedDocumentRequest {
@@ -41,25 +39,27 @@ export function PatchedRpcRelatedDocumentRequestFromJSON(json: any): PatchedRpcR
 }
 
 export function PatchedRpcRelatedDocumentRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): PatchedRpcRelatedDocumentRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
         
-        'relationship': !exists(json, 'relationship') ? undefined : json['relationship'],
+        'relationship': json['relationship'] == null ? undefined : json['relationship'],
     };
 }
 
-export function PatchedRpcRelatedDocumentRequestToJSON(value?: PatchedRpcRelatedDocumentRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function PatchedRpcRelatedDocumentRequestToJSON(json: any): PatchedRpcRelatedDocumentRequest {
+    return PatchedRpcRelatedDocumentRequestToJSONTyped(json, false);
+}
+
+export function PatchedRpcRelatedDocumentRequestToJSONTyped(value?: PatchedRpcRelatedDocumentRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'relationship': value.relationship,
+        'relationship': value['relationship'],
     };
 }
 

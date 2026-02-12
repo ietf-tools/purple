@@ -12,7 +12,7 @@
  * Do not edit the class manually.
  */
 
-import { exists, mapValues } from '../runtime';
+import { mapValues } from '../runtime';
 /**
  * 
  * @export
@@ -36,12 +36,10 @@ export interface ClusterMemberRequest {
 /**
  * Check if a given object implements the ClusterMemberRequest interface.
  */
-export function instanceOfClusterMemberRequest(value: object): boolean {
-    let isInstance = true;
-    isInstance = isInstance && "name" in value;
-    isInstance = isInstance && "order" in value;
-
-    return isInstance;
+export function instanceOfClusterMemberRequest(value: object): value is ClusterMemberRequest {
+    if (!('name' in value) || value['name'] === undefined) return false;
+    if (!('order' in value) || value['order'] === undefined) return false;
+    return true;
 }
 
 export function ClusterMemberRequestFromJSON(json: any): ClusterMemberRequest {
@@ -49,7 +47,7 @@ export function ClusterMemberRequestFromJSON(json: any): ClusterMemberRequest {
 }
 
 export function ClusterMemberRequestFromJSONTyped(json: any, ignoreDiscriminator: boolean): ClusterMemberRequest {
-    if ((json === undefined) || (json === null)) {
+    if (json == null) {
         return json;
     }
     return {
@@ -59,17 +57,19 @@ export function ClusterMemberRequestFromJSONTyped(json: any, ignoreDiscriminator
     };
 }
 
-export function ClusterMemberRequestToJSON(value?: ClusterMemberRequest | null): any {
-    if (value === undefined) {
-        return undefined;
+export function ClusterMemberRequestToJSON(json: any): ClusterMemberRequest {
+    return ClusterMemberRequestToJSONTyped(json, false);
+}
+
+export function ClusterMemberRequestToJSONTyped(value?: ClusterMemberRequest | null, ignoreDiscriminator: boolean = false): any {
+    if (value == null) {
+        return value;
     }
-    if (value === null) {
-        return null;
-    }
+
     return {
         
-        'name': value.name,
-        'order': value.order,
+        'name': value['name'],
+        'order': value['order'],
     };
 }
 
