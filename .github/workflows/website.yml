@@ -28,6 +28,10 @@ jobs:
         run: npm ci
         working-directory: ./client
 
+      - name: Generate API client
+        run: npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+        working-directory: ./
+
       - name: Build Nuxt (dev mode, no prerender)
         run: npm run build:dev
         working-directory: ./client

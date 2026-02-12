@@ -71,12 +71,7 @@ export default defineNuxtConfig({
     viewer: false
   },
   typescript: {
-    typeCheck: false,
-    tsConfig: {
-      compilerOptions: {
-        noImplicitOverride: false
-      },
-    }
+    typeCheck: false
   },
   vite: {
     optimizeDeps: {
