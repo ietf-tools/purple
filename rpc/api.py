@@ -1005,6 +1005,50 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
     @extend_schema(
+        description="Returns relations where this draft is the target of an update "
+        "relationship",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="updated-by")
+    def updated_by(self, request, draft_name=None):
+        qs = (
+            super()
+            .get_queryset()
+            .filter(
+                target_rfctobe__draft__name=self.kwargs["draft_name"],
+                relationship__slug = "updates",
+            )
+        )
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        description="Returns relations where this draft is the target of an obsoletes "
+        "relationship",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="obsoleted-by")
+    def obsoleted_by(self, request, draft_name=None):
+        qs = (
+            super()
+            .get_queryset()
+            .filter(
+                target_rfctobe__draft__name=self.kwargs["draft_name"],
+                relationship__slug = "obs",
+            )
+        )
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
         request=CreateRpcRelatedDocumentSerializer,
         responses=RpcRelatedDocumentSerializer,
         examples=[

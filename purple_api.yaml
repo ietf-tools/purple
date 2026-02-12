@@ -1958,6 +1958,61 @@ paths:
                 items:
                   $ref: '#/components/schemas/RpcRelatedDocument'
           description: ''
+  /api/rpc/documents/{draft_name}/references/obsoleted-by/:
+    get:
+      operationId: documents_references_obsoleted_by_list
+      description: Returns relations where this draft is the target of an obsoletes
+        relationship
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: relationship__slug
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+  /api/rpc/documents/{draft_name}/references/updated-by/:
+    get:
+      operationId: documents_references_updated_by_list
+      description: Returns relations where this draft is the target of an update relationship
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: relationship__slug
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
   /api/rpc/labels/:
     get:
       operationId: labels_list
@@ -4919,6 +4974,9 @@ components:
           type: string
           readOnly: true
         target_rfc_number:
+          type: integer
+          readOnly: true
+        source_rfc_number:
           type: integer
           readOnly: true
       required:

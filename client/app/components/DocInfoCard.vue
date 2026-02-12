@@ -268,6 +268,30 @@
             <div v-else class="text-sm text-gray-500">(none)</div>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Obsoleted By" :spacing="spacing">
+          <DescriptionListDetails>
+            <div v-if="obsoletedBy && obsoletedBy.length > 0" class="text-sm font-medium">
+              <span v-for="(doc, idx) in obsoletedBy" :key="doc.id">
+                <NuxtLink :to="`/docs/${doc.draftName}`" class="text-blue-600 hover:underline">
+                  RFC {{ doc.sourceRfcNumber }}
+                </NuxtLink><span v-if="idx < obsoletedBy.length - 1">, </span>
+              </span>
+            </div>
+            <div v-else class="text-sm text-gray-500">(none)</div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
+        <DescriptionListItem term="Updated By" :spacing="spacing">
+          <DescriptionListDetails>
+            <div v-if="updatedBy && updatedBy.length > 0" class="text-sm font-medium">
+              <span v-for="(doc, idx) in updatedBy" :key="doc.id">
+                <NuxtLink :to="`/docs/${doc.draftName}`" class="text-blue-600 hover:underline">
+                  RFC {{ doc.sourceRfcNumber }}
+                </NuxtLink><span v-if="idx < updatedBy.length - 1">, </span>
+              </span>
+            </div>
+            <div v-else class="text-sm text-gray-500">(none)</div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>
@@ -356,13 +380,27 @@ const removeEmail = async (id: number) => {
 }
 
 const { data: obsoletes } = await useAsyncData(
+  () => `obsoletes-${props.draftName}`,
   () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'obs' }) : Promise.resolve([]),
-  { server: false, lazy: true, default: () => [], watch: [() => props.draftName] }
+  { server: false, lazy: true, default: () => [] }
 )
 
 const { data: updates } = await useAsyncData(
+  () => `updates-${props.draftName}`,
   () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'updates' }) : Promise.resolve([]),
-  { server: false, lazy: true, default: () => [], watch: [() => props.draftName] }
+  { server: false, lazy: true, default: () => [] }
+)
+
+const { data: obsoletedBy } = await useAsyncData(
+  () => `obsoletedBy-${props.draftName}`,
+  () => props.draftName ? api.documentsReferencesObsoletedByList({ draftName: props.draftName, relationshipSlug: 'obs-by' }) : Promise.resolve([]),
+  { server: false, lazy: true, default: () => [] }
+)
+
+const { data: updatedBy } = await useAsyncData(
+  () => `updatedBy-${props.draftName}`,
+  () => props.draftName ? api.documentsReferencesUpdatedByList({ draftName: props.draftName, relationshipSlug: 'updates-by' }) : Promise.resolve([]),
+  { server: false, lazy: true, default: () => [] }
 )
 
 const loadStreams = async (): Promise<SelectOption[]> => {
