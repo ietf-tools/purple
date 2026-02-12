@@ -29,7 +29,9 @@ jobs:
         working-directory: ./client
 
       - name: Generate API client
-        run: npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+        run: |
+          npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+          sed -i '1i // @ts-nocheck' client/app/purple_client/runtime.ts
         working-directory: ./
 
       - name: Build Nuxt (dev mode, no prerender)

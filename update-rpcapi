@@ -37,11 +37,18 @@ fi
 # Generate OpenAPI schema for the Purple api
 ./manage.py spectacular --file purple_api.yaml
 
+if ! grep -q "// @ts-nocheck" "$WORKSPACE/client/app/purple_client/runtime.ts"; then
+  sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
+fi
+
 if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.yaml" > /dev/null 2>&1; then
   echo "Generating purple API client from purple_api.yaml"
   # Generate purple's own API
   # Configure the generator in openapitools.json
   npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
+  if ! grep -q "// @ts-nocheck" "$WORKSPACE/client/app/purple_client/runtime.ts"; then
+    sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
+  fi
   cd client
   npm run build
   cd ..
