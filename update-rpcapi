@@ -42,7 +42,6 @@ if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.ya
   # Generate purple's own API
   # Configure the generator in openapitools.json
   npx --yes @openapitools/openapi-generator-cli generate --generator-key purple
-
   cd client
   npm run build
   cd ..
