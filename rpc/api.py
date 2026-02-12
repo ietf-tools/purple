@@ -1016,7 +1016,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             .get_queryset()
             .filter(
                 target_rfctobe__draft__name=self.kwargs["draft_name"],
-                relationship__slug = "updates",
+                relationship__slug="updates",
             )
         )
         page = self.paginate_queryset(qs)
@@ -1038,7 +1038,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             .get_queryset()
             .filter(
                 target_rfctobe__draft__name=self.kwargs["draft_name"],
-                relationship__slug = "obs",
+                relationship__slug="obs",
             )
         )
         page = self.paginate_queryset(qs)
