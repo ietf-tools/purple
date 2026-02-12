@@ -2,7 +2,7 @@
   "$schema": "./node_modules/@openapitools/openapi-generator-cli/config.schema.json",
   "spaces": 4,
   "generator-cli": {
-    "version": "7.19.0",
+    "version": "7.1.0",
     "generators": {
       "datatracker": {
         "generatorName": "python",
@@ -19,10 +19,7 @@
         "output": "#{cwd}/client/app/purple_client",
         "additionalProperties": {
           "packageName": "purple_client",
-          "disallowAdditionalPropertiesIfNotPresent": false,
-          "supportsES6": true,
-          "useOverride": true,
-          "typescriptThreePlus": true
+          "disallowAdditionalPropertiesIfNotPresent": false
         }
       }
     }
