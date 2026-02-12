@@ -393,13 +393,13 @@ const { data: updates } = await useAsyncData(
 
 const { data: obsoletedBy } = await useAsyncData(
   () => `obsoletedBy-${props.draftName}`,
-  () => props.draftName ? api.documentsReferencesObsoletedByList({ draftName: props.draftName, relationshipSlug: 'obs-by' }) : Promise.resolve([]),
+  () => props.draftName ? api.documentsReferencesObsoletedByList({ draftName: props.draftName }) : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
 const { data: updatedBy } = await useAsyncData(
   () => `updatedBy-${props.draftName}`,
-  () => props.draftName ? api.documentsReferencesUpdatedByList({ draftName: props.draftName, relationshipSlug: 'updates-by' }) : Promise.resolve([]),
+  () => props.draftName ? api.documentsReferencesUpdatedByList({ draftName: props.draftName }) : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
