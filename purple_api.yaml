@@ -810,6 +810,161 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionHolder'
           description: ''
+  /api/rpc/documents/{draft_name}/additional_emails/:
+    get:
+      operationId: documents_additional_emails_list
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    post:
+      operationId: documents_additional_emails_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalEmailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+  /api/rpc/documents/{draft_name}/additional_emails/{id}/:
+    get:
+      operationId: documents_additional_emails_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    put:
+      operationId: documents_additional_emails_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalEmailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    patch:
+      operationId: documents_additional_emails_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdditionalEmailRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    delete:
+      operationId: documents_additional_emails_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/rpc/documents/{draft_name}/approval_logs/:
     get:
       operationId: documents_approval_logs_list
@@ -2767,6 +2922,31 @@ components:
         body:
           type: string
           maxLength: 64
+    AdditionalEmail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        rfc_to_be:
+          type: integer
+          readOnly: true
+      required:
+      - email
+    AdditionalEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+      required:
+      - email
     ApprovalLogMessage:
       type: object
       properties:
@@ -3864,6 +4044,14 @@ components:
         body:
           type: string
           maxLength: 64
+    PatchedAdditionalEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
     PatchedApprovalLogMessageRequest:
       type: object
       properties:
@@ -4481,6 +4669,11 @@ components:
         iana_status:
           allOf:
           - $ref: '#/components/schemas/IanaStatus'
+          readOnly: true
+        additional_emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalEmail'
           readOnly: true
       required:
       - authors

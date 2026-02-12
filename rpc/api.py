@@ -52,6 +52,7 @@ from .lifecycle.publication import (
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
+    AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
     Capability,
@@ -78,6 +79,7 @@ from .models import (
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
     ActionHolderSerializer,
+    AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
     AuthorOrderSerializer,
@@ -1033,6 +1035,25 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
 class LabelViewSet(viewsets.ModelViewSet):
     queryset = Label.objects.all()
     serializer_class = LabelSerializer
+
+
+class AdditionalEmailViewSet(viewsets.ModelViewSet):
+    queryset = AdditionalEmail.objects.all()
+    serializer_class = AdditionalEmailSerializer
+
+    def get_queryset(self):
+        draft_name = self.kwargs.get("draft_name")
+        if draft_name:
+            return super().get_queryset().filter(rfc_to_be__draft__name=draft_name)
+        return super().get_queryset()
+
+    def perform_create(self, serializer):
+        draft_name = self.kwargs.get("draft_name")
+        if draft_name:
+            rfc_to_be = get_object_or_404(RfcToBe, draft__name=draft_name)
+            serializer.save(rfc_to_be=rfc_to_be)
+        else:
+            serializer.save()
 
 
 class RpcRoleViewSet(viewsets.ReadOnlyModelViewSet):

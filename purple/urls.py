@@ -85,6 +85,11 @@ rpc_router.register(
     basename="documents-approval-log-messages",
 )
 rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/additional_emails",
+    rpc_api.AdditionalEmailViewSet,
+    basename="documents-additional-emails",
+)
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/metadata_validation_results",
     rpc_api.MetadataValidationResultsViewSet,
     basename="documents-metadata-validation-results",

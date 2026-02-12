@@ -24,6 +24,7 @@ from rpc.lifecycle.metadata import MetadataComparator
 
 from .models import (
     ActionHolder,
+    AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
     BlockingReason,
@@ -264,6 +265,17 @@ class LabelSerializer(serializers.ModelSerializer):
             "color",
             "used",
         ]
+
+
+class AdditionalEmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdditionalEmail
+        fields = [
+            "id",
+            "email",
+            "rfc_to_be",
+        ]
+        read_only_fields = ["rfc_to_be"]
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -640,6 +652,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
 
     iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
     shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+    additional_emails = AdditionalEmailSerializer(
+        source="additionalemail_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -675,6 +690,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "subseries",
             "iana_status",
             "iana_status_slug",
+            "additional_emails",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 

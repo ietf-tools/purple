@@ -179,6 +179,50 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Additional Emails" :spacing="spacing">
+          <DescriptionListDetails>
+            <div v-if="!isEditingAdditionalEmails"
+              class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
+              <div v-if="additionalEmails && additionalEmails.length > 0" class="w-full">
+                <div v-for="email in additionalEmails" :key="email.id">
+                  {{ email.email }}
+                </div>
+              </div>
+              <div v-else class="flex-1 text-gray-500">(none)</div>
+              <div v-if="!props.isReadOnly">
+                <button @click="isEditingAdditionalEmails = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                  <Icon name="uil:pen" />
+                </button>
+              </div>
+            </div>
+            <div v-else class="w-full flex flex-col gap-2">
+              <div v-if="additionalEmails && additionalEmails.length > 0" class="space-y-1">
+                <div v-for="email in additionalEmails" :key="email.id"
+                  class="flex items-center justify-between text-sm">
+                  <span>{{ email.email }}</span>
+                  <button @click="removeEmail(email.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                    <Icon name="uil:trash" />
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500">(none)</div>
+              <div class="flex gap-2">
+                <input v-model="newEmail" type="email" placeholder="email@example.com"
+                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newEmailInput" @keyup.enter="addEmail" />
+                <button @click="addEmail" :disabled="!newEmail"
+                  class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
+                  Add
+                </button>
+              </div>
+              <div class="flex justify-end">
+                <button @click="isEditingAdditionalEmails = false"
+                  class="text-xs text-gray-500 hover:text-gray-700 underline">
+                  Done
+                </button>
+              </div>
+            </div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="consensus" :is-read-only="props.isReadOnly"
@@ -230,6 +274,50 @@ const emit = defineEmits<{
 }>()
 
 const api = useApi()
+
+const { data: additionalEmails, refresh: refreshEmails } = await useAsyncData(
+  () => `additional-emails-${props.draftName}`,
+  () => props.draftName ? api.documentsAdditionalEmailsList({ draftName: props.draftName }) : Promise.resolve([]),
+  { server: false, lazy: true, default: () => [] }
+)
+
+const isEditingAdditionalEmails = ref(false)
+const newEmailInput = ref<HTMLInputElement | null>(null)
+
+watch(isEditingAdditionalEmails, async (newValue) => {
+  if (newValue) {
+    await nextTick()
+    newEmailInput.value?.focus()
+  }
+})
+
+const newEmail = ref('')
+
+const addEmail = async () => {
+  if (!newEmail.value || !props.draftName) return
+  try {
+    await api.documentsAdditionalEmailsCreate({
+      draftName: props.draftName,
+      additionalEmailRequest: { email: newEmail.value }
+    })
+    newEmail.value = ''
+    await refreshEmails()
+    await props.refresh?.()
+  } catch (error) {
+    console.error('Failed to add email:', error)
+  }
+}
+
+const removeEmail = async (id: number) => {
+  if (!props.draftName) return
+  try {
+    await api.documentsAdditionalEmailsDestroy({ draftName: props.draftName, id })
+    await refreshEmails()
+    await props.refresh?.()
+  } catch (error) {
+    console.error('Failed to remove email:', error)
+  }
+}
 
 const loadStreams = async (): Promise<SelectOption[]> => {
   const streamNames = await api.streamNamesList()
