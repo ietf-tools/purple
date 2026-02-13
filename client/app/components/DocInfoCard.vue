@@ -381,13 +381,13 @@ const removeEmail = async (id: number) => {
 
 const { data: obsoletes } = await useAsyncData(
   () => `obsoletes-${props.draftName}`,
-  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'obs' }) : Promise.resolve([]),
+  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationship: 'obs' }) : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
 const { data: updates } = await useAsyncData(
   () => `updates-${props.draftName}`,
-  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationshipSlug: 'updates' }) : Promise.resolve([]),
+  () => props.draftName ? api.documentsReferencesList({ draftName: props.draftName, relationship: 'updates' }) : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
