@@ -990,6 +990,14 @@ class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema_with_draft_name()
+@extend_schema_view(
+    list=extend_schema(
+        description="Returns only related relationships like obsoletes/updates for "
+        "this draft and also reverse relationships where this draft is the target "
+        "(e.g. updated_by, obsoleted_by)",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
+)
 class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
@@ -1006,12 +1014,6 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             )
         )
 
-    @extend_schema(
-        description="Returns only related relationships like obsoletes/updates for "
-        "this draft and also reverse relationships where this draft is the target "
-        "(e.g. updated_by, obsoleted_by)",
-        responses=RpcRelatedDocumentSerializer(many=True),
-    )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         results = list(queryset)

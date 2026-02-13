@@ -1932,6 +1932,9 @@ paths:
   /api/rpc/documents/{draft_name}/related/:
     get:
       operationId: documents_related_list
+      description: Returns only related relationships like obsoletes/updates for this
+        draft and also reverse relationships where this draft is the target (e.g.
+        updated_by, obsoleted_by)
       parameters:
       - in: path
         name: draft_name
