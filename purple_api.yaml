@@ -1768,7 +1768,7 @@ paths:
           type: string
         required: true
       - in: query
-        name: relationship__slug
+        name: relationship
         schema:
           type: string
       tags:
@@ -1942,7 +1942,7 @@ paths:
           type: string
         required: true
       - in: query
-        name: relationship__slug
+        name: relationship
         schema:
           type: string
       tags:
@@ -1970,7 +1970,7 @@ paths:
           type: string
         required: true
       - in: query
-        name: relationship__slug
+        name: relationship
         schema:
           type: string
       tags:
@@ -1997,7 +1997,7 @@ paths:
           type: string
         required: true
       - in: query
-        name: relationship__slug
+        name: relationship
         schema:
           type: string
       tags:

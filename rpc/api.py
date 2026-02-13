@@ -969,7 +969,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["relationship__slug"]
+    filterset_fields = ["relationship"]
 
     def get_queryset(self):
         return (
