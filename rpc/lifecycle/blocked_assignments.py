@@ -195,6 +195,18 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
                     },
                 )
 
+        else:
+            logger.info("Creating new blocked assignment for rfc %s", rfc.pk)
+            comment = (
+                f"blocked because of blocking condition(s): {', '.join(reasons)}; "
+            )
+            Assignment.objects.create(
+                rfc_to_be=rfc,
+                role=role,
+                state=Assignment.State.IN_PROGRESS,
+                comment=comment,
+            )
+
         # Store blocking reasons in RfcToBeBlockingReason
         for reason_slug in reasons:
             try:
