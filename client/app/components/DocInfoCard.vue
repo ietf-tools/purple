@@ -246,26 +246,100 @@
         </DescriptionListItem>
         <DescriptionListItem term="Obsoletes" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="obsoletes && obsoletes.length > 0" class="text-sm font-medium">
-              <span v-for="(doc, idx) in obsoletes" :key="doc.id">
-                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  RFC {{ doc.targetRfcNumber }}
-                </NuxtLink><span v-if="idx < obsoletes.length - 1">, </span>
-              </span>
+            <div v-if="!isEditingObsoletes"
+              class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
+              <div v-if="obsoletes && obsoletes.length > 0" class="flex-1">
+                <span v-for="(doc, idx) in obsoletes" :key="doc.id">
+                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }}
+                  </NuxtLink><span v-if="idx < obsoletes.length - 1">, </span>
+                </span>
+              </div>
+              <div v-else class="flex-1 text-gray-500">(none)</div>
+              <div>
+                <button @click="isEditingObsoletes = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                  <Icon name="uil:pen" />
+                </button>
+              </div>
             </div>
-            <div v-else class="text-sm text-gray-500">(none)</div>
+            <div v-else class="w-full flex flex-col gap-2">
+              <div v-if="obsoletes && obsoletes.length > 0" class="space-y-1">
+                <div v-for="doc in obsoletes" :key="doc.id"
+                  class="flex items-center justify-between text-sm">
+                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }}
+                  </NuxtLink>
+                  <button @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                    <Icon name="uil:times" />
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500">(none)</div>
+              <div class="flex gap-2">
+                <input v-model="newObsoletesRfc" type="text" placeholder="RFC number (e.g., 9999)"
+                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newObsoletesInput"
+                  @keyup.enter="addRelatedDocument(newObsoletesRfc, 'obs')" />
+                <button @click="addRelatedDocument(newObsoletesRfc, 'obs')" :disabled="!newObsoletesRfc"
+                  class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
+                  Add
+                </button>
+              </div>
+              <div class="flex justify-end">
+                <button @click="isEditingObsoletes = false"
+                  class="text-xs text-gray-500 hover:text-gray-700 underline">
+                  Done
+                </button>
+              </div>
+            </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Updates" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="updates && updates.length > 0" class="text-sm font-medium">
-              <span v-for="(doc, idx) in updates" :key="doc.id">
-                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  RFC {{ doc.targetRfcNumber }}
-                </NuxtLink><span v-if="idx < updates.length - 1">, </span>
-              </span>
+            <div v-if="!isEditingUpdates"
+              class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
+              <div v-if="updates && updates.length > 0" class="flex-1">
+                <span v-for="(doc, idx) in updates" :key="doc.id">
+                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }}
+                  </NuxtLink><span v-if="idx < updates.length - 1">, </span>
+                </span>
+              </div>
+              <div v-else class="flex-1 text-gray-500">(none)</div>
+              <div>
+                <button @click="isEditingUpdates = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                  <Icon name="uil:pen" />
+                </button>
+              </div>
             </div>
-            <div v-else class="text-sm text-gray-500">(none)</div>
+            <div v-else class="w-full flex flex-col gap-2">
+              <div v-if="updates && updates.length > 0" class="space-y-1">
+                <div v-for="doc in updates" :key="doc.id"
+                  class="flex items-center justify-between text-sm">
+                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }}
+                  </NuxtLink>
+                  <button @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                    <Icon name="uil:times" />
+                  </button>
+                </div>
+              </div>
+              <div v-else class="text-sm text-gray-500">(none)</div>
+              <div class="flex gap-2">
+                <input v-model="newUpdatesRfc" type="text" placeholder="RFC number (e.g., 9999)"
+                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newUpdatesInput"
+                  @keyup.enter="addRelatedDocument(newUpdatesRfc, 'updates')" />
+                <button @click="addRelatedDocument(newUpdatesRfc, 'updates')" :disabled="!newUpdatesRfc"
+                  class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
+                  Add
+                </button>
+              </div>
+              <div class="flex justify-end">
+                <button @click="isEditingUpdates = false"
+                  class="text-xs text-gray-500 hover:text-gray-700 underline">
+                  Done
+                </button>
+              </div>
+            </div>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Obsoleted By" :spacing="spacing">
@@ -379,7 +453,7 @@ const removeEmail = async (id: number) => {
   }
 }
 
-const { data: relatedDocs } = await useAsyncData(
+const { data: relatedDocs, refresh: refreshRelatedDocs } = await useAsyncData(
   () => `related-${props.draftName}`,
   () => props.draftName ? api.documentsRelatedList({ draftName: props.draftName }) : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
@@ -389,6 +463,99 @@ const obsoletes = computed(() => relatedDocs.value?.filter(d => d.relationship =
 const updates = computed(() => relatedDocs.value?.filter(d => d.relationship === 'updates') ?? [])
 const obsoletedBy = computed(() => relatedDocs.value?.filter(d => d.relationship === 'obsoleted_by') ?? [])
 const updatedBy = computed(() => relatedDocs.value?.filter(d => d.relationship === 'updated_by') ?? [])
+
+const isEditingObsoletes = ref(false)
+const isEditingUpdates = ref(false)
+const newObsoletesRfc = ref('')
+const newUpdatesRfc = ref('')
+const newObsoletesInput = ref<HTMLInputElement | null>(null)
+const newUpdatesInput = ref<HTMLInputElement | null>(null)
+
+watch(isEditingObsoletes, async (newValue) => {
+  if (newValue) {
+    await nextTick()
+    newObsoletesInput.value?.focus()
+  }
+})
+
+watch(isEditingUpdates, async (newValue) => {
+  if (newValue) {
+    await nextTick()
+    newUpdatesInput.value?.focus()
+  }
+})
+
+const addRelatedDocument = async (rfcNumber: string, relationshipType: 'obs' | 'updates') => {
+  if (!rfcNumber || !props.draftName || !props.rfcToBe || !props.rfcToBe.id) return
+
+  // Parse RFC number - handle "9999" or "rfc9999" formats
+  const cleaned = rfcNumber.toLowerCase().replace(/^rfc/, '').trim()
+  const rfcLookup = `rfc${cleaned}`
+
+  try {
+    // First, check if the target RFC exists
+    const targetDoc = await api.documentsRetrieve({ draftName: rfcLookup })
+
+    if (!targetDoc.name) {
+      throw new Error('Document found but has no name')
+    }
+
+    // Create the relationship using the draft name from the retrieved document
+    await api.documentsRelatedCreate({
+      draftName: props.draftName,
+      createRpcRelatedDocumentRequest: {
+        source: props.rfcToBe.id,
+        relationship: relationshipType,
+        targetDraftName: targetDoc.name
+      }
+    })
+
+    if (relationshipType === 'obs') {
+      newObsoletesRfc.value = ''
+    } else {
+      newUpdatesRfc.value = ''
+    }
+
+    await refreshRelatedDocs()
+    await props.refresh?.()
+  } catch (error) {
+    let msg = `Failed to add ${relationshipType === 'obs' ? 'obsoletes' : 'updates'} relationship.`
+
+    if (error instanceof ResponseError) {
+      if (error.response.status === 404) {
+        msg = `RFC ${cleaned} does not exist in the system.`
+      } else {
+        const data = await error.response.json()
+        if (data?.target_draft_name) {
+          msg = data.target_draft_name[0]
+        } else if (data?.detail) {
+          msg = data.detail
+        }
+      }
+    }
+
+    snackbar.add({
+      type: 'error',
+      text: msg
+    })
+    console.error('Failed to add related document:', error)
+  }
+}
+
+const removeRelatedDocument = async (id: number) => {
+  if (!props.draftName) return
+  try {
+    await api.documentsRelatedDestroy({ draftName: props.draftName, id })
+    await refreshRelatedDocs()
+    await props.refresh?.()
+  } catch (error) {
+    snackbar.add({
+      type: 'error',
+      text: 'Failed to remove relationship.'
+    })
+    console.error('Failed to remove related document:', error)
+  }
+}
 
 const loadStreams = async (): Promise<SelectOption[]> => {
   const streamNames = await api.streamNamesList()
