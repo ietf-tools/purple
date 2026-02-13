@@ -174,7 +174,7 @@ const { data: people } = await useAsyncData(
 )
 
 const { data: relatedDocuments } = await useAsyncData(
-  () => api.documentsReferencesDepsList({ draftName: draftName.value }),
+  () => api.documentsReferencesList({ draftName: draftName.value }),
   { server: false, lazy: true, default: () => [] }
 )
 

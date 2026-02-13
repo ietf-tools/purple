@@ -813,7 +813,7 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.IntegerField())
     def get_target_rfc_number(self, obj: RpcRelatedDocument) -> int:
         """Get the RFC number of the target document, if available"""
-        return obj.target_rfctobe.rfc_number
+        return obj.target_rfctobe.rfc_number if obj.target_rfctobe else None
 
     @extend_schema_field(serializers.IntegerField())
     def get_source_rfc_number(self, obj: RpcRelatedDocument) -> int:

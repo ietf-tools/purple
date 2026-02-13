@@ -469,6 +469,12 @@ paths:
   /api/rpc/doc_relationship_names/:
     get:
       operationId: doc_relationship_names_list
+      parameters:
+      - in: query
+        name: refs
+        schema:
+          type: boolean
+        description: Return only reference relationships
       tags:
       - purple
       security:
@@ -486,6 +492,11 @@ paths:
     get:
       operationId: doc_relationship_names_retrieve
       parameters:
+      - in: query
+        name: refs
+        schema:
+          type: boolean
+        description: Return only reference relationships
       - in: path
         name: slug
         schema:
@@ -1771,6 +1782,10 @@ paths:
         name: relationship
         schema:
           type: string
+      - in: query
+        name: relationship__slug
+        schema:
+          type: string
       tags:
       - purple
       security:
@@ -1798,13 +1813,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateRpcRelatedDocumentRequest'
-            examples:
-              CreateRelatedDocument:
-                value:
-                  relationship: not-received
-                  target_draft_name: draft-lorem-ipsum-dolor-sit-amet
-                summary: Create Related Document
+              $ref: '#/components/schemas/RpcRelatedDocumentRequest'
         required: true
       security:
       - cookieAuth: []
@@ -1814,14 +1823,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/RpcRelatedDocument'
-              examples:
-                CreatedRelatedDocumentResponse:
-                  value:
-                    id: 1
-                    relationship: not-received
-                    draft_name: draft-source-document
-                    target_draft_name: draft-lorem-ipsum-dolor-sit-amet
-                  summary: Created Related Document Response
           description: ''
   /api/rpc/documents/{draft_name}/references/{id}/:
     get:
@@ -1931,10 +1932,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/rpc/documents/{draft_name}/references/deps/:
+  /api/rpc/documents/{draft_name}/related/:
     get:
-      operationId: documents_references_deps_list
-      description: Returns only relations for this draft that are pre-publishing dependencies
+      operationId: documents_related_list
       parameters:
       - in: path
         name: draft_name
@@ -1943,6 +1943,10 @@ paths:
         required: true
       - in: query
         name: relationship
+        schema:
+          type: string
+      - in: query
+        name: relationship__slug
         schema:
           type: string
       tags:
@@ -1958,21 +1962,60 @@ paths:
                 items:
                   $ref: '#/components/schemas/RpcRelatedDocument'
           description: ''
-  /api/rpc/documents/{draft_name}/references/obsoleted-by/:
-    get:
-      operationId: documents_references_obsoleted_by_list
-      description: Returns relations where this draft is the target of an obsoletes
-        relationship
+    post:
+      operationId: documents_related_create
       parameters:
       - in: path
         name: draft_name
         schema:
           type: string
         required: true
-      - in: query
-        name: relationship
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRpcRelatedDocumentRequest'
+            examples:
+              CreateRelatedDocument:
+                value:
+                  relationship: not-received
+                  target_draft_name: draft-lorem-ipsum-dolor-sit-amet
+                summary: Create Related Document
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+              examples:
+                CreatedRelatedDocumentResponse:
+                  value:
+                    id: 1
+                    relationship: not-received
+                    draft_name: draft-source-document
+                    target_draft_name: draft-lorem-ipsum-dolor-sit-amet
+                  summary: Created Related Document Response
+          description: ''
+  /api/rpc/documents/{draft_name}/related/{id}/:
+    get:
+      operationId: documents_related_retrieve
+      parameters:
+      - in: path
+        name: draft_name
         schema:
           type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
       tags:
       - purple
       security:
@@ -1982,26 +2025,30 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RpcRelatedDocument'
+                $ref: '#/components/schemas/RpcRelatedDocument'
           description: ''
-  /api/rpc/documents/{draft_name}/references/updated-by/:
-    get:
-      operationId: documents_references_updated_by_list
-      description: Returns relations where this draft is the target of an update relationship
+    put:
+      operationId: documents_related_update
       parameters:
       - in: path
         name: draft_name
         schema:
           type: string
         required: true
-      - in: query
-        name: relationship
+      - in: path
+        name: id
         schema:
-          type: string
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
       tags:
       - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RpcRelatedDocumentRequest'
+        required: true
       security:
       - cookieAuth: []
       responses:
@@ -2009,10 +2056,59 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/RpcRelatedDocument'
+                $ref: '#/components/schemas/RpcRelatedDocument'
           description: ''
+    patch:
+      operationId: documents_related_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRpcRelatedDocumentRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    delete:
+      operationId: documents_related_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/rpc/labels/:
     get:
       operationId: labels_list

@@ -66,8 +66,13 @@ rpc_router.register(
 )
 rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/references",
-    rpc_api.RpcRelatedDocumentViewSet,
+    rpc_api.RpcDocumentReferencesViewSet,
     basename="documents-references",
+)
+rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/related",
+    rpc_api.RpcRelatedDocumentViewSet,
+    basename="documents-related",
 )
 rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/final_approvals",
