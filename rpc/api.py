@@ -1037,6 +1037,7 @@ class LabelViewSet(viewsets.ModelViewSet):
     serializer_class = LabelSerializer
 
 
+@extend_schema_with_draft_name()
 class AdditionalEmailViewSet(viewsets.ModelViewSet):
     queryset = AdditionalEmail.objects.all()
     serializer_class = AdditionalEmailSerializer
