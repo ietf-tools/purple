@@ -200,7 +200,7 @@
                 <div v-for="email in additionalEmails" :key="email.id"
                   class="flex items-center justify-between text-sm">
                   <span>{{ email.email }}</span>
-                  <button @click="removeEmail(email.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button v-if="email.id" @click="removeEmail(email.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:trash" />
                   </button>
                 </div>
@@ -250,7 +250,7 @@
 </template>
 
 <script setup lang="ts">
-import { type RfcToBe } from '~/purple_client'
+import { type RfcToBe, ResponseError } from '~/purple_client'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
 import { draftAssignmentsHref } from '~/utils/url'
@@ -259,6 +259,7 @@ import type { SelectOption } from '~/utils/html'
 import { dispositionValues } from '~/utils/document_relations-utils'
 
 const datatrackerLinks = useDatatrackerLinks()
+const snackbar = useSnackbar()
 
 type Props = {
   rfcToBe: RfcToBe | null | undefined
@@ -304,6 +305,17 @@ const addEmail = async () => {
     await refreshEmails()
     await props.refresh?.()
   } catch (error) {
+    let msg = 'Failed to add email.'
+    if (error instanceof ResponseError) {
+      const data = await error.response.json()
+      if (data?.email) {
+        msg = data.email[0]
+      }
+    }
+    snackbar.add({
+      type: 'error',
+      text: msg
+    })
     console.error('Failed to add email:', error)
   }
 }
