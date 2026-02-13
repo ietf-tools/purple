@@ -87,6 +87,10 @@ jobs:
           push: true
           tags: ghcr.io/ietf-tools/purple-statics:latest
 
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./purple/client
+
       - name: Generate Purple API client
         working-directory: ./purple
         run: |
