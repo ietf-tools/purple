@@ -49,6 +49,10 @@ fi
 # Django should be operational now. Build purple API client.
 ./manage.py spectacular --file purple_api.yaml && \
     client/node_modules/.bin/openapi-generator-cli generate --generator-key purple  || true
+    echo "If not set, add @ts-nocheck in runtime.ts to avoid type errors from generated code"
+    if ! grep -q "// @ts-nocheck" "client/app/purple_client/runtime.ts"; then
+        sed -i '1i // @ts-nocheck' "client/app/purple_client/runtime.ts"
+    fi
     /bin/cp purple_api.yaml client/app/purple_client/.purple_api.yaml
 
 sudo touch /.dev-ready

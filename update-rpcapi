@@ -23,7 +23,7 @@ if ! diff -q rpcapi.yaml "$WORKSPACE/openapi/rpcapi_client/.rpcapi.yaml" > /dev/
   echo "Generating datatracker API client from rpcapi.yaml"
   # Generate datatracker API client
   # Configure the generator in openapitools.json
-  client/node_modules/.bin/openapi-generator-cli generate --generator-key purple generate --generator-key datatracker
+  client/node_modules/.bin/openapi-generator-cli generate --generator-key datatracker
 
   # Install the datatracker rpcapi client
   pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
@@ -37,18 +37,11 @@ fi
 # Generate OpenAPI schema for the Purple api
 ./manage.py spectacular --file purple_api.yaml
 
-if ! grep -q "// @ts-nocheck" "$WORKSPACE/client/app/purple_client/runtime.ts"; then
-  sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
-fi
-
 if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.yaml" > /dev/null 2>&1; then
   echo "Generating purple API client from purple_api.yaml"
   # Generate purple's own API
   # Configure the generator in openapitools.json
-  client/node_modules/.bin/openapi-generator-cli generate --generator-key purple generate --generator-key purple
-  if ! grep -q "// @ts-nocheck" "$WORKSPACE/client/app/purple_client/runtime.ts"; then
-    sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
-  fi
+  client/node_modules/.bin/openapi-generator-cli generate --generator-key purple
   cd client
   npm run build
   cd ..
@@ -57,6 +50,11 @@ if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.ya
   /bin/cp purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.yaml"
 else
   echo "No change to purple_api.yaml, skipping purple API client generation"
+fi
+
+echo "If not set, add @ts-nocheck in runtime.ts to avoid type errors from generated code"
+if ! grep -q "// @ts-nocheck" "$WORKSPACE/client/app/purple_client/runtime.ts"; then
+  sed -i '1i // @ts-nocheck' "$WORKSPACE/client/app/purple_client/runtime.ts"
 fi
 
 echo
