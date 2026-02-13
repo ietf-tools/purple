@@ -1772,6 +1772,7 @@ paths:
   /api/rpc/documents/{draft_name}/references/:
     get:
       operationId: documents_references_list
+      description: Returns only relations for this draft that are pre-publishing dependencies
       parameters:
       - in: path
         name: draft_name
@@ -1780,10 +1781,6 @@ paths:
         required: true
       - in: query
         name: relationship
-        schema:
-          type: string
-      - in: query
-        name: relationship__slug
         schema:
           type: string
       tags:
@@ -1943,10 +1940,6 @@ paths:
         required: true
       - in: query
         name: relationship
-        schema:
-          type: string
-      - in: query
-        name: relationship__slug
         schema:
           type: string
       tags:

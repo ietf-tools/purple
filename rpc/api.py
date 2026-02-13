@@ -965,17 +965,19 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema_with_draft_name()
-class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
-    queryset = RpcRelatedDocument.objects.all()
-    serializer_class = RpcRelatedDocumentSerializer
-    filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["relationship", "relationship__slug"]
-
-    @extend_schema(
+@extend_schema_view(
+    list=extend_schema(
         description="Returns only relations for this draft that are pre-publishing "
         "dependencies",
         responses=RpcRelatedDocumentSerializer(many=True),
     )
+)
+class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
+    queryset = RpcRelatedDocument.objects.all()
+    serializer_class = RpcRelatedDocumentSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["relationship"]
+
     def get_queryset(self):
         return (
             super()
@@ -992,7 +994,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    filterset_fields = ["relationship", "relationship__slug"]
+    filterset_fields = ["relationship"]
 
     def get_queryset(self):
         return (
@@ -1004,12 +1006,18 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
             )
         )
 
+    @extend_schema(
+        description="Returns only related relationships like obsoletes/updates for "
+        "this draft and also reverse relationships where this draft is the target "
+        "(e.g. updated_by, obsoleted_by)",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
         results = list(queryset)
 
         draft_name = self.kwargs["draft_name"]
-        slug_filter = request.query_params.get("relationship")
+        slug_filter = request.query_params.getlist("relationship")
 
         class _ReverseRelationship:
             def __init__(self, slug):
@@ -1025,7 +1033,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 self.target_document = None
 
         def append_reverse(rel_slug, fake_slug):
-            if slug_filter and slug_filter != fake_slug:
+            if slug_filter and fake_slug not in slug_filter:
                 return
 
             reverse_qs = RpcRelatedDocument.objects.filter(

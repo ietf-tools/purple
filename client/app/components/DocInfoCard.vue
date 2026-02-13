@@ -269,7 +269,7 @@
                   <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
-                  <button @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button v-if="doc.id" @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:times" />
                   </button>
                 </div>
@@ -318,7 +318,7 @@
                   <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
-                  <button @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button v-if="doc.id" @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:times" />
                   </button>
                 </div>
