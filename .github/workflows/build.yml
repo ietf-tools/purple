@@ -55,6 +55,9 @@ jobs:
           docker run --rm --volume .:/workspace ghcr.io/ietf-tools/datatracker-app-base:latest /bin/bash -e doit.bash
           mv rpcapi.yaml ..
 
+      - name: Install dependencies
+        run: npm ci
+        working-directory: ./purple/client
 
       - name: Generate Datatracker API client
         working-directory: ./purple
@@ -86,10 +89,6 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ghcr.io/ietf-tools/purple-statics:latest
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: ./purple/client
 
       - name: Generate Purple API client
         working-directory: ./purple
