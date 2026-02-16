@@ -3,12 +3,12 @@
 from django.db import migrations
 from simple_history.utils import bulk_create_with_history
 
+from rpc.models import Label
+
 COMPLEXITY_COLOR = "green"
 
 
 def forward(apps, schema_editor):
-    Label = apps.get_model("rpc", "Label")
-
     labels = []
     for slug in [
         "bis",
