@@ -869,6 +869,51 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         )
         return Response()  # todo return value
 
+    @extend_schema(
+        operation_id="documents_search",
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description="Search query for draft name, RFC number, or author name "
+                "(e.g., 'draft-ietf-example', '9999', 'rfc9999', or 'John Doe')",
+            ),
+        ],
+        responses=RfcToBeSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="search")
+    def search(self, request):
+        """Search for documents by draft name, RFC number, or author name"""
+        query = request.query_params.get("q", "").strip()
+
+        if not query:
+            return Response({"error": "Search query 'q' is required"}, status=400)
+
+        # Check if query looks like an RFC number
+        rfc_number = None
+        if query.isdigit():
+            rfc_number = int(query)
+        elif query.lower().startswith("rfc") and query[3:].isdigit():
+            rfc_number = int(query[3:])
+
+        q_filter = Q(draft__name__icontains=query) | Q(
+            authors__titlepage_name__icontains=query
+        )
+        if rfc_number:
+            q_filter |= Q(rfc_number=rfc_number)
+
+        queryset = RfcToBe.objects.filter(q_filter).distinct()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 
 @extend_schema_with_draft_name()
 class RpcAuthorViewSet(viewsets.ModelViewSet):

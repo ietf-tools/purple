@@ -2105,6 +2105,51 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/rpc/documents/search/:
+    get:
+      operationId: documents_search
+      description: Search for documents by draft name, RFC number, or author name
+      parameters:
+      - in: query
+        name: disposition
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query for draft name, RFC number, or author name (e.g.,
+          'draft-ietf-example', '9999', 'rfc9999', or 'John Doe')
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRfcToBeList'
+          description: ''
   /api/rpc/labels/:
     get:
       operationId: labels_list
