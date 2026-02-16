@@ -1,12 +1,15 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 
 from django.db import migrations
+from simple_history.utils import bulk_create_with_history
 
 COMPLEXITY_COLOR = "green"
 
 
 def forward(apps, schema_editor):
     Label = apps.get_model("rpc", "Label")
+
+    labels = []
     for slug in [
         "bis",
         "cluster: easy",
@@ -27,11 +30,26 @@ def forward(apps, schema_editor):
         "refs: hard",
         "Fast Track",
     ]:
-        Label.objects.create(
-            slug=slug, is_exception=False, is_complexity=True, color=COMPLEXITY_COLOR
+        labels.append(
+            Label(
+                slug=slug,
+                is_exception=False,
+                is_complexity=True,
+                color=COMPLEXITY_COLOR,
+            )
         )
-    Label.objects.create(
-        slug="Expedited", is_exception=True, is_complexity=True, color=COMPLEXITY_COLOR
+
+    labels.append(
+        Label(
+            slug="Expedited",
+            is_exception=True,
+            is_complexity=True,
+            color=COMPLEXITY_COLOR,
+        )
+    )
+
+    bulk_create_with_history(
+        labels, Label, batch_size=100, default_change_reason="Created during migration"
     )
 
 
