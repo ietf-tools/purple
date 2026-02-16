@@ -691,6 +691,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "iana_status",
             "iana_status_slug",
             "additional_emails",
+            "repository",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 

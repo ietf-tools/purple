@@ -366,6 +366,21 @@
             <div v-else class="text-sm text-gray-500">(none)</div>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Repository" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="repository" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., rfc-editor-drafts/{draft_name}', initialValue: rfcToBe.repository }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="font-mono">
+                <a v-if="rfcToBe.repository" :href="`https://www.github.com/${rfcToBe.repository}`" target="_blank" rel="noopener noreferrer"
+                  class="text-blue-600 hover:underline">
+                  {{ rfcToBe.repository }}
+                </a>
+                <span v-else>(none)</span>
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>

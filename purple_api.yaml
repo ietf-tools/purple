@@ -4421,6 +4421,10 @@ components:
             * `completed` - IANA has completed actions in draft
             * `changes_required` - Changes to registries are required due to RFC edits
             * `reconciled` - IANA has reconciled changes between draft and RFC
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -4853,6 +4857,10 @@ components:
           items:
             $ref: '#/components/schemas/AdditionalEmail'
           readOnly: true
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
       required:
       - authors
       - boilerplate
@@ -4997,6 +5005,10 @@ components:
             * `completed` - IANA has completed actions in draft
             * `changes_required` - Changes to registries are required due to RFC edits
             * `reconciled` - IANA has reconciled changes between draft and RFC
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
       required:
       - authors
       - boilerplate
