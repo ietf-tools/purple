@@ -1,14 +1,15 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 
 from django.db import migrations
-from simple_history.utils import bulk_create_with_history
-
-from rpc.models import Label
+from django.utils import timezone
 
 COMPLEXITY_COLOR = "green"
 
 
 def forward(apps, schema_editor):
+    Label = apps.get_model("rpc", "Label")
+    HistoricalLabel = apps.get_model("rpc", "HistoricalLabel")
+
     labels = []
     for slug in [
         "bis",
@@ -48,9 +49,27 @@ def forward(apps, schema_editor):
         )
     )
 
-    bulk_create_with_history(
-        labels, Label, batch_size=100, default_change_reason="Created during migration"
-    )
+    # Bulk create labels
+    created_labels = Label.objects.bulk_create(labels)
+
+    # Manually create history records
+    history_records = []
+    history_date = timezone.now()
+    for label in created_labels:
+        history_records.append(
+            HistoricalLabel(
+                id=label.id,
+                slug=label.slug,
+                is_exception=label.is_exception,
+                is_complexity=label.is_complexity,
+                color=label.color,
+                history_date=history_date,
+                history_change_reason="Created during migration",
+                history_type="+",
+            )
+        )
+
+    HistoricalLabel.objects.bulk_create(history_records)
 
 
 def reverse(apps, schema_editor):
