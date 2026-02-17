@@ -891,6 +891,17 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         if not query:
             return Response({"error": "Search query 'q' is required"}, status=400)
 
+        if not query.isprintable():
+            return Response(
+                {"error": "Invalid characters in search query."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(query) > 200:
+            return Response(
+                {"error": "Search query too long (max 200 characters)"}, status=400
+            )
+
         # Check if query looks like an RFC number
         rfc_number = None
         if query.isdigit():
