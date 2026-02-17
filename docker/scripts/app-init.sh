@@ -8,6 +8,11 @@ git config --global --add safe.directory /workspace
 # Turn off git info in zsh prompt (causes slowdowns)
 git config oh-my-zsh.hide-info 1
 
+# Install client dependencies
+cd client
+npm install
+cd ..
+
 # Install requirements.txt dependencies
 echo "Installing dependencies from requirements.txt..."
 pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
@@ -19,11 +24,6 @@ sudo nginx
 # Wait for DB container
 echo "Waiting for DB container to come online..."
 /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"
-
-# Install client dependencies
-cd client
-npm install
-cd ..
 
 # Run migrations
 echo "Running migrations..."
