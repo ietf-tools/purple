@@ -178,6 +178,9 @@ DOI_AUTHOR_ORGS = [
     "IAB",
 ]
 
+# Errata notification
+ERRATA_NOTIFICATION_URL = os.environ.get("PURPLE_ERRATA_NOTIFICATION_URL")
+
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
 
