@@ -17,7 +17,9 @@ cd ..
 echo "Fetching datatracker API schema..."
 if wget -O rpcapi.yaml http://host.docker.internal:8000/api/schema/; then
     echo "Building datatracker API client..."
+    cd client
     npx --no @openapitools/openapi-generator-cli generate  --generator-key datatracker # config in openapitools.json
+    cd ..
     /usr/bin/mkdir -p openapi/rpcapi_client/
     /bin/cp rpcapi.yaml openapi/rpcapi_client/.rpcapi.yaml
     BUILT_API=yes
@@ -48,8 +50,10 @@ echo "Populating initial history..."
 ./manage.py collectstatic --no-input || true
 
 # Django should be operational now. Build purple API client.
-./manage.py spectacular --file purple_api.yaml && \
-    npx --no @openapitools/openapi-generator-cli generate --generator-key purple  || true
+./manage.py spectacular --file purple_api.yaml
+cd client
+npx --no @openapitools/openapi-generator-cli generate --generator-key purple
+cd ..
 # If not set, add @ts-nocheck in runtime.ts to avoid type errors from generated code
 if ! grep -q "// @ts-nocheck" "client/app/purple_client/runtime.ts"; then
     sed -i '1i // @ts-nocheck' "client/app/purple_client/runtime.ts"

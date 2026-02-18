@@ -23,7 +23,9 @@ if ! diff -q rpcapi.yaml "$WORKSPACE/openapi/rpcapi_client/.rpcapi.yaml" > /dev/
   echo "Generating datatracker API client from rpcapi.yaml"
   # Generate datatracker API client
   # Configure the generator in openapitools.json
+  cd client
   npx --no @openapitools/openapi-generator-cli generate --generator-key datatracker
+  cd ..
 
   # Install the datatracker rpcapi client
   pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-location -r requirements.txt
@@ -41,8 +43,8 @@ if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.ya
   echo "Generating purple API client from purple_api.yaml"
   # Generate purple's own API
   # Configure the generator in openapitools.json
-  npx --no @openapitools/openapi-generator-cli generate --generator-key purple
   cd client
+  npx --no @openapitools/openapi-generator-cli generate --generator-key purple
   npm run build
   cd ..
 
