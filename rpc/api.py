@@ -51,6 +51,8 @@ from .lifecycle.publication import (
 )
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
+    ActionHolder,
+    AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
     Capability,
@@ -76,6 +78,8 @@ from .models import (
 )
 from .pagination import DefaultLimitOffsetPagination
 from .serializers import (
+    ActionHolderSerializer,
+    AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
     AuthorOrderSerializer,
@@ -821,6 +825,13 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
 
+    def get_object(self):
+        lookup_value = self.kwargs.get(self.lookup_field)
+        if lookup_value and str(lookup_value).startswith("rfc"):
+            self.lookup_field = "rfc_number"
+            self.kwargs[self.lookup_field] = int(lookup_value[3:])
+        return super().get_object()
+
     def get_queryset(self):
         queryset = super().get_queryset()
         form = RfcToBeQueryParamsForm(self.request.query_params)
@@ -857,6 +868,62 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             rfctobe_id=rfctobe.pk, expected_head=serializer.validated_data["head_sha"]
         )
         return Response()  # todo return value
+
+    @extend_schema(
+        operation_id="documents_search",
+        parameters=[
+            OpenApiParameter(
+                name="q",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=True,
+                description="Search query for draft name, RFC number, or author name "
+                "(e.g., 'draft-ietf-example', '9999', 'rfc9999', or 'John Doe')",
+            ),
+        ],
+        responses=RfcToBeSerializer(many=True),
+    )
+    @action(detail=False, methods=["get"], url_path="search")
+    def search(self, request):
+        """Search for documents by draft name, RFC number, or author name"""
+        query = request.query_params.get("q", "").strip()
+
+        if not query:
+            return Response({"error": "Search query 'q' is required"}, status=400)
+
+        if not query.isprintable():
+            return Response(
+                {"error": "Invalid characters in search query."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if len(query) > 200:
+            return Response(
+                {"error": "Search query too long (max 200 characters)"}, status=400
+            )
+
+        # Check if query looks like an RFC number
+        rfc_number = None
+        if query.isdigit():
+            rfc_number = int(query)
+        elif query.lower().startswith("rfc") and query[3:].isdigit():
+            rfc_number = int(query[3:])
+
+        q_filter = Q(draft__name__icontains=query) | Q(
+            authors__titlepage_name__icontains=query
+        )
+        if rfc_number:
+            q_filter |= Q(rfc_number=rfc_number)
+
+        queryset = RfcToBe.objects.filter(q_filter).distinct()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 @extend_schema_with_draft_name()
@@ -954,14 +1021,105 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema_with_draft_name()
-class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
+@extend_schema_view(
+    list=extend_schema(
+        description="Returns only relations for this draft that are pre-publishing "
+        "dependencies",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
+)
+class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
     queryset = RpcRelatedDocument.objects.all()
     serializer_class = RpcRelatedDocumentSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["relationship"]
 
     def get_queryset(self):
         return (
-            super().get_queryset().filter(source__draft__name=self.kwargs["draft_name"])
+            super()
+            .get_queryset()
+            .filter(
+                source__draft__name=self.kwargs["draft_name"],
+                relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
+            )
         )
+
+
+@extend_schema_with_draft_name()
+@extend_schema_view(
+    list=extend_schema(
+        description="Returns only related relationships like obsoletes/updates for "
+        "this draft and also reverse relationships where this draft is the target "
+        "(e.g. updated_by, obsoleted_by)",
+        responses=RpcRelatedDocumentSerializer(many=True),
+    )
+)
+class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
+    queryset = RpcRelatedDocument.objects.all()
+    serializer_class = RpcRelatedDocumentSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    filterset_fields = ["relationship"]
+
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(source__draft__name=self.kwargs["draft_name"])
+            .exclude(
+                relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
+            )
+        )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        results = list(queryset)
+
+        draft_name = self.kwargs["draft_name"]
+        slug_filter = request.query_params.getlist("relationship")
+
+        class _ReverseRelationship:
+            def __init__(self, slug):
+                self.pk = slug
+                self.slug = slug
+
+        class _ReverseRpcRelatedDocument:
+            def __init__(self, id, relationship, source, target_rfctobe):
+                self.id = id
+                self.relationship = relationship
+                self.source = source
+                self.target_rfctobe = target_rfctobe
+                self.target_document = None
+
+        def append_reverse(rel_slug, fake_slug):
+            if slug_filter and fake_slug not in slug_filter:
+                return
+
+            reverse_qs = RpcRelatedDocument.objects.filter(
+                target_rfctobe__draft__name=draft_name,
+                relationship__slug=rel_slug,
+            ).select_related(
+                "source", "source__draft", "target_rfctobe", "target_rfctobe__draft"
+            )
+
+            for rel in reverse_qs:
+                results.append(
+                    _ReverseRpcRelatedDocument(
+                        id=rel.id,
+                        relationship=_ReverseRelationship(fake_slug),
+                        source=rel.target_rfctobe,
+                        target_rfctobe=rel.source,
+                    )
+                )
+
+        append_reverse("updates", "updated_by")
+        append_reverse("obs", "obsoleted_by")
+
+        page = self.paginate_queryset(results)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(results, many=True)
+        return Response(serializer.data)
 
     @extend_schema(
         request=CreateRpcRelatedDocumentSerializer,
@@ -1024,6 +1182,26 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
 class LabelViewSet(viewsets.ModelViewSet):
     queryset = Label.objects.all()
     serializer_class = LabelSerializer
+
+
+@extend_schema_with_draft_name()
+class AdditionalEmailViewSet(viewsets.ModelViewSet):
+    queryset = AdditionalEmail.objects.all()
+    serializer_class = AdditionalEmailSerializer
+
+    def get_queryset(self):
+        draft_name = self.kwargs.get("draft_name")
+        if draft_name:
+            return super().get_queryset().filter(rfc_to_be__draft__name=draft_name)
+        return super().get_queryset()
+
+    def perform_create(self, serializer):
+        draft_name = self.kwargs.get("draft_name")
+        if draft_name:
+            rfc_to_be = get_object_or_404(RfcToBe, draft__name=draft_name)
+            serializer.save(rfc_to_be=rfc_to_be)
+        else:
+            serializer.save()
 
 
 class RpcRoleViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1090,9 +1268,25 @@ class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter(
+            name="refs",
+            type=OpenApiTypes.BOOL,
+            location=OpenApiParameter.QUERY,
+            description="Return only reference relationships",
+        )
+    ]
+)
 class DocRelationshipNameViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = DocRelationshipName.objects.all()
     serializer_class = NameSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.query_params.get("refs") == "true":
+            return qs.filter(slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS)
+        return qs
 
 
 class SourceFormatNameViewSet(viewsets.ReadOnlyModelViewSet):
@@ -1420,6 +1614,32 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema_with_draft_name()
+class ActionHolderViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+    viewsets.GenericViewSet,
+):
+    """ViewSet for ActionHolder entries related to a draft"""
+
+    queryset = ActionHolder.objects.all()
+    serializer_class = ActionHolderSerializer
+    filter_backends = (filters.DjangoFilterBackend,)
+    ordering = ["since_when"]
+
+    def get_queryset(self):
+        draft_name = self.kwargs["draft_name"]
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                Q(target_rfctobe__draft__name=draft_name)
+                | Q(target_document__name=draft_name)
+            )
+        )
+
+
+@extend_schema_with_draft_name()
 class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
     queryset = ApprovalLogMessage.objects.all()
     serializer_class = ApprovalLogMessageSerializer
@@ -1529,9 +1749,9 @@ class RfcMailTemplatesList(views.APIView):
             raise NotFound("Unknown rfctobe_id") from None
 
         message_templates = (
-            ("blank", "mail/blank.txt", "Blank Message"),
-            ("finalreview", "mail/finalreview.txt", "Final Review"),
-            ("publication", "mail/publication.txt", "Announce Publication"),
+            ("blank", "rpc/mail/blank.txt", "Blank Message"),
+            ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
+            ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
 
         serializer = MailTemplateSerializer(
@@ -1578,35 +1798,6 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             .get_queryset()
             .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
         )
-
-    @extend_schema(
-        operation_id="metadata_validation_results_list",
-        parameters=[
-            OpenApiParameter(
-                name="draft_name",
-                type=OpenApiTypes.STR,
-                location=OpenApiParameter.PATH,
-                description="Draft name",
-            ),
-        ],
-        responses={
-            200: MetadataValidationResultsSerializer,
-        },
-    )
-    def list(self, request, *args, **kwargs):
-        """Return single metadata validation result for this draft"""
-        draft_name = kwargs.get("draft_name")
-        try:
-            mvr = MetadataValidationResults.objects.get(
-                rfc_to_be__draft__name=draft_name
-            )
-            serializer = self.get_serializer(mvr)
-            return Response(serializer.data)
-        except MetadataValidationResults.DoesNotExist:
-            return Response(
-                {"error": "No MetadataValidationResults for draft found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
 
     @extend_schema(
         operation_id="metadata_validation_results_create",

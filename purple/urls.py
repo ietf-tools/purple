@@ -66,8 +66,13 @@ rpc_router.register(
 )
 rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/references",
-    rpc_api.RpcRelatedDocumentViewSet,
+    rpc_api.RpcDocumentReferencesViewSet,
     basename="documents-references",
+)
+rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/related",
+    rpc_api.RpcRelatedDocumentViewSet,
+    basename="documents-related",
 )
 rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/final_approvals",
@@ -75,9 +80,19 @@ rpc_router.register(
     basename="documents-final-approvals",
 )
 rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/action_holders",
+    rpc_api.ActionHolderViewSet,
+    basename="documents-action-holders",
+)
+rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/approval_logs",
     rpc_api.ApprovalLogMessageViewSet,
     basename="documents-approval-log-messages",
+)
+rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/additional_emails",
+    rpc_api.AdditionalEmailViewSet,
+    basename="documents-additional-emails",
 )
 rpc_router.register(
     r"documents/(?P<draft_name>[^/.]+)/metadata_validation_results",

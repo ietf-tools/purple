@@ -152,7 +152,7 @@ const clickFinalApprovalHandler = async () => {
         id,
         patchedFinalApprovalRequest: {
           approved,
-          body: bodyText,
+          comment: bodyText,
           approverPersonId,
           overridingApproverPersonId
         }

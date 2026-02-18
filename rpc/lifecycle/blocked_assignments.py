@@ -50,7 +50,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
             reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
         # any related documents not received (incl. 2g/3g), return only first
         if rfc.rpcrelateddocument_set.filter(
-            relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
+            relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
         ).exists():
             if rfc.rpcrelateddocument_set.filter(
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
@@ -194,6 +194,18 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
                         "comment": comment,
                     },
                 )
+
+        else:
+            logger.info("Creating new blocked assignment for rfc %s", rfc.pk)
+            comment = (
+                f"blocked because of blocking condition(s): {', '.join(reasons)}; "
+            )
+            Assignment.objects.create(
+                rfc_to_be=rfc,
+                role=role,
+                state=Assignment.State.IN_PROGRESS,
+                comment=comment,
+            )
 
         # Store blocking reasons in RfcToBeBlockingReason
         for reason_slug in reasons:

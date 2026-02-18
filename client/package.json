@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
-    "build:dev": "npx --no nuxt prepare && npx --no nuxt build --envName development",
+    "build:dev": "nuxt prepare && nuxt build --envName development",
     "cleanup": "nuxt cleanup",
     "dev": "nuxt dev",
     "generate": "nuxt generate",

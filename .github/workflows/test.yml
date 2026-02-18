@@ -93,11 +93,15 @@ jobs:
         docker run --rm --volume .:/workspace ghcr.io/ietf-tools/datatracker-app-base:latest /bin/bash -e doit.bash
         mv rpcapi.yaml ..
 
+    - name: Install dependencies
+      run: npm ci
+      working-directory: ./purple/client
+
     - name: Generate Datatracker API client
       working-directory: ./purple
       run: |
         cp ../rpcapi.yaml .
-        npx --yes @openapitools/openapi-generator-cli generate --generator-key datatracker
+        npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key datatracker
         tar cfz ../rpcapi_client.tgz -C openapi rpcapi_client
 
     - uses: actions/setup-python@v6

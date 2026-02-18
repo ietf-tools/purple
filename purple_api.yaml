@@ -1,0 +1,5437 @@
+openapi: 3.0.3
+info:
+  title: Purple
+  version: '0.1'
+  description: Backend API for the Purple app
+paths:
+  /api/pubq/clusters/:
+    get:
+      operationId: api_pubq_clusters_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/pubq/clusters/{number}/:
+    get:
+      operationId: api_pubq_clusters_retrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/pubq/queue/:
+    get:
+      operationId: api_pubq_queue_list
+      description: Queue view for the public queue site
+      parameters:
+      - in: query
+        name: disposition
+        schema:
+          type: string
+      - in: query
+        name: pending_final_approval
+        schema:
+          type: boolean
+        description: Filter by pending final approval status, true returns drafts
+          with at least one pending final approval, false returns drafts where all
+          final approvals are approved.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicQueueItem'
+          description: ''
+  /api/rpc/assignments/:
+    get:
+      operationId: assignments_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Assignment'
+          description: ''
+    post:
+      operationId: assignments_create
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+  /api/rpc/assignments/{id}/:
+    get:
+      operationId: assignments_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignment.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    put:
+      operationId: assignments_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignment.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignmentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    patch:
+      operationId: assignments_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignment.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAssignmentRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assignment'
+          description: ''
+    delete:
+      operationId: assignments_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this assignment.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/capabilities/:
+    get:
+      operationId: capabilities_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Capability'
+          description: ''
+  /api/rpc/capabilities/{slug}/:
+    get:
+      operationId: capabilities_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this capability.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Capability'
+          description: ''
+  /api/rpc/clusters/:
+    get:
+      operationId: clusters_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+        description: Filter by active status. A cluster is considered active if at
+          least one of its documents is not in terminal state (published/withdrawn).
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Cluster'
+          description: ''
+    post:
+      operationId: clusters_create
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/rpc/clusters/{number}/:
+    get:
+      operationId: clusters_retrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+    put:
+      operationId: clusters_update
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+    patch:
+      operationId: clusters_partial_update
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedClusterRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/rpc/clusters/{number}/add-document/:
+    post:
+      operationId: clusters_add_document
+      description: Add a document to a cluster
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterAddRemoveDocumentRequest'
+            examples:
+              AddDocumentToCluster:
+                value:
+                  draft_name: draft-ietf-example-document
+                summary: Add Document to Cluster
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/rpc/clusters/{number}/order/:
+    post:
+      operationId: clusters_reorder_documents
+      description: Reorder documents in a cluster
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterReorderDocumentsRequest'
+            examples:
+              ReorderDocumentsInCluster:
+                value:
+                  draft_names:
+                  - draft-ietf-example-first
+                  - draft-ietf-example-second
+                  - draft-ietf-example-third
+                summary: Reorder Documents in Cluster
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/rpc/clusters/{number}/remove-document/:
+    post:
+      operationId: clusters_remove_document
+      description: Remove a document from a cluster
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterAddRemoveDocumentRequest'
+            examples:
+              RemoveDocumentFromCluster:
+                value:
+                  draft_name: draft-ietf-example-document
+                summary: Remove Document from Cluster
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cluster'
+          description: ''
+  /api/rpc/doc_relationship_names/:
+    get:
+      operationId: doc_relationship_names_list
+      parameters:
+      - in: query
+        name: refs
+        schema:
+          type: boolean
+        description: Return only reference relationships
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/doc_relationship_names/{slug}/:
+    get:
+      operationId: doc_relationship_names_retrieve
+      parameters:
+      - in: query
+        name: refs
+        schema:
+          type: boolean
+        description: Return only reference relationships
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this doc relationship name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/documents/:
+    get:
+      operationId: documents_list
+      parameters:
+      - in: query
+        name: disposition
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: published_within_days
+        schema:
+          type: integer
+        description: Show only RFCs published within the last N days.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRfcToBeList'
+          description: ''
+    post:
+      operationId: documents_create
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RfcToBeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
+  /api/rpc/documents/{draft__name}/:
+    get:
+      operationId: documents_retrieve
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
+    put:
+      operationId: documents_update
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RfcToBeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
+    patch:
+      operationId: documents_partial_update
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRfcToBeRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
+    delete:
+      operationId: documents_destroy
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft__name}/history/:
+    get:
+      operationId: documents_history_list
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RfcToBeHistory'
+          description: ''
+  /api/rpc/documents/{draft__name}/publish/:
+    post:
+      operationId: documents_publish
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PublishRfcRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/rpc/documents/{draft_name}/action_holders/:
+    get:
+      operationId: documents_action_holders_list
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ActionHolder'
+          description: ''
+  /api/rpc/documents/{draft_name}/action_holders/{id}/:
+    get:
+      operationId: documents_action_holders_retrieve
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this action holder.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionHolder'
+          description: ''
+    put:
+      operationId: documents_action_holders_update
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this action holder.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActionHolderRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionHolder'
+          description: ''
+    patch:
+      operationId: documents_action_holders_partial_update
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this action holder.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedActionHolderRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActionHolder'
+          description: ''
+  /api/rpc/documents/{draft_name}/additional_emails/:
+    get:
+      operationId: documents_additional_emails_list
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    post:
+      operationId: documents_additional_emails_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalEmailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+  /api/rpc/documents/{draft_name}/additional_emails/{id}/:
+    get:
+      operationId: documents_additional_emails_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    put:
+      operationId: documents_additional_emails_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdditionalEmailRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    patch:
+      operationId: documents_additional_emails_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedAdditionalEmailRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdditionalEmail'
+          description: ''
+    delete:
+      operationId: documents_additional_emails_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this additional email.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/approval_logs/:
+    get:
+      operationId: documents_approval_logs_list
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApprovalLogMessage'
+          description: ''
+    post:
+      operationId: documents_approval_logs_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalLogMessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalLogMessage'
+          description: ''
+  /api/rpc/documents/{draft_name}/approval_logs/{id}/:
+    get:
+      operationId: documents_approval_logs_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this approval log message.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalLogMessage'
+          description: ''
+    put:
+      operationId: documents_approval_logs_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this approval log message.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApprovalLogMessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalLogMessage'
+          description: ''
+    patch:
+      operationId: documents_approval_logs_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this approval log message.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedApprovalLogMessageRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApprovalLogMessage'
+          description: ''
+    delete:
+      operationId: documents_approval_logs_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this approval log message.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/authors/:
+    get:
+      operationId: documents_authors_list
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RfcAuthor'
+          description: ''
+    post:
+      operationId: documents_authors_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRfcAuthorRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateRfcAuthor'
+          description: ''
+  /api/rpc/documents/{draft_name}/authors/{id}/:
+    get:
+      operationId: documents_authors_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rfc author.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcAuthor'
+          description: ''
+    put:
+      operationId: documents_authors_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rfc author.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RfcAuthorRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcAuthor'
+          description: ''
+    patch:
+      operationId: documents_authors_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rfc author.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRfcAuthorRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcAuthor'
+          description: ''
+    delete:
+      operationId: documents_authors_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rfc author.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/authors/order/:
+    post:
+      operationId: documents_authors_order
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthorOrderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorOrderStatus'
+              examples:
+                Success:
+                  value:
+                    status: OK
+          description: ''
+  /api/rpc/documents/{draft_name}/comments/:
+    get:
+      operationId: documents_comments_list
+      description: ViewSet for comments on an RfcToBe or datatracker Document
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedDocumentCommentList'
+          description: ''
+    post:
+      operationId: documents_comments_create
+      description: ViewSet for comments on an RfcToBe or datatracker Document
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCommentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentComment'
+          description: ''
+  /api/rpc/documents/{draft_name}/comments/{id}/:
+    put:
+      operationId: documents_comments_update
+      description: ViewSet for comments on an RfcToBe or datatracker Document
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc document comment.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentCommentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentComment'
+          description: ''
+    patch:
+      operationId: documents_comments_partial_update
+      description: ViewSet for comments on an RfcToBe or datatracker Document
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc document comment.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDocumentCommentRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentComment'
+          description: ''
+  /api/rpc/documents/{draft_name}/final_approvals/:
+    get:
+      operationId: documents_final_approvals_list
+      parameters:
+      - in: query
+        name: approver__datatracker_id
+        schema:
+          type: integer
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: rfc_to_be__rfc_number
+        schema:
+          type: integer
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FinalApproval'
+          description: ''
+    post:
+      operationId: documents_final_approvals_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateFinalApprovalRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateFinalApproval'
+          description: ''
+  /api/rpc/documents/{draft_name}/final_approvals/{id}/:
+    get:
+      operationId: documents_final_approvals_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this final approval.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalApproval'
+          description: ''
+    put:
+      operationId: documents_final_approvals_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this final approval.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinalApprovalRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalApproval'
+          description: ''
+    patch:
+      operationId: documents_final_approvals_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this final approval.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedFinalApprovalRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinalApproval'
+          description: ''
+    delete:
+      operationId: documents_final_approvals_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this final approval.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/mail:
+    post:
+      operationId: document_mail_send
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailMessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailResponse'
+          description: ''
+  /api/rpc/documents/{draft_name}/metadata_validation_results/:
+    get:
+      operationId: documents_metadata_validation_results_list
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MetadataValidationResults'
+          description: ''
+    post:
+      operationId: metadata_validation_results_create
+      description: Create a pending metadata validation result and enqueue task
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataValidationResults'
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataValidationResults'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBeNotFoundResponse'
+          description: ''
+  /api/rpc/documents/{draft_name}/metadata_validation_results/{head_sha}/:
+    get:
+      operationId: documents_metadata_validation_results_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: head_sha
+        schema:
+          type: string
+          description: Head SHA of the commit that was validated
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataValidationResults'
+          description: ''
+    delete:
+      operationId: documents_metadata_validation_results_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: head_sha
+        schema:
+          type: string
+          description: Head SHA of the commit that was validated
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/metadata_validation_results/sync/:
+    post:
+      operationId: metadata_validation_results_sync
+      description: Sync metadata validation results - update DB fields from XML. Requires
+        head_sha in request body to make sure the right metadata is synced.
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        description: Draft name
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyncMetadataRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetadataValidationResults'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncMetadataNotFoundResponse'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyncMetadataBadRequestResponse'
+          description: ''
+  /api/rpc/documents/{draft_name}/references/:
+    get:
+      operationId: documents_references_list
+      description: Returns only relations for this draft that are pre-publishing dependencies
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: relationship
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    post:
+      operationId: documents_references_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RpcRelatedDocumentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+  /api/rpc/documents/{draft_name}/references/{id}/:
+    get:
+      operationId: documents_references_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    put:
+      operationId: documents_references_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RpcRelatedDocumentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    patch:
+      operationId: documents_references_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRpcRelatedDocumentRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    delete:
+      operationId: documents_references_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/{draft_name}/related/:
+    get:
+      operationId: documents_related_list
+      description: Returns only related relationships like obsoletes/updates for this
+        draft and also reverse relationships where this draft is the target (e.g.
+        updated_by, obsoleted_by)
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: query
+        name: relationship
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    post:
+      operationId: documents_related_create
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRpcRelatedDocumentRequest'
+            examples:
+              CreateRelatedDocument:
+                value:
+                  relationship: not-received
+                  target_draft_name: draft-lorem-ipsum-dolor-sit-amet
+                summary: Create Related Document
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+              examples:
+                CreatedRelatedDocumentResponse:
+                  value:
+                    id: 1
+                    relationship: not-received
+                    draft_name: draft-source-document
+                    target_draft_name: draft-lorem-ipsum-dolor-sit-amet
+                  summary: Created Related Document Response
+          description: ''
+  /api/rpc/documents/{draft_name}/related/{id}/:
+    get:
+      operationId: documents_related_retrieve
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    put:
+      operationId: documents_related_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RpcRelatedDocumentRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    patch:
+      operationId: documents_related_partial_update
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedRpcRelatedDocumentRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRelatedDocument'
+          description: ''
+    delete:
+      operationId: documents_related_destroy
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc related document.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/documents/search/:
+    get:
+      operationId: documents_search
+      description: Search for documents by draft name, RFC number, or author name
+      parameters:
+      - in: query
+        name: disposition
+        schema:
+          type: string
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: q
+        schema:
+          type: string
+        description: Search query for draft name, RFC number, or author name (e.g.,
+          'draft-ietf-example', '9999', 'rfc9999', or 'John Doe')
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedRfcToBeList'
+          description: ''
+  /api/rpc/labels/:
+    get:
+      operationId: labels_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Label'
+          description: ''
+    post:
+      operationId: labels_create
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+          description: ''
+  /api/rpc/labels/{id}/:
+    get:
+      operationId: labels_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+          description: ''
+    put:
+      operationId: labels_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+          description: ''
+    patch:
+      operationId: labels_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedLabelRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Label'
+          description: ''
+    delete:
+      operationId: labels_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this label.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/mail:
+    post:
+      operationId: mail_send
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MailMessageRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MailResponse'
+          description: ''
+  /api/rpc/mailtemplate/{rfctobe_id}/:
+    get:
+      operationId: mailtemplate_list
+      parameters:
+      - in: path
+        name: rfctobe_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MailTemplate'
+          description: ''
+  /api/rpc/profile/:
+    get:
+      operationId: profile
+      description: Get profile of current user
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Profile'
+          description: ''
+  /api/rpc/profile/{rpc_person_id}:
+    get:
+      operationId: profile_retrieve_demo_only
+      parameters:
+      - in: path
+        name: rpc_person_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/rpc/queue/:
+    get:
+      operationId: queue_list
+      description: Queue view for purple application
+      parameters:
+      - in: query
+        name: disposition
+        schema:
+          type: string
+      - in: query
+        name: pending_final_approval
+        schema:
+          type: boolean
+        description: Filter by pending final approval status, true returns drafts
+          with at least one pending final approval, false returns drafts where all
+          final approvals are approved.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QueueItem'
+          description: ''
+  /api/rpc/rpc_person/:
+    get:
+      operationId: rpc_person_list
+      parameters:
+      - in: query
+        name: is_active
+        schema:
+          type: boolean
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcPerson'
+          description: ''
+  /api/rpc/rpc_person/{person_id}/assignments/:
+    get:
+      operationId: rpc_person_assignments_list
+      description: |-
+        Assignments for a specific RPC Person
+
+        URL router must provide the `person_id` kwarg
+      parameters:
+      - in: path
+        name: person_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NestedAssignment'
+          description: ''
+  /api/rpc/rpc_person/{id}/:
+    get:
+      operationId: rpc_person_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this rpc person.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcPerson'
+          description: ''
+  /api/rpc/rpc_roles/:
+    get:
+      operationId: rpc_roles_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RpcRole'
+          description: ''
+  /api/rpc/rpc_roles/{slug}/:
+    get:
+      operationId: rpc_roles_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this rpc role.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RpcRole'
+          description: ''
+  /api/rpc/search/datatrackerpersons/:
+    get:
+      operationId: search_datatrackerpersons
+      description: |-
+        Datatracker person search API
+
+        Search for a datatracker person by name/email fragment.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - in: query
+        name: search
+        schema:
+          type: string
+        description: Name/email fragment for the search
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBaseDatatrackerPersonList'
+          description: ''
+  /api/rpc/source_format_names/:
+    get:
+      operationId: source_format_names_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/source_format_names/{slug}/:
+    get:
+      operationId: source_format_names_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this source format name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/stats/label/:
+    get:
+      operationId: stats_labels
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LabelStats'
+          description: ''
+  /api/rpc/std_level_names/:
+    get:
+      operationId: std_level_names_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/std_level_names/{slug}/:
+    get:
+      operationId: std_level_names_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this std level name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/stream_names/:
+    get:
+      operationId: stream_names_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/stream_names/{slug}/:
+    get:
+      operationId: stream_names_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this stream name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/submissions/:
+    get:
+      operationId: submissions_list
+      description: |-
+        Retrieve submitted docs not yet in the purple queue
+
+        Returns documents in datatracker that have been submitted to the RPC but are
+        not yet in the queue
+
+        [
+            {
+                "id": 123456,
+                "name": "draft-foo-bar",
+                "stream": "ietf",
+                "submitted" : "2023-09-19"
+            }
+            ...
+        ]
+
+        Fed by doing a server->server API query that returns essentially the union of:
+        >>> Document.objects.filter(states__type_id="draft-iesg",
+        ... states__slug__in=["approved","ann"])
+        <QuerySet [
+            <Document: draft-ietf-bess-pbb-evpn-isid-cmacflush>,
+            <Document: draft-ietf-dnssd-update-lease>,
+            ...
+        ]>
+        and
+        >>> Document.objects.filter(states__type_id__in=["draft-stream-iab",
+        ... "draft-stream-irtf","draft-stream-ise"],states__slug__in=["rfc-edit"])
+        <QuerySet [
+            <Document: draft-iab-m-ten-workshop>,
+            <Document: draft-irtf-cfrg-spake2>,
+            ...
+        ]>
+        and SOMETHING ABOUT THE EDITORIAL STREAM...
+
+        Those queries overreturn - there may be things, particularly not from the IETF
+        stream that are already in the queue.
+        This api will filter those out.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubmissionListItem'
+          description: ''
+  /api/rpc/submissions/{document_id}/:
+    get:
+      operationId: submissions_retrieve
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Submission'
+          description: ''
+  /api/rpc/submissions/{document_id}/import/:
+    post:
+      operationId: submissions_import
+      description: View to import a submission and create an RfcToBe
+      parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRfcToBeRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
+  /api/rpc/subseries/:
+    get:
+      operationId: subseries_list
+      description: List all subseries
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubseriesDoc'
+          description: ''
+  /api/rpc/subseries/{subseries_slug}/:
+    get:
+      operationId: subseries_retrieve
+      description: Get all RfcToBe items in a specific subseries
+      parameters:
+      - in: path
+        name: subseries_slug
+        schema:
+          type: string
+          pattern: ^[a-z]+\d+$
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubseriesDoc'
+          description: ''
+  /api/rpc/subseries_members/:
+    get:
+      operationId: subseries_members_list
+      description: ViewSet to track which RfcToBes have been assigned to which subseries
+      parameters:
+      - in: query
+        name: number
+        schema:
+          type: integer
+      - in: query
+        name: rfc_to_be
+        schema:
+          type: integer
+      - in: query
+        name: type
+        schema:
+          type: string
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubseriesMember'
+          description: ''
+    post:
+      operationId: subseries_members_create
+      description: ViewSet to track which RfcToBes have been assigned to which subseries
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubseriesMemberRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubseriesMember'
+          description: ''
+  /api/rpc/subseries_members/{id}/:
+    get:
+      operationId: subseries_members_retrieve
+      description: ViewSet to track which RfcToBes have been assigned to which subseries
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subseries member.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubseriesMember'
+          description: ''
+    patch:
+      operationId: subseries_members_partial_update
+      description: ViewSet to track which RfcToBes have been assigned to which subseries
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subseries member.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedSubseriesMemberRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubseriesMember'
+          description: ''
+    delete:
+      operationId: subseries_members_destroy
+      description: ViewSet to track which RfcToBes have been assigned to which subseries
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this subseries member.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/subseries_types/:
+    get:
+      operationId: subseries_types_list
+      description: ViewSet for SubseriesTypeName entries (read-only)
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubseriesTypeName'
+          description: ''
+  /api/rpc/subseries_types/{slug}/:
+    get:
+      operationId: subseries_types_retrieve
+      description: ViewSet for SubseriesTypeName entries (read-only)
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this subseries type name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubseriesTypeName'
+          description: ''
+  /api/rpc/tlp_boilerplate_choice_names/:
+    get:
+      operationId: tlp_boilerplate_choice_names_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/tlp_boilerplate_choice_names/{slug}/:
+    get:
+      operationId: tlp_boilerplate_choice_names_retrieve
+      parameters:
+      - in: path
+        name: slug
+        schema:
+          type: string
+        description: A unique value identifying this tlp boilerplate choice name.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Name'
+          description: ''
+  /api/rpc/unusable_rfc_numbers/:
+    get:
+      operationId: unusable_rfc_numbers_list
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UnusableRfcNumber'
+          description: ''
+    post:
+      operationId: unusable_rfc_numbers_create
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UnusableRfcNumberRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnusableRfcNumber'
+          description: ''
+  /api/rpc/unusable_rfc_numbers/{number}/:
+    get:
+      operationId: unusable_rfc_numbers_retrieve
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        description: A unique value identifying this unusable rfc number.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnusableRfcNumber'
+          description: ''
+    patch:
+      operationId: unusable_rfc_numbers_partial_update
+      description: Allow PATCH operations only for the comment field
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        description: A unique value identifying this unusable rfc number.
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUnusableRfcNumberRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UnusableRfcNumber'
+          description: ''
+    delete:
+      operationId: unusable_rfc_numbers_destroy
+      parameters:
+      - in: path
+        name: number
+        schema:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        description: A unique value identifying this unusable rfc number.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/rpc/version/:
+    get:
+      operationId: version
+      description: Get application version information
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VersionInfo'
+          description: ''
+components:
+  schemas:
+    ActionHolder:
+      type: object
+      description: Serialize an ActionHolder with person name
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        since_when:
+          type: string
+          format: date-time
+          readOnly: true
+        completed:
+          type: string
+          format: date-time
+          nullable: true
+          description: The action is considered done when the completed field is set
+            with a datetime.
+        comment:
+          type: string
+        body:
+          type: string
+          maxLength: 64
+    ActionHolderRequest:
+      type: object
+      description: Serialize an ActionHolder with person name
+      properties:
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        completed:
+          type: string
+          format: date-time
+          nullable: true
+          description: The action is considered done when the completed field is set
+            with a datetime.
+        comment:
+          type: string
+        body:
+          type: string
+          maxLength: 64
+    AdditionalEmail:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        rfc_to_be:
+          type: integer
+          readOnly: true
+      required:
+      - email
+    AdditionalEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+      required:
+      - email
+    ApprovalLogMessage:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        by:
+          allOf:
+          - $ref: '#/components/schemas/DatatrackerPerson'
+          readOnly: true
+        rfc_to_be:
+          allOf:
+          - $ref: '#/components/schemas/MinimalRfcToBe'
+          readOnly: true
+        log_message:
+          type: string
+        time:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - log_message
+    ApprovalLogMessageRequest:
+      type: object
+      properties:
+        log_message:
+          type: string
+          minLength: 1
+      required:
+      - log_message
+    Assignment:
+      type: object
+      description: Assignment serializer with PK reference to RfcToBe
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        role:
+          type: string
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          default: assigned
+        comment:
+          type: string
+        time_spent:
+          type: string
+      required:
+      - rfc_to_be
+      - role
+    AssignmentRequest:
+      type: object
+      description: Assignment serializer with PK reference to RfcToBe
+      properties:
+        rfc_to_be:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        role:
+          type: string
+          minLength: 1
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          default: assigned
+        comment:
+          type: string
+        time_spent:
+          type: string
+      required:
+      - rfc_to_be
+      - role
+    AuthorOrderRequest:
+      type: object
+      properties:
+        order:
+          type: array
+          items:
+            type: integer
+          description: List of RfcAuthor IDs in the desired order
+      required:
+      - order
+    AuthorOrderStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          description: Status message
+      required:
+      - status
+    BaseDatatrackerPerson:
+      type: object
+      description: |-
+        Serialize a minimal DatatrackerPerson
+
+        This is the serializer to use if you may be working with non-persisted
+        DatatrackerPerson instances.
+      properties:
+        person_id:
+          type: integer
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        picture:
+          type: string
+          format: uri
+          readOnly: true
+        datatracker_url:
+          type: string
+          format: uri
+          readOnly: true
+      required:
+      - person_id
+    BaseDatatrackerPersonRequest:
+      type: object
+      description: |-
+        Serialize a minimal DatatrackerPerson
+
+        This is the serializer to use if you may be working with non-persisted
+        DatatrackerPerson instances.
+      properties:
+        person_id:
+          type: integer
+      required:
+      - person_id
+    BlockingReason:
+      type: object
+      description: Serialize BlockingReason model
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+      - desc
+      - name
+      - slug
+    Capability:
+      type: object
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+      required:
+      - name
+      - slug
+    Cluster:
+      type: object
+      description: |-
+        Serialize a Cluster instance
+
+        Uses a nested representation for `documents` rather than the ModelSerializer's
+        handling of relations so we can work with the through model. Specifically, we
+        want to respect the `order_by` setting of the `ClusterMember` class.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClusterMember'
+          readOnly: true
+        is_active:
+          type: boolean
+          description: |-
+            A cluster is considered active if at least one of its documents is not in
+            terminal state (published/withdrawn).
+          readOnly: true
+      required:
+      - number
+    ClusterAddRemoveDocumentRequest:
+      type: object
+      description: Serializer for adding or removing a document in a cluster
+      properties:
+        draft_name:
+          type: string
+          minLength: 1
+          description: Name of the draft to add/remove in the cluster
+      required:
+      - draft_name
+    ClusterMember:
+      type: object
+      properties:
+        name:
+          type: string
+        rfc_number:
+          type: integer
+          nullable: true
+          readOnly: true
+        disposition:
+          type: string
+          nullable: true
+          readOnly: true
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRelatedDocument'
+          readOnly: true
+        is_received:
+          type: boolean
+          nullable: true
+          description: Determine if the document has been received based on related
+            documents
+          readOnly: true
+        order:
+          type: integer
+      required:
+      - name
+      - order
+    ClusterMemberRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        order:
+          type: integer
+      required:
+      - name
+      - order
+    ClusterReorderDocumentsRequest:
+      type: object
+      description: Serializer for reordering documents in a cluster
+      properties:
+        draft_names:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: List of draft names in the desired order
+      required:
+      - draft_names
+    ClusterRequest:
+      type: object
+      description: |-
+        Serialize a Cluster instance
+
+        Uses a nested representation for `documents` rather than the ModelSerializer's
+        handling of relations so we can work with the through model. Specifically, we
+        want to respect the `order_by` setting of the `ClusterMember` class.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        draft_names:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          writeOnly: true
+          description: List of draft names to add to the cluster
+      required:
+      - number
+    ColorEnum:
+      enum:
+      - slate
+      - gray
+      - zinc
+      - neutral
+      - stone
+      - red
+      - orange
+      - amber
+      - yellow
+      - lime
+      - green
+      - emerald
+      - teal
+      - cyan
+      - sky
+      - blue
+      - indigo
+      - violet
+      - purple
+      - fuchsia
+      - pink
+      - rose
+      type: string
+      description: |-
+        * `slate` - slate
+        * `gray` - gray
+        * `zinc` - zinc
+        * `neutral` - neutral
+        * `stone` - stone
+        * `red` - red
+        * `orange` - orange
+        * `amber` - amber
+        * `yellow` - yellow
+        * `lime` - lime
+        * `green` - green
+        * `emerald` - emerald
+        * `teal` - teal
+        * `cyan` - cyan
+        * `sky` - sky
+        * `blue` - blue
+        * `indigo` - indigo
+        * `violet` - violet
+        * `purple` - purple
+        * `fuchsia` - fuchsia
+        * `pink` - pink
+        * `rose` - rose
+    CreateFinalApproval:
+      type: object
+      description: Serializer for creating FinalApproval instances
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          allOf:
+          - $ref: '#/components/schemas/MinimalRfcToBe'
+          readOnly: true
+        requested:
+          type: string
+          format: date-time
+          readOnly: true
+        approver:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+        approved:
+          type: string
+          format: date-time
+          nullable: true
+        overriding_approver:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+          nullable: true
+        comment:
+          type: string
+    CreateFinalApprovalRequest:
+      type: object
+      description: Serializer for creating FinalApproval instances
+      properties:
+        approved:
+          type: string
+          format: date-time
+          nullable: true
+        approver_person_id:
+          type: integer
+          writeOnly: true
+        overriding_approver_person_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+        comment:
+          type: string
+      required:
+      - approver_person_id
+    CreateRfcAuthor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        titlepage_name:
+          type: string
+          maxLength: 128
+        is_editor:
+          type: boolean
+        picture:
+          type: string
+          format: uri
+          readOnly: true
+        datatracker_url:
+          type: string
+          format: uri
+          readOnly: true
+        affiliation:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - titlepage_name
+    CreateRfcAuthorRequest:
+      type: object
+      properties:
+        titlepage_name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        is_editor:
+          type: boolean
+        affiliation:
+          type: string
+          nullable: true
+          maxLength: 255
+        person_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: datatracker ID of a Person
+      required:
+      - titlepage_name
+    CreateRfcToBeRequest:
+      type: object
+      description: Serializer for RfcToBe fields that need to be specified explicitly
+        on import
+      properties:
+        submitted_format:
+          type: string
+          minLength: 1
+        boilerplate:
+          type: string
+          minLength: 1
+          description: TLP IPR boilerplate option
+        std_level:
+          type: string
+          minLength: 1
+          description: Current StdLevel
+        stream:
+          type: string
+          minLength: 1
+          description: Current stream
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            type: integer
+        draft:
+          type: integer
+          nullable: true
+        title:
+          type: string
+          minLength: 1
+          description: Document title
+          maxLength: 255
+        group:
+          type: string
+          description: Acronym of datatracker group where this document originated,
+            if any
+          maxLength: 40
+        abstract:
+          type: string
+          description: Document abstract
+          maxLength: 32000
+        shepherd:
+          type: integer
+          nullable: true
+          description: Document shepherd
+        iesg_contact:
+          type: integer
+          nullable: true
+          description: Responsible or shepherding AD, if any
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Page count
+        keywords:
+          type: string
+          description: Comma-separated list of keywords
+          maxLength: 1000
+        iana_status_slug:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatusSlugEnum'
+          writeOnly: true
+          description: |-
+            Set the IANA status by providing the slug identifier. Defaults to 'not_completed' if not provided.
+
+            * `no_actions` - This document has no IANA actions
+            * `not_completed` - IANA has not completed actions in draft
+            * `completed` - IANA has completed actions in draft
+            * `changes_required` - Changes to registries are required due to RFC edits
+            * `reconciled` - IANA has reconciled changes between draft and RFC
+        consensus:
+          type: boolean
+          nullable: true
+          description: Whether document has consensus (None=unknown)
+      required:
+      - boilerplate
+      - labels
+      - std_level
+      - stream
+      - submitted_format
+      - title
+    CreateRpcRelatedDocumentRequest:
+      type: object
+      description: Serializer for creating a related document for an RfcToBe
+      properties:
+        relationship:
+          type: string
+          minLength: 1
+        source:
+          type: integer
+          writeOnly: true
+        target_draft_name:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - relationship
+      - source
+      - target_draft_name
+    DatatrackerPerson:
+      type: object
+      description: Serializer a DatatrackerPerson, including all the bells and whistles
+      properties:
+        person_id:
+          type: integer
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        picture:
+          type: string
+          format: uri
+          readOnly: true
+        datatracker_url:
+          type: string
+          format: uri
+          readOnly: true
+        rpcperson:
+          type: integer
+          readOnly: true
+      required:
+      - person_id
+    DatatrackerPersonRequest:
+      type: object
+      description: Serializer a DatatrackerPerson, including all the bells and whistles
+      properties:
+        person_id:
+          type: integer
+      required:
+      - person_id
+    DocumentComment:
+      type: object
+      description: Serialize a comment on an RfcToBe
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        comment:
+          type: string
+        by:
+          allOf:
+          - $ref: '#/components/schemas/DatatrackerPerson'
+          readOnly: true
+        time:
+          type: string
+          format: date-time
+          readOnly: true
+        last_edit:
+          allOf:
+          - $ref: '#/components/schemas/HistoryLastEdit'
+          readOnly: true
+      required:
+      - comment
+    DocumentCommentRequest:
+      type: object
+      description: Serialize a comment on an RfcToBe
+      properties:
+        comment:
+          type: string
+          minLength: 1
+      required:
+      - comment
+    Draft:
+      type: object
+      properties:
+        name:
+          type: string
+          readOnly: true
+          description: Name of draft
+        rev:
+          type: string
+          readOnly: true
+          description: Revision of draft
+        title:
+          type: string
+          readOnly: true
+          description: Title of draft
+        pages:
+          type: integer
+          readOnly: true
+          description: Number of pages
+    FinalApproval:
+      type: object
+      description: Serialize final approval information for an RfcToBe
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          allOf:
+          - $ref: '#/components/schemas/MinimalRfcToBe'
+          readOnly: true
+        requested:
+          type: string
+          format: date-time
+          readOnly: true
+        approver:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+        approved:
+          type: string
+          format: date-time
+          nullable: true
+        overriding_approver:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+          nullable: true
+        comment:
+          type: string
+    FinalApprovalRequest:
+      type: object
+      description: Serialize final approval information for an RfcToBe
+      properties:
+        approved:
+          type: string
+          format: date-time
+          nullable: true
+        approver_person_id:
+          type: integer
+          writeOnly: true
+        overriding_approver_person_id:
+          type: integer
+          writeOnly: true
+        comment:
+          type: string
+    HistoryLastEdit:
+      type: object
+      description: Serialize the most recent change in a HistoricalRecord
+      properties:
+        by:
+          allOf:
+          - $ref: '#/components/schemas/DatatrackerPerson'
+          readOnly: true
+        time:
+          type: string
+          format: date-time
+          readOnly: true
+    IanaStatus:
+      type: object
+      description: Serialize IANA status with slug and display text
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+      - desc
+      - name
+      - slug
+    IanaStatusRequest:
+      type: object
+      description: Serialize IANA status with slug and display text
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+      - desc
+      - name
+      - slug
+    IanaStatusSlugEnum:
+      enum:
+      - no_actions
+      - not_completed
+      - completed
+      - changes_required
+      - reconciled
+      type: string
+      description: |-
+        * `no_actions` - This document has no IANA actions
+        * `not_completed` - IANA has not completed actions in draft
+        * `completed` - IANA has completed actions in draft
+        * `changes_required` - Changes to registries are required due to RFC edits
+        * `reconciled` - IANA has reconciled changes between draft and RFC
+    Label:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          maxLength: 64
+        is_exception:
+          type: boolean
+        is_complexity:
+          type: boolean
+        color:
+          $ref: '#/components/schemas/ColorEnum'
+        used:
+          type: boolean
+      required:
+      - slug
+    LabelRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 64
+        is_exception:
+          type: boolean
+        is_complexity:
+          type: boolean
+        color:
+          $ref: '#/components/schemas/ColorEnum'
+        used:
+          type: boolean
+      required:
+      - slug
+    LabelStat:
+      type: object
+      properties:
+        document_id:
+          type: integer
+        label_id:
+          type: integer
+        seconds:
+          type: number
+          format: double
+      required:
+      - document_id
+      - label_id
+      - seconds
+    LabelStats:
+      type: object
+      properties:
+        label_stats:
+          type: array
+          items:
+            $ref: '#/components/schemas/LabelStat'
+      required:
+      - label_stats
+    MailMessage:
+      type: object
+      description: Mail message serializer
+      properties:
+        msgtype:
+          $ref: '#/components/schemas/MsgtypeEnum'
+        to:
+          type: string
+          maxLength: 1000
+        cc:
+          type: string
+          maxLength: 1000
+        subject:
+          type: string
+          maxLength: 1000
+        body:
+          type: string
+      required:
+      - body
+      - msgtype
+      - subject
+      - to
+    MailMessageRequest:
+      type: object
+      description: Mail message serializer
+      properties:
+        msgtype:
+          $ref: '#/components/schemas/MsgtypeEnum'
+        to:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        cc:
+          type: string
+          maxLength: 1000
+        subject:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        body:
+          type: string
+          minLength: 1
+      required:
+      - body
+      - msgtype
+      - subject
+      - to
+    MailResponse:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/TypeEnum'
+        message:
+          type: string
+      required:
+      - message
+      - type
+    MailTemplate:
+      type: object
+      properties:
+        label:
+          type: string
+          description: human readable text for UI
+        template:
+          $ref: '#/components/schemas/MailMessage'
+      required:
+      - label
+      - template
+    MetadataTableRow:
+      type: object
+      properties:
+        row_name:
+          type: string
+        row_name_list_depth:
+          type: integer
+        row_value:
+          $ref: '#/components/schemas/MetadataTableRowValue'
+      required:
+      - row_name
+      - row_name_list_depth
+      - row_value
+    MetadataTableRowValue:
+      type: object
+      properties:
+        left_value:
+          type: string
+          description: Value for left column
+        right_value:
+          type: string
+          description: Value for right column
+        is_match:
+          type: boolean
+          description: Are the values equivalent?
+        can_auto_fix:
+          type: boolean
+          description: Can the difference be auto-fixed?
+        is_error:
+          type: boolean
+          description: Is the difference an error?
+        detail:
+          type: string
+          description: Additional details about the difference
+      required:
+      - can_auto_fix
+      - detail
+      - is_error
+      - is_match
+      - left_value
+      - right_value
+    MetadataValidationResults:
+      type: object
+      properties:
+        rfc_to_be:
+          type: integer
+        repository:
+          type: string
+          readOnly: true
+        head_sha:
+          type: string
+          nullable: true
+          description: Head SHA of the commit that was validated
+          maxLength: 40
+        can_autofix:
+          type: boolean
+          readOnly: true
+        is_match:
+          type: boolean
+          readOnly: true
+        metadata_compare:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetadataTableRow'
+          readOnly: true
+        status:
+          type: string
+        detail:
+          type: string
+        is_error:
+          type: boolean
+          readOnly: true
+        received_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - detail
+      - rfc_to_be
+      - status
+    MinimalRfcToBe:
+      type: object
+      properties:
+        name:
+          type: string
+          readOnly: true
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+    MinimalRfcToBeRequest:
+      type: object
+      properties:
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+    MsgtypeEnum:
+      enum:
+      - blank
+      - finalapproval
+      - publication
+      type: string
+      description: |-
+        * `blank` - freeform
+        * `finalapproval` - final approval
+        * `publication` - publication announcement
+    Name:
+      type: object
+      description: Serialize any Name subclass
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+      - desc
+      - name
+      - slug
+    NestedAssignment:
+      type: object
+      description: Assignment serializer with nested RfcToBe details
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          allOf:
+          - $ref: '#/components/schemas/RfcToBe'
+          readOnly: true
+        person:
+          type: integer
+          nullable: true
+        role:
+          type: string
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          default: assigned
+        comment:
+          type: string
+        time_spent:
+          type: string
+      required:
+      - role
+    PaginatedBaseDatatrackerPersonList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BaseDatatrackerPerson'
+    PaginatedDocumentCommentList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentComment'
+    PaginatedRfcToBeList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcToBe'
+    PatchedActionHolderRequest:
+      type: object
+      description: Serialize an ActionHolder with person name
+      properties:
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        completed:
+          type: string
+          format: date-time
+          nullable: true
+          description: The action is considered done when the completed field is set
+            with a datetime.
+        comment:
+          type: string
+        body:
+          type: string
+          maxLength: 64
+    PatchedAdditionalEmailRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+    PatchedApprovalLogMessageRequest:
+      type: object
+      properties:
+        log_message:
+          type: string
+          minLength: 1
+    PatchedAssignmentRequest:
+      type: object
+      description: Assignment serializer with PK reference to RfcToBe
+      properties:
+        rfc_to_be:
+          type: integer
+        person:
+          type: integer
+          nullable: true
+        role:
+          type: string
+          minLength: 1
+        state:
+          allOf:
+          - $ref: '#/components/schemas/StateEnum'
+          default: assigned
+        comment:
+          type: string
+        time_spent:
+          type: string
+    PatchedClusterRequest:
+      type: object
+      description: |-
+        Serialize a Cluster instance
+
+        Uses a nested representation for `documents` rather than the ModelSerializer's
+        handling of relations so we can work with the through model. Specifically, we
+        want to respect the `order_by` setting of the `ClusterMember` class.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        draft_names:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          writeOnly: true
+          description: List of draft names to add to the cluster
+    PatchedDocumentCommentRequest:
+      type: object
+      description: Serialize a comment on an RfcToBe
+      properties:
+        comment:
+          type: string
+          minLength: 1
+    PatchedFinalApprovalRequest:
+      type: object
+      description: Serialize final approval information for an RfcToBe
+      properties:
+        approved:
+          type: string
+          format: date-time
+          nullable: true
+        approver_person_id:
+          type: integer
+          writeOnly: true
+        overriding_approver_person_id:
+          type: integer
+          writeOnly: true
+        comment:
+          type: string
+    PatchedLabelRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 64
+        is_exception:
+          type: boolean
+        is_complexity:
+          type: boolean
+        color:
+          $ref: '#/components/schemas/ColorEnum'
+        used:
+          type: boolean
+    PatchedRfcAuthorRequest:
+      type: object
+      properties:
+        titlepage_name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        is_editor:
+          type: boolean
+        affiliation:
+          type: string
+          nullable: true
+          maxLength: 255
+    PatchedRfcToBeRequest:
+      type: object
+      description: RfcToBeSerializer suitable for displaying full details of a single
+        instance
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Document title
+          maxLength: 255
+        abstract:
+          type: string
+          description: Document abstract
+          maxLength: 32000
+        group:
+          type: string
+          description: Acronym of datatracker group where this document originated,
+            if any
+          maxLength: 40
+        disposition:
+          type: string
+          minLength: 1
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        internal_goal:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            type: integer
+        submitted_format:
+          type: string
+          minLength: 1
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Page count
+        keywords:
+          type: string
+          description: Comma-separated list of keywords
+          maxLength: 1000
+        boilerplate:
+          type: string
+          minLength: 1
+          description: TLP IPR boilerplate option
+        std_level:
+          type: string
+          minLength: 1
+          description: Current StdLevel
+        publication_std_level:
+          type: string
+          minLength: 1
+          nullable: true
+          description: StdLevel at publication (blank until published)
+        stream:
+          type: string
+          minLength: 1
+          description: Current stream
+        publication_stream:
+          type: string
+          minLength: 1
+          nullable: true
+          description: Stream at publication (blank until published)
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcAuthorRequest'
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        consensus:
+          type: boolean
+          nullable: true
+          description: Whether document has consensus (None=unknown)
+        iana_status_slug:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatusSlugEnum'
+          writeOnly: true
+          description: |-
+            Set the IANA status by providing the slug identifier.
+
+            * `no_actions` - This document has no IANA actions
+            * `not_completed` - IANA has not completed actions in draft
+            * `completed` - IANA has completed actions in draft
+            * `changes_required` - Changes to registries are required due to RFC edits
+            * `reconciled` - IANA has reconciled changes between draft and RFC
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
+    PatchedRpcRelatedDocumentRequest:
+      type: object
+      description: Serializer for related document for an RfcToBe
+      properties:
+        relationship:
+          type: string
+          minLength: 1
+    PatchedSubseriesMemberRequest:
+      type: object
+      description: Serialize a SubseriesMember
+      properties:
+        rfc_to_be:
+          type: integer
+        type:
+          type: string
+          minLength: 1
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+    PatchedUnusableRfcNumberRequest:
+      type: object
+      description: Serialize an Unusable Rfc Number
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        comment:
+          type: string
+    Profile:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
+        id:
+          type: integer
+        name:
+          type: string
+        avatar:
+          type: string
+        rpcPersonId:
+          type: integer
+          nullable: true
+        isManager:
+          type: boolean
+      required:
+      - authenticated
+      - avatar
+      - id
+      - isManager
+      - name
+      - rpcPersonId
+    PublicAssignment:
+      type: object
+      description: Assignment serializer for the public queue view
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          type: integer
+        role:
+          type: string
+        state:
+          $ref: '#/components/schemas/StateEnum'
+      required:
+      - rfc_to_be
+      - role
+    PublicQueueAuthor:
+      type: object
+      properties:
+        titlepage_name:
+          type: string
+          maxLength: 128
+        is_editor:
+          type: boolean
+      required:
+      - titlepage_name
+    PublicQueueItem:
+      type: object
+      description: RfcToBe serializer for the public view of the RFC Editor queue
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          description: Document title
+          maxLength: 255
+        draft_url:
+          type: string
+          format: uri
+          nullable: true
+        disposition:
+          type: string
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+          readOnly: true
+        cluster:
+          allOf:
+          - $ref: '#/components/schemas/SimpleCluster'
+          readOnly: true
+        assignment_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicAssignment'
+          readOnly: true
+        actionholder_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionHolder'
+          readOnly: true
+        pending_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRole'
+          readOnly: true
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        pages:
+          type: integer
+          readOnly: true
+        enqueued_at:
+          type: string
+          format: date-time
+          description: Datetime document entered the queue
+        final_approval:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinalApproval'
+          readOnly: true
+        iana_status:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatus'
+          readOnly: true
+        blocking_reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcToBeBlockingReason'
+          readOnly: true
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicQueueAuthor'
+      required:
+      - authors
+      - disposition
+      - draft_url
+      - enqueued_at
+      - title
+    PublishRfcRequest:
+      type: object
+      properties:
+        head_sha:
+          type: string
+          minLength: 40
+          description: Commit hash of repository HEAD intended for publication
+          maxLength: 40
+      required:
+      - head_sha
+    QueueItem:
+      type: object
+      description: RfcToBe serializer suitable for displaying a queue of many
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          description: Document title
+          maxLength: 255
+        draft_url:
+          type: string
+          format: uri
+          nullable: true
+        disposition:
+          type: string
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        internal_goal:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/Label'
+          readOnly: true
+        cluster:
+          allOf:
+          - $ref: '#/components/schemas/SimpleCluster'
+          readOnly: true
+        assignment_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+          readOnly: true
+        actionholder_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionHolder'
+          readOnly: true
+        pending_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRole'
+          readOnly: true
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        pages:
+          type: integer
+          readOnly: true
+        enqueued_at:
+          type: string
+          format: date
+          readOnly: true
+        final_approval:
+          type: array
+          items:
+            $ref: '#/components/schemas/FinalApproval'
+          readOnly: true
+        iana_status:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatus'
+          readOnly: true
+        blocking_reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcToBeBlockingReason'
+          readOnly: true
+      required:
+      - disposition
+      - draft_url
+      - title
+    RfcAuthor:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+        titlepage_name:
+          type: string
+          maxLength: 128
+        is_editor:
+          type: boolean
+        picture:
+          type: string
+          format: uri
+          readOnly: true
+        datatracker_url:
+          type: string
+          format: uri
+          readOnly: true
+        affiliation:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - titlepage_name
+    RfcAuthorRequest:
+      type: object
+      properties:
+        titlepage_name:
+          type: string
+          minLength: 1
+          maxLength: 128
+        is_editor:
+          type: boolean
+        affiliation:
+          type: string
+          nullable: true
+          maxLength: 255
+      required:
+      - titlepage_name
+    RfcToBe:
+      type: object
+      description: RfcToBeSerializer suitable for displaying full details of a single
+        instance
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          description: Document title
+          maxLength: 255
+        abstract:
+          type: string
+          description: Document abstract
+          maxLength: 32000
+        group:
+          type: string
+          description: Acronym of datatracker group where this document originated,
+            if any
+          maxLength: 40
+        draft:
+          allOf:
+          - $ref: '#/components/schemas/Draft'
+          readOnly: true
+        disposition:
+          type: string
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        internal_goal:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            type: integer
+        cluster:
+          allOf:
+          - $ref: '#/components/schemas/SimpleCluster'
+          readOnly: true
+        submitted_format:
+          type: string
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Page count
+        keywords:
+          type: string
+          description: Comma-separated list of keywords
+          maxLength: 1000
+        boilerplate:
+          type: string
+          description: TLP IPR boilerplate option
+        std_level:
+          type: string
+          description: Current StdLevel
+        publication_std_level:
+          type: string
+          nullable: true
+          description: StdLevel at publication (blank until published)
+        stream:
+          type: string
+          description: Current stream
+        publication_stream:
+          type: string
+          nullable: true
+          description: Stream at publication (blank until published)
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcAuthor'
+        shepherd:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+        iesg_contact:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+        assignment_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/Assignment'
+          readOnly: true
+        actionholder_set:
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionHolder'
+          readOnly: true
+        pending_activities:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRole'
+          readOnly: true
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        consensus:
+          type: boolean
+          nullable: true
+          description: Whether document has consensus (None=unknown)
+        subseries:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubseriesMember'
+          readOnly: true
+        iana_status:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatus'
+          readOnly: true
+        additional_emails:
+          type: array
+          items:
+            $ref: '#/components/schemas/AdditionalEmail'
+          readOnly: true
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
+      required:
+      - authors
+      - boilerplate
+      - disposition
+      - labels
+      - std_level
+      - stream
+      - submitted_format
+      - title
+    RfcToBeBlockingReason:
+      type: object
+      description: Serialize RfcToBeBlockingReason with reason details
+      properties:
+        reason:
+          allOf:
+          - $ref: '#/components/schemas/BlockingReason'
+          readOnly: true
+        since_when:
+          type: string
+          format: date-time
+          readOnly: true
+        resolved:
+          type: string
+          format: date-time
+          readOnly: true
+    RfcToBeHistory:
+      type: object
+      description: Serialize a HistoricalRecord
+      properties:
+        id:
+          type: integer
+        time:
+          type: string
+          format: date-time
+        by:
+          $ref: '#/components/schemas/DatatrackerPerson'
+        desc:
+          type: string
+      required:
+      - by
+      - desc
+      - id
+      - time
+    RfcToBeNotFoundResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    RfcToBeRequest:
+      type: object
+      description: RfcToBeSerializer suitable for displaying full details of a single
+        instance
+      properties:
+        title:
+          type: string
+          minLength: 1
+          description: Document title
+          maxLength: 255
+        abstract:
+          type: string
+          description: Document abstract
+          maxLength: 32000
+        group:
+          type: string
+          description: Acronym of datatracker group where this document originated,
+            if any
+          maxLength: 40
+        disposition:
+          type: string
+          minLength: 1
+        external_deadline:
+          type: string
+          format: date-time
+          nullable: true
+        internal_goal:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            type: integer
+        submitted_format:
+          type: string
+          minLength: 1
+        pages:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+          description: Page count
+        keywords:
+          type: string
+          description: Comma-separated list of keywords
+          maxLength: 1000
+        boilerplate:
+          type: string
+          minLength: 1
+          description: TLP IPR boilerplate option
+        std_level:
+          type: string
+          minLength: 1
+          description: Current StdLevel
+        publication_std_level:
+          type: string
+          minLength: 1
+          nullable: true
+          description: StdLevel at publication (blank until published)
+        stream:
+          type: string
+          minLength: 1
+          description: Current stream
+        publication_stream:
+          type: string
+          minLength: 1
+          nullable: true
+          description: Stream at publication (blank until published)
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcAuthorRequest'
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        consensus:
+          type: boolean
+          nullable: true
+          description: Whether document has consensus (None=unknown)
+        iana_status_slug:
+          allOf:
+          - $ref: '#/components/schemas/IanaStatusSlugEnum'
+          writeOnly: true
+          description: |-
+            Set the IANA status by providing the slug identifier.
+
+            * `no_actions` - This document has no IANA actions
+            * `not_completed` - IANA has not completed actions in draft
+            * `completed` - IANA has completed actions in draft
+            * `changes_required` - Changes to registries are required due to RFC edits
+            * `reconciled` - IANA has reconciled changes between draft and RFC
+        repository:
+          type: string
+          description: Repository name (e.g., ietf-tools/purple)
+          maxLength: 1000
+      required:
+      - authors
+      - boilerplate
+      - disposition
+      - labels
+      - std_level
+      - stream
+      - submitted_format
+      - title
+    RpcPerson:
+      type: object
+      description: |-
+        Serialize an RpcPerson
+
+        To avoid datatracker API calls, use the `name_map` parameter to
+        pass a dict mapping datatracker Person ID to name (designed for use
+        with the `get_persons()` API endpoint).
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        hours_per_week:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        capabilities:
+          type: array
+          items:
+            $ref: '#/components/schemas/Capability'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRole'
+        is_active:
+          type: boolean
+        email:
+          type: string
+          format: email
+          readOnly: true
+        picture:
+          type: string
+          format: uri
+          readOnly: true
+        datatracker_url:
+          type: string
+          format: uri
+          readOnly: true
+      required:
+      - capabilities
+      - roles
+    RpcRelatedDocument:
+      type: object
+      description: Serializer for related document for an RfcToBe
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        relationship:
+          type: string
+        draft_name:
+          type: string
+          readOnly: true
+        target_draft_name:
+          type: string
+          readOnly: true
+        target_rfc_number:
+          type: integer
+          readOnly: true
+        source_rfc_number:
+          type: integer
+          readOnly: true
+      required:
+      - relationship
+    RpcRelatedDocumentRequest:
+      type: object
+      description: Serializer for related document for an RfcToBe
+      properties:
+        relationship:
+          type: string
+          minLength: 1
+      required:
+      - relationship
+    RpcRole:
+      type: object
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+      required:
+      - name
+      - slug
+    RpcRoleRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        desc:
+          type: string
+      required:
+      - name
+      - slug
+    SimpleCluster:
+      type: object
+      description: Serialize a cluster without its contents
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - number
+    SimpleClusterRequest:
+      type: object
+      description: Serialize a cluster without its contents
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - number
+    StateEnum:
+      enum:
+      - assigned
+      - in_progress
+      - done
+      - withdrawn
+      - closed_for_hold
+      type: string
+      description: |-
+        * `assigned` - Assigned
+        * `in_progress` - In Progress
+        * `done` - Done
+        * `withdrawn` - Withdrawn
+        * `closed_for_hold` - Closed For Hold
+    Submission:
+      type: object
+      description: Serialize a submission
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        rev:
+          type: string
+        stream:
+          $ref: '#/components/schemas/Name'
+        title:
+          type: string
+        pages:
+          type: integer
+        source_format:
+          $ref: '#/components/schemas/Name'
+        authors:
+          type: array
+          items:
+            $ref: '#/components/schemas/SubmissionAuthor'
+        shepherd:
+          type: string
+          format: email
+        std_level:
+          $ref: '#/components/schemas/Name'
+        datatracker_url:
+          type: string
+          format: uri
+        consensus:
+          type: boolean
+      required:
+      - authors
+      - consensus
+      - datatracker_url
+      - id
+      - name
+      - pages
+      - rev
+      - shepherd
+      - source_format
+      - stream
+      - title
+    SubmissionAuthor:
+      type: object
+      properties:
+        id:
+          type: integer
+        plain_name:
+          type: string
+      required:
+      - id
+      - plain_name
+    SubmissionListItem:
+      type: object
+      description: |-
+        Serialize a submission list item
+
+        Only includes a subset of the SubmissionSerializer fields
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        stream:
+          type: string
+        submitted:
+          type: string
+          format: date-time
+      required:
+      - id
+      - name
+      - stream
+      - submitted
+    SubseriesDoc:
+      type: object
+      properties:
+        type:
+          type: string
+        number:
+          type: integer
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/MinimalRfcToBe'
+        rfc_count:
+          type: integer
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+        display_name:
+          type: string
+          readOnly: true
+      required:
+      - documents
+      - number
+      - type
+    SubseriesMember:
+      type: object
+      description: Serialize a SubseriesMember
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        rfc_to_be:
+          type: integer
+        type:
+          type: string
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        display_name:
+          type: string
+          readOnly: true
+        slug:
+          type: string
+          readOnly: true
+      required:
+      - number
+      - rfc_to_be
+      - type
+    SubseriesMemberRequest:
+      type: object
+      description: Serialize a SubseriesMember
+      properties:
+        rfc_to_be:
+          type: integer
+        type:
+          type: string
+          minLength: 1
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+      required:
+      - number
+      - rfc_to_be
+      - type
+    SubseriesTypeName:
+      type: object
+      properties:
+        slug:
+          type: string
+          maxLength: 32
+        name:
+          type: string
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+      required:
+      - name
+      - slug
+    SyncMetadataBadRequestResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    SyncMetadataNotFoundResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+      - error
+    SyncMetadataRequestRequest:
+      type: object
+      properties:
+        head_sha:
+          type: string
+          minLength: 1
+          description: Git commit SHA identifying the metadata result
+      required:
+      - head_sha
+    TypeEnum:
+      enum:
+      - success
+      - error
+      type: string
+      description: |-
+        * `success` - success
+        * `error` - error
+    UnusableRfcNumber:
+      type: object
+      description: Serialize an Unusable Rfc Number
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        comment:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - number
+    UnusableRfcNumberRequest:
+      type: object
+      description: Serialize an Unusable Rfc Number
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        comment:
+          type: string
+      required:
+      - number
+    VersionInfo:
+      type: object
+      description: Serialize version information
+      properties:
+        version:
+          type: string
+          readOnly: true
+        dump_timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: rpcsessionid

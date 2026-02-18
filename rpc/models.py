@@ -492,6 +492,7 @@ class StreamName(Name):
 
 class DocRelationshipName(Name):
     REFQUEUE_RELATIONSHIP_SLUG = "refqueue"
+    WITHDRAWNREF_RELATIONSHIP_SLUG = "withdrawnref"
     NOT_RECEIVED_RELATIONSHIP_SLUG = "not-received"
     NOT_RECEIVED_2G_RELATIONSHIP_SLUG = "not-received-2g"
     NOT_RECEIVED_3G_RELATIONSHIP_SLUG = "not-received-3g"
@@ -501,7 +502,8 @@ class DocRelationshipName(Name):
         NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
     ]
     REFERENCE_RELATIONSHIP_SLUGS = NOT_RECEIVED_RELATIONSHIP_SLUGS + [
-        REFQUEUE_RELATIONSHIP_SLUG
+        REFQUEUE_RELATIONSHIP_SLUG,
+        WITHDRAWNREF_RELATIONSHIP_SLUG,
     ]
 
 
@@ -1205,6 +1207,7 @@ class MetadataValidationResults(models.Model):
 
     class Meta:
         ordering = ["-received_at"]
+        verbose_name_plural = "Metadata validation results"
         constraints = [
             models.UniqueConstraint(
                 fields=["rfc_to_be"],

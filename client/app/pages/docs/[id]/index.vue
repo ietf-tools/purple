@@ -26,7 +26,7 @@
 
         <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
 
-        <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
+        <div v-if="rawRfcToBe?.id && rawRfcToBe.disposition !== 'published'" class="lg:col-span-full grid place-items-stretch">
           <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName" :people="people"
             :cluster-number="rawRfcToBe.cluster?.number">
           </DocumentDependencies>
@@ -173,7 +173,10 @@ const { data: people } = await useAsyncData(
   { server: false, lazy: true, default: () => [] }
 )
 
-const { data: relatedDocuments } = await useReferencesForDraft(draftName.value)
+const { data: relatedDocuments } = await useAsyncData(
+  () => api.documentsReferencesList({ draftName: draftName.value }),
+  { server: false, lazy: true, default: () => [] }
+)
 
 useHead({
   title: draftName.value

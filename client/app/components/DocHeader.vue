@@ -15,7 +15,7 @@
             <Icon name="solar:document-text-line-duotone" class="w-10 h-10" />
             <h1>
               <span class="mt-1 text-xl font-semibold leading-6">
-                <span v-if="props.draftName">{{ props.draftName }}</span>
+                <span v-if="props.draftName">{{ formattedTitle }}</span>
               </span>
             </h1>
           </div>
@@ -40,9 +40,9 @@
 </template>
 
 <script setup lang="ts">
-import { AssignmentFinishedModal, EmailModal } from '#components';
+import { AssignmentFinishedModal } from '#components';
 import { overlayModalKey } from '~/providers/providerKeys';
-import type { MailTemplate, RfcToBe, RpcPerson } from '~/purple_client';
+import type { RfcToBe, RpcPerson } from '~/purple_client';
 
 type Props = {
   draftName: string,
@@ -64,7 +64,17 @@ const snackbar = useSnackbar()
 
 const isLoadingNewEmailModal = ref(false)
 const isLoadingFinishAssignmentsModal = ref(false)
-const isLoadingPublishModal = ref(false)
+
+const formattedTitle = computed(() => {
+  if (!props.draftName) return ''
+
+  const match = props.draftName.match(/^rfc(\d+)$/i)
+  if (match) {
+    return `RFC ${match[1]}`
+  }
+
+  return props.draftName
+})
 
 // Cache API responses for slow APIs and/or APIs that don't change much
 const personsRef = ref<RpcPerson[] | undefined>(undefined)
@@ -75,8 +85,6 @@ watch(() => props.people, () => {
   }
   personsRef.value = props.people
 })
-
-const mailTemplateList = ref<MailTemplate[] | undefined>(undefined)
 
 const openAssignmentFinishedModal = async () => {
   if (!props.rfcToBe || !props.rfcToBe.id) {
@@ -98,7 +106,7 @@ const openAssignmentFinishedModal = async () => {
       personsRef.value ? personsRef.value : api.rpcPersonList()
     ])
 
-    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe.id)
+    const rfcToBeAssignments = assignments.filter((a) => a.rfcToBe === props.rfcToBe?.id)
 
     personsRef.value = rpcPersonList
 

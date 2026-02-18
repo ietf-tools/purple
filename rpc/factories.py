@@ -164,8 +164,9 @@ class UnusableRfcNumberFactory(factory.django.DjangoModelFactory):
         model = UnusableRfcNumber
 
     number = factory.LazyFunction(
-        lambda: 1
-        + (UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 0)
+        lambda: (
+            1 + (UnusableRfcNumber.objects.aggregate(Max("number"))["number__max"] or 0)
+        )
     )
     comment = factory.Faker("sentence")
 

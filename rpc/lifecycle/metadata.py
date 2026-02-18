@@ -3,6 +3,7 @@
 
 import datetime
 import logging
+import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
 
@@ -37,9 +38,12 @@ class Metadata:
         abstract_elem = front.find("abstract", ns)
         abstract_text = ""
         if abstract_elem is not None:
-            abstract_text = " ".join(
-                t.text.strip() for t in abstract_elem.findall("t", ns) if t.text
-            )
+            paragraphs = [
+                re.sub(r"\s+", " ", t.text).strip()
+                for t in abstract_elem.findall("t", ns)
+                if t.text and t.text.strip()
+            ]
+            abstract_text = "\n\n".join(p for p in paragraphs if p)
 
         authors = []
         for author in front.findall("author", ns):
@@ -332,8 +336,8 @@ class MetadataComparator:
 
     def compare_title(self):
         """Compare title field"""
-        xml_value = self.xml_metadata.get("title", "")
-        db_value = self.rfc_to_be.title or ""
+        xml_value = " ".join(self.xml_metadata.get("title", "").split())
+        db_value = " ".join((self.rfc_to_be.title or "").split())
 
         return {
             "field": "title",
@@ -588,8 +592,24 @@ class MetadataComparator:
 
     def compare_abstract(self):
         """Compare abstract field"""
-        xml_value = self.xml_metadata.get("abstract", "").strip()
-        db_value = (self.rfc_to_be.abstract or "").strip()
+
+        def clean_spacing_keep_paragraphs(text):
+            paragraphs = re.split(r"\n\s*\n", text)
+
+            cleaned_paragraphs = []
+            for p in paragraphs:
+                cleaned_p = re.sub(r"\s+", " ", p).strip()
+                if cleaned_p:
+                    cleaned_paragraphs.append(cleaned_p)
+
+            return "\n\n".join(cleaned_paragraphs)
+
+        # Normalize whitespace within paragraphs, preserve paragraph breaks
+        xml_abstract = self.xml_metadata.get("abstract", "")
+        xml_value = clean_spacing_keep_paragraphs(str(xml_abstract or ""))
+
+        db_abstract = self.rfc_to_be.abstract or ""
+        db_value = clean_spacing_keep_paragraphs(db_abstract)
 
         return {
             "field": "abstract",

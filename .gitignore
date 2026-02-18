@@ -36,5 +36,5 @@ __pycache__
 docker-compose.extend-custom.yml
 client/app/purple_client
 /static
-purple_api.yaml
+# purple_api.yaml
 /purple.dump

@@ -24,6 +24,7 @@ from rpc.lifecycle.metadata import MetadataComparator
 
 from .models import (
     ActionHolder,
+    AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
     BlockingReason,
@@ -202,17 +203,28 @@ class HistoryLastEditSerializer(serializers.Serializer):
 
 
 class ActionHolderSerializer(serializers.ModelSerializer):
-    name = serializers.SerializerMethodField()
+    """Serialize an ActionHolder with person name"""
+
+    name = serializers.SerializerMethodField(read_only=True)
 
     class Meta:
         model = ActionHolder
         fields = [
+            "id",
             "name",
             "deadline",
             "since_when",
+            "completed",
             "comment",
             "body",
         ]
+        read_only_fields = ["since_when"]
+        extra_kwargs = {
+            "completed": {
+                "help_text": "The action is considered done when the completed field "
+                "is set with a datetime."
+            }
+        }
 
     def get_name(self, actionholder) -> str:
         return actionholder.datatracker_person.plain_name  # allow prefetched name map?
@@ -253,6 +265,17 @@ class LabelSerializer(serializers.ModelSerializer):
             "color",
             "used",
         ]
+
+
+class AdditionalEmailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AdditionalEmail
+        fields = [
+            "id",
+            "email",
+            "rfc_to_be",
+        ]
+        read_only_fields = ["rfc_to_be"]
 
 
 class RfcAuthorSerializer(serializers.ModelSerializer):
@@ -629,6 +652,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
 
     iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
     shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+    additional_emails = AdditionalEmailSerializer(
+        source="additionalemail_set", many=True, read_only=True
+    )
 
     class Meta:
         model = RfcToBe
@@ -664,6 +690,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "subseries",
             "iana_status",
             "iana_status_slug",
+            "additional_emails",
+            "repository",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
@@ -757,10 +785,19 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
 
     target_draft_name = serializers.SerializerMethodField()
     draft_name = serializers.SerializerMethodField()
+    target_rfc_number = serializers.SerializerMethodField()
+    source_rfc_number = serializers.SerializerMethodField()
 
     class Meta:
         model = RpcRelatedDocument
-        fields = ["id", "relationship", "draft_name", "target_draft_name"]
+        fields = [
+            "id",
+            "relationship",
+            "draft_name",
+            "target_draft_name",
+            "target_rfc_number",
+            "source_rfc_number",
+        ]
 
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
         if obj.target_document is not None:
@@ -773,6 +810,16 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     def get_draft_name(self, obj: RpcRelatedDocument) -> str:
         """Get the draft name of the source document"""
         return obj.source.draft.name
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_target_rfc_number(self, obj: RpcRelatedDocument) -> int:
+        """Get the RFC number of the target document, if available"""
+        return obj.target_rfctobe.rfc_number if obj.target_rfctobe else None
+
+    @extend_schema_field(serializers.IntegerField())
+    def get_source_rfc_number(self, obj: RpcRelatedDocument) -> int:
+        """Get the RFC number of the source document, if available"""
+        return obj.source.rfc_number
 
 
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
@@ -1499,6 +1546,8 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.BooleanField())
     def get_is_error(self, obj):
         """Check if there are any metadata errors"""
+        if obj.status == MetadataValidationResults.Status.FAILED:
+            return True
         comparator = self._get_comparator(obj)
         return comparator.is_error()
 

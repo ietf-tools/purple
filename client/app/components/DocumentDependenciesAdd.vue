@@ -38,7 +38,7 @@ import {
   DialogRoot,
   DialogTitle,
 } from "reka-ui"
-import type { DocumentsReferencesCreateRequest, RpcRelatedDocument } from "~/purple_client"
+import type { DocumentsRelatedCreateRequest, RpcRelatedDocument } from "~/purple_client"
 import type { DialogOption } from "~/utils/dialog"
 import { snackbarForErrors } from "~/utils/snackbar"
 
@@ -61,7 +61,7 @@ const snackbar = useSnackbar()
 const api = useApi()
 
 const addDependencyItem = async () => {
-  const createArg: DocumentsReferencesCreateRequest = {
+  const createArg: DocumentsRelatedCreateRequest = {
     draftName: props.draftName,
     createRpcRelatedDocumentRequest: {
       source: props.id,
@@ -70,7 +70,7 @@ const addDependencyItem = async () => {
     }
   }
   try {
-    const newRpcRelatedDocument = await api.documentsReferencesCreate(createArg)
+    const newRpcRelatedDocument = await api.documentsRelatedCreate(createArg)
     relatedDocuments.value = [...relatedDocuments.value, newRpcRelatedDocument]
     // reset form
     isOpenDependencyModal.value = false
@@ -89,7 +89,7 @@ const {
   data: relationshipNamesList,
   error: errorRelationshipNamesList
 } = await useAsyncData(
-  () => api.docRelationshipNamesList()
+  () => api.docRelationshipNamesList({ refs: true })
 )
 
 const options = computed((): DialogOption[] => {

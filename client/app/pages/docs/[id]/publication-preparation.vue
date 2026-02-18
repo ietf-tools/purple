@@ -81,7 +81,22 @@
           {{ SPACE }}
           <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{
             step.repository
-            }}</a>
+          }}</a>
+          {{ SPACE }}
+          <TooltipProvider v-if="step.receivedAt">
+            <TooltipRoot>
+              <TooltipTrigger>
+                <time :datetime="DateTime.fromJSDate(step.receivedAt).toISOTime() ?? undefined">
+                  {{ DateTime.fromJSDate(step.receivedAt).toRelative() }}
+                </time>
+              </TooltipTrigger>
+              <TooltipPortal>
+                <TooltipContent class="shadow-md bg-white text-black dark:bg-black dark:text-white rounded px-2 py-1">
+                  {{ DateTime.fromJSDate(step.receivedAt).toISO()?.replace(/T/gi, ' ') }}
+                </TooltipContent>
+              </TooltipPortal>
+            </TooltipRoot>
+          </TooltipProvider>
         </p>
         <p v-else class="ml-8 mb-4 text-sm text-black dark:text-white">
           No git commit available in API response. Can't publish until this is verified.
@@ -125,7 +140,7 @@
         <template v-else>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="secondary"
-              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : console.error('internal error unhandled state (2)', step)">
+              @click="() => step.type === 'diff' && step.headSha ? deleteMetadataValidationAndRetry(step.headSha) : fetchAndVerifyMetadata()">
               Redo metadata validation
             </BaseButton>
           </div>
@@ -179,7 +194,9 @@
 </template>
 
 <script setup lang="ts">
+import { TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
 import { useAsyncData } from '#app'
+import { DateTime } from 'luxon'
 import BaseButton from '~/components/BaseButton.vue'
 import type { MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
@@ -194,6 +211,7 @@ const draftName = computed(() => route.params.id?.toString() ?? '')
 const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" }
 
 type Step =
+  | { type: 'getMetadataValidationResults' }
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
   | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: { headSha: string } }
@@ -216,21 +234,82 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   }
 )
 
-watch([rfcToBe, rfcToBeError], () => {
-  if (!rfcToBe.value) {
-    if (rfcToBeError.value) {
-      console.error('Unable to load RFC. Server error:', rfcToBeError.value)
-      step.value = {
-        type: 'error',
-        errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value.message}`
-      }
+const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus } = await useAsyncData(
+  () => `draft-${draftName.value}-metadata-validation-results`,
+  () => api.documentsMetadataValidationResultsList({
+    draftName: draftName.value,
+  }),
+  {
+    server: false,
+    lazy: true,
+  }
+)
+
+const isMetadataValidationResults = (data: unknown): data is MetadataValidationResults => {
+  return !!data && !Array.isArray(data) && typeof data === 'object' && 'isError' in data && 'isMatch' in data
+}
+
+watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
+  if (
+    rfcToBeStatus.value === 'pending' ||
+    metadataValidationResultsStatus.value === 'pending' ||
+    rfcToBeStatus.value === 'idle' ||
+    metadataValidationResultsStatus.value === 'idle'
+  ) {
+    return
+  }
+  if (
+    rfcToBeStatus.value === 'error'
+  ) {
+    let precomputedResult = metadataValidationResults.value as unknown
+    step.value = {
+      type: 'error',
+      errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
+      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) && precomputedResult?.headSha ? { headSha: precomputedResult.headSha } : undefined,
+      showResyncButton: true
     }
     return
   }
-  if (rfcToBe.value.disposition === 'published') {
-    step.value = { type: 'rfcPosted' }
-  } else {
+  if (metadataValidationResultsStatus.value === 'error') {
+    // could be a 404 meaning there were no precomputed validation results, ie not an error
     step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+    return
+  }
+
+  if (metadataValidationResults.value) {
+    let precomputedResults = metadataValidationResults.value as unknown
+    if (!Array.isArray(precomputedResults)) {
+      console.error({ precomputedResults })
+      throw Error('Unhandled validation result. See console')
+    }
+    if (precomputedResults.length === 1) {
+      const firstResult = precomputedResults[0]
+      if (isMetadataValidationResults(firstResult)) {
+        step.value = { type: 'diff', ...firstResult }
+        return
+      }
+    } else if (precomputedResults.length === 0) {
+      step.value = { type: 'fetchAndVerifyAndMetadataButton' }
+      return
+    }
+  }
+
+  if (rfcToBe.value?.disposition === 'published') {
+    step.value = { type: 'rfcPosted' }
+    return
+  } else {
+    console.error({
+      metadataValidationResultsStatus: metadataValidationResultsStatus.value,
+      metadataValidationResults: metadataValidationResults.value,
+      rfcToBeStatus: rfcToBeStatus.value,
+      rfcToBe: rfcToBe.value
+    })
+    step.value = {
+      type: 'error',
+      errorText: `Unhandled error. See dev console`,
+      showResyncButton: true,
+    }
+    return
   }
 })
 
@@ -251,6 +330,9 @@ const fetchAndVerifyMetadata = async () => {
     do {
       attemptCount++
       resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
+      if (!isMetadataValidationResults(resultsCreate)) {
+        break;
+      }
       hasTimedOut = Date.now() > endTimeMs
       console.log({ hasTimedOut, attemptCount, resultsCreate })
       await sleep(WAIT_BETWEEN_REQUESTS_MS)
@@ -271,7 +353,12 @@ const fetchAndVerifyMetadata = async () => {
   console.log("Finished", { hasTimedOut, resultsCreate })
 
   if (resultsCreate.status === 'failed') {
-    const { headSha } = resultsCreate
+    const { headSha, detail } = resultsCreate
+    if (detail) {
+      console.error("Metadata validation failed", resultsCreate)
+      step.value = { type: 'error', errorText: `Details: ${detail}`, showResyncButton: true }
+      return
+    }
     if (!headSha) {
       console.error("Git hash (head sha) not found", resultsCreate)
       snackbar.add({ type: 'error', title: 'git hash (head sha) was expected but none was provided', text: 'See dev console for more' })
