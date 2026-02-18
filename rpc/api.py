@@ -123,6 +123,7 @@ from .serializers import (
 )
 from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+from . import notifications
 
 logger = logging.getLogger(__name__)
 
@@ -843,6 +844,20 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         else:
             raise serializers.ValidationError(form.errors)
         return queryset
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        instance = serializer.instance
+        notifications.notify_change(instance, change_type='created')
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        instance = serializer.instance
+        notifications.notify_change(instance, change_type='updated')
+
+    def perform_destroy(self, instance):
+        notifications.notify_change(instance, change_type='deleted')
+        super().perform_destroy(instance)
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
     @action(detail=True, pagination_class=None, filter_backends=[])
