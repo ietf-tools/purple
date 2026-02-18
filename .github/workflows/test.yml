@@ -101,7 +101,7 @@ jobs:
       working-directory: ./purple
       run: |
         cp ../rpcapi.yaml .
-        client/node_modules/.bin/openapi-generator-cli generate --generator-key datatracker
+        npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key datatracker
         tar cfz ../rpcapi_client.tgz -C openapi rpcapi_client
 
     - uses: actions/setup-python@v6

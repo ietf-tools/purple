@@ -30,7 +30,7 @@ jobs:
 
       - name: Generate API client
         run: |
-          client/node_modules/.bin/openapi-generator-cli generate --generator-key purple
+          npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key purple
           sed -i '1i // @ts-nocheck' client/app/purple_client/runtime.ts
         working-directory: ./
 

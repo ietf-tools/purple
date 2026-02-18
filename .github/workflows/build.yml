@@ -63,7 +63,7 @@ jobs:
         working-directory: ./purple
         run: |
           cp ../rpcapi.yaml .
-          client/node_modules/.bin/openapi-generator-cli generate --generator-key datatracker
+          npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key datatracker
           tar cfz ../rpcapi_client.tgz -C openapi rpcapi_client
 
       - name: Build backend image
@@ -96,7 +96,7 @@ jobs:
           container_id="$(docker create ghcr.io/ietf-tools/purple-backend:latest)"
           docker cp "${container_id}:/workspace/purple_api.yaml" ./
           docker rm "${container_id}"
-          client/node_modules/.bin/openapi-generator-cli generate --generator-key purple
+          npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key purple
           tar cfz ../purple_client.tgz -C client/app purple_client
           cp purple_api.yaml ..
 
