@@ -10,7 +10,7 @@ def forward(apps, schema_editor):
     PublishedFormatName.objects.create(slug="pdf", name="PDF")
     PublishedFormatName.objects.create(slug="xml", name="XML")
     PublishedFormatName.objects.create(slug="ps", name="PostScript")
-    PublishedFormatName.objects.create(slug="notprepped.xml", name="Not prepped XML")
+    PublishedFormatName.objects.create(slug="notprepped", name="Not prepped XML")
 
 
 def reverse(apps, schema_editor):
@@ -22,7 +22,7 @@ def reverse(apps, schema_editor):
             "pdf",
             "xml",
             "ps",
-            "notprepped.xml",
+            "notprepped",
         ]
     ).delete()
 
