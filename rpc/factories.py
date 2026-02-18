@@ -13,6 +13,7 @@ from .models import (
     DispositionName,
     FinalApproval,
     Label,
+    PublishedFormatName,
     RfcAuthor,
     RfcToBe,
     RpcAuthorComment,
@@ -229,3 +230,9 @@ class LabelFactory(factory.django.DjangoModelFactory):
         django_get_or_create = ("slug",)
 
     color = "fuchsia"
+
+
+class PublishedFormatNameFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = PublishedFormatName
+        django_get_or_create = ("slug",)
