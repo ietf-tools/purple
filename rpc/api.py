@@ -656,6 +656,7 @@ class ClusterViewSet(
         cluster.refresh_from_db()
 
         response_serializer = ClusterSerializer(cluster)
+
         return Response(response_serializer.data)
 
     @extend_schema(
@@ -795,6 +796,34 @@ class AssignmentViewSet(viewsets.ModelViewSet):
         # Filter assignments for the logged-in RpcPerson
         return base_queryset.filter(person=rpcperson)
 
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        # get instance of the rfc_to_be related to the assignment and notify
+        # about the change
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="created")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="updated")
+
+    def perform_destroy(self, instance):
+        rfc_to_be = instance.rfc_to_be if hasattr(instance, "rfc_to_be") else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="deleted")
+        super().perform_destroy(instance)
+
 
 class RfcToBeQueryParamsForm(forms.Form):
     published_within_days = forms.IntegerField(required=False, min_value=0)
@@ -847,16 +876,14 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        instance = serializer.instance
-        notifications.notify_change(instance, change_type='created')
+        notifications.notify_change(serializer.instance, change_type="created")
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        instance = serializer.instance
-        notifications.notify_change(instance, change_type='updated')
+        notifications.notify_change(serializer.instance, change_type="updated")
 
     def perform_destroy(self, instance):
-        notifications.notify_change(instance, change_type='deleted')
+        notifications.notify_change(instance, change_type="deleted")
         super().perform_destroy(instance)
 
     @extend_schema(responses=RfcToBeHistorySerializer(many=True))
@@ -981,6 +1008,30 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             # If no person_id is provided, save the author without it
             serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="created")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="updated")
+
+    def perform_destroy(self, instance):
+        rfc_to_be = instance.rfc_to_be if hasattr(instance, "rfc_to_be") else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="deleted")
+        super().perform_destroy(instance)
+
     def get_serializer_class(self):
         if self.action == "create":
             return CreateRfcAuthorSerializer
@@ -1084,6 +1135,24 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
             )
         )
+
+    def perform_create(self, serializer):
+        super().perform_create(serializer)
+        rfc_to_be = serializer.instance.source if hasattr(serializer.instance, 'source') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="created")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        rfc_to_be = serializer.instance.source if hasattr(serializer.instance, 'source') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="updated")
+
+    def perform_destroy(self, instance):
+        rfc_to_be = instance.source if hasattr(instance, 'source') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="deleted")
+        super().perform_destroy(instance)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
@@ -1217,6 +1286,22 @@ class AdditionalEmailViewSet(viewsets.ModelViewSet):
             serializer.save(rfc_to_be=rfc_to_be)
         else:
             serializer.save()
+
+        rfc_to_be = serializer.instance.rfc_to_be if hasattr(serializer.instance, 'rfc_to_be') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="created")
+
+    def perform_update(self, serializer):
+        super().perform_update(serializer)
+        rfc_to_be = serializer.instance.rfc_to_be if hasattr(serializer.instance, 'rfc_to_be') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="updated")
+
+    def perform_destroy(self, instance):
+        rfc_to_be = instance.rfc_to_be if hasattr(instance, 'rfc_to_be') else None
+        if rfc_to_be:
+            notifications.notify_change(rfc_to_be, change_type="deleted")
+        super().perform_destroy(instance)
 
 
 class RpcRoleViewSet(viewsets.ReadOnlyModelViewSet):

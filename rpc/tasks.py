@@ -5,6 +5,7 @@ from celery.utils.log import get_task_logger
 from django.conf import settings
 from django.db.models import F
 
+from datatracker.utils.publication import publish_rfc_metadata
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
@@ -135,8 +136,8 @@ def validate_metadata_task(self, rfc_to_be_id):
         _save_metadata_results(rfc_to_be, head_sha, metadata, status)
 
     except Exception as e:
-        logger.error(f"Error in validate_metadata_task: {e}")
-        detail = str(e)
+        logger.exception(f"Error in validate_metadata_task for RfcToBe {rfc_to_be_id}")
+        detail = f"{type(e).__name__}: {str(e)}" if str(e) else type(e).__name__
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
 
@@ -157,41 +158,70 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
 
 
 @shared_task(bind=True, max_retries=5)
-def notify_errata(self, rfc_number, draft_name, change_type):
-    """Notify external errata system about published RFC changes
-    
+def notify_queue_task(self, draft_name, change_type):
+    """Notify external queue system about in-progress RFC changes
+
     Args:
-        rfc_number: RFC number of the published document
         draft_name: Draft name (if available)
         change_type: 'created', 'updated', or 'deleted'
     """
-    url = getattr(settings, 'ERRATA_NOTIFICATION_URL', None)
-    
+    logger.info(f"Notifying queue system about draft {draft_name} ({change_type})")
+
+    url = getattr(settings, "QUEUE_NOTIFICATION_URL", "")
     if not url:
-        logger.warning("ERRATA_NOTIFICATION_URL not configured, skipping notification")
+        logger.warning("QUEUE_NOTIFICATION_URL not configured, skipping notification")
         return
-    
+
     payload = {
-        'rfc_number': rfc_number,
-        'draft_name': draft_name,
-        'change_type': change_type,
+        "draft_name": draft_name,
+        "change_type": change_type,
     }
-    
+
+    # try:
+    #     response = requests.post(
+    #         url,
+    #         json=payload,
+    #         timeout=30,
+    #         headers={'Content-Type': 'application/json'},
+    #     )
+    #     response.raise_for_status()
+    #     logger.info(
+    #         f"Successfully notified datatracker system about draft {draft_name} "
+    #         f"({change_type})"
+    #     )
+    # except requests.RequestException as exc:
+    #     logger.error(
+    #         f"Failed to notify datatracker system about draft {draft_name}: {exc}"
+    #     )
+    #     # Retry with exponential backoff
+    #     raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+
+@shared_task(bind=True, max_retries=5)
+def notify_datatracker_task(self, rfctobe_id, change_type):
+    """Notify datatracker about published RFC changes
+
+    Args:
+        rfctobe_id: Primary key of the RfcToBe instance
+        change_type: 'created', 'updated', or 'deleted'
+    """
     try:
-        response = requests.post(
-            url,
-            json=payload,
-            timeout=30,
-            headers={'Content-Type': 'application/json'},
-        )
-        response.raise_for_status()
+        rfc_to_be = RfcToBe.objects.get(pk=rfctobe_id)
+    except RfcToBe.DoesNotExist:
+        logger.error(f"RfcToBe with id {rfctobe_id} does not exist")
+        return
+
+    logger.info(
+        f"Notifying datatracker about RFC {rfc_to_be.rfc_number} ({change_type})"
+    )
+
+    try:
+        publish_rfc_metadata(rfc_to_be)
         logger.info(
-            f"Successfully notified errata system about RFC {rfc_number} "
-            f"({change_type})"
+            f"Notified datatracker about updates in published RFC "
+            f"{rfc_to_be.rfc_number}"
         )
-    except requests.RequestException as exc:
+    except Exception as exc:
         logger.error(
-            f"Failed to notify errata system about RFC {rfc_number}: {exc}"
+            f"Failed to notify datatracker about RFC {rfc_to_be.rfc_number}: {exc}"
         )
-        # Retry with exponential backoff
         raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
