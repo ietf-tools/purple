@@ -34,7 +34,7 @@ import { overlayModalKey } from '~/providers/providerKeys'
 
 const route = useRoute()
 
-// Only allow numbers as route parameter, rejecting leading zeros
+// Only allow numbers as route parameter, rejecting leading zeros or 'C' prefix
 definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number?.toString() ?? '') })
 
 const clusterNumber = computed(() => route.params.number ? parseInt(route.params.number.toString(), 10) : undefined)
