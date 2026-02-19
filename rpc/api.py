@@ -44,6 +44,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
+from . import notifications
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     can_publish,
@@ -123,7 +124,6 @@ from .serializers import (
 )
 from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
 from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
-from . import notifications
 
 logger = logging.getLogger(__name__)
 

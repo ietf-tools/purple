@@ -1,5 +1,4 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
-import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
@@ -172,10 +171,10 @@ def notify_queue_task(self, draft_name, change_type):
         logger.warning("QUEUE_NOTIFICATION_URL not configured, skipping notification")
         return
 
-    payload = {
-        "draft_name": draft_name,
-        "change_type": change_type,
-    }
+    # payload = {
+    #     "draft_name": draft_name,
+    #     "change_type": change_type,
+    # }
 
     # try:
     #     response = requests.post(
@@ -225,4 +224,4 @@ def notify_datatracker_task(self, rfctobe_id, change_type):
         logger.error(
             f"Failed to notify datatracker about RFC {rfc_to_be.rfc_number}: {exc}"
         )
-        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries)) from exc
