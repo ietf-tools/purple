@@ -442,6 +442,18 @@ class MetadataComparator:
             xml_name = (
                 xml_author.get("initials", "") + " " + xml_author.get("surname", "")
             ).strip()
+            if not xml_name:
+                xml_fullname = (xml_author.get("asciiFullname", "") or xml_author.get(
+                    "fullname", ""
+                )).strip()
+                # Convert full name to initials format
+                name_parts = xml_fullname.split()
+                if len(name_parts) > 1:
+                    # Convert all parts except last to initials, keep surname as-is
+                    initials = [p[0] + "." for p in name_parts[:-1]]
+                    xml_name = " ".join(initials + [name_parts[-1]])
+                else:
+                    xml_name = xml_fullname
             db_name = db_author.titlepage_name
 
             # Check if names match
