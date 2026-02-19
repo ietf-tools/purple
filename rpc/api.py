@@ -1138,18 +1138,26 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         super().perform_create(serializer)
-        rfc_to_be = serializer.instance.source if hasattr(serializer.instance, 'source') else None
+        rfc_to_be = (
+            serializer.instance.source
+            if hasattr(serializer.instance, "source")
+            else None
+        )
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="created")
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        rfc_to_be = serializer.instance.source if hasattr(serializer.instance, 'source') else None
+        rfc_to_be = (
+            serializer.instance.source
+            if hasattr(serializer.instance, "source")
+            else None
+        )
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="updated")
 
     def perform_destroy(self, instance):
-        rfc_to_be = instance.source if hasattr(instance, 'source') else None
+        rfc_to_be = instance.source if hasattr(instance, "source") else None
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="deleted")
         super().perform_destroy(instance)
@@ -1287,18 +1295,26 @@ class AdditionalEmailViewSet(viewsets.ModelViewSet):
         else:
             serializer.save()
 
-        rfc_to_be = serializer.instance.rfc_to_be if hasattr(serializer.instance, 'rfc_to_be') else None
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="created")
 
     def perform_update(self, serializer):
         super().perform_update(serializer)
-        rfc_to_be = serializer.instance.rfc_to_be if hasattr(serializer.instance, 'rfc_to_be') else None
+        rfc_to_be = (
+            serializer.instance.rfc_to_be
+            if hasattr(serializer.instance, "rfc_to_be")
+            else None
+        )
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="updated")
 
     def perform_destroy(self, instance):
-        rfc_to_be = instance.rfc_to_be if hasattr(instance, 'rfc_to_be') else None
+        rfc_to_be = instance.rfc_to_be if hasattr(instance, "rfc_to_be") else None
         if rfc_to_be:
             notifications.notify_change(rfc_to_be, change_type="deleted")
         super().perform_destroy(instance)
