@@ -2,9 +2,11 @@
 
 """Simple notification system for RfcToBe changes"""
 
-from rpc.models import ASSIGNMENT_INACTIVE_STATES
-from .tasks import notify_datatracker_task, notify_queue_task
 from celery.utils.log import get_task_logger
+
+from rpc.models import ASSIGNMENT_INACTIVE_STATES
+
+from .tasks import notify_datatracker_task, notify_queue_task
 
 logger = get_task_logger(__name__)
 
