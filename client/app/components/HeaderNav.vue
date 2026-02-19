@@ -64,7 +64,7 @@
         <HeadlessMenu v-if="userStore.authenticated" as="div" class="relative">
           <HeadlessMenuButton class="-m-1.5 flex items-center p-1.5">
             <span class="sr-only">Open user menu</span>
-            <img class="w-8 rounded-full bg-gray-50" :src="userStore.avatar ?? undefined" alt="" >
+            <img class="h-8 max-w-16 rounded-full bg-gray-50" :src="userStore.avatar ?? undefined" alt="" >
             <span class="hidden lg:flex lg:items-center">
               <span class="ml-4 text-sm font-semibold leading-6 text-gray-900 dark:text-neutral-300" aria-hidden="true">{{ userStore.name }}</span>
               <Icon name="uil:angle-down" class="ml-2 h-5 w-5 text-gray-400 dark:text-neutral-400" aria-hidden="true" />
