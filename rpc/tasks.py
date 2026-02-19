@@ -196,6 +196,7 @@ def notify_queue_task(self, draft_name, change_type):
     #     # Retry with exponential backoff
     #     raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
 
+
 @shared_task(bind=True, max_retries=5)
 def notify_datatracker_task(self, rfctobe_id, change_type):
     """Notify datatracker about published RFC changes
@@ -224,4 +225,4 @@ def notify_datatracker_task(self, rfctobe_id, change_type):
         logger.error(
             f"Failed to notify datatracker about RFC {rfc_to_be.rfc_number}: {exc}"
         )
-        raise self.retry(exc=exc, countdown=60 * (2 ** self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
