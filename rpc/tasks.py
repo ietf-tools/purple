@@ -1,8 +1,13 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
+import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.conf import settings
+from django.core.cache import cache
 from django.db.models import F
+from django.utils import timezone
 
+from datatracker.utils.publication import publish_rfc_metadata
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
@@ -12,7 +17,18 @@ from .lifecycle.publication import (
     publish_rfctobe,
 )
 from .lifecycle.repo import GithubRepository
-from .models import MailMessage, MetadataValidationResults, RfcToBe
+from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
+    AdditionalEmail,
+    Assignment,
+    ClusterMember,
+    MailMessage,
+    MetadataValidationResults,
+    RfcAuthor,
+    RfcToBe,
+    RpcRelatedDocument,
+    SubseriesMember,
+)
 
 logger = get_task_logger(__name__)
 
@@ -133,8 +149,8 @@ def validate_metadata_task(self, rfc_to_be_id):
         _save_metadata_results(rfc_to_be, head_sha, metadata, status)
 
     except Exception as e:
-        logger.error(f"Error in validate_metadata_task: {e}")
-        detail = str(e)
+        logger.exception(f"Error in validate_metadata_task for RfcToBe {rfc_to_be_id}")
+        detail = f"{type(e).__name__}: {str(e)}" if str(e) else type(e).__name__
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
 
@@ -152,3 +168,187 @@ class PublishRfcToBeTask(RetryTask):
 def publish_rfctobe_task(self, rfctobe_id, expected_head):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
     publish_rfctobe(rfctobe, expected_head=expected_head)
+
+
+@shared_task(bind=True, max_retries=5)
+def notify_queue_task(self, rfctobe_ids):
+    """Notify external queue system about in-progress RFC changes
+
+    Args:
+        rfctobe_ids: List of RfcToBe primary keys
+    """
+    logger.info(f"Notifying queue system about RFCs: {rfctobe_ids}")
+
+    url = getattr(settings, "QUEUE_NOTIFICATION_URL", "")
+    if not url:
+        logger.warning("QUEUE_NOTIFICATION_URL not configured, skipping notification")
+        return
+
+    payload = {
+        "rfcs": ", ".join(str(n) for n in sorted(rfctobe_ids)),
+    }
+
+    try:
+        response = requests.post(
+            url,
+            json=payload,
+            timeout=30,
+            headers={"Content-Type": "application/json"},
+        )
+        response.raise_for_status()
+        logger.info(f"Successfully notified queue system about RFCs: {rfctobe_ids}")
+    except requests.RequestException as exc:
+        logger.error(f"Failed to notify queue system about RFCs {rfctobe_ids}: {exc}")
+        # Retry with exponential backoff
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries)) from exc
+
+
+@shared_task(bind=True, max_retries=5)
+def notify_datatracker_task(self, rfctobe_ids):
+    """Notify datatracker about published RFC changes
+
+    Args:
+        rfctobe_ids: List of RfcToBe primary keys
+    """
+    for rfctobe_id in rfctobe_ids:
+        try:
+            rfc_to_be = RfcToBe.objects.get(pk=rfctobe_id)
+        except RfcToBe.DoesNotExist:
+            logger.error(f"RfcToBe with id {rfctobe_id} does not exist")
+            continue
+
+        logger.info(f"Notifying datatracker about RFC {rfc_to_be.rfc_number}")
+
+        try:
+            publish_rfc_metadata(rfc_to_be)
+            logger.info(
+                f"Notified datatracker about updates in published RFC "
+                f"{rfc_to_be.rfc_number}"
+            )
+        except Exception as exc:
+            logger.error(
+                f"Failed to notify datatracker about RFC {rfc_to_be.rfc_number}: {exc}"
+            )
+            raise self.retry(exc=exc, countdown=60 * (2**self.request.retries)) from exc
+
+
+@shared_task(bind=True)
+def process_rfctobe_changes_from_history(self):
+    """Poll history tables and send batched notifications for changes
+    (runs every minute)"""
+
+    logger.info("Processing RfcToBe changes from history")
+
+    # Get last processed timestamp - default to 2 minutes ago on first run
+    cache_key = "rfctobe_history_last_check"
+    last_check = cache.get(cache_key)
+    if last_check is None:
+        last_check = timezone.now() - timezone.timedelta(minutes=2)
+        logger.info(f"First run, processing changes since {last_check}")
+
+    current_check = timezone.now()
+
+    # Track affected RFCs for queue notifications (in-progress RFCs)
+    queue_rfcs = set()
+
+    # Track affected RFCs for datatracker notifications (published RFCs)
+    published_rfc_ids = set()
+
+    # Check RfcToBe direct changes
+    for hist in RfcToBe.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("disposition", "draft"):
+        if hist.disposition:
+            if hist.disposition.slug == "published":
+                # Track published RFCs for immediate datatracker notification
+                published_rfc_ids.add(hist.id)
+            elif hist.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                # Track in-progress RFCs for batched queue notification
+                queue_rfcs.add(hist.id)
+
+    # Check Assignment changes (queue only)
+    for hist in Assignment.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("rfc_to_be__disposition"):
+        rfc = hist.rfc_to_be
+        if rfc and rfc.disposition:
+            if rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                queue_rfcs.add(rfc.id)
+
+    # Check RfcAuthor changes
+    for hist in RfcAuthor.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("rfc_to_be__disposition"):
+        rfc = hist.rfc_to_be
+        if rfc and rfc.disposition:
+            if rfc.disposition.slug == "published":
+                published_rfc_ids.add(rfc.id)
+            elif rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                queue_rfcs.add(rfc.id)
+
+    # Check RpcRelatedDocument changes
+    for hist in RpcRelatedDocument.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("source", "source__disposition"):
+        rfc = hist.source
+        if rfc and rfc.disposition:
+            if rfc.disposition.slug == "published":
+                published_rfc_ids.add(rfc.id)
+            elif rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                queue_rfcs.add(rfc.id)
+
+    # Check AdditionalEmail changes
+    for hist in AdditionalEmail.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("rfc_to_be__disposition"):
+        rfc = hist.rfc_to_be
+        if rfc and rfc.disposition:
+            if rfc.disposition.slug == "published":
+                published_rfc_ids.add(rfc.id)
+            elif rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                queue_rfcs.add(rfc.id)
+
+    # Check ClusterMembership changes (queue only)
+    for hist in ClusterMember.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("doc"):
+        rfcs = RfcToBe.objects.filter(draft=hist.doc).select_related("disposition")
+        for rfc in rfcs:
+            if rfc.disposition:
+                if rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                    queue_rfcs.add(rfc.id)
+
+    # Check SubseriesMember changes
+    for hist in SubseriesMember.history.filter(
+        history_date__gt=last_check, history_date__lte=current_check
+    ).select_related("rfc_to_be__disposition"):
+        rfc = hist.rfc_to_be
+        if rfc and rfc.disposition:
+            if rfc.disposition.slug == "published":
+                published_rfc_ids.add(rfc.id)
+            elif rfc.disposition.slug not in ASSIGNMENT_INACTIVE_STATES:
+                queue_rfcs.add(rfc.id)
+
+    # Send batched queue notification
+    if queue_rfcs:
+        logger.info(f"Sending batched queue notification for {len(queue_rfcs)} RFCs")
+        notify_queue_task.delay(list(queue_rfcs))
+    else:
+        logger.info("No in-progress RFCs changed")
+
+    # Send datatracker notification for published RFCs
+    if published_rfc_ids:
+        logger.info(
+            f"Sending datatracker notifications for {len(published_rfc_ids)} "
+            "published RFCs"
+        )
+        notify_datatracker_task.delay(list(published_rfc_ids))
+    else:
+        logger.info("No published RFCs changed")
+
+    # Update last processed timestamp
+    cache.set(cache_key, current_check, timeout=3600)
+    logger.info(
+        f"Completed processing history changes. Next check will process changes "
+        f"after {current_check}"
+    )

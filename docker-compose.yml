@@ -58,6 +58,7 @@ services:
     depends_on:
       - db
       - mq
+      - memcache
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

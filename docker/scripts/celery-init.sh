@@ -26,14 +26,14 @@ cleanup () {
   fi
 }
 trap 'trap "" TERM; cleanup' TERM
-echo "Starting celery..."
+echo "Starting celery worker with beat scheduler..."
 watchmedo auto-restart \
           --patterns '*.py' \
           --directory . \
           --recursive \
           --debounce-interval 5 \
           -- \
-          $CELERY --app="${CELERY_APP:-purple}" worker &
+          $CELERY --app="${CELERY_APP:-purple}" worker --beat --loglevel=info &
 celery_pid=$!
 
 # Just chill while celery does its thang

@@ -698,6 +698,7 @@ class RfcAuthor(models.Model):
         blank=False,
     )
     affiliation = models.CharField(max_length=255, null=True, blank=True)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
@@ -723,6 +724,7 @@ class RfcAuthor(models.Model):
 class AdditionalEmail(models.Model):
     email = models.EmailField()
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.email} associated with {self.rfc_to_be}"
@@ -910,6 +912,8 @@ class RpcRelatedDocument(models.Model):
                 "combination must be unique.",
             ),
         ]
+
+    history = HistoricalRecords()
 
     def __str__(self):
         target = self.target_document if self.target_document else self.target_rfctobe
