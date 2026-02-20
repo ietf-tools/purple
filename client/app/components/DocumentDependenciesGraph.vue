@@ -176,6 +176,8 @@ const clusterGraphData = computed(() => {
     }
   }
 
+  let referenceNodes: NodeParam[] = []
+
   newClusterGraphData.nodes.push(
     ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
       const { name, rfcNumber, disposition, references, isReceived } = clusterMember
@@ -183,15 +185,7 @@ const clusterGraphData = computed(() => {
 
       const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
 
-      return [{
-        id: name,
-        rfcToBe: doc,
-        url: `/docs/${name}`,
-        rfcNumber: resolvedRfcNumber,
-        isReceived: Boolean(isReceived),
-        disposition: parseDisposition(disposition),
-      },
-      ...(references ?? []).flatMap(reference => {
+      referenceNodes.push(...(references ?? []).flatMap(reference => {
         const { draftName, targetDraftName } = reference
         const draft = draftName ? rfcsByDraftName.value[draftName] : undefined
         const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
@@ -200,10 +194,24 @@ const clusterGraphData = computed(() => {
           draft ? rfcToBeToNodeParam(draft) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
           target ? rfcToBeToNodeParam(target) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
         ].filter(isNodeParam)
-      })
-      ]
+      }))
+
+      return [{
+        id: name,
+        rfcToBe: doc,
+        url: `/docs/${name}`,
+        rfcNumber: resolvedRfcNumber,
+        isReceived: Boolean(isReceived),
+        disposition: parseDisposition(disposition),
+      }]
     }).filter(isNodeParam)
   )
+
+  referenceNodes = referenceNodes.filter(
+    // only include reference nodes if they weren't already mentioned
+    referenceNode => !newClusterGraphData.nodes.some(graphDataNode => graphDataNode.id === referenceNode.id)
+  )
+  newClusterGraphData.nodes.push(...referenceNodes)
 
   newClusterGraphData.links.push(
     ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
@@ -225,6 +233,7 @@ const clusterGraphData = computed(() => {
       }).filter(isLinkParam) : null
     }).filter(isLinkParam)
   )
+
 
   newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
   newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))

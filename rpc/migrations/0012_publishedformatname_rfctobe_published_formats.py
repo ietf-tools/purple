@@ -1,0 +1,32 @@
+# Copyright The IETF Trust 2026, All Rights Reserved
+
+from django.db import migrations, models
+
+
+class Migration(migrations.Migration):
+    dependencies = [
+        ("rpc", "0011_alter_metadatavalidationresults_options"),
+    ]
+
+    operations = [
+        migrations.CreateModel(
+            name="PublishedFormatName",
+            fields=[
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("desc", models.TextField(blank=True)),
+                ("used", models.BooleanField(default=True)),
+            ],
+            options={
+                "abstract": False,
+            },
+        ),
+        migrations.AddField(
+            model_name="rfctobe",
+            name="published_formats",
+            field=models.ManyToManyField(blank=True, to="rpc.publishedformatname"),
+        ),
+    ]

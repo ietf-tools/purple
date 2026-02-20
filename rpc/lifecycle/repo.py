@@ -121,7 +121,10 @@ class GithubRepository(Repository):
             manifest = json.loads(contents.decoded_content)
             self.validate_manifest(manifest)
         except Exception as err:
-            raise RepositoryError from err
+            logger.exception("Error validating manifest from %s", self.repo.name)
+            raise RepositoryError(
+                f"Error validating manifest from {self.repo.name}: {err}"
+            ) from err
         return manifest
 
     def get_file(self, path: PurePath | str) -> GithubRepositoryFile:

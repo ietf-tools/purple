@@ -272,6 +272,8 @@ class RfcToBe(models.Model):
         help_text="Whether document has consensus (None=unknown)",
     )
 
+    published_formats = models.ManyToManyField("PublishedFormatName", blank=True)
+
     history = HistoricalRecords(m2m_fields=[labels])
 
     class Meta:
@@ -407,6 +409,10 @@ class DispositionName(Name):
 
 
 class SourceFormatName(Name):
+    pass
+
+
+class PublishedFormatName(Name):
     pass
 
 
