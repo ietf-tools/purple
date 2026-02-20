@@ -330,6 +330,22 @@ class RfcToBe(models.Model):
             rpcrelateddocument_target_set__relationship_id="updates",
         )
 
+    @property
+    def obsoleted_by(self) -> models.QuerySet["RfcToBe"]:
+        """RfcToBes that obsoletes this RfcToBe"""
+        return RfcToBe.objects.filter(
+            rpcrelateddocument__target_rfctobe=self,
+            rpcrelateddocument__relationship_id="obs",
+        )
+
+    @property
+    def updated_by(self) -> models.QuerySet["RfcToBe"]:
+        """RfcToBes that updates this RfcToBe"""
+        return RfcToBe.objects.filter(
+            rpcrelateddocument__target_rfctobe=self,
+            rpcrelateddocument__relationship_id="updates",
+        )
+
     @dataclass
     class Interval:
         start: datetime.datetime
