@@ -178,7 +178,7 @@ DOI_AUTHOR_ORGS = [
     "IAB",
 ]
 
-# Errata notification
+# Queue notification
 QUEUE_NOTIFICATION_URL = os.environ.get("QUEUE_NOTIFICATION_URL")
 
 # Github

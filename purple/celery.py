@@ -47,3 +47,16 @@ def debug_log_task():
         "debug_log_task executed at "
         + datetime.datetime.now(tz=datetime.UTC).isoformat()
     )
+
+
+# Celery Beat schedule for periodic tasks
+app.conf.beat_schedule = {
+    "process-rfctobe-changes-every-minute": {
+        "task": "rpc.tasks.process_rfctobe_changes_from_history",
+        "schedule": 60.0,  # Run every 60 seconds
+        "options": {
+            "expires": 55,  # Task expires after 55 seconds to avoid overlap
+        },
+    },
+}
+app.conf.timezone = "UTC"

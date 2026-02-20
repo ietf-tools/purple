@@ -28,9 +28,11 @@ RUN echo "source /usr/local/share/django/extras/django_bash_completion" >> /home
 COPY docker/scripts/app-init.sh /docker-init.sh
 COPY docker/scripts/app-start.sh /docker-start.sh
 COPY docker/scripts/celery-init.sh /celery-init.sh
+COPY docker/scripts/celery-beat-init.sh /celery-beat-init.sh
 RUN sed -i 's/\r$//' /docker-init.sh && chmod +x /docker-init.sh
 RUN sed -i 's/\r$//' /docker-start.sh && chmod +x /docker-start.sh
 RUN sed -i 's/\r$//' /celery-init.sh && chmod +x /celery-init.sh
+RUN sed -i 's/\r$//' /celery-beat-init.sh && chmod +x /celery-beat-init.sh
 
 # Fix user UID / GID to match host
 RUN groupmod --gid $USER_GID $USERNAME \
