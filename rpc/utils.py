@@ -99,7 +99,13 @@ def get_rfc_text_index_entries():
                 else rfc.published_at.strftime("%B %Y")
             )
 
-            formats = ", ".join(["TXT", "HTML"])  # TODO: Populate formats
+            # formats
+            FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
+            formats = ", ".join(
+                rfc.published_formats.filter(slug__in=FORMATS_FOR_INDEX).values_list(
+                    "slug", flat=True
+                )
+            ).upper()
 
             # obsoletes
             obsoletes = ""
