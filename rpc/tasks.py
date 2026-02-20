@@ -196,13 +196,11 @@ def notify_queue_task(self, rfctobe_ids):
             headers={"Content-Type": "application/json"},
         )
         response.raise_for_status()
-        logger.info(
-            f"Successfully notified queue system about RFCs: {rfctobe_ids}"
-        )
+        logger.info(f"Successfully notified queue system about RFCs: {rfctobe_ids}")
     except requests.RequestException as exc:
         logger.error(f"Failed to notify queue system about RFCs {rfctobe_ids}: {exc}")
         # Retry with exponential backoff
-        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries))
+        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries)) from exc
 
 
 @shared_task(bind=True, max_retries=5)
@@ -219,9 +217,7 @@ def notify_datatracker_task(self, rfctobe_ids):
             logger.error(f"RfcToBe with id {rfctobe_id} does not exist")
             continue
 
-        logger.info(
-            f"Notifying datatracker about RFC {rfc_to_be.rfc_number}"
-        )
+        logger.info(f"Notifying datatracker about RFC {rfc_to_be.rfc_number}")
 
         try:
             publish_rfc_metadata(rfc_to_be)
@@ -335,9 +331,7 @@ def process_rfctobe_changes_from_history(self):
 
     # Send batched queue notification
     if queue_rfcs:
-        logger.info(
-            f"Sending batched queue notification for {len(queue_rfcs)} RFCs"
-        )
+        logger.info(f"Sending batched queue notification for {len(queue_rfcs)} RFCs")
         notify_queue_task.delay(list(queue_rfcs))
     else:
         logger.info("No in-progress RFCs changed")
