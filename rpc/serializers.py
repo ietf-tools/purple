@@ -787,6 +787,7 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     draft_name = serializers.SerializerMethodField()
     target_rfc_number = serializers.SerializerMethodField()
     source_rfc_number = serializers.SerializerMethodField()
+    target_disposition = serializers.SerializerMethodField()
 
     class Meta:
         model = RpcRelatedDocument
@@ -797,6 +798,7 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
             "target_draft_name",
             "target_rfc_number",
             "source_rfc_number",
+            "target_disposition",
         ]
 
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
@@ -820,6 +822,13 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     def get_source_rfc_number(self, obj: RpcRelatedDocument) -> int:
         """Get the RFC number of the source document, if available"""
         return obj.source.rfc_number
+
+    @extend_schema_field(serializers.CharField())
+    def get_target_disposition(self, obj: RpcRelatedDocument) -> str:
+        """Get the disposition of the target document"""
+        if obj.target_rfctobe and obj.target_rfctobe.disposition:
+            return obj.target_rfctobe.disposition.slug
+        return None
 
 
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
