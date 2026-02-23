@@ -5128,6 +5128,9 @@ components:
         source_rfc_number:
           type: integer
           readOnly: true
+        target_disposition:
+          type: string
+          readOnly: true
       required:
       - relationship
     RpcRelatedDocumentRequest:
