@@ -259,8 +259,12 @@ def process_rfctobe_changes_from_history(self):
         # Check for recent changes - if changes happened in last minute, abort
         recent_changes_exist = (
             RfcToBe.history.filter(history_date__gt=recent_change_threshold).exists()
-            or Assignment.history.filter(history_date__gt=recent_change_threshold).exists()
-            or RfcAuthor.history.filter(history_date__gt=recent_change_threshold).exists()
+            or Assignment.history.filter(
+                history_date__gt=recent_change_threshold
+            ).exists()
+            or RfcAuthor.history.filter(
+                history_date__gt=recent_change_threshold
+            ).exists()
             or RpcRelatedDocument.history.filter(
                 history_date__gt=recent_change_threshold
             ).exists()
@@ -290,11 +294,7 @@ def process_rfctobe_changes_from_history(self):
 
         def _should_notify_queue(rfc):
             """Check if RFC should be included in queue notifications"""
-            return (
-                rfc
-                and rfc.disposition
-                and rfc.disposition.slug == "in_progress"
-            )
+            return rfc and rfc.disposition and rfc.disposition.slug == "in_progress"
 
         # Track affected RFCs for queue notifications (in_progress RFCs)
         queue_rfcs = set()
@@ -351,7 +351,9 @@ def process_rfctobe_changes_from_history(self):
                 queue_rfcs.add(hist.rfc_to_be.id)
 
         if queue_rfcs:
-            logger.info(f"Sending batched queue notification for {len(queue_rfcs)} RFCs")
+            logger.info(
+                f"Sending batched queue notification for {len(queue_rfcs)} RFCs"
+            )
             notify_queue_task.delay(list(queue_rfcs))
         else:
             logger.info("No in-progress RFCs changed")
