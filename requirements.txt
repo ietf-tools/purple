@@ -1,5 +1,6 @@
 ./openapi/rpcapi_client
 celery>=5.5.3
+django-celery-beat>=2.5.0
 Django~=5.2
 django-debug-toolbar>=4.0.0
 django-filter>=25.1

@@ -1,14 +1,12 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
-import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.conf import settings
 from django.db.models import F
-from django.utils import timezone
 
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
+from .lifecycle.notifications import process_rfctobe_changes_for_queue
 from .lifecycle.publication import (
     PublicationError,
     TemporaryPublicationError,
@@ -16,16 +14,9 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import (
-    AdditionalEmail,
-    Assignment,
-    ClusterMember,
     MailMessage,
     MetadataValidationResults,
-    PeriodicTaskRun,
-    RfcAuthor,
     RfcToBe,
-    RpcRelatedDocument,
-    SubseriesMember,
 )
 
 logger = get_task_logger(__name__)
@@ -168,200 +159,21 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
     publish_rfctobe(rfctobe, expected_head=expected_head)
 
 
-@shared_task(bind=True, max_retries=5)
-def notify_queue_task(self, rfctobe_ids):
-    """Notify external queue system about in-progress RFC changes
+class NotifyQueueTask(RetryTask):
+    max_retries = 10 # after that, manual intervention is likely needed
+    retry_delay_schedule = [60, 120, 240, 900]
 
-    Args:
-        rfctobe_ids: List of RfcToBe primary keys
-        current_check_time: Timestamp when this notification was triggered
+class NotifyQueueFailure(Exception):
+    pass
+
+@shared_task(base=NotifyQueueTask, autoretry_for=(NotifyQueueFailure,))
+def process_rfctobe_changes_for_queue_task():
     """
-    logger.info(f"Notifying queue system about RFCs: {rfctobe_ids}")
-
-    url = getattr(settings, "QUEUE_NOTIFICATION_URL", "")
-    if not url:
-        logger.warning("QUEUE_NOTIFICATION_URL not configured, skipping notification")
-        return
-
-    payload = {
-        "rfcs": ", ".join(str(n) for n in sorted(rfctobe_ids)),
-    }
+    Celery task to check for changes to in-progress RFCs and send notifications.
+    """
 
     try:
-        response = requests.post(
-            url,
-            json=payload,
-            timeout=30,
-            headers={"Content-Type": "application/json"},
-        )
-        response.raise_for_status()
-        logger.info(f"Successfully notified queue system about RFCs: {rfctobe_ids}")
-
-        # Update last successful run timestamp
-        PeriodicTaskRun.objects.update_or_create(
-            task_name="notify_queue",
-            defaults={"last_run_at": timezone.now(), "is_running": False},
-        )
-    except requests.RequestException as exc:
-        logger.error(
-            f"Failed to notify queue system about RFCs {rfctobe_ids}: {exc} "
-            f"(attempt {self.request.retries + 1}/{self.max_retries + 1})"
-        )
-
-        if self.request.retries >= self.max_retries:
-            logger.critical(
-                f"Exhausted retries for queue notification. "
-                f"RFCs {rfctobe_ids} were not notified."
-            )
-            # Mark as not running to unblock the periodic task
-            PeriodicTaskRun.objects.filter(
-                task_name="process_rfctobe_changes_from_history"
-            ).update(is_running=False)
-            return
-
-        # Retry with exponential backoff
-        raise self.retry(exc=exc, countdown=60 * (2**self.request.retries)) from exc
-
-
-@shared_task(bind=True)
-def process_rfctobe_changes_from_history(self):
-    """Poll history tables and send batched notifications for changes
-    (runs every minute)"""
-
-    logger.info("Processing RfcToBe changes from history")
-
-    current_check_time = timezone.now()
-
-    # Check if task is already running
-    try:
-        task_run = PeriodicTaskRun.objects.get(
-            task_name="process_rfctobe_changes_from_history"
-        )
-        if task_run.is_running:
-            logger.info("Task is already running, skipping this execution")
-            return
-        task_run.is_running = True
-        task_run.save()
-    except PeriodicTaskRun.DoesNotExist:
-        # First run - create the record
-        task_run = PeriodicTaskRun.objects.create(
-            task_name="process_rfctobe_changes_from_history",
-            last_run_at=current_check_time,
-            is_running=True,
-        )
-
-    try:
-        recent_change_threshold = current_check_time - timezone.timedelta(minutes=1)
-
-        # Check for recent changes - if changes happened in last minute, abort
-        recent_changes_exist = (
-            RfcToBe.history.filter(history_date__gt=recent_change_threshold).exists()
-            or Assignment.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-            or RfcAuthor.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-            or RpcRelatedDocument.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-            or AdditionalEmail.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-            or ClusterMember.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-            or SubseriesMember.history.filter(
-                history_date__gt=recent_change_threshold
-            ).exists()
-        )
-
-        if recent_changes_exist:
-            logger.info(
-                "Changes detected in last minute, skipping notification to avoid "
-                "notifying during active edits"
-            )
-            task_run.is_running = False
-            task_run.save()
-            return
-
-        # Get last successful notification time from DB
-        last_check = task_run.last_run_at
-        logger.info(f"Processing changes since last notification at {last_check}")
-
-        def _should_notify_queue(rfc):
-            """Check if RFC should be included in queue notifications"""
-            return rfc and rfc.disposition and rfc.disposition.slug == "in_progress"
-
-        # Track affected RFCs for queue notifications (in_progress RFCs)
-        queue_rfcs = set()
-
-        # Check RfcToBe direct changes
-        for hist in RfcToBe.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("disposition", "draft"):
-            if _should_notify_queue(hist):
-                queue_rfcs.add(hist.id)
-
-        # Check Assignment changes
-        for hist in Assignment.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("rfc_to_be__disposition"):
-            if _should_notify_queue(hist.rfc_to_be):
-                queue_rfcs.add(hist.rfc_to_be.id)
-
-        # Check RfcAuthor changes
-        for hist in RfcAuthor.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("rfc_to_be__disposition"):
-            if _should_notify_queue(hist.rfc_to_be):
-                queue_rfcs.add(hist.rfc_to_be.id)
-
-        # Check RpcRelatedDocument changes
-        for hist in RpcRelatedDocument.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("source", "source__disposition"):
-            if _should_notify_queue(hist.source):
-                queue_rfcs.add(hist.source.id)
-
-        # Check AdditionalEmail changes
-        for hist in AdditionalEmail.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("rfc_to_be__disposition"):
-            if _should_notify_queue(hist.rfc_to_be):
-                queue_rfcs.add(hist.rfc_to_be.id)
-
-        # Check ClusterMembership changes
-        for hist in ClusterMember.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("doc"):
-            rfcs = RfcToBe.objects.filter(draft=hist.doc).select_related("disposition")
-            for rfc in rfcs:
-                if _should_notify_queue(rfc):
-                    queue_rfcs.add(rfc.id)
-
-        # Check SubseriesMember changes
-        for hist in SubseriesMember.history.filter(
-            history_date__gt=last_check, history_date__lte=current_check_time
-        ).select_related("rfc_to_be__disposition"):
-            if _should_notify_queue(hist.rfc_to_be):
-                queue_rfcs.add(hist.rfc_to_be.id)
-
-        if queue_rfcs:
-            logger.info(
-                f"Sending batched queue notification for {len(queue_rfcs)} RFCs"
-            )
-            notify_queue_task.delay(list(queue_rfcs))
-        else:
-            logger.info("No in-progress RFCs changed")
-
-        task_run.last_run_at = current_check_time
-        task_run.is_running = False
-        task_run.save()
-
-        logger.info("Completed processing history changes")
-
+        process_rfctobe_changes_for_queue()
     except Exception as e:
-        logger.exception(
-            f"Unexpected error in process_rfctobe_changes_from_history: {e}"
-        )
+        logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
+        raise NotifyQueueFailure from e

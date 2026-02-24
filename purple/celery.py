@@ -56,8 +56,8 @@ _process_rfctobe_changes_schedule = getattr(
 )
 
 app.conf.beat_schedule = {
-    "process-rfctobe-changes-every-minute": {
-        "task": "rpc.tasks.process_rfctobe_changes_from_history",
+    "process-rfctobe-changes-for-queue": {
+        "task": "rpc.tasks.process_rfctobe_changes_for_queue_task",
         "schedule": _process_rfctobe_changes_schedule,
         "options": {
             # Set expires less than the schedule to prevent overlapping runs

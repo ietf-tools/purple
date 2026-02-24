@@ -33,7 +33,7 @@ watchmedo auto-restart \
           --recursive \
           --debounce-interval 5 \
           -- \
-          $CELERY --app="${CELERY_APP:-purple}" worker --beat --loglevel=info &
+          $CELERY --app="${CELERY_APP:-purple}" worker --loglevel=INFO "$@" &
 celery_pid=$!
 
 # Just chill while celery does its thang
