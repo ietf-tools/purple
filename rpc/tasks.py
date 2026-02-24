@@ -147,8 +147,8 @@ def validate_metadata_task(self, rfc_to_be_id):
         _save_metadata_results(rfc_to_be, head_sha, metadata, status)
 
     except Exception as e:
-        logger.exception(f"Error in validate_metadata_task for RfcToBe {rfc_to_be_id}")
-        detail = f"{type(e).__name__}: {str(e)}" if str(e) else type(e).__name__
+        logger.error(f"Error in validate_metadata_task: {e}")
+        detail = str(e)
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
 
