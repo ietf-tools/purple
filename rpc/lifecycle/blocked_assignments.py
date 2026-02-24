@@ -143,9 +143,11 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         if refqueue_qs.exists():
             for ref in refqueue_qs:
                 # block if publisher is neither done, active, or pending
-                publisher_done_qs = ref.target_rfctobe.assignment_set.filter(
-                    role__slug="publisher", state=Assignment.State.DONE
-                ).exists()
+                publisher_done_qs = (
+                    ref.target_rfctobe.complete_activities()
+                    .filter(role__slug="publisher")
+                    .exists()
+                )
                 publisher_active_qs = (
                     ref.target_rfctobe.assignment_set.filter(role__slug="publisher")
                     .active()
