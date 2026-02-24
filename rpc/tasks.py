@@ -3,11 +3,9 @@ import requests
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.conf import settings
-from django.core.cache import cache
 from django.db.models import F
 from django.utils import timezone
 
-from datatracker.utils.publication import publish_rfc_metadata
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
@@ -18,7 +16,6 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import (
-    ASSIGNMENT_INACTIVE_STATES,
     AdditionalEmail,
     Assignment,
     ClusterMember,
@@ -214,7 +211,7 @@ def notify_queue_task(self, rfctobe_ids):
         if self.request.retries >= self.max_retries:
             logger.critical(
                 f"Exhausted retries for queue notification. "
-                f"RFCs {rfctobe_ids} were not notified. Manual intervention may be needed."
+                f"RFCs {rfctobe_ids} were not notified."
             )
             # Mark as not running to unblock the periodic task
             PeriodicTaskRun.objects.filter(
