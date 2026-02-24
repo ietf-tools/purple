@@ -40,6 +40,29 @@ class DumpInfo(models.Model):
     timestamp = models.DateTimeField()
 
 
+class PeriodicTaskRun(models.Model):
+    """Track when periodic tasks last ran successfully"""
+
+    task_name = models.CharField(max_length=255, unique=True)
+    last_run_at = models.DateTimeField()
+    is_running = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "Periodic task run"
+        verbose_name_plural = "Periodic task runs"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["task_name"],
+                condition=models.Q(is_running=True),
+                name="unique_running_task",
+                violation_error_message="This task is already running",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.task_name} last ran at {self.last_run_at}"
+
+
 class RpcPerson(models.Model):
     datatracker_person = models.OneToOneField(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT

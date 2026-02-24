@@ -3,6 +3,7 @@ import os
 
 from celery import Celery
 from celery import signals as celery_signals
+from django.conf import settings
 
 
 # Disable celery's internal logging configuration, we set it up via Django
@@ -50,12 +51,17 @@ def debug_log_task():
 
 
 # Celery Beat schedule for periodic tasks
+_process_rfctobe_changes_schedule = getattr(
+    settings, "CELERY_PROCESS_RFCTOBE_CHANGES_SCHEDULE", 300.0
+)
+
 app.conf.beat_schedule = {
     "process-rfctobe-changes-every-minute": {
         "task": "rpc.tasks.process_rfctobe_changes_from_history",
-        "schedule": 60.0,  # Run every 60 seconds
+        "schedule": _process_rfctobe_changes_schedule,
         "options": {
-            "expires": 55,  # Task expires after 55 seconds to avoid overlap
+            # Set expires less than the schedule to prevent overlapping runs
+            "expires": _process_rfctobe_changes_schedule - 5,
         },
     },
 }
