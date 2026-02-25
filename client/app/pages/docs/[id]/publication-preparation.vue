@@ -324,7 +324,7 @@ const fetchAndVerifyMetadata = async () => {
   const startTimeMs = Date.now()
   let hasTimedOut = false
   const endTimeMs = startTimeMs + MAXIMUM_ATTEMPTS_DURATION_MS
-  let attemptCount = 0f
+  let attemptCount = 0
 
   try {
     do {
