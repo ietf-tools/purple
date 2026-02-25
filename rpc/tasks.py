@@ -13,11 +13,8 @@ from .lifecycle.publication import (
     publish_rfctobe,
 )
 from .lifecycle.repo import GithubRepository
-from .models import (
-    MailMessage,
-    MetadataValidationResults,
-    RfcToBe,
-)
+from .models import MailMessage, MetadataValidationResults, RfcToBe
+from .rfcindex import createRfcTxtIndex
 
 logger = get_task_logger(__name__)
 
@@ -168,3 +165,8 @@ def process_rfctobe_changes_for_queue_task():
         process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
+        
+        
+@shared_task(bind=True)
+def create_index(self):
+    createRfcTxtIndex()
