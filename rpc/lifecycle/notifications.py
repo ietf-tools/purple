@@ -9,11 +9,11 @@ from rpc.models import (
     AdditionalEmail,
     Assignment,
     ClusterMember,
-    PeriodicTaskRun,
     RfcAuthor,
     RfcToBe,
     RpcRelatedDocument,
     SubseriesMember,
+    TaskRun,
 )
 
 logger = logging.getLogger(__name__)
@@ -145,7 +145,7 @@ def process_rfctobe_changes_for_queue():
     current_check_time = timezone.now()
 
     with transaction.atomic():
-        task_run, _ = PeriodicTaskRun.objects.select_for_update().get_or_create(
+        task_run, _ = TaskRun.objects.select_for_update().get_or_create(
             task_name="process_rfctobe_changes_for_queue",
             defaults={"last_run_at": current_check_time, "is_running": False},
         )

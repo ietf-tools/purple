@@ -40,7 +40,7 @@ class DumpInfo(models.Model):
     timestamp = models.DateTimeField()
 
 
-class PeriodicTaskRun(models.Model):
+class TaskRun(models.Model):
     """Track when periodic tasks last ran successfully"""
 
     task_name = models.CharField(max_length=255, unique=True)
@@ -48,8 +48,6 @@ class PeriodicTaskRun(models.Model):
     is_running = models.BooleanField(default=False)
 
     class Meta:
-        verbose_name = "Periodic task run"
-        verbose_name_plural = "Periodic task runs"
         constraints = [
             models.UniqueConstraint(
                 fields=["task_name"],

@@ -18,7 +18,6 @@ from .models import (
     Label,
     MailMessage,
     MetadataValidationResults,
-    PeriodicTaskRun,
     RfcAuthor,
     RfcToBe,
     RfcToBeLabel,
@@ -31,6 +30,7 @@ from .models import (
     StdLevelName,
     StreamName,
     SubseriesMember,
+    TaskRun,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -211,7 +211,7 @@ class MetadataValidationResultsAdmin(admin.ModelAdmin):
     raw_id_fields = ["rfc_to_be"]
 
 
-@admin.register(PeriodicTaskRun)
-class PeriodicTaskRunAdmin(admin.ModelAdmin):
+@admin.register(TaskRun)
+class TaskRunAdmin(admin.ModelAdmin):
     list_display = ["task_name", "last_run_at", "is_running"]
     search_fields = ["task_name"]

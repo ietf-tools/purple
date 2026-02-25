@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.CreateModel(
-            name="PeriodicTaskRun",
+            name="TaskRun",
             fields=[
                 (
                     "id",
@@ -26,8 +26,6 @@ class Migration(migrations.Migration):
                 ("is_running", models.BooleanField(default=False)),
             ],
             options={
-                "verbose_name": "Periodic task run",
-                "verbose_name_plural": "Periodic task runs",
                 "constraints": [
                     models.UniqueConstraint(
                         condition=models.Q(("is_running", True)),
