@@ -2,8 +2,6 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
-from django.template.loader import render_to_string
-from django.utils import timezone
 
 from utils.task_utils import RetryTask
 
@@ -15,7 +13,7 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import MailMessage, MetadataValidationResults, RfcToBe
-from .utils import get_rfc_text_index_entries
+from .rfcindex import createRfcTxtIndex
 
 logger = get_task_logger(__name__)
 
@@ -159,18 +157,4 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
 
 @shared_task(bind=True)
 def create_index(self):
-    """
-    Create index of published documents
-    """
-    DATE_FMT = "%m/%d/%Y"
-    created_on = timezone.now().strftime(DATE_FMT)
-    logger.info("Creating rfc-index.txt")
-    index = render_to_string(
-        "rpc/index/rfc-index.txt",
-        {
-            "created_on": created_on,
-            "rfcs": get_rfc_text_index_entries(),
-        },
-    )
-    print(index)  # TODO: Write to a blob store
-    logger.info("Created rfc-index.txt")
+    createRfcTxtIndex()
