@@ -165,8 +165,8 @@ def process_rfctobe_changes_for_queue_task():
         process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
-        
-        
+
+
 @shared_task(bind=True)
 def create_index(self):
     createRfcTxtIndex()
