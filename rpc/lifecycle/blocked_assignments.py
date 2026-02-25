@@ -142,25 +142,15 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
-                # block if publisher is neither done, active, or pending
-                publisher_done_qs = (
-                    ref.target_rfctobe.complete_activities()
-                    .filter(role__slug="publisher")
-                    .exists()
+                # block if publisher has no done or active assignment
+                publisher_qs = ref.target_rfctobe.assignment_set.filter(
+                    role__slug="publisher"
                 )
-                publisher_active_qs = (
-                    ref.target_rfctobe.assignment_set.filter(role__slug="publisher")
-                    .active()
-                    .exists()
-                )
-                publisher_pending_qs = (
-                    ref.target_rfctobe.pending_activities()
-                    .filter(slug="publisher")
-                    .exists()
-                )
-                if not (
-                    publisher_done_qs or publisher_active_qs or publisher_pending_qs
-                ):
+                publisher_done_or_active = (
+                    publisher_qs.active()
+                    | publisher_qs.filter(state=Assignment.State.DONE)
+                ).exists()
+                if not publisher_done_or_active:
                     reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
         if rfc.finalapproval_set.active().exists():
             reasons.add(BlockingReason.FINAL_APPROVAL_PENDING)
