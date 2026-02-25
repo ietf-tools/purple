@@ -408,10 +408,8 @@ class FinalApprovalSerializer(serializers.Serializer):
                 datatracker_id=overriding_approver_person_id
             )
 
-        if approver_dt_person:
-            instance.approver = approver_dt_person
-        if overriding_approver_dt_person:
-            instance.overriding_approver = overriding_approver_dt_person
+        instance.approver = approver_dt_person
+        instance.overriding_approver = overriding_approver_dt_person
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
