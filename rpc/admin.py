@@ -18,6 +18,7 @@ from .models import (
     Label,
     MailMessage,
     MetadataValidationResults,
+    PeriodicTaskRun,
     RfcAuthor,
     RfcToBe,
     RfcToBeLabel,
@@ -208,3 +209,9 @@ class MetadataValidationResultsAdmin(admin.ModelAdmin):
     list_filter = ["status"]
     search_fields = ["rfc_to_be__rfc_number", "rfc_to_be__draft__name"]
     raw_id_fields = ["rfc_to_be"]
+
+
+@admin.register(PeriodicTaskRun)
+class PeriodicTaskRunAdmin(admin.ModelAdmin):
+    list_display = ["task_name", "last_run_at", "is_running"]
+    search_fields = ["task_name"]
