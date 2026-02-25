@@ -3,6 +3,7 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
+from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
@@ -170,3 +171,10 @@ def process_rfctobe_changes_for_queue_task():
 @shared_task(bind=True)
 def create_index(self):
     createRfcTxtIndex()
+
+
+@shared_task
+def update_blocked_assignments_for_in_progress_rfcs_task():
+    """Process all in_progress RfcToBe instances to apply blocked assignments"""
+    for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
+        apply_blocked_assignment_for_rfc(rfc)
