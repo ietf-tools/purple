@@ -9,6 +9,7 @@ from .models import (
     ActionHolder,
     Assignment,
     ClusterMember,
+    FinalApproval,
     RfcToBe,
     RfcToBeLabel,
     RpcRelatedDocument,
@@ -25,7 +26,14 @@ def defer_apply(rfc: RfcToBe | None):
 def assignment_changed(sender, instance: Assignment, **kwargs):
     if instance.role_id == "blocked":
         return
-    defer_apply(getattr(instance, "rfc_to_be", None))
+    rfc = getattr(instance, "rfc_to_be", None)
+    defer_apply(rfc)
+    # Re-evaluate any RFC that has this rfc as a refqueue target
+    if rfc:
+        for related in RpcRelatedDocument.objects.filter(
+            target_rfctobe=rfc, relationship="refqueue"
+        ):
+            defer_apply(related.source)
 
 
 @receiver([post_save, post_delete], sender=ActionHolder)
@@ -42,6 +50,11 @@ def related_doc_changed(sender, instance: RpcRelatedDocument, **kwargs):
 def cluster_member_changed(sender, instance: ClusterMember, **kwargs):
     rfc_to_be = RfcToBe.objects.filter(draft=instance.doc).first()
     defer_apply(rfc_to_be)
+
+
+@receiver([post_save, post_delete], sender=FinalApproval)
+def final_approval_changed(sender, instance: FinalApproval, **kwargs):
+    defer_apply(getattr(instance, "rfc_to_be", None))
 
 
 @receiver(m2m_changed, sender=RfcToBe.labels.through)
@@ -63,6 +76,8 @@ class SignalsManager:
         (post_delete, related_doc_changed, RpcRelatedDocument),
         (post_save, cluster_member_changed, ClusterMember),
         (post_delete, cluster_member_changed, ClusterMember),
+        (post_save, final_approval_changed, FinalApproval),
+        (post_delete, final_approval_changed, FinalApproval),
         (m2m_changed, rfc_labels_m2m_changed, RfcToBe.labels.through),
     ]
 
