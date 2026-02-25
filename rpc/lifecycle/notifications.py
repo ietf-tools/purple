@@ -24,10 +24,10 @@ def notify_red_precompute(rfctobe_ids):
 
     logger.info(f"Notifying RED precompute system about RFCs: {rfctobe_ids}")
 
-    url = getattr(settings, "PURPLE_TRIGGER_RED_PRECOMPUTE_URL", "")
+    url = getattr(settings, "TRIGGER_RED_PRECOMPUTE_URL", "")
     if not url:
         logger.warning(
-            "PURPLE_TRIGGER_RED_PRECOMPUTE_URL not configured, skipping notification"
+            "TRIGGER_RED_PRECOMPUTE_URL not configured, skipping notification"
         )
         return
 
