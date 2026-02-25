@@ -179,8 +179,6 @@ DOI_AUTHOR_ORGS = [
     "IAB",
 ]
 
-# Queue notification
-QUEUE_NOTIFICATION_URL = os.environ.get("QUEUE_NOTIFICATION_URL")
 
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
@@ -195,3 +193,5 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 # Window after after a missed deadline before abandoning a cron task
 CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds
+
+TRIGGER_RED_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_RED_PRECOMPUTE_URL")

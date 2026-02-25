@@ -19,18 +19,20 @@ from rpc.models import (
 logger = logging.getLogger(__name__)
 
 
-def notify_queue(rfctobe_ids):
-    """Notify external queue system about in-progress RFC changes."""
+def notify_red_precompute(rfctobe_ids):
+    """Notify external system about in-progress RFC changes."""
 
-    logger.info(f"Notifying queue system about RFCs: {rfctobe_ids}")
+    logger.info(f"Notifying RED precompute system about RFCs: {rfctobe_ids}")
 
-    url = getattr(settings, "QUEUE_NOTIFICATION_URL", "")
+    url = getattr(settings, "PURPLE_TRIGGER_RED_PRECOMPUTE_URL", "")
     if not url:
-        logger.warning("QUEUE_NOTIFICATION_URL not configured, skipping notification")
+        logger.warning(
+            "PURPLE_TRIGGER_RED_PRECOMPUTE_URL not configured, skipping notification"
+        )
         return
 
     payload = {
-        "rfcs": ", ".join(str(n) for n in sorted(rfctobe_ids)),
+        "rfcs": ",".join(str(n) for n in sorted(rfctobe_ids)),
     }
 
     response = requests.post(
@@ -40,7 +42,9 @@ def notify_queue(rfctobe_ids):
         headers={"Content-Type": "application/json"},
     )
     response.raise_for_status()
-    logger.info(f"Successfully notified queue system about RFCs: {rfctobe_ids}")
+    logger.info(
+        f"Successfully notified RED precompute system about RFCs: {rfctobe_ids}"
+    )
 
 
 def get_updated_rfcs_since(current_check_time):
@@ -162,8 +166,6 @@ def process_rfctobe_changes_for_queue():
                 "Changes detected in last minute, skipping notification to avoid "
                 "notifying during active edits"
             )
-            task_run.is_running = False
-            task_run.save()
             return
 
         # Get last successful notification time from DB
@@ -174,9 +176,10 @@ def process_rfctobe_changes_for_queue():
 
         if queue_rfcs:
             logger.info(
-                f"Sending batched queue notification for {len(queue_rfcs)} RFCs"
+                f"Sending batched RED precompute notification for {len(queue_rfcs)} "
+                "RFCs"
             )
-            notify_queue(list(queue_rfcs))
+            notify_red_precompute(list(queue_rfcs))
         else:
             logger.info("No in-progress RFCs changed")
 
@@ -185,9 +188,8 @@ def process_rfctobe_changes_for_queue():
 
     except Exception as e:
         logger.exception(f"Unexpected error in process_rfctobe_changes_for_queue: {e}")
-        task_run.is_running = False
-        task_run.save()
         raise
 
-    task_run.is_running = False
-    task_run.save()
+    finally:
+        task_run.is_running = False
+        task_run.save()

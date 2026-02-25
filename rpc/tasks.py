@@ -159,23 +159,12 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
     publish_rfctobe(rfctobe, expected_head=expected_head)
 
 
-class NotifyQueueTask(RetryTask):
-    max_retries = 10  # after that, manual intervention is likely needed
-    retry_delay_schedule = [60, 120, 240, 900]
-
-
-class NotifyQueueFailure(Exception):
-    pass
-
-
-@shared_task(base=NotifyQueueTask, autoretry_for=(NotifyQueueFailure,))
+@shared_task
 def process_rfctobe_changes_for_queue_task():
     """
     Celery task to check for changes to in-progress RFCs and send notifications.
     """
-
     try:
         process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
-        raise NotifyQueueFailure from e
