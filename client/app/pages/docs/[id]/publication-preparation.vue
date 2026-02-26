@@ -189,6 +189,13 @@
           </div>
         </template>
       </template>
+      <template v-else-if="step.type === 'alreadyPublished'">
+        <div class="text-center">
+          <BaseButton btn-type="default" @click="pushCurrentMetadata">
+            Push current metadata
+          </BaseButton>
+        </div>
+      </template>
     </div>
   </div>
 </template>
@@ -221,7 +228,8 @@ type Step =
   } & MetadataValidationResults
   | { type: 'cancelled' }
   | { type: 'databaseUpdated', error?: string }
-  | { type: 'rfcPosted', error?: string, }
+  | { type: 'rfcPosted', error?: string }
+  | { type: 'alreadyPublished' }
 
 const step = ref<Step>({ type: 'loading' })
 
@@ -256,6 +264,11 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus], () => {
     rfcToBeStatus.value === 'idle' ||
     metadataValidationResultsStatus.value === 'idle'
   ) {
+    return
+  }
+
+  if (rfcToBe.value?.disposition === 'published') {
+    step.value = { type: 'alreadyPublished' }
     return
   }
   if (
@@ -472,6 +485,16 @@ const metadataValidationResultsSyncHandler = async () => {
 
 const cancel = () => {
   step.value = { type: "cancelled" }
+}
+
+const pushCurrentMetadata = async () => {
+  // TODO: call the appropriate API endpoint to push metadata for a published RFC
+  // e.g. await api.documentsPushMetadata({ draftName: draftName.value })
+  snackbar.add({
+    type: 'success',
+    title: 'Metadata pushed successfully',
+    text: ''
+  })
 }
 
 const snackbar = useSnackbar()

@@ -23,7 +23,7 @@ export const docTabsFactory = (draftName: string) => {
     },
     {
       id: 'publication-preparation',
-      name: 'Publication Prep',
+      name: 'Publication',
       to: `/docs/${sanitisedDraftName}/publication-preparation`,
       icon: 'material-symbols:difference-outline' // was 'fluent:checkmark-circle-hint-16-filled'
     },
