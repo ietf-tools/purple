@@ -26,6 +26,11 @@
                   <dd class="relative">
                     <BaseBadge :label="assignment.role" />
                     <AssignmentState :state="assignment.state" />
+                    <template v-if="assignment.role === 'blocked' && blockingReasonNames.length > 0">
+                      <span class="block text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
+                        {{ blockingReasonNames.join(', ') }}
+                      </span>
+                    </template>
                   </dd>
                 </div>
               </dl>
@@ -128,6 +133,12 @@ const initialSelectedLabelIds = computed(() => {
 })
 
 const selectedLabelIds = ref([...initialSelectedLabelIds.value])
+
+const blockingReasonNames = computed(() =>
+  (rawRfcToBe.value?.blockingReasons ?? [])
+    .map((br) => br.reason?.name)
+    .filter((name): name is string => !!name)
+)
 
 const rfcToBe = computed((): CookedDraft | null => {
   if (rawRfcToBe.value) {

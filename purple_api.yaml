@@ -3324,6 +3324,27 @@ components:
       - desc
       - name
       - slug
+    BlockingReasonRequest:
+      type: object
+      description: Serialize BlockingReason model
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+      - desc
+      - name
+      - slug
     Capability:
       type: object
       properties:
@@ -4906,6 +4927,11 @@ components:
           type: string
           description: Repository name (e.g., ietf-tools/purple)
           maxLength: 1000
+        blocking_reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/RfcToBeBlockingReason'
+          readOnly: true
       required:
       - authors
       - boilerplate

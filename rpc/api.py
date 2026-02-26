@@ -813,7 +813,7 @@ class RfcToBeQueryParamsForm(forms.Form):
     ),
 )
 class RfcToBeViewSet(viewsets.ModelViewSet):
-    queryset = RfcToBe.objects.all()
+    queryset = RfcToBe.objects.all().with_blocking_reasons()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
     filter_backends = (

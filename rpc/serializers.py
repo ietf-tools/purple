@@ -655,6 +655,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     additional_emails = AdditionalEmailSerializer(
         source="additionalemail_set", many=True, read_only=True
     )
+    blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
 
     class Meta:
         model = RfcToBe
@@ -692,6 +693,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "iana_status_slug",
             "additional_emails",
             "repository",
+            "blocking_reasons",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
