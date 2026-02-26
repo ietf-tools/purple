@@ -15,3 +15,4 @@ resources:
   - mailpit.yaml
   - memcached.yaml
   - purple.yaml
+  - beat.yaml

@@ -2,6 +2,9 @@
 #
 # Startup script for the celery container
 #
+# Usage: celery-start.sh <worker|beat> [args...]
+#
+# Do not pass the `--app` argument, set CELERY_APP in the environment to control this.
 
 # specify binary locations
 CELERY=/usr/local/bin/celery

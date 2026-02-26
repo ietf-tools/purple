@@ -9,7 +9,7 @@ case "${CONTAINER_ROLE:-backend}" in
         exec ./backend-start.sh
         ;;
     celery)
-        exec ./celery-start.sh
+        exec ./celery-start.sh beat --loglevel=INFO
         ;;
     migrations)
         exec ./migration-start.sh
