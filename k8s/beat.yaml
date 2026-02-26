@@ -24,7 +24,7 @@ spec:
         # Beat Container
         # -----------------------------------------------------
         - name: beat
-          image: "ghcr.io/ietf-tools/errata-backend:$APP_IMAGE_TAG"
+          image: "ghcr.io/ietf-tools/purple-backend:$APP_IMAGE_TAG"
           imagePullPolicy: Always
           volumeMounts:
             - name: beat-tmp
@@ -37,7 +37,7 @@ spec:
               value: "$DEPLOY_UID"
           envFrom:
             - secretRef:
-                name: errata-secrets-env
+                name: purple-secrets-env
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
