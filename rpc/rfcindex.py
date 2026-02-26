@@ -102,7 +102,7 @@ def get_rfc_text_index_entries():
                 (
                     f"{rfc.rfc_number:04d} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
-                    f"(Status: {str(rfc.publication_std_level).upper()}) "
+                    f"(Status: {str(rfc.std_level).upper()}) "
                     f"(DOI: {settings.DOI_PREFIX}/RFC{rfc.rfc_number:04d})"
                 ),
                 width=75,
