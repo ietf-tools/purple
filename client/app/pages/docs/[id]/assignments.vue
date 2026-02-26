@@ -27,9 +27,12 @@
                     <BaseBadge :label="assignment.role" />
                     <AssignmentState :state="assignment.state" />
                     <template v-if="assignment.role === 'blocked' && blockingReasonNames.length > 0">
-                      <span class="block text-xs text-gray-500 dark:text-neutral-400 mt-0.5">
-                        {{ blockingReasonNames.join(', ') }}
-                      </span>
+                      <div class="ml-2 mt-0.5 text-xs text-gray-500 dark:text-neutral-400">
+                        <span class="font-medium">Reasons:</span>
+                        <ul class="list-disc list-inside">
+                          <li v-for="reason in blockingReasonNames" :key="reason">{{ reason }}</li>
+                        </ul>
+                      </div>
                     </template>
                   </dd>
                 </div>
