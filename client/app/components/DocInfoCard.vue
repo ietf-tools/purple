@@ -369,6 +369,18 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Keywords" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="keywords" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., keyword1, keyword2', initialValue: rfcToBe.keywords }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="font-mono">
+                <span v-if="rfcToBe.keywords">{{ rfcToBe.keywords }}</span>
+                <span v-else>(none)</span>
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>
