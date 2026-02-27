@@ -91,7 +91,7 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
 
 
 def choose_files(publication_list):
-    required_types = ["xml", "txt", "html", "pdf", "json", "notprepped"]
+    required_types = ["xml", "txt", "html", "pdf", "notprepped"]
     chosen = {type_: [] for type_ in required_types}
 
     for fileinfo in publication_list:
