@@ -371,7 +371,7 @@
         </DescriptionListItem>
         <DescriptionListItem term="Keywords" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="keywords" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="keywords" :is-read-only="false"
               :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., keyword1, keyword2', initialValue: rfcToBe.keywords }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <div class="font-mono">
