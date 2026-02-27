@@ -32,7 +32,7 @@
               >
                 <span class="font-semibold text-gray-900 dark:text-neutral-100">{{ doc.name }}</span>
                 <span v-if="doc.rfcNumber" class="text-xs text-gray-500 dark:text-neutral-400">RFC {{ doc.rfcNumber }}</span>
-                <span v-if="doc.title" class="truncate text-xs text-gray-400 dark:text-neutral-500">{{ doc.title }}</span>
+                <span v-if="doc.title" class="truncate text-xs text-gray-600 dark:text-neutral-300">{{ doc.title }}</span>
                 <span v-if="doc.disposition" :class="dispositionClass(doc.disposition)" class="ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">{{ doc.disposition }}</span>
               </button>
             </li>
@@ -181,7 +181,7 @@ const dispositionClass = (disposition: string) => {
     case 'in_progress': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
     case 'published':   return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
     case 'withdrawn':   return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
-    default:            return 'bg-gray-100 text-gray-500 dark:bg-neutral-700 dark:text-neutral-400'
+    default:            return 'bg-gray-100 text-gray-700 dark:bg-neutral-700 dark:text-neutral-200'
   }
 }
 
