@@ -40,12 +40,12 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Pages" :spacing="spacing">
+        <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="pages" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1, initialValue: rfcToBe.draft?.pages?.toString() }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              {{ rfcToBe.draft?.pages?.toString() }}
+              {{ rfcToBe.pages?.toString() }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -119,7 +119,7 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Standard Level" :spacing="spacing">
+        <DescriptionListItem term="Status (Standards Track)" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="stdLevel" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
