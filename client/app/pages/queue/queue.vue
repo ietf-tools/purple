@@ -133,16 +133,12 @@ import type { Assignment, Cluster, Label, QueueItem, RpcPerson } from '~/purple_
 import { calculatePeopleWorkload, calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
 import { type QueueTabId, type AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
-import { useSiteStore } from '@/stores/site'
 import { overlayModalKey } from '~/providers/providerKeys'
 
 const SELECT_STYLE = "px-3 py-1 bg-white dark:bg-black border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
 
 const api = useApi()
 const currentTab: QueueTabId = 'queue'
-const route = useRoute()
-const router = useRouter()
-const siteStore = useSiteStore()
 
 const {
   data,
@@ -549,30 +545,7 @@ const table = useVueTable({
   },
 })
 
-const searchQuery = computed({
-  get: () => siteStore.search,
-  set: (value: string) => { siteStore.search = value }
-})
-
-onMounted(() => {
-  if (route.query.search && route.query.search !== siteStore.search) {
-    siteStore.search = route.query.search as string
-  }
-})
-
-watch(() => route.query.search, (newSearch) => {
-  siteStore.search = newSearch as string || ''
-})
-
-watch(() => siteStore.search, (newSearch) => {
-  const query = { ...route.query }
-  if (newSearch) {
-    query.search = newSearch
-  } else {
-    delete query.search
-  }
-  router.replace({ query })
-})
+const searchQuery = ref('')
 
 const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(
   'queue2-clusterslist',

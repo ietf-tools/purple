@@ -9,10 +9,35 @@
     <div class="h-6 w-px bg-gray-900/10 lg:hidden" aria-hidden="true" />
 
     <div class="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-      <form class="relative flex flex-1" action="#" method="GET">
+      <form class="relative flex flex-1" action="#" method="GET" @submit.prevent>
         <label for="search-field" class="sr-only">Search</label>
         <Icon name="uil:search" class="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" aria-hidden="true" />
-        <input id="search-field" v-model="siteStore.search" class="block h-full w-full border-0 py-0 pl-8 pr-0 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-200 placeholder:text-gray-400 dark:placeholder:text-neutral-400 focus:ring-0 sm:text-sm" placeholder="Search..." type="search" name="search" >
+        <input id="search-field" v-model="navSearch" class="block h-full w-full border-0 py-0 pl-8 pr-0 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-200 placeholder:text-gray-400 dark:placeholder:text-neutral-400 focus:ring-0 sm:text-sm"
+          placeholder="Search docs by draft name, RFC number or author" type="search" name="search" autocomplete="off" @focus="showResults = true" @blur="onSearchBlur" >
+        <div
+          v-if="showResults && navSearch.length >= 4"
+          class="absolute left-0 top-full z-50 mt-1 w-full min-w-[280px] max-h-[60vh] overflow-y-auto rounded-lg border bg-white dark:bg-neutral-800 shadow-xl"
+        >
+          <div v-if="searchLoading" class="flex items-center justify-center gap-2 py-4 text-sm text-gray-500 dark:text-neutral-400">
+            <Icon name="ei:spinner-3" class="animate-spin" size="1.2em" />
+            Searching...
+          </div>
+          <div v-else-if="!searchResults?.results?.length" class="py-4 text-center text-sm text-gray-500 dark:text-neutral-400">(no matches)</div>
+          <ul v-else class="divide-y divide-gray-100 dark:divide-neutral-700">
+            <li v-for="doc in searchResults.results" :key="doc.id">
+              <button
+                type="button"
+                class="flex w-full items-baseline gap-2 px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-neutral-700"
+                @mousedown.prevent="navigateTo(`/docs/${doc.name}`); navSearch = ''; showResults = false"
+              >
+                <span class="font-semibold text-gray-900 dark:text-neutral-100">{{ doc.name }}</span>
+                <span v-if="doc.rfcNumber" class="text-xs text-gray-500 dark:text-neutral-400">RFC {{ doc.rfcNumber }}</span>
+                <span v-if="doc.title" class="truncate text-xs text-gray-400 dark:text-neutral-500">{{ doc.title }}</span>
+                <span v-if="doc.disposition" :class="dispositionClass(doc.disposition)" class="ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium">{{ doc.disposition }}</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </form>
       <div class="flex items-center gap-x-4 lg:gap-x-6">
         <!-- Site Theme Switcher -->
@@ -91,6 +116,7 @@
 </template>
 
 <script setup lang="ts">
+import { refDebounced } from '@vueuse/core'
 import { useSiteStore } from '@/stores/site'
 import { useUserStore } from '@/stores/user'
 import { STICKY_DOM_ID } from '~/utils/scroll'
@@ -107,5 +133,56 @@ const userStore = useUserStore()
 const userNavigation = [
   { name: 'Your profile', href: '/' }
 ]
+
+// SEARCH
+
+const api = useApi()
+type DocumentsSearchResponse = Awaited<ReturnType<typeof api.documentsSearch>>
+
+const navSearch = ref('')
+const showResults = ref(false)
+const searchLoading = ref(false)
+const searchResults = ref<DocumentsSearchResponse>()
+
+const debouncedSearch = refDebounced(navSearch, 250)
+
+let previousAbortController: AbortController | undefined
+
+watch(debouncedSearch, async (q) => {
+  if (previousAbortController) {
+    previousAbortController.abort()
+  }
+  if (q.length < 4) {
+    searchResults.value = undefined
+    return
+  }
+  previousAbortController = new AbortController()
+  searchLoading.value = true
+  try {
+    searchResults.value = await api.documentsSearch(
+      { q },
+      { signal: previousAbortController.signal }
+    )
+  } catch {
+    // aborted or network error — ignore
+  } finally {
+    searchLoading.value = false
+  }
+})
+
+const onSearchBlur = () => {
+  // small delay so a click on a result fires before we hide the list
+  setTimeout(() => { showResults.value = false }, 150)
+}
+
+const dispositionClass = (disposition: string) => {
+  switch (disposition) {
+    case 'created':     return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'
+    case 'in_progress': return 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300'
+    case 'published':   return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+    case 'withdrawn':   return 'bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300'
+    default:            return 'bg-gray-100 text-gray-500 dark:bg-neutral-700 dark:text-neutral-400'
+  }
+}
 
 </script>
