@@ -88,6 +88,7 @@ from .serializers import (
     ClusterAddRemoveDocumentSerializer,
     ClusterReorderDocumentsSerializer,
     ClusterSerializer,
+    CreateActionHolderSerializer,
     CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
@@ -1620,6 +1621,7 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
 
 @extend_schema_with_draft_name()
 class ActionHolderViewSet(
+    mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
@@ -1642,6 +1644,15 @@ class ActionHolderViewSet(
                 | Q(target_document__name=draft_name)
             )
         )
+
+    def perform_create(self, serializer):
+        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
+        serializer.save(target_rfctobe=rfc_to_be)
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateActionHolderSerializer
+        return ActionHolderSerializer
 
 
 @extend_schema_with_draft_name()

@@ -205,13 +205,13 @@ class HistoryLastEditSerializer(serializers.Serializer):
 class ActionHolderSerializer(serializers.ModelSerializer):
     """Serialize an ActionHolder with person name"""
 
-    name = serializers.SerializerMethodField(read_only=True)
+    person = BaseDatatrackerPersonSerializer(source="datatracker_person", read_only=True)
 
     class Meta:
         model = ActionHolder
         fields = [
             "id",
-            "name",
+            "person",
             "deadline",
             "since_when",
             "completed",
@@ -226,8 +226,23 @@ class ActionHolderSerializer(serializers.ModelSerializer):
             }
         }
 
-    def get_name(self, actionholder) -> str:
-        return actionholder.datatracker_person.plain_name  # allow prefetched name map?
+
+class CreateActionHolderSerializer(ActionHolderSerializer):
+    """Serializer for creating ActionHolder instances"""
+
+    person_id = serializers.IntegerField(
+        write_only=True,
+        required=True,
+        help_text="Datatracker ID of the person to add as action holder",
+    )
+
+    class Meta(ActionHolderSerializer.Meta):
+        fields = ActionHolderSerializer.Meta.fields + ["person_id"]
+
+    def create(self, validated_data):
+        person_id = validated_data.pop("person_id")
+        dt_person = DatatrackerPerson.objects.get(datatracker_id=person_id)
+        return ActionHolder.objects.create(datatracker_person=dt_person, **validated_data)
 
 
 class AssignmentSerializer(serializers.ModelSerializer):

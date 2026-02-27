@@ -732,6 +732,32 @@ paths:
                 items:
                   $ref: '#/components/schemas/ActionHolder'
           description: ''
+    post:
+      operationId: documents_action_holders_create
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateActionHolderRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateActionHolder'
+          description: ''
   /api/rpc/documents/{draft_name}/action_holders/{id}/:
     get:
       operationId: documents_action_holders_retrieve
@@ -3104,8 +3130,9 @@ components:
         id:
           type: integer
           readOnly: true
-        name:
-          type: string
+        person:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
         deadline:
           type: string
@@ -3517,6 +3544,61 @@ components:
         * `fuchsia` - fuchsia
         * `pink` - pink
         * `rose` - rose
+    CreateActionHolder:
+      type: object
+      description: Serializer for creating ActionHolder instances
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        person:
+          allOf:
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
+          readOnly: true
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        since_when:
+          type: string
+          format: date-time
+          readOnly: true
+        completed:
+          type: string
+          format: date-time
+          nullable: true
+          description: The action is considered done when the completed field is set
+            with a datetime.
+        comment:
+          type: string
+        body:
+          type: string
+          maxLength: 64
+    CreateActionHolderRequest:
+      type: object
+      description: Serializer for creating ActionHolder instances
+      properties:
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+        completed:
+          type: string
+          format: date-time
+          nullable: true
+          description: The action is considered done when the completed field is set
+            with a datetime.
+        comment:
+          type: string
+        body:
+          type: string
+          maxLength: 64
+        person_id:
+          type: integer
+          writeOnly: true
+          description: Datatracker ID of the person to add as action holder
+      required:
+      - person_id
     CreateFinalApproval:
       type: object
       description: Serializer for creating FinalApproval instances

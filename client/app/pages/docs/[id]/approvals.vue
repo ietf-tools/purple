@@ -5,7 +5,11 @@
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div class="lg:col-span-full">
+      <div class="lg:col-span-full mt-6">
+        <DocumentActionHolders :name="draftName" />
+      </div>
+
+      <div class="lg:col-span-full mt-6">
         <DocumentFinalReviews :heading-level="4" :name="draftName" />
       </div>
 
@@ -42,7 +46,7 @@ const api = useApi()
 
 // COMPUTED
 
-const currentTab: DocTabId = 'final-reviews'
+const currentTab: DocTabId = 'approvals'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
