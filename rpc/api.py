@@ -871,13 +871,13 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response()  # todo return value
 
     @extend_schema(
-        operation_id="documents_push_metadata",
+        operation_id="documents_sync_metadata",
         request=None,
         responses={200: None, 400: None},
     )
-    @action(detail=True, methods=["post"], url_path="push_metadata")
+    @action(detail=True, methods=["post"], url_path="sync_metadata")
     @with_rpcapi
-    def push_metadata(self, request, rpcapi: rpcapi_client.PurpleApi, draft__name=None):
+    def sync_metadata(self, request, rpcapi: rpcapi_client.PurpleApi, draft__name=None):
         """Push current RFC metadata to the datatracker via
         rpcapi purple_rfc_partial_update."""
         rfctobe = self.get_object()

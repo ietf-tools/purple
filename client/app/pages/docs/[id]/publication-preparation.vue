@@ -196,8 +196,8 @@
               RFC is already published, push changes to update Datatracker
             </Heading>
           </div>
-          <BaseButton btn-type="default" @click="pushCurrentMetadata">
-            Push changes
+          <BaseButton btn-type="default" @click="syncCurrentMetadata">
+            Sync changes
           </BaseButton>
         </div>
       </template>
@@ -492,12 +492,12 @@ const cancel = () => {
   step.value = { type: "cancelled" }
 }
 
-const pushCurrentMetadata = async () => {
+const syncCurrentMetadata = async () => {
   try {
-    await api.documentsPushMetadata({ draftName: draftName.value })
-    snackbar.add({ type: 'success', title: 'Metadata pushed successfully', text: '' })
+    await api.documentsSyncMetadata({ draftName: draftName.value })
+    snackbar.add({ type: 'success', title: 'Metadata synced successfully', text: '' })
   } catch (e) {
-    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to push metadata' })
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to sync metadata' })
   }
 }
 

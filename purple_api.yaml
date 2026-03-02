@@ -709,10 +709,12 @@ paths:
       responses:
         '200':
           description: No response body
-  /api/rpc/documents/{draft__name}/push_metadata/:
+  /api/rpc/documents/{draft__name}/sync_metadata/:
     post:
-      operationId: documents_push_metadata
-      description: Push current RFC metadata to the datatracker via rpcapi purple_rfc_partial_update.
+      operationId: documents_sync_metadata
+      description: |-
+        Push current RFC metadata to the datatracker via
+        rpcapi purple_rfc_partial_update.
       parameters:
       - in: path
         name: draft__name
