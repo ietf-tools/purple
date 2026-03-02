@@ -40,12 +40,12 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Submitted Pages" :spacing="spacing">
+        <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="pages" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1, initialValue: rfcToBe.draft?.pages?.toString() }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              {{ rfcToBe.draft?.pages?.toString() }}
+              {{ rfcToBe.pages?.toString() }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -119,7 +119,7 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Standard Level" :spacing="spacing">
+        <DescriptionListItem term="Status (Standards Track)" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="stdLevel" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
@@ -133,30 +133,18 @@
         </DescriptionListItem>
         <DescriptionListItem term="Subseries" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="!props.isReadOnly && rfcToBe.disposition !== 'published'">
-              <template v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
-                <div v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
-                  <EditSubseries :id="rfcToBe.id" :initial-subseries="sub" :on-success="() => props.refresh?.()">
-                    {{ sub.displayName }}<span v-if="idx < rfcToBe.subseries.length - 1">, </span>
-                  </EditSubseries>
-                </div>
-              </template>
-              <template v-else>
-                <EditSubseries :id="rfcToBe.id" :initial-subseries="null" :on-success="() => props.refresh?.()">
-                  (none)
-                </EditSubseries>
-              </template>
-            </div>
-            <div v-else>
-              <span v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
-                <span v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
+            <template v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
+              <div v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
+                <EditSubseries :id="rfcToBe.id" :initial-subseries="sub" :on-success="() => props.refresh?.()">
                   {{ sub.displayName }}<span v-if="idx < rfcToBe.subseries.length - 1">, </span>
-                </span>
-              </span>
-              <span v-else>
+                </EditSubseries>
+              </div>
+            </template>
+            <template v-else>
+              <EditSubseries :id="rfcToBe.id" :initial-subseries="null" :on-success="() => props.refresh?.()">
                 (none)
-              </span>
-            </div>
+              </EditSubseries>
+            </template>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Disposition" :spacing="spacing">
@@ -376,6 +364,18 @@
                   class="text-blue-600 hover:underline">
                   {{ rfcToBe.repository }}
                 </a>
+                <span v-else>(none)</span>
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
+        <DescriptionListItem term="Keywords" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="keywords" :is-read-only="false"
+              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., keyword1, keyword2', initialValue: rfcToBe.keywords }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="font-mono">
+                <span v-if="rfcToBe.keywords">{{ rfcToBe.keywords }}</span>
                 <span v-else>(none)</span>
               </div>
             </PatchRfcToBeField>

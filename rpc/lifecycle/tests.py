@@ -17,7 +17,6 @@ class RepoTests(TestCase):
                         {"type": "txt", "path": "toPublish/rfc10000.txt"},
                         {"type": "html", "path": "toPublish/rfc10000.html"},
                         {"type": "pdf", "path": "toPublish/rfc10000.pdf"},
-                        {"type": "json", "path": "toPublish/rfc10000.json"},
                         {
                             "type": "notprepped",
                             "path": "toPublish/rfc10000.notprepped",

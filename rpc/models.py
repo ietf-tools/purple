@@ -40,6 +40,27 @@ class DumpInfo(models.Model):
     timestamp = models.DateTimeField()
 
 
+class TaskRun(models.Model):
+    """Track when periodic tasks last ran successfully"""
+
+    task_name = models.CharField(max_length=255, unique=True)
+    last_run_at = models.DateTimeField()
+    is_running = models.BooleanField(default=False)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["task_name"],
+                condition=models.Q(is_running=True),
+                name="unique_running_task",
+                violation_error_message="This task is already running",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.task_name} last ran at {self.last_run_at}"
+
+
 class RpcPerson(models.Model):
     datatracker_person = models.OneToOneField(
         "datatracker.DatatrackerPerson", on_delete=models.PROTECT
@@ -714,6 +735,7 @@ class RfcAuthor(models.Model):
         blank=False,
     )
     affiliation = models.CharField(max_length=255, null=True, blank=True)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.datatracker_person} as author of {self.rfc_to_be}"
@@ -739,6 +761,7 @@ class RfcAuthor(models.Model):
 class AdditionalEmail(models.Model):
     email = models.EmailField()
     rfc_to_be = models.ForeignKey(RfcToBe, on_delete=models.PROTECT)
+    history = HistoricalRecords()
 
     def __str__(self):
         return f"{self.email} associated with {self.rfc_to_be}"
@@ -926,6 +949,8 @@ class RpcRelatedDocument(models.Model):
                 "combination must be unique.",
             ),
         ]
+
+    history = HistoricalRecords()
 
     def __str__(self):
         target = self.target_document if self.target_document else self.target_rfctobe

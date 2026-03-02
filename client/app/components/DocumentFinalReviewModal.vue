@@ -34,12 +34,12 @@
           class="flex flex-row items-center justify-end px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
           <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess">
             {{ props.finalApproval ?
-              'Edit Approver' :
+              'Save' :
               'Add Approver' }}
           </BaseButton>
           <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
             {{ props.finalApproval ?
-              'Approver Edited' :
+              'Saved' :
               'Approver Added' }}
           </b>
         </div>

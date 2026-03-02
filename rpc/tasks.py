@@ -3,9 +3,11 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
+from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
+from .lifecycle.notifications import process_rfctobe_changes_for_queue
 from .lifecycle.publication import (
     PublicationError,
     TemporaryPublicationError,
@@ -155,6 +157,17 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
     publish_rfctobe(rfctobe, expected_head=expected_head)
 
 
+@shared_task
+def process_rfctobe_changes_for_queue_task():
+    """
+    Celery task to check for changes to in-progress RFCs and send notifications.
+    """
+    try:
+        process_rfctobe_changes_for_queue()
+    except Exception as e:
+        logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
+
+
 @shared_task(bind=True)
 def create_index_txt(self):
     createRfcTxtIndex()
@@ -163,3 +176,10 @@ def create_index_txt(self):
 @shared_task(bind=True)
 def create_index_xml(self):
     createRfcXmlIndex()
+
+
+@shared_task
+def update_blocked_assignments_for_in_progress_rfcs_task():
+    """Process all in_progress RfcToBe instances to apply blocked assignments"""
+    for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
+        apply_blocked_assignment_for_rfc(rfc)

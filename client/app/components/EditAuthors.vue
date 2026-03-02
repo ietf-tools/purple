@@ -51,7 +51,10 @@ const handleRemoveAuthor = async (index: number) => {
   )
 }
 
-const authorsRef = ref(draft.value.authors)
+const authorsRef = computed({
+  get: () => draft.value?.authors ?? [],
+  set: (val) => { if (draft.value) draft.value.authors = val }
+})
 
 const [ parent ] = useDragAndDrop(authorsRef);
 

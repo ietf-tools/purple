@@ -16,9 +16,9 @@ export const docTabsFactory = (draftName: string) => {
       icon: 'fluent:layer-diagonal-person-16-regular'
     },
     {
-      id: 'final-reviews',
-      name: 'Final Reviews',
-      to: `/docs/${sanitisedDraftName}/final-reviews`,
+      id: 'approvals',
+      name: 'Approvals',
+      to: `/docs/${sanitisedDraftName}/approvals`,
       icon: 'fluent:emoji-hand-16-regular'
     },
     {

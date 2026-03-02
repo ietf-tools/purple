@@ -2,6 +2,9 @@
 #
 # Startup script for the celery container
 #
+# Usage: celery-start.sh <worker|beat> [args...]
+#
+# Do not pass the `--app` argument, set CELERY_APP in the environment to control this.
 
 # specify binary locations
 CELERY=/usr/local/bin/celery
@@ -31,7 +34,7 @@ echo "Starting Purple celery container..."
 cleanup () {
   # Cleanly terminate the celery app by sending it a TERM, then waiting for it to exit.
   if [[ -n "${celery_pid}" ]]; then
-    echo "Gracefully terminating celery worker..."
+    echo "Gracefully terminating celery process..."
     kill -TERM "${celery_pid}"
     wait "${celery_pid}"
   fi
@@ -40,7 +43,7 @@ cleanup () {
 trap 'trap "" TERM; cleanup' TERM
 
 # start celery in the background so we can trap the TERM signal
-$CELERY --app="${CELERY_APP:-purple}" worker &
+$CELERY --app="${CELERY_APP:-purple}" "$@" &
 celery_pid=$!
 
 # Just chill while celery does its thang

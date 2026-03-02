@@ -90,11 +90,21 @@ def get_rfc_text_index_entries():
 
             doc_relations = f"{obsoletes}{obsoleted_by}{updates}{updated_by} "
 
+            # subseries
+            subseries = ",".join(
+                [
+                    f"{s.type_id.upper()}{s.number:04d}"
+                    for s in rfc.subseriesmember_set.all()
+                ]
+            )
+            if subseries:
+                subseries = f"(Also {subseries}) "
+
             entry = fill(
                 (
                     f"{rfc.rfc_number:04d} {rfc.title}. {authors}. {date}. "
-                    f"(Format: {formats}){doc_relations}"
-                    f"(Status: {str(rfc.publication_std_level).upper()}) "
+                    f"(Format: {formats}){doc_relations}{subseries}"
+                    f"(Status: {str(rfc.std_level).upper()}) "
                     f"(DOI: {settings.DOI_PREFIX}/RFC{rfc.rfc_number:04d})"
                 ),
                 width=75,

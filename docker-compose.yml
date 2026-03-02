@@ -40,8 +40,8 @@ services:
 
   celery:
     image: "${COMPOSE_PROJECT_NAME}-app"
-    command:
-      - "/celery-init.sh"
+    command: [ "/celery-init.sh" ]  # without beat
+    # command: [ "/celery-init.sh", "-BE" ]  # with beat
     volumes:
       - .:/workspace
     restart: unless-stopped
@@ -58,6 +58,7 @@ services:
     depends_on:
       - db
       - mq
+      - memcache
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

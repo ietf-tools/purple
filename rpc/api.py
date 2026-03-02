@@ -88,6 +88,7 @@ from .serializers import (
     ClusterAddRemoveDocumentSerializer,
     ClusterReorderDocumentsSerializer,
     ClusterSerializer,
+    CreateActionHolderSerializer,
     CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
@@ -813,7 +814,7 @@ class RfcToBeQueryParamsForm(forms.Form):
     ),
 )
 class RfcToBeViewSet(viewsets.ModelViewSet):
-    queryset = RfcToBe.objects.all()
+    queryset = RfcToBe.objects.all().with_blocking_reasons()
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
     filter_backends = (
@@ -902,20 +903,25 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 {"error": "Search query too long (max 200 characters)"}, status=400
             )
 
-        # Check if query looks like an RFC number
+        # Check if query looks like an RFC number or cluster number
         rfc_number = None
+        cluster_number = None
         if query.isdigit():
             rfc_number = int(query)
         elif query.lower().startswith("rfc") and query[3:].isdigit():
             rfc_number = int(query[3:])
+        elif query.lower().startswith("c") and query[1:].isdigit():
+            cluster_number = int(query[1:])
 
         q_filter = Q(draft__name__icontains=query) | Q(
             authors__titlepage_name__icontains=query
         )
         if rfc_number:
             q_filter |= Q(rfc_number=rfc_number)
+        if cluster_number:
+            q_filter |= Q(draft__clustermember__cluster__number=cluster_number)
 
-        queryset = RfcToBe.objects.filter(q_filter).distinct()
+        queryset = RfcToBe.objects.filter(q_filter).distinct().order_by("-id")
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -1615,6 +1621,7 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
 
 @extend_schema_with_draft_name()
 class ActionHolderViewSet(
+    mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
@@ -1637,6 +1644,15 @@ class ActionHolderViewSet(
                 | Q(target_document__name=draft_name)
             )
         )
+
+    def perform_create(self, serializer):
+        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
+        serializer.save(target_rfctobe=rfc_to_be)
+
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateActionHolderSerializer
+        return ActionHolderSerializer
 
 
 @extend_schema_with_draft_name()

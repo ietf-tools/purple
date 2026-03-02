@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_beat",
     "drf_spectacular",
     "rest_framework",
     "rules.apps.AutodiscoverRulesConfig",
@@ -178,6 +179,7 @@ DOI_AUTHOR_ORGS = [
     "IAB",
 ]
 
+
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
 
@@ -185,3 +187,11 @@ GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
 APP_API_TOKENS = {
     "api.pubq": ["pubq-token"],
 }
+
+# Celery Beat
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
+# Window after after a missed deadline before abandoning a cron task
+CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds
+
+TRIGGER_RED_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_RED_PRECOMPUTE_URL")

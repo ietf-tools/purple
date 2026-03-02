@@ -47,3 +47,6 @@ def debug_log_task():
         "debug_log_task executed at "
         + datetime.datetime.now(tz=datetime.UTC).isoformat()
     )
+
+
+app.conf.timezone = "UTC"
