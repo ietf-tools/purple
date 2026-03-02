@@ -126,7 +126,7 @@ def load_bcp_xml_index_entries(rfc_index):
             for bcp_entry in subseries_members:
                 ElementTree.SubElement(
                     is_also, "doc-id"
-                ).text = f"RFC{bcp_entry.rfc_to_be_id:04d}"
+                ).text = f"RFC{bcp_entry.rfc_to_be.rfc_number:04d}"
 
         entries.append(entry)
 
@@ -149,7 +149,7 @@ def load_fyi_xml_index_entries(rfc_index):
         ):
             ElementTree.SubElement(
                 is_also, "doc-id"
-            ).text = f"RFC{fyi_entry.rfc_to_be_id:04d}"
+            ).text = f"RFC{fyi_entry.rfc_to_be.rfc_number:04d}"
 
         entries.append(entry)
 
@@ -172,7 +172,7 @@ def load_std_xml_index_entries(rfc_index):
         ):
             ElementTree.SubElement(
                 is_also, "doc-id"
-            ).text = f"RFC{std_entry.rfc_to_be_id:04d}"
+            ).text = f"RFC{std_entry.rfc_to_be.rfc_number:04d}"
 
         entries.append(entry)
 
