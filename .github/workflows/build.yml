@@ -101,7 +101,7 @@ jobs:
           cp purple_api.yaml ..
 
       - name: Upload API
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: api-clients
           path: |
