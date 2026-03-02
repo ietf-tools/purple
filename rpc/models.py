@@ -330,6 +330,10 @@ class RfcToBe(models.Model):
             return f"RFC {self.rfc_number}"
         return f"<RfcToBe {self.pk}>"
 
+    @property
+    def area(self) -> str:
+        return "" if self.draft is None else self.draft.area
+
     # Easier interface to the cluster_set
     @property
     def cluster(self) -> "Cluster | None":

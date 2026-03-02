@@ -123,6 +123,11 @@ class Document(models.Model):
         return self._fetch("shepherd")
 
     @property
+    def area(self) -> str:
+        area = self._fetch("area")
+        return "" if area is None else area.acronym
+
+    @property
     def ad(self) -> str:
         return self._fetch("ad")
 
