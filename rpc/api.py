@@ -31,6 +31,7 @@ from rest_framework.decorators import (
     api_view,
 )
 from rest_framework.exceptions import (
+    APIException,
     NotAuthenticated,
     NotFound,
     PermissionDenied,
@@ -873,7 +874,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         operation_id="documents_sync_metadata",
         request=None,
-        responses={200: None, 400: None},
+        responses={200: None},
     )
     @action(detail=True, methods=["post"], url_path="sync_metadata")
     @with_rpcapi
@@ -882,10 +883,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         rpcapi purple_rfc_partial_update."""
         rfctobe = self.get_object()
         if rfctobe.rfc_number is None:
-            return Response(
-                {"detail": "No RFC number assigned"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            raise serializers.ValidationError("No RFC number assigned")
         patched = rpcapi_client.PatchedEditableRfcRequest(
             published=rfctobe.published_at,
             title=rfctobe.title,
@@ -914,10 +912,16 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
             ],
         )
-        rpcapi.purple_rfc_partial_update(
-            rfc_number=str(rfctobe.rfc_number),
-            patched_editable_rfc_request=patched,
-        )
+        try:
+            rpcapi.purple_rfc_partial_update(
+                rfc_number=str(rfctobe.rfc_number),
+                patched_editable_rfc_request=patched,
+            )
+        except rpcapi_client.exceptions.ApiException as err:
+            raise APIException(
+                f"Failed to sync metadata with datatracker: {err}"
+            ) from err
+
         return Response()
 
     @extend_schema(
