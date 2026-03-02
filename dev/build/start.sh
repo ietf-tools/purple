@@ -2,7 +2,7 @@
 #
 # Environment config:
 #
-#  CONTAINER_ROLE - backend, celery, or migrations
+#  CONTAINER_ROLE - backend, beat, celery, or migrations
 #
 case "${CONTAINER_ROLE:-backend}" in
     backend)
