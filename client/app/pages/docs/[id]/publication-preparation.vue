@@ -191,8 +191,13 @@
       </template>
       <template v-else-if="step.type === 'alreadyPublished'">
         <div class="text-center">
+          <div class="text-center">
+            <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
+              RFC is already published, push changes to update Datatracker
+            </Heading>
+          </div>
           <BaseButton btn-type="default" @click="pushCurrentMetadata">
-            Push current metadata
+            Push changes
           </BaseButton>
         </div>
       </template>
@@ -488,13 +493,12 @@ const cancel = () => {
 }
 
 const pushCurrentMetadata = async () => {
-  // TODO: call the appropriate API endpoint to push metadata for a published RFC
-  // e.g. await api.documentsPushMetadata({ draftName: draftName.value })
-  snackbar.add({
-    type: 'success',
-    title: 'Metadata pushed successfully',
-    text: ''
-  })
+  try {
+    await api.documentsPushMetadata({ draftName: draftName.value })
+    snackbar.add({ type: 'success', title: 'Metadata pushed successfully', text: '' })
+  } catch (e) {
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to push metadata' })
+  }
 }
 
 const snackbar = useSnackbar()

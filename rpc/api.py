@@ -871,6 +871,56 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response()  # todo return value
 
     @extend_schema(
+        operation_id="documents_push_metadata",
+        request=None,
+        responses={200: None, 400: None},
+    )
+    @action(detail=True, methods=["post"], url_path="push_metadata")
+    @with_rpcapi
+    def push_metadata(self, request, rpcapi: rpcapi_client.PurpleApi, draft__name=None):
+        """Push current RFC metadata to the datatracker via
+        rpcapi purple_rfc_partial_update."""
+        rfctobe = self.get_object()
+        if rfctobe.rfc_number is None:
+            return Response(
+                {"detail": "No RFC number assigned"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        patched = rpcapi_client.PatchedEditableRfcRequest(
+            published=rfctobe.published_at,
+            title=rfctobe.title,
+            authors=[
+                rpcapi_client.RfcAuthorRequest(
+                    titlepage_name=author.titlepage_name,
+                    is_editor=author.is_editor,
+                    person=(
+                        author.datatracker_person.datatracker_id
+                        if author.datatracker_person is not None
+                        else None
+                    ),
+                    affiliation=author.affiliation or "",
+                )
+                for author in rfctobe.authors.all()
+            ],
+            stream=rfctobe.publication_stream.slug
+            if rfctobe.publication_stream
+            else None,
+            abstract=rfctobe.abstract,
+            pages=rfctobe.pages,
+            std_level=rfctobe.publication_std_level.slug
+            if rfctobe.publication_std_level
+            else None,
+            subseries=[
+                f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
+            ],
+        )
+        rpcapi.purple_rfc_partial_update(
+            rfc_number=str(rfctobe.rfc_number),
+            patched_editable_rfc_request=patched,
+        )
+        return Response()
+
+    @extend_schema(
         operation_id="documents_search",
         parameters=[
             OpenApiParameter(
