@@ -205,7 +205,9 @@ class HistoryLastEditSerializer(serializers.Serializer):
 class ActionHolderSerializer(serializers.ModelSerializer):
     """Serialize an ActionHolder with person name"""
 
-    person = BaseDatatrackerPersonSerializer(source="datatracker_person", read_only=True)
+    person = BaseDatatrackerPersonSerializer(
+        source="datatracker_person", read_only=True
+    )
 
     class Meta:
         model = ActionHolder
@@ -242,7 +244,9 @@ class CreateActionHolderSerializer(ActionHolderSerializer):
     def create(self, validated_data):
         person_id = validated_data.pop("person_id")
         dt_person = DatatrackerPerson.objects.get(datatracker_id=person_id)
-        return ActionHolder.objects.create(datatracker_person=dt_person, **validated_data)
+        return ActionHolder.objects.create(
+            datatracker_person=dt_person, **validated_data
+        )
 
 
 class AssignmentSerializer(serializers.ModelSerializer):
