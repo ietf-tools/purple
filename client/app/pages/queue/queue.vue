@@ -345,7 +345,7 @@ const columns = [
         if (!value) {
           return undefined
         }
-        return h('span', {}, value.map(actionHolder => actionHolder.body ?? actionHolder.name ?? 'No name'))
+        return h('span', {}, value.map(actionHolder => actionHolder.body ?? actionHolder.person?.name ?? 'No name'))
       },
       sortingFn: 'alphanumeric',
     }
