@@ -102,7 +102,7 @@ const columnHelper = createColumnHelper<ActionHolder>()
 
 const columns = [
   columnHelper.accessor('person', {
-    header: 'Approver Name',
+    header: 'Action Holder Name',
     cell: data => formatAuthor(data.getValue()),
     sortingFn: 'alphanumeric',
   }),
