@@ -98,7 +98,21 @@ DATABASES = {
         "PASSWORD": os.environ.get("DATATRACKER_DB_PASS", ""),
         "OPTIONS": json.loads(os.environ.get("DATATRACKER_DB_OPTS_JSON", "{}")),
     },
+    "blobdb": {
+        "HOST": os.environ.get("BLOBDB_DB_HOST", "db"),
+        "PORT": os.environ.get("BLOBDB_DB_PORT", "5432"),
+        "NAME": os.environ.get("BLOBDB_DB_NAME", "blobdb"),
+        "ENGINE": "django.db.backends.postgresql",
+        "USER": os.environ.get("BLOBDB_DB_USER", "django"),
+        "PASSWORD": os.environ.get("BLOBDB_DB_PASS", ""),
+        "OPTIONS": json.loads(os.environ.get("BLOBDB_DB_OPTS_JSON", "{}")),
+    },
 }
+
+
+DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
+BLOBDB_DATABASE = "blobdb"
+BLOBDB_REPLICATION = {"ENABLED": False}  # just to be clear
 
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
