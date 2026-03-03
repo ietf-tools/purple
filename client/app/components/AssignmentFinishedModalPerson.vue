@@ -10,7 +10,7 @@
           @blur="patchTimeSpent"
         >
       </label>
-      <BaseButton v-if="props.assignment.state !== 'done'" btnType="default" @click="finishAssignment" size="xs"
+      <BaseButton v-if="props.assignment.state !== 'done'" btnType="default" @mousedown="isFinishing = true" @click="finishAssignment" size="xs"
         :disabled="isSaving">
         Finish
       </BaseButton>
@@ -31,6 +31,7 @@ type Props = {
 const props = defineProps<Props>()
 
 const isSaving = ref(false)
+const isFinishing = ref(false)
 
 const api = useApi()
 
@@ -40,13 +41,11 @@ const hours = ref(durationStringToHours(props.assignment.timeSpent))
 
 const finishAssignment = async () => {
   isSaving.value = true
-  const { id, timeSpent } = props.assignment
+  const { id } = props.assignment
   if (id === undefined) {
     throw Error('Internal error: expected assignment to have id')
   }
-  if (timeSpent === undefined) {
-    throw Error('Internal error: expected assignment to have timeSpent when saving (not undefined)')
-  }
+  const timeSpent = hoursToDurationString(hours.value)
   try {
     const updatedAssignment = await api.assignmentsPartialUpdate({
       id,
@@ -67,10 +66,12 @@ const finishAssignment = async () => {
     snackbarForErrors({ snackbar, defaultTitle: "Unable to update assignment to 'done'", error: e })
   }
   isSaving.value = false
+  isFinishing.value = false
   props.onSuccess() // triggers reload of data from page under modal
 }
 
 const patchTimeSpent = async () => {
+  if (isFinishing.value) return
   const { id } = props.assignment
   if (id === undefined) {
     throw Error('Internal error: expected assignment to have id')
@@ -93,5 +94,4 @@ const patchTimeSpent = async () => {
   }
   props.onSuccess() // triggers reload of data from page under modal
 }
-
 </script>
