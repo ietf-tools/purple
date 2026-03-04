@@ -42,8 +42,8 @@
         </DescriptionListItem>
         <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="pages" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', isNumber: true, rows: 1, initialValue: rfcToBe.draft?.pages?.toString() }"
+            <PatchRfcToBeField fieldName="pages" :is-read-only="false"
+              :ui-mode="{ type: 'textbox', placeholder: '# of pages', isNumber: true, rows: 1, initialValue: rfcToBe.pages?.toString() }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.pages?.toString() }}
             </PatchRfcToBeField>

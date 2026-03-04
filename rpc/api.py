@@ -31,6 +31,7 @@ from rest_framework.decorators import (
     api_view,
 )
 from rest_framework.exceptions import (
+    APIException,
     NotAuthenticated,
     NotFound,
     PermissionDenied,
@@ -869,6 +870,59 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             rfctobe_id=rfctobe.pk, expected_head=serializer.validated_data["head_sha"]
         )
         return Response()  # todo return value
+
+    @extend_schema(
+        operation_id="documents_sync_metadata",
+        request=None,
+        responses={200: None},
+    )
+    @action(detail=True, methods=["post"], url_path="sync_metadata")
+    @with_rpcapi
+    def sync_metadata(self, request, rpcapi: rpcapi_client.PurpleApi, draft__name=None):
+        """Push current RFC metadata to the datatracker via
+        rpcapi purple_rfc_partial_update."""
+        rfctobe = self.get_object()
+        if rfctobe.rfc_number is None:
+            raise serializers.ValidationError("No RFC number assigned")
+        patched = rpcapi_client.PatchedEditableRfcRequest(
+            published=rfctobe.published_at,
+            title=rfctobe.title,
+            authors=[
+                rpcapi_client.RfcAuthorRequest(
+                    titlepage_name=author.titlepage_name,
+                    is_editor=author.is_editor,
+                    person=(
+                        author.datatracker_person.datatracker_id
+                        if author.datatracker_person is not None
+                        else None
+                    ),
+                    affiliation=author.affiliation or "",
+                )
+                for author in rfctobe.authors.all()
+            ],
+            stream=rfctobe.publication_stream.slug
+            if rfctobe.publication_stream
+            else None,
+            abstract=rfctobe.abstract,
+            pages=rfctobe.pages,
+            std_level=rfctobe.publication_std_level.slug
+            if rfctobe.publication_std_level
+            else None,
+            subseries=[
+                f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
+            ],
+        )
+        try:
+            rpcapi.purple_rfc_partial_update(
+                rfc_number=str(rfctobe.rfc_number),
+                patched_editable_rfc_request=patched,
+            )
+        except rpcapi_client.exceptions.ApiException as err:
+            raise APIException(
+                f"Failed to sync metadata with datatracker: {err}"
+            ) from err
+
+        return Response()
 
     @extend_schema(
         operation_id="documents_search",

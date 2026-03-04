@@ -115,24 +115,14 @@ def get_updated_rfcs_since(current_check_time):
 def get_recent_changes(check_time):
     """Check if any relevant changes have occurred since the check time"""
 
-    recent_change_threshold = check_time - timezone.timedelta(minutes=1)
-
     return (
-        RfcToBe.history.filter(history_date__gt=recent_change_threshold).exists()
-        or Assignment.history.filter(history_date__gt=recent_change_threshold).exists()
-        or RfcAuthor.history.filter(history_date__gt=recent_change_threshold).exists()
-        or RpcRelatedDocument.history.filter(
-            history_date__gt=recent_change_threshold
-        ).exists()
-        or AdditionalEmail.history.filter(
-            history_date__gt=recent_change_threshold
-        ).exists()
-        or ClusterMember.history.filter(
-            history_date__gt=recent_change_threshold
-        ).exists()
-        or SubseriesMember.history.filter(
-            history_date__gt=recent_change_threshold
-        ).exists()
+        RfcToBe.history.filter(history_date__gt=check_time).exists()
+        or Assignment.history.filter(history_date__gt=check_time).exists()
+        or RfcAuthor.history.filter(history_date__gt=check_time).exists()
+        or RpcRelatedDocument.history.filter(history_date__gt=check_time).exists()
+        or AdditionalEmail.history.filter(history_date__gt=check_time).exists()
+        or ClusterMember.history.filter(history_date__gt=check_time).exists()
+        or SubseriesMember.history.filter(history_date__gt=check_time).exists()
     )
 
 
