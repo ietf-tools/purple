@@ -527,6 +527,26 @@ class QueueItemSerializer(serializers.ModelSerializer):
             # Fallback if no history exists
             return None
 
+class ApprovalLogMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    by = DatatrackerPersonSerializer(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    log_message = serializers.CharField()
+    time = serializers.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        # Set the 'by' field to the current user
+        request = self.context.get("request")
+        validated_data["by"] = request.user.datatracker_person()
+
+        return ApprovalLogMessage.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
+            **validated_data,
+        )
+        return ApprovalLogMessage.objects.get(pk=instance.pk)
+
 
 class PublicQueueAuthorSerializer(RfcAuthorSerializer):
     class Meta:
@@ -557,6 +577,9 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     assignment_set = PublicAssignmentSerializer(
         source="active_assignments", many=True, read_only=True
     )
+    approval_log_message = ApprovalLogMessageSerializer(
+        source="approvallogmessage_set", many=True, read_only=True
+    )
 
     class Meta:
         model = QueueItemSerializer.Meta.model
@@ -579,6 +602,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "iana_status",
             "blocking_reasons",
             "authors",
+            "approval_log_message",
         ]
 
 
@@ -1409,27 +1433,6 @@ class MailTemplateSerializer(serializers.Serializer):
 class MailResponseSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["success", "error"])
     message = serializers.CharField()
-
-
-class ApprovalLogMessageSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    by = DatatrackerPersonSerializer(read_only=True)
-    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
-    log_message = serializers.CharField()
-    time = serializers.DateTimeField(read_only=True)
-
-    def create(self, validated_data):
-        # Set the 'by' field to the current user
-        request = self.context.get("request")
-        validated_data["by"] = request.user.datatracker_person()
-
-        return ApprovalLogMessage.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
-            **validated_data,
-        )
-        return ApprovalLogMessage.objects.get(pk=instance.pk)
 
 
 @dataclass
