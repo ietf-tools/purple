@@ -14,6 +14,7 @@ from django.utils import timezone
 from .models import RfcToBe, SubseriesMember, UnusableRfcNumber
 
 logger = get_task_logger(__name__)
+FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
 
 
 def get_rfc_text_index_entries():
@@ -37,7 +38,6 @@ def get_rfc_text_index_entries():
             )
 
             # formats
-            FORMATS_FOR_INDEX = ["txt", "html", "pdf", "xml", "ps"]
             formats = ", ".join(
                 rfc.published_formats.filter(slug__in=FORMATS_FOR_INDEX).values_list(
                     "slug", flat=True
@@ -197,6 +197,106 @@ def load_rfc_not_be_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
+def load_rfc_xml_index_entries(rfc_index):
+    """Load RFC entries for rfc-index.xml"""
+    entries = []
+
+    published_rfcs = RfcToBe.objects.filter(published_at__isnull=False).order_by(
+        "rfc_number"
+    )
+    for rfc in published_rfcs:
+        entry = ElementTree.SubElement(rfc_index, "rfc-entry")
+
+        ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
+        ElementTree.SubElement(entry, "title").text = rfc.title
+
+        for author in rfc.authors.all():
+            author_element = ElementTree.SubElement(entry, "author")
+            ElementTree.SubElement(author_element, "name").text = author.titlepage_name
+            if author.is_editor:
+                ElementTree.SubElement(author_element, "title").text = "Editor"
+
+        date = ElementTree.SubElement(entry, "date")
+        ElementTree.SubElement(date, "month").text = rfc.published_at.strftime("%B")
+        if rfc.is_april_first_rfc:
+            ElementTree.SubElement(date, "day").text = str(rfc.published_at.day)
+        ElementTree.SubElement(date, "year").text = str(rfc.published_at.year)
+
+        format = ElementTree.SubElement(entry, "format")
+        for file_format in rfc.published_formats.filter(
+            slug__in=FORMATS_FOR_INDEX
+        ).values_list("slug", flat=True):
+            ElementTree.SubElement(format, "file-format").text = file_format.upper()
+
+        ElementTree.SubElement(entry, "page-count").text = str(rfc.pages)
+
+        if rfc.obsoletes:
+            obsoletes = ElementTree.SubElement(entry, "obsoletes")
+            for rfc_number in rfc.obsoletes.values_list(
+                "rfc_number", flat=True
+            ).order_by("rfc_number"):
+                ElementTree.SubElement(
+                    obsoletes, "doc-id"
+                ).text = f"RFC{rfc_number:04d}"
+
+        if rfc.updates:
+            updates = ElementTree.SubElement(entry, "updates")
+            for rfc_number in rfc.updates.values_list("rfc_number", flat=True).order_by(
+                "rfc_number"
+            ):
+                ElementTree.SubElement(updates, "doc-id").text = f"RFC{rfc_number:04d}"
+
+        if rfc.obsoleted_by:
+            obsoleted_by = ElementTree.SubElement(entry, "obsoleted-by")
+            for rfc_number in rfc.obsoleted_by.values_list(
+                "rfc_number", flat=True
+            ).order_by("rfc_number"):
+                ElementTree.SubElement(
+                    obsoleted_by, "doc-id"
+                ).text = f"RFC{rfc_number:04d}"
+
+        if rfc.updated_by:
+            updated_by = ElementTree.SubElement(entry, "updated-by")
+            for rfc_number in rfc.updated_by.values_list(
+                "rfc_number", flat=True
+            ).order_by("rfc_number"):
+                ElementTree.SubElement(
+                    updated_by, "doc-id"
+                ).text = f"RFC{rfc_number:04d}"
+
+        if rfc.keywords.strip():
+            keywords = ElementTree.SubElement(entry, "keywords")
+            for keyword in rfc.keywords.strip().split(","):
+                ElementTree.SubElement(keywords, "kw").text = keyword.strip()
+
+        if rfc.abstract:
+            abstract = ElementTree.SubElement(entry, "abstract")
+            ElementTree.SubElement(abstract, "p").text = rfc.abstract
+
+        if rfc.draft:
+            ElementTree.SubElement(entry, "draft").text = str(rfc.draft)
+
+        ElementTree.SubElement(entry, "current-status").text = str(
+            rfc.std_level
+        ).upper()
+        ElementTree.SubElement(entry, "publication-status").text = str(
+            rfc.publication_std_level
+        ).upper()
+        ElementTree.SubElement(entry, "stream").text = str(rfc.stream)
+        ElementTree.SubElement(entry, "area").text = ""
+
+        if rfc.group:
+            ElementTree.SubElement(entry, "wg_acronym").text = str(rfc.group)
+
+        ElementTree.SubElement(
+            entry, "errata-url"
+        ).text = f"{settings.ERRATA_URL}/rfc{rfc.rfc_number}"
+        ElementTree.SubElement(
+            entry, "doi"
+        ).text = f"{settings.DOI_PREFIX}/RFC{rfc.rfc_number:04d}"
+        entries.append(entry)
+
+
 def createRfcTxtIndex():
     """
     Create text index of published documents
@@ -236,6 +336,7 @@ def createRfcXmlIndex():
     load_bcp_xml_index_entries(rfc_index)
     load_fyi_xml_index_entries(rfc_index)
     load_rfc_not_be_xml_index_entries(rfc_index)
+    load_rfc_xml_index_entries(rfc_index)
     load_std_xml_index_entries(rfc_index)
 
     # make it pretty
