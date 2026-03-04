@@ -729,8 +729,6 @@ paths:
       responses:
         '200':
           description: No response body
-        '400':
-          description: No response body
   /api/rpc/documents/{draft_name}/action_holders/:
     get:
       operationId: documents_action_holders_list
