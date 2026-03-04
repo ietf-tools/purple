@@ -527,6 +527,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             # Fallback if no history exists
             return None
 
+
 class ApprovalLogMessageSerializer(serializers.Serializer):
     id = serializers.IntegerField(read_only=True)
     by = DatatrackerPersonSerializer(read_only=True)
