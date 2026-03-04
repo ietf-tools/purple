@@ -123,8 +123,7 @@ _FORMAT_TYPE_TO_LABEL = {
 
 
 def create_rfc_index_json(rfctobe: RfcToBe, chosen_files: dict, tmpdir: Path) -> Path:
-    """Create an RFC index JSON file in tmpdir and return its path.
-    """
+    """Create an RFC index JSON file in tmpdir and return its path."""
 
     def _rfc_list(queryset) -> list[str]:
         """Convert a queryset of RfcToBe to a list of 'RFCNNNN' strings."""
@@ -145,9 +144,7 @@ def create_rfc_index_json(rfctobe: RfcToBe, chosen_files: dict, tmpdir: Path) ->
         authors.append(name)
 
     formats = [
-        _FORMAT_TYPE_TO_LABEL[t]
-        for t in _FORMAT_TYPE_TO_LABEL
-        if t in chosen_files
+        _FORMAT_TYPE_TO_LABEL[t] for t in _FORMAT_TYPE_TO_LABEL if t in chosen_files
     ]
 
     std_level = rfctobe.publication_std_level or rfctobe.std_level
@@ -196,6 +193,7 @@ def create_rfc_index_json(rfctobe: RfcToBe, chosen_files: dict, tmpdir: Path) ->
     json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
     logger.debug("Created RFC index JSON at %s", json_path)
     return json_path
+
 
 @with_rpcapi
 def publish_rfctobe(
@@ -284,9 +282,7 @@ def publish_rfctobe(
         rfctobe.save()
 
         # create the RFC index JSON file and upload all the files to datatracker.
-        json_path = create_rfc_index_json(
-            rfctobe, chosen_files, Path(tmpdirname)
-        )
+        json_path = create_rfc_index_json(rfctobe, chosen_files, Path(tmpdirname))
 
         try:
             upload_rfc_contents(
