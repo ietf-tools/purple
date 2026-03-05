@@ -125,7 +125,7 @@ def load_bcp_xml_index_entries(rfc_index):
 
     for bcp_number in range(1, highest_bcp_number):
         entry = ElementTree.SubElement(rfc_index, "bcp-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"BCP{bcp_number:04d}"
+        ElementTree.SubElement(entry, "doc-id").text = f"BCP{bcp_number}"
 
         subseries_members = SubseriesMember.objects.filter(
             type_id="bcp", number=bcp_number
@@ -136,7 +136,7 @@ def load_bcp_xml_index_entries(rfc_index):
             for bcp_entry in subseries_members:
                 ElementTree.SubElement(
                     is_also, "doc-id"
-                ).text = f"RFC{bcp_entry.rfc_to_be.rfc_number:04d}"
+                ).text = f"RFC{bcp_entry.rfc_to_be.rfc_number}"
 
         entries.append(entry)
 
@@ -151,7 +151,7 @@ def load_fyi_xml_index_entries(rfc_index):
 
     for fyi in published_fyis:
         entry = ElementTree.SubElement(rfc_index, "fyi-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"FYI{fyi.number:04d}"
+        ElementTree.SubElement(entry, "doc-id").text = f"FYI{fyi.number}"
         is_also = ElementTree.SubElement(entry, "is-also")
 
         for fyi_entry in SubseriesMember.objects.filter(
@@ -159,7 +159,7 @@ def load_fyi_xml_index_entries(rfc_index):
         ):
             ElementTree.SubElement(
                 is_also, "doc-id"
-            ).text = f"RFC{fyi_entry.rfc_to_be.rfc_number:04d}"
+            ).text = f"RFC{fyi_entry.rfc_to_be.rfc_number}"
 
         entries.append(entry)
 
@@ -174,7 +174,7 @@ def load_std_xml_index_entries(rfc_index):
 
     for std in published_stds:
         entry = ElementTree.SubElement(rfc_index, "std-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"STD{std.number:04d}"
+        ElementTree.SubElement(entry, "doc-id").text = f"STD{std.number}"
         is_also = ElementTree.SubElement(entry, "is-also")
 
         for std_entry in SubseriesMember.objects.filter(
@@ -182,7 +182,7 @@ def load_std_xml_index_entries(rfc_index):
         ):
             ElementTree.SubElement(
                 is_also, "doc-id"
-            ).text = f"RFC{std_entry.rfc_to_be.rfc_number:04d}"
+            ).text = f"RFC{std_entry.rfc_to_be.rfc_number}"
 
         entries.append(entry)
 
@@ -193,7 +193,7 @@ def load_rfc_not_be_xml_index_entries(rfc_index):
 
     for record in UnusableRfcNumber.objects.order_by("number"):
         entry = ElementTree.SubElement(rfc_index, "rfc-not-issued-entry")
-        ElementTree.SubElement(entry, "doc-id").text = f"RFC{record.number:04d}"
+        ElementTree.SubElement(entry, "doc-id").text = f"RFC{record.number}"
         entries.append(entry)
 
 
@@ -207,7 +207,7 @@ def load_rfc_xml_index_entries(rfc_index):
     for rfc in published_rfcs:
         entry = ElementTree.SubElement(rfc_index, "rfc-entry")
 
-        ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number:04d}"
+        ElementTree.SubElement(entry, "doc-id").text = f"RFC{rfc.rfc_number}"
         ElementTree.SubElement(entry, "title").text = rfc.title
 
         for author in rfc.authors.all():
@@ -235,34 +235,28 @@ def load_rfc_xml_index_entries(rfc_index):
             for rfc_number in rfc.obsoletes.values_list(
                 "rfc_number", flat=True
             ).order_by("rfc_number"):
-                ElementTree.SubElement(
-                    obsoletes, "doc-id"
-                ).text = f"RFC{rfc_number:04d}"
+                ElementTree.SubElement(obsoletes, "doc-id").text = f"RFC{rfc_number}"
 
         if rfc.updates:
             updates = ElementTree.SubElement(entry, "updates")
             for rfc_number in rfc.updates.values_list("rfc_number", flat=True).order_by(
                 "rfc_number"
             ):
-                ElementTree.SubElement(updates, "doc-id").text = f"RFC{rfc_number:04d}"
+                ElementTree.SubElement(updates, "doc-id").text = f"RFC{rfc_number}"
 
         if rfc.obsoleted_by:
             obsoleted_by = ElementTree.SubElement(entry, "obsoleted-by")
             for rfc_number in rfc.obsoleted_by.values_list(
                 "rfc_number", flat=True
             ).order_by("rfc_number"):
-                ElementTree.SubElement(
-                    obsoleted_by, "doc-id"
-                ).text = f"RFC{rfc_number:04d}"
+                ElementTree.SubElement(obsoleted_by, "doc-id").text = f"RFC{rfc_number}"
 
         if rfc.updated_by:
             updated_by = ElementTree.SubElement(entry, "updated-by")
             for rfc_number in rfc.updated_by.values_list(
                 "rfc_number", flat=True
             ).order_by("rfc_number"):
-                ElementTree.SubElement(
-                    updated_by, "doc-id"
-                ).text = f"RFC{rfc_number:04d}"
+                ElementTree.SubElement(updated_by, "doc-id").text = f"RFC{rfc_number}"
 
         if rfc.keywords.strip():
             keywords = ElementTree.SubElement(entry, "keywords")
