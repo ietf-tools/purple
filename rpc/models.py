@@ -305,6 +305,13 @@ class RfcToBe(models.Model):
                 name="unique_non_null_rfc_number",
                 nulls_distinct=True,
             ),
+            models.UniqueConstraint(
+                fields=["draft"],
+                condition=~models.Q(disposition_id="withdrawn"),
+                name="unique_active_rfctobe_per_draft",
+                violation_error_message="A draft can only have one non-withdrawn "
+                "RfcToBe",
+            ),
         ]
 
     def __str__(self):

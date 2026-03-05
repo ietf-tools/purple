@@ -132,6 +132,19 @@ logger = logging.getLogger(__name__)
 PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
 
 
+def get_rfctobe_for_draft_name(draft_name: str) -> RfcToBe:
+    """Return the preferred RfcToBe for a given draft name.
+
+    When multiple RfcToBes share a draft name (e.g., one withdrawn and one
+    in-progress), the non-withdrawn one is preferred.
+    """
+    qs = RfcToBe.objects.filter(draft__name=draft_name)
+    obj = qs.exclude(disposition_id="withdrawn").first() or qs.first()
+    if obj is None:
+        raise NotFound(f"No RfcToBe found for draft '{draft_name}'")
+    return obj
+
+
 @extend_schema(operation_id="version", responses=VersionInfoSerializer)
 @api_view(["GET"])
 def version(request):
@@ -832,6 +845,9 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         if lookup_value and str(lookup_value).startswith("rfc"):
             self.lookup_field = "rfc_number"
             self.kwargs[self.lookup_field] = int(lookup_value[3:])
+        else:
+            self.kwargs["pk"] = get_rfctobe_for_draft_name(lookup_value).pk
+            self.lookup_field = "pk"
         return super().get_object()
 
     def get_queryset(self):
@@ -998,11 +1014,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = RfcToBe.objects.filter(
-            draft__name=self.kwargs["draft_name"]
-        ).first()
-        if rfc_to_be is None:
-            raise NotFound("RfcToBe with the given draft name does not exist")
+        rfc_to_be = get_rfctobe_for_draft_name(self.kwargs["draft_name"])
         # Find the current highest order for this document
         max_order = (
             RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
@@ -1208,7 +1220,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     @with_rpcapi
     def create(self, request, rpcapi, *args, **kwargs):
         draft_name = self.kwargs["draft_name"]
-        source = get_object_or_404(RfcToBe, draft__name=draft_name)
+        source = get_rfctobe_for_draft_name(draft_name)
 
         data = request.data.copy()
         data["source"] = source.pk
@@ -1258,8 +1270,7 @@ class AdditionalEmailViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         draft_name = self.kwargs.get("draft_name")
         if draft_name:
-            rfc_to_be = get_object_or_404(RfcToBe, draft__name=draft_name)
-            serializer.save(rfc_to_be=rfc_to_be)
+            serializer.save(rfc_to_be=get_rfctobe_for_draft_name(draft_name))
         else:
             serializer.save()
 
@@ -1664,8 +1675,7 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
-        serializer.save(rfc_to_be=rfc_to_be)
+        serializer.save(rfc_to_be=get_rfctobe_for_draft_name(self.kwargs["draft_name"]))
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -1700,8 +1710,9 @@ class ActionHolderViewSet(
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
-        serializer.save(target_rfctobe=rfc_to_be)
+        serializer.save(
+            target_rfctobe=get_rfctobe_for_draft_name(self.kwargs["draft_name"])
+        )
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -1724,8 +1735,7 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = get_object_or_404(RfcToBe, draft__name=self.kwargs["draft_name"])
-        serializer.save(rfc_to_be=rfc_to_be)
+        serializer.save(rfc_to_be=get_rfctobe_for_draft_name(self.kwargs["draft_name"]))
 
 
 class Mail(views.APIView):
@@ -1772,7 +1782,11 @@ class DocumentMail(views.APIView):
         ],
     )
     def post(self, request, draft_name: str, format=None):
-        rfctobe = RfcToBe.objects.filter(draft__name=draft_name).first()
+        rfctobe = (
+            RfcToBe.objects.filter(draft__name=draft_name)
+            .exclude(disposition_id="withdrawn")
+            .first()
+        )
         if rfctobe is None:
             draft = Document.objects.filter(name=draft_name).first()
         else:

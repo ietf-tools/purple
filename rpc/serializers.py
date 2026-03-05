@@ -922,7 +922,11 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
 
         source = validated_data["source"]
 
-        target_rfctobe = RfcToBe.objects.filter(draft__name=target_draft_name).first()
+        target_rfctobe = (
+            RfcToBe.objects.filter(draft__name=target_draft_name)
+            .exclude(disposition_id="withdrawn")
+            .first()
+        )
         target_document = None
         if not target_rfctobe:
             target_document = Document.objects.filter(name=target_draft_name).first()
