@@ -283,7 +283,9 @@ def load_rfc_xml_index_entries(rfc_index):
             rfc.publication_std_level
         ).upper()
         ElementTree.SubElement(entry, "stream").text = str(rfc.stream)
-        ElementTree.SubElement(entry, "area").text = ""
+
+        if rfc.area:
+            ElementTree.SubElement(entry, "area").text = str(rfc.area)
 
         if rfc.group:
             ElementTree.SubElement(entry, "wg_acronym").text = str(rfc.group)
