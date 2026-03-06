@@ -1258,3 +1258,20 @@ class MetadataValidationResults(models.Model):
             f"MetadataValidationResults for {self.rfc_to_be}: {self.status} on "
             + f"{self.received_at:%Y-%m-%d %H:%M}"
         )
+
+
+class PublicationAttempt(models.Model):
+    """Track an in-flight publication request"""
+
+    class Status(models.TextChoices):
+        PENDING = "pending"
+        FAILED = "failed"
+
+    rfc_to_be = models.OneToOneField("RfcToBe", on_delete=models.PROTECT)
+    started_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        choices=Status,
+        default=Status.PENDING,
+        help_text="Record of an RFC publication request",
+    )
+    detail = models.CharField(max_length=1000, blank=True)

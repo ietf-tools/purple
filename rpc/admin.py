@@ -18,6 +18,7 @@ from .models import (
     Label,
     MailMessage,
     MetadataValidationResults,
+    PublicationAttempt,
     RfcAuthor,
     RfcToBe,
     RfcToBeLabel,
@@ -215,3 +216,9 @@ class MetadataValidationResultsAdmin(admin.ModelAdmin):
 class TaskRunAdmin(admin.ModelAdmin):
     list_display = ["task_name", "last_run_at", "is_running"]
     search_fields = ["task_name"]
+
+
+@admin.register(PublicationAttempt)
+class PublicationAttemptAdmin(admin.ModelAdmin):
+    list_display = ["rfc_to_be", "status", "started_at", "detail"]
+    raw_id_fields = ["rfc_to_be"]

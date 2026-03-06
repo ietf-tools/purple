@@ -3,7 +3,7 @@
 import datetime
 import logging
 import re
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from dataclasses import dataclass
 
 import django_filters
@@ -47,6 +47,7 @@ from utils.rest_framework.permissions import HasApiKey
 
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
+    begin_publication_attempt,
     can_publish,
     validate_ready_to_publish,
 )
@@ -105,6 +106,7 @@ from .serializers import (
     NestedAssignmentSerializer,
     PublicQueueItemSerializer,
     PublishRfcSerializer,
+    PublishRfcStatusSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
     RfcToBeHistorySerializer,
@@ -866,10 +868,33 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         if not can_publish(rfctobe, request.user):
             raise PermissionDenied("User is not permitted to publish this RFC")
         validate_ready_to_publish(rfctobe)  # raises ValidationError
-        publish_rfctobe_task.delay(
-            rfctobe_id=rfctobe.pk, expected_head=serializer.validated_data["head_sha"]
-        )
-        return Response()  # todo return value
+        already_pending = begin_publication_attempt(rfctobe)
+        if not already_pending:
+            publish_rfctobe_task.delay(
+                rfctobe_id=rfctobe.pk,
+                expected_head=serializer.validated_data["head_sha"],
+            )
+        return Response()
+
+    @extend_schema(
+        operation_id="documents_pub_status",
+        request=None,
+        responses=PublishRfcStatusSerializer,
+    )
+    @action(detail=True, methods=["get"], url_path="pub_status")
+    def pub_status(self, request, draft__name=None):
+        StatusTuple = namedtuple("StatusTuple", "status detail")
+        rfctobe = self.get_object()
+        if rfctobe.disposition_id == "published":
+            status = StatusTuple("published", "")
+        else:
+            try:
+                pub_attempt = rfctobe.publicationattempt
+            except RfcToBe.publicationattempt.RelatedObjectDoesNotExist:
+                status = StatusTuple("none", "")
+            else:
+                status = pub_attempt
+        return Response(PublishRfcStatusSerializer(status).data)
 
     @extend_schema(
         operation_id="documents_sync_metadata",

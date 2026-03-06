@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2023, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
 
 import datetime
 
@@ -13,6 +13,7 @@ from .models import (
     DispositionName,
     FinalApproval,
     Label,
+    PublicationAttempt,
     PublishedFormatName,
     RfcAuthor,
     RfcToBe,
@@ -236,3 +237,11 @@ class PublishedFormatNameFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = PublishedFormatName
         django_get_or_create = ("slug",)
+
+
+class PublicationAttemptFactory(factory.django.DjangoModelFactory):
+    rfc_to_be = factory.SubFactory("rpc.factories.RfcToBeFactory")
+    status = PublicationAttempt.Status.PENDING
+
+    class Meta:
+        model = PublicationAttempt

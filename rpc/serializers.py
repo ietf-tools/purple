@@ -1592,3 +1592,8 @@ class PublishRfcSerializer(serializers.Serializer):
         max_length=40,
         help_text="Commit hash of repository HEAD intended for publication",
     )
+
+
+class PublishRfcStatusSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=["none", "pending", "published", "failed"])
+    detail = serializers.CharField(max_length=1000, allow_blank=True)
