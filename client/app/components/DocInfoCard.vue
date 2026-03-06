@@ -335,7 +335,7 @@
             <div v-if="obsoletedBy && obsoletedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in obsoletedBy" :key="doc.id">
                 <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  RFC {{ doc.targetRfcNumber }}
+                  {{ doc.targetDisposition == 'published' ? `RFC ${doc.targetRfcNumber}` : doc.targetDraftName }}
                 </NuxtLink><span v-if="idx < obsoletedBy.length - 1">, </span>
               </span>
             </div>
@@ -347,7 +347,7 @@
             <div v-if="updatedBy && updatedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in updatedBy" :key="doc.id">
                 <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  RFC {{ doc.targetRfcNumber }}
+                  {{ doc.targetDisposition == 'published' ? `RFC ${doc.targetRfcNumber}` : doc.targetDraftName }}
                 </NuxtLink><span v-if="idx < updatedBy.length - 1">, </span>
               </span>
             </div>
