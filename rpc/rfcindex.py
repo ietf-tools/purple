@@ -115,8 +115,8 @@ def get_rfc_text_index_entries():
     return entries
 
 
-def load_bcp_xml_index_entries(rfc_index):
-    """Load BCP entries for rfc-index.xml"""
+def add_bcp_xml_index_entries(rfc_index):
+    """Add BCP entries for rfc-index.xml"""
     entries = []
 
     highest_bcp_number = (
@@ -141,8 +141,8 @@ def load_bcp_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
-def load_fyi_xml_index_entries(rfc_index):
-    """Returns FYI entries for rfc-index.xml"""
+def add_fyi_xml_index_entries(rfc_index):
+    """Add FYI entries for rfc-index.xml"""
     entries = []
 
     published_fyis = (
@@ -164,8 +164,8 @@ def load_fyi_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
-def load_std_xml_index_entries(rfc_index):
-    """Load std entries for rfc-index.xml"""
+def add_std_xml_index_entries(rfc_index):
+    """Add std entries for rfc-index.xml"""
     entries = []
 
     published_stds = (
@@ -187,8 +187,8 @@ def load_std_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
-def load_rfc_not_be_xml_index_entries(rfc_index):
-    """Load unusable RFC entries for rfc-index.xml"""
+def add_rfc_not_be_xml_index_entries(rfc_index):
+    """Add unusable RFC entries for rfc-index.xml"""
     entries = []
 
     for record in UnusableRfcNumber.objects.order_by("number"):
@@ -197,8 +197,8 @@ def load_rfc_not_be_xml_index_entries(rfc_index):
         entries.append(entry)
 
 
-def load_rfc_xml_index_entries(rfc_index):
-    """Load RFC entries for rfc-index.xml"""
+def add_rfc_xml_index_entries(rfc_index):
+    """Add RFC entries for rfc-index.xml"""
     entries = []
 
     published_rfcs = RfcToBe.objects.filter(published_at__isnull=False).order_by(
@@ -328,12 +328,12 @@ def createRfcXmlIndex():
         },
     )
 
-    # load data
-    load_bcp_xml_index_entries(rfc_index)
-    load_fyi_xml_index_entries(rfc_index)
-    load_rfc_not_be_xml_index_entries(rfc_index)
-    load_rfc_xml_index_entries(rfc_index)
-    load_std_xml_index_entries(rfc_index)
+    # add data
+    add_bcp_xml_index_entries(rfc_index)
+    add_fyi_xml_index_entries(rfc_index)
+    add_rfc_not_be_xml_index_entries(rfc_index)
+    add_rfc_xml_index_entries(rfc_index)
+    add_std_xml_index_entries(rfc_index)
 
     # make it pretty
     rough_index = parseString(ElementTree.tostring(rfc_index, encoding="UTF-8"))
