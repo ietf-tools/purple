@@ -28,7 +28,7 @@ def get_rfc_text_index_entries():
     rfcs = sorted(chain(published_rfcs, unususable), key=attrgetter("rfc_number"))
     for rfc in rfcs:
         if isinstance(rfc, UnusableRfcNumber):
-            entries.append(f"{rfc.rfc_number:04d} Not Issued.")
+            entries.append(f"{rfc.rfc_number} Not Issued.")
         else:
             authors = ", ".join(rfc.authors.values_list("titlepage_name", flat=True))
             date = (
@@ -48,7 +48,7 @@ def get_rfc_text_index_entries():
             obsoletes = ""
             if rfc.obsoletes:
                 obsoleting_rfcs = ", ".join(
-                    f"RFC{rfc_number:04d}"
+                    f"RFC{rfc_number}"
                     for rfc_number in rfc.obsoletes.values_list(
                         "rfc_number", flat=True
                     ).order_by("rfc_number")
@@ -59,7 +59,7 @@ def get_rfc_text_index_entries():
             obsoleted_by = ""
             if rfc.obsoleted_by:
                 obsoleting_rfcs = ", ".join(
-                    f"RFC{rfc_number:04d}"
+                    f"RFC{rfc_number}"
                     for rfc_number in rfc.obsoleted_by.values_list(
                         "rfc_number", flat=True
                     ).order_by("rfc_number")
@@ -70,7 +70,7 @@ def get_rfc_text_index_entries():
             updates = ""
             if rfc.updates:
                 updating_rfcs = ", ".join(
-                    f"RFC{rfc_number:04d}"
+                    f"RFC{rfc_number}"
                     for rfc_number in rfc.updates.values_list(
                         "rfc_number", flat=True
                     ).order_by("rfc_number")
@@ -81,7 +81,7 @@ def get_rfc_text_index_entries():
             updated_by = ""
             if rfc.updated_by:
                 updating_rfcs = ", ".join(
-                    f"RFC{rfc_number:04d}"
+                    f"RFC{rfc_number}"
                     for rfc_number in rfc.updated_by.values_list(
                         "rfc_number", flat=True
                     ).order_by("rfc_number")
@@ -93,7 +93,7 @@ def get_rfc_text_index_entries():
             # subseries
             subseries = ",".join(
                 [
-                    f"{s.type_id.upper()}{s.number:04d}"
+                    f"{s.type_id.upper()}{s.number}"
                     for s in rfc.subseriesmember_set.all()
                 ]
             )
@@ -102,7 +102,7 @@ def get_rfc_text_index_entries():
 
             entry = fill(
                 (
-                    f"{rfc.rfc_number:04d} {rfc.title}. {authors}. {date}. "
+                    f"{rfc.rfc_number} {rfc.title}. {authors}. {date}. "
                     f"(Format: {formats}){doc_relations}{subseries}"
                     f"(Status: {str(rfc.std_level).upper()}) "
                     f"(DOI: {settings.DOI_PREFIX}/RFC{rfc.rfc_number:04d})"
