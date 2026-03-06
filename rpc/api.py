@@ -10,7 +10,7 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Max, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -65,6 +65,7 @@ from .models import (
     MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
+    RfcToBeBlockingReason,
     RpcDocumentComment,
     RpcPerson,
     RpcRelatedDocument,
@@ -268,6 +269,15 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
             .get_queryset()
             .select_related("rfc_to_be__draft", "person__datatracker_person")
             .filter(person_id=req_person_id)
+            .prefetch_related(
+                Prefetch(
+                    "rfc_to_be__rfctobeblockingreason_set",
+                    queryset=RfcToBeBlockingReason.objects.filter(
+                        resolved__isnull=True
+                    ).select_related("reason"),
+                    to_attr="blocking_reasons",
+                )
+            )
         )
 
         is_manager = check_user_has_role(user, "manager")
