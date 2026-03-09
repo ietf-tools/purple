@@ -58,8 +58,7 @@
         "ms-python.vscode-pylance",
         "mutantdino.resourcemonitor",
         "oderwat.indent-rainbow",
-        "redhat.vscode-yaml",
-        "spmeesseman.vscode-taskexplorer"
+        "redhat.vscode-yaml"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
