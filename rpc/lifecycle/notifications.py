@@ -155,8 +155,7 @@ def process_rfctobe_changes_for_queue():
 
         if queue_rfcs:
             logger.info(
-                f"Sending batched queue precompute notification for {len(queue_rfcs)} "
-                "RFCs"
+                f"Sending queue precompute notification for updated RFCs"
             )
             notify_queue_precompute()
         else:
