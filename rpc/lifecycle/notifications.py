@@ -19,31 +19,25 @@ from rpc.models import (
 logger = logging.getLogger(__name__)
 
 
-def notify_red_precompute(rfctobe_ids):
+def notify_queue_precompute():
     """Notify external system about in-progress RFC changes."""
 
-    logger.info(f"Notifying RED precompute system about RFCs: {rfctobe_ids}")
+    logger.info(f"Notifying queue precompute system about updated RFCs")
 
-    url = getattr(settings, "TRIGGER_RED_PRECOMPUTE_URL", "")
+    url = getattr(settings, "TRIGGER_QUEUE_PRECOMPUTE_URL", "")
     if not url:
         logger.warning(
-            "TRIGGER_RED_PRECOMPUTE_URL not configured, skipping notification"
+            "TRIGGER_QUEUE_PRECOMPUTE_URL not configured, skipping notification"
         )
         return
 
-    payload = {
-        "rfcs": ",".join(str(n) for n in sorted(rfctobe_ids)),
-    }
-
     response = requests.post(
         url,
-        json=payload,
-        timeout=30,
-        headers={"Content-Type": "application/json"},
+        timeout=30
     )
     response.raise_for_status()
     logger.info(
-        f"Successfully notified RED precompute system about RFCs: {rfctobe_ids}"
+        f"Successfully notified queue precompute system about updated RFCs"
     )
 
 
@@ -166,10 +160,10 @@ def process_rfctobe_changes_for_queue():
 
         if queue_rfcs:
             logger.info(
-                f"Sending batched RED precompute notification for {len(queue_rfcs)} "
+                f"Sending batched queue precompute notification for {len(queue_rfcs)} "
                 "RFCs"
             )
-            notify_red_precompute(list(queue_rfcs))
+            notify_queue_precompute()
         else:
             logger.info("No in-progress RFCs changed")
 
