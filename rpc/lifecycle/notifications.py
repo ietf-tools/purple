@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 def notify_queue_precompute():
     """Notify external system about in-progress RFC changes."""
 
-    logger.info(f"Notifying queue precompute system about updated RFCs")
+    logger.info("Notifying queue precompute system about updated RFCs")
 
     url = getattr(settings, "TRIGGER_QUEUE_PRECOMPUTE_URL", "")
     if not url:
@@ -33,7 +33,7 @@ def notify_queue_precompute():
 
     response = requests.post(url, timeout=30)
     response.raise_for_status()
-    logger.info(f"Successfully notified queue precompute system about updated RFCs")
+    logger.info("Successfully notified queue precompute system about updated RFCs")
 
 
 def get_updated_rfcs_since(current_check_time):
@@ -154,9 +154,7 @@ def process_rfctobe_changes_for_queue():
         queue_rfcs = get_updated_rfcs_since(last_check)
 
         if queue_rfcs:
-            logger.info(
-                f"Sending queue precompute notification for updated RFCs"
-            )
+            logger.info("Sending queue precompute notification for updated RFCs")
             notify_queue_precompute()
         else:
             logger.info("No in-progress RFCs changed")
