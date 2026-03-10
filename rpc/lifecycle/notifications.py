@@ -31,14 +31,9 @@ def notify_queue_precompute():
         )
         return
 
-    response = requests.post(
-        url,
-        timeout=30
-    )
+    response = requests.post(url, timeout=30)
     response.raise_for_status()
-    logger.info(
-        f"Successfully notified queue precompute system about updated RFCs"
-    )
+    logger.info(f"Successfully notified queue precompute system about updated RFCs")
 
 
 def get_updated_rfcs_since(current_check_time):

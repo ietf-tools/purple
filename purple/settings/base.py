@@ -194,7 +194,7 @@ CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 # Window after after a missed deadline before abandoning a cron task
 CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds
 
-TRIGGER_RED_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_RED_PRECOMPUTE_URL")
+TRIGGER_QUEUE_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_QUEUE_PRECOMPUTE_URL")
 
 # Errata
 ERRATA_URL = "https://www.rfc-editor.org/errata"
