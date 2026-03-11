@@ -3,6 +3,7 @@
 
 import os
 from pathlib import Path
+from typing import Any
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
@@ -198,3 +199,10 @@ TRIGGER_QUEUE_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_QUEUE_PRECOMPUTE_U
 
 # Errata
 ERRATA_URL = "https://www.rfc-editor.org/errata"
+
+# Storages
+STORAGES: dict[str, Any] = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+    "red_bucket": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
+}
