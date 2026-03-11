@@ -91,6 +91,27 @@ INTERNAL_IPS = [
     "localhost",
 ]
 
+# Storages
+# To connect with datatracker in dev, uncomment this and fill in the port on the
+# endpoint_url to match the port mapped to port 9000 on the blobstore container.
+# STORAGES["red_bucket"] = {
+#     "BACKEND": "storages.backends.s3.S3Storage",
+#     "OPTIONS": {
+#         "endpoint_url": "http://host.docker.internal:53724/",
+#         "access_key": "minio_root",
+#         "secret_key": "minio_pass",
+#         "security_token": None,
+#         "bucket_name": "red",
+#     },
+# }
+#
+# Alternatively, create the red_bucket directory and enable this instead. This
+# will not be accessible to datatracker, but is useful for inspecting output.
+# STORAGES["red_bucket"] = {
+#     "BACKEND": "django.core.files.storage.FileSystemStorage",
+#     "OPTIONS": {"location": "red_bucket", "allow_overwrite": True},
+# }
+
 # Local settings override
 try:
     from .development_local import *

@@ -52,6 +52,6 @@ def create_rfc_index_support_blobs():
         "april-first-rfc-numbers.json": generate_april_first_rfc_json(),
         "publication-std-levels.json": generate_publication_std_level_json(),
     }
-    bucket_path = Path(getattr(settings, "RFCINDEX_SUPPORT_PATH", ""))
+    bucket_path = Path(getattr(settings, "RFCINDEX_SUPPORT_BLOB_PATH", ""))
     for filename, contents in json_data.items():
         red_bucket.save(bucket_path / filename, StringIO(contents))
