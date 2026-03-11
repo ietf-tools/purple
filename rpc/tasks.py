@@ -15,7 +15,7 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import MailMessage, MetadataValidationResults, RfcToBe
-from .rfcindex import createRfcTxtIndex, createRfcXmlIndex
+from .rfcindex import create_rfc_index_support_blobs
 
 logger = get_task_logger(__name__)
 
@@ -159,23 +159,17 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
 
 @shared_task
 def process_rfctobe_changes_for_queue_task():
-    """
-    Celery task to check for changes to in-progress RFCs and send notifications.
-    """
+    """Check for changes to in-progress RFCs and send notifications"""
     try:
         process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
 
 
-@shared_task(bind=True)
-def create_index_txt(self):
-    createRfcTxtIndex()
-
-
-@shared_task(bind=True)
-def create_index_xml(self):
-    createRfcXmlIndex()
+@shared_task
+def create_rfc_index_support_blobs_task():
+    """Create JSON blobs needed to generate rfc-index files"""
+    create_rfc_index_support_blobs()
 
 
 @shared_task
