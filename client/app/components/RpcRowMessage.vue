@@ -1,5 +1,5 @@
 <template>
-  <tr v-if="statusArr.every(status => status === 'pending')">
+  <tr v-if="statusArr.some(status => status === 'pending')">
     <RpcTdMessage :colspan="props.columnCount">
       Loading...
     </RpcTdMessage>
@@ -9,22 +9,37 @@
       No rows found
     </RpcTdMessage>
   </tr>
+  <tr v-else-if="errorArr.some(error => Boolean(error))">
+    <RpcTdMessage :colspan="props.columnCount" class="bg-red-300">
+      Error:
+      <BaseBadge v-for="error in errorArr" color="red" class="mr-2">
+        {{ error }}
+      </BaseBadge>
+    </RpcTdMessage>
+  </tr>
 </template>
 
 <script setup lang="ts">
-
-type Status = Awaited<ReturnType<typeof useAsyncData>>['status']['value']
+type UseAsyncDataReturn = Awaited<ReturnType<typeof useAsyncData>>
+type Status = UseAsyncDataReturn['status']['value']
+type Error = UseAsyncDataReturn['error']['value']
 
 type Props = {
   rowCount: number
   columnCount: number
   status: Status | Status[]
+  error: Error | Error[]
 }
 
-const statusArr = computed(()=> {
+const props = defineProps<Props>()
+
+const statusArr = computed(() => {
   const { status } = props
   return Array.isArray(status) ? status : [status]
 })
 
-const props = defineProps<Props>()
+const errorArr = computed(() => {
+  const { error } = props
+  return Array.isArray(error) ? error : [error]
+})
 </script>
