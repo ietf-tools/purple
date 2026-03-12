@@ -70,7 +70,7 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
             f"{subseries.type.slug}{subseries.number}"
             for subseries in rfctobe.subseriesmember_set.all()
         ],
-        keywords=[kw.strip() for kw in rfctobe.keywords.split(",")]
+        keywords=[kw.strip() for kw in rfctobe.keywords.split(",")],
         # todo changes_status_of (needs datatracker support, too)
     )
     if rfctobe.draft is not None:
