@@ -31,7 +31,12 @@ def notify_queue_precompute():
         )
         return
 
-    response = requests.post(url, timeout=30)
+    response = requests.post(
+        url,
+        timeout=30,
+        json={},
+        headers={"Content-Type": "application/json"},
+    )
     response.raise_for_status()
     logger.info("Successfully notified queue precompute system about updated RFCs")
 
