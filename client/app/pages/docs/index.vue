@@ -37,7 +37,7 @@ const columns: Column[] = [
     label: 'Document',
     field: 'name',
     classes: 'text-sm font-medium',
-    link: row => `/docs/${row.name}`
+    link: row => `/docs/${ row.name }`
   },
   {
     field: 'labels',
@@ -53,14 +53,14 @@ const columns: Column[] = [
 const rpcPersonId = computed(() => userStore.rpcPersonId)
 
 const { data: myAssignments, status: assignmentStatus } = await useAsyncData(
-  () => `myAssignments-${rpcPersonId.value}`,
+  () => `myAssignments-${ rpcPersonId.value }`,
   async () => {
     if (rpcPersonId.value === null) {
       return []
     }
     return api.rpcPersonAssignmentsList({ personId: rpcPersonId.value })
   },
-  { server: false, default: () => ([]) }
+  { server: false, lazy: true, default: () => ([]) }
 )
 
 const pending = computed(() => assignmentStatus.value === 'pending')
@@ -68,7 +68,7 @@ const pending = computed(() => assignmentStatus.value === 'pending')
 const { data: labels } = await useAsyncData(
   'labels',
   () => api.labelsList(),
-  { server: false, default: () => ([]) }
+  { server: false, lazy: true, default: () => ([]) }
 )
 
 useHead({

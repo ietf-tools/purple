@@ -62,7 +62,7 @@ const sortedLabels = computed(() => labels.value?.toSorted((a, b) => a.slug.loca
 
 const { data: labels, error: labelsError, refresh } = await useAsyncData(
   () => api.labelsList(),
-  { server: false }
+  { server: false, lazy: true }
 )
 
 const val = inject(overlayModalKey)
