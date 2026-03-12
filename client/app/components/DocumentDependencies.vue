@@ -33,7 +33,7 @@
 <script setup lang="ts">
 import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
-import { h } from 'vue'
+import { h, resolveComponent } from 'vue'
 import { Anchor } from '#components'
 import BaseBadge from './BaseBadge.vue'
 
@@ -122,6 +122,20 @@ const columns: Column[] = [
       const info = relatedDocsInfo.value?.[row] || {}
       return info.refqueue_count || 0
     }
+  },
+  {
+    key: 'delete',
+    label: '',
+    field: 'id' satisfies keyof RpcRelatedDocument,
+    classes: 'text-center w-8',
+    sortable: false,
+    format: (id: any) => {
+      return h('button', {
+        type: 'button',
+        class: 'text-red-500 hover:text-red-700 border-none bg-transparent p-0.5',
+        onClick: () => handleDeleteDependency(id)
+      }, [h(resolveComponent('Icon'), { name: 'uil:trash' })])
+    }
   }
 ]
 
@@ -181,4 +195,19 @@ watch(
   { immediate: true }
 )
 
+const handleDeleteDependency = async (id: number) => {
+  if (!id) return
+  try {
+    await api.documentsReferencesDestroy({
+      draftName: props.draftName,
+      id
+    })
+    const index = relatedDocuments.value.findIndex(doc => doc.id === id)
+    if (index > -1) {
+      relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
+    }
+  } catch (e) {
+    console.error('Failed to delete dependency:', e)
+  }
+}
 </script>
