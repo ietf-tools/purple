@@ -28,18 +28,20 @@ type Props = {
   rowCount: number
   columnCount: number
   status: Status | Status[]
-  error: Error | Error[]
+  error?: Error | Error[]
 }
 
 const props = defineProps<Props>()
 
 const statusArr = computed(() => {
   const { status } = props
+  if (!status) return []
   return Array.isArray(status) ? status : [status]
 })
 
 const errorArr = computed(() => {
   const { error } = props
+  if (!error) return []
   return Array.isArray(error) ? error : [error]
 })
 </script>

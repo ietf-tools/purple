@@ -94,7 +94,7 @@
         </tr>
       </RpcThead>
       <RpcTbody>
-        <RpcRowMessage :status="[status, clustersStatus, peopleStatus]" :column-count="table.getAllColumns().length"
+        <RpcRowMessage :status="[status, clustersStatus, peopleStatus]" :error="[error, clustersError, peopleError]" :column-count="table.getAllColumns().length"
           :row-count="table.getRowModel().rows.length" />
         <tr v-for="row in table.getRowModel().rows" :key="row.id">
           <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
