@@ -137,15 +137,12 @@ type Props = {
 const api = useApi()
 const props = defineProps<Props>()
 
-const people = ref<RpcPerson[]>(props.people ?? [])
+const people = computed(() => props.people ?? fetchedPeople.value)
 
-if (!props.people) {
-  const { data: fetchedPeople } = await useAsyncData(
-    () => api.rpcPersonList(),
-    { server: false, default: () => [] }
-  )
-  if (fetchedPeople.value) people.value = fetchedPeople.value
-}
+const { data: fetchedPeople } = await useAsyncData(
+  () => api.rpcPersonList(),
+  { server: false, lazy: true, default: () => [] }
+)
 
 // Fetch additional info for each related document
 const relatedDocsInfo = ref<Record<string, any>>({})
