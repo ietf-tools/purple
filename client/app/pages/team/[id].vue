@@ -227,7 +227,7 @@ const { data: assignments, status: assignmentsStatus, error: assignmentsError } 
 
 const { data: clusters, status: clustersStatus, error: clustersError } = await useAsyncData(
   () => api.clustersList(),
-  { server: false, lazy: false, default: () => [] as Cluster[] }
+  { server: false, lazy: true, default: () => [] as Cluster[] }
 )
 
 // Handle error state

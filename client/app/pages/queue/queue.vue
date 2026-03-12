@@ -552,7 +552,7 @@ const { data: clusters, refresh: refreshClusters, status: clustersStatus, error:
   () => api.clustersList(),
   {
     server: false,
-    lazy: false,
+    lazy: true,
     default: () => [] as Cluster[]
   }
 )
