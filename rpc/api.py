@@ -927,6 +927,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             subseries=[
                 f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
             ],
+            keywords=[kw.strip() for kw in rfctobe.keywords.split(",")]
         )
         try:
             rpcapi.purple_rfc_partial_update(
