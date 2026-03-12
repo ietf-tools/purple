@@ -33,9 +33,10 @@
 <script setup lang="ts">
 import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
-import { h, resolveComponent } from 'vue'
+import { h } from 'vue'
 import { Anchor } from '#components'
 import BaseBadge from './BaseBadge.vue'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 type RpcRelatedDocumentAsObject = {
   [K in keyof RpcRelatedDocument]: RpcRelatedDocument[K]
@@ -129,12 +130,13 @@ const columns: Column[] = [
     field: 'id' satisfies keyof RpcRelatedDocument,
     classes: 'text-center w-8',
     sortable: false,
-    format: (id: any) => {
+    format: (id: RpcRelatedDocument['id']) => {
+      if (typeof id !== 'number') return '—'
       return h('button', {
         type: 'button',
         class: 'text-red-500 hover:text-red-700 border-none bg-transparent p-0.5',
         onClick: () => handleDeleteDependency(id)
-      }, [h(resolveComponent('Icon'), { name: 'uil:trash' })])
+      }, [h(Icon, { name: 'uil:trash' })])
     }
   }
 ]
@@ -149,6 +151,7 @@ type Props = {
 }
 
 const api = useApi()
+const snackbar = useSnackbar()
 const props = defineProps<Props>()
 
 const people = ref<RpcPerson[]>(props.people ?? [])
@@ -207,7 +210,7 @@ const handleDeleteDependency = async (id: number) => {
       relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
     }
   } catch (e) {
-    console.error('Failed to delete dependency:', e)
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to delete dependency' })
   }
 }
 </script>
