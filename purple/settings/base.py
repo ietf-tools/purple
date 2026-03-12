@@ -201,7 +201,7 @@ TRIGGER_QUEUE_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_QUEUE_PRECOMPUTE_U
 ERRATA_URL = "https://www.rfc-editor.org/errata"
 
 # Storages
-STORAGES: dict[str, Any] = {
+STORAGES: dict[str, dict[str, Any]] = {
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     "red_bucket": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
