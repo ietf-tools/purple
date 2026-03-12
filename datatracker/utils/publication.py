@@ -34,7 +34,6 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
                     if author.datatracker_person is not None
                     else None
                 ),
-                email=author.datatracker_person.email,
                 affiliation=author.affiliation or "",
                 country="",  # purple does not model country
             )

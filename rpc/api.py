@@ -913,6 +913,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                         else None
                     ),
                     affiliation=author.affiliation or "",
+                    country="",  # purple does not model country
                 )
                 for author in rfctobe.authors.all()
             ],
@@ -927,7 +928,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             subseries=[
                 f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
             ],
-            keywords=[kw.strip() for kw in rfctobe.keywords.split(",")]
+            keywords=[kw.strip() for kw in rfctobe.keywords.split(",")],
         )
         try:
             rpcapi.purple_rfc_partial_update(
