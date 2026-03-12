@@ -3,10 +3,12 @@ import json
 from io import StringIO
 from pathlib import Path
 
+import rpcapi_client
 from django.conf import settings
 from django.core.files.storage import storages
 from django.db.models import QuerySet
 
+from datatracker.rpcapi import with_rpcapi
 from rpc.models import RfcToBe, UnusableRfcNumber
 
 
@@ -55,3 +57,14 @@ def create_rfc_index_support_blobs():
     bucket_path = Path(getattr(settings, "RFCINDEX_SUPPORT_BLOB_PATH", ""))
     for filename, contents in json_data.items():
         red_bucket.save(bucket_path / filename, StringIO(contents))
+
+
+@with_rpcapi
+def refresh_rfc_index(*, rpcapi: rpcapi_client.PurpleApi):
+    """Refresh the RFC index
+
+    Generates necessary support files and asks datatracker to generate the new
+    indexes.
+    """
+    create_rfc_index_support_blobs()
+    rpcapi.refresh_rfc_index()

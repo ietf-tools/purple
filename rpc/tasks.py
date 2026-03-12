@@ -15,7 +15,7 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import MailMessage, MetadataValidationResults, RfcToBe
-from .rfcindex import create_rfc_index_support_blobs
+from .rfcindex import refresh_rfc_index
 
 logger = get_task_logger(__name__)
 
@@ -167,9 +167,8 @@ def process_rfctobe_changes_for_queue_task():
 
 
 @shared_task
-def create_rfc_index_support_blobs_task():
-    """Create JSON blobs needed to generate rfc-index files"""
-    create_rfc_index_support_blobs()
+def refresh_rfc_index_task():
+    refresh_rfc_index()
 
 
 @shared_task
