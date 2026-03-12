@@ -20,7 +20,7 @@
         {{
           humanizeDuration(
             Duration.fromObject({ second: stat.seconds }).milliseconds,
-            { largest: 1, round: true})
+            { largest: 1, round: true })
         }}
       </td>
     </tr>
@@ -38,16 +38,17 @@ const api = useApi()
 
 // DATA
 
-const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, default: () => [] })
+const { data: labels } = await useAsyncData(() => api.labelsList(), { server: false, lazy: true, default: () => [] })
 
 const { data: documents } = await useAsyncData(
   () => api.documentsList(),
-  { server: false, default: () => ({ count: 0, results:[] }) as PaginatedRfcToBeList }
+  { server: false, lazy: true, default: () => ({ count: 0, results: [] }) as PaginatedRfcToBeList }
 )
 
 const { data: labelStats } = await useAsyncData(
   () => api.statsLabels(), {
     server: false,
+    lazy: true,
     default: () => ({ labelStats: [] }) as LabelStats
   }
 )

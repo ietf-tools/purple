@@ -78,6 +78,7 @@ const { data: rfcToBe, error: rfcToBeError } = await useAsyncData(
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
     server: false,
+    lazy: true,
     deep: true // author editing relies on deep reactivity
   }
 )
@@ -85,7 +86,7 @@ const { data: rfcToBe, error: rfcToBeError } = await useAsyncData(
 // const { data: capabilities } = await useAsyncData<Capability[]>(
 //   'capabilities',
 //   () => api.capabilitiesList(),
-//   { default: () => ([]), server: false }
+//   { default: () => ([]), server: false, lazy: true }
 // )
 
 const { data: labels } = await useLabels()
