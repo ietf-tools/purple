@@ -97,7 +97,7 @@ INTERNAL_IPS = [
 # STORAGES["red_bucket"] = {
 #     "BACKEND": "storages.backends.s3.S3Storage",
 #     "OPTIONS": {
-#         "endpoint_url": "http://host.docker.internal:53724/",
+#         "endpoint_url": "http://host.docker.internal:9000/",
 #         "access_key": "minio_root",
 #         "secret_key": "minio_pass",
 #         "security_token": None,
