@@ -4,7 +4,12 @@
       <CardHeader title="Edit Authors"/>
     </template>
     <div v-if="draft.authors" class="border-5 border-gray-700 text-gray-500">
-      <p class="italic text-sm">(drag to reorder)</p>
+      <div class="flex justify-between">
+        <p class="italic text-sm">(drag to reorder)</p>
+        <span>[
+        <UpdateSpinner :status="updateStatusRef" :error="updateStatusErrorRef" />
+        ]</span>
+      </div>
       <ul ref="parent" class="block min-w-[200px]">
         <li v-for="(author, index) in draft.authors" :index="index" :key="author.id" class="flex items-center justify-between pl-2 cursor-ns-resize pr-1 py-1 mt-1 border rounded-md border-gray-400">
           <Icon name="fluent:re-order-dots-vertical-24-regular" class="mr-2" />
@@ -22,8 +27,10 @@
 </template>
 
 <script setup lang="ts">
-import { useDragAndDrop } from "fluid-dnd/vue";
+import { watchDebounced } from '@vueuse/core'
+import { useDragAndDrop } from 'fluid-dnd/vue'
 import type { RfcToBe } from '~/purple_client'
+import { useUpdateStatusRef, useUpdateStatusErrorRef } from '../utils/update-status'
 
 type Props = {
   draftName: string
@@ -56,34 +63,48 @@ const authorsRef = computed({
   set: (val) => { if (draft.value) draft.value.authors = val }
 })
 
-const [ parent ] = useDragAndDrop(authorsRef);
+const [ parent ] = useDragAndDrop(authorsRef)
 
-watch(() => draft.value?.authors, async () => {
+const updateStatusRef = useUpdateStatusRef()
+const updateStatusErrorRef = useUpdateStatusErrorRef()
+
+watchDebounced(() => draft.value?.authors, async () => {
+  console.log("updating")
   const newAuthors = draft.value?.authors
   if(!newAuthors) return
 
-  const authorIds = newAuthors
-    .map(author => author.id)
-    .filter(maybeId => maybeId !== undefined)
+  updateStatusRef.value = 'pending'
 
-  api.documentsAuthorsOrder({
-    draftName: props.draftName,
-    authorOrderRequest: {
-      order: authorIds
-    }
-  })
+  try {
+    const authorIds = newAuthors
+      .map(author => author.id)
+      .filter(maybeId => maybeId !== undefined)
 
-  await Promise.all(newAuthors.map(author =>
-    api.documentsAuthorsPartialUpdate({
+    api.documentsAuthorsOrder({
       draftName: props.draftName,
-      id: author.id!,
-      patchedRfcAuthorRequest: {
-        isEditor: Boolean(author.isEditor),
-        titlepageName: author.titlepageName
+      authorOrderRequest: {
+        order: authorIds
       }
     })
-  ))
+
+    await Promise.all(newAuthors.map(author =>
+      api.documentsAuthorsPartialUpdate({
+        draftName: props.draftName,
+        id: author.id!,
+        patchedRfcAuthorRequest: {
+          isEditor: Boolean(author.isEditor),
+          titlepageName: author.titlepageName
+        }
+      })
+    ))
+
+    updateStatusRef.value = 'success'
+  } catch (e) {
+    console.error('Error', e)
+    updateStatusRef.value = 'error'
+    updateStatusErrorRef.value = String(e)
+  }
 },
-  { deep: true }
+  { deep: true, debounce: 500 }
 )
 </script>
