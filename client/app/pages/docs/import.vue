@@ -290,7 +290,7 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       })
     }
   },
-  { server: false }
+  { server: false, lazy: true }
 )
 
 const submissionName = computed(() => fetchedData.value?.submission?.name)
@@ -317,7 +317,7 @@ const {
     submissionName.value
       ? api.documentsCommentsList({ draftName: submissionName.value })
       : Promise.resolve({ results: [], count: 0 }),
-  { server: false, watch: [submissionName] }
+  { server: false, lazy: true, watch: [submissionName] }
 )
 
 </script>

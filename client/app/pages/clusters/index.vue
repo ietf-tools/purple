@@ -49,7 +49,10 @@ const api = useApi()
 const { data: clusters, pending, refresh } = await useAsyncData(
   'all-clusters',
   () => api.clustersList(),
-  {}
+  {
+    server: false,
+    lazy: true,
+  }
 )
 
 const lastClusterNumber = computed(() => {

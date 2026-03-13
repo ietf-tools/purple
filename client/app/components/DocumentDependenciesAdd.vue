@@ -89,7 +89,8 @@ const {
   data: relationshipNamesList,
   error: errorRelationshipNamesList
 } = await useAsyncData(
-  () => api.docRelationshipNamesList({ refs: true })
+  () => api.docRelationshipNamesList({ refs: true }),
+  {server: false, lazy: true}
 )
 
 const options = computed((): DialogOption[] => {

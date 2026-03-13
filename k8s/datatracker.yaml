@@ -126,18 +126,20 @@ spec:
           image: busybox:stable
           command:
             - "sh"
-            - "-c"
+            - "-ec"
             - |-
               cd /a
-              mkdir -p ietfdata/doc/draft/repository &&\
-              mkdir -p www/www6s/staging &&\
-              mkdir -p ietfdata/doc/draft/collection/draft-archive &&\
-              mkdir -p www/www6s/lib/dt/media/photo &&\
-              mkdir -p www/www6s/proceedings &&\
-              mkdir -p www/ietf-ftp/yang/catalogmod &&\
-              mkdir -p www/ietf-ftp/yang/draftmod &&\
-              mkdir -p www/ietf-ftp/yang/ianamod &&\
+              mkdir -p www/www6s/staging
+              mkdir -p ietfdata/doc/draft/collection/draft-archive
+              mkdir -p ietfdata/doc/draft/repository
+              mkdir -p www/www6s/lib/dt/media/photo
+              mkdir -p www/www6s/proceedings
+              mkdir -p www/ietf-ftp/rfc/prerelease
+              mkdir -p www/ietf-ftp/yang/catalogmod
+              mkdir -p www/ietf-ftp/yang/draftmod
+              mkdir -p www/ietf-ftp/yang/ianamod
               mkdir -p www/ietf-ftp/yang/rfcmod
+              chown -R 1000:1000 /a
           securityContext:
             runAsNonRoot: false
             runAsUser: 0

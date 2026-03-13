@@ -7,7 +7,7 @@ from base64 import b64decode
 from email.utils import parseaddr
 from hashlib import sha384
 
-import botocore
+import botocore.config
 
 from .base import *
 from .logging.production import LOGGING as _logging

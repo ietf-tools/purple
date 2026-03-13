@@ -52,6 +52,10 @@ const { data: cluster, error, status, refresh } = await useAsyncData(
       return null
     }
     return api.clustersRetrieve({ number: clusterNumber.value })
+  },
+  {
+    server: false,
+    lazy: true,
   }
 )
 

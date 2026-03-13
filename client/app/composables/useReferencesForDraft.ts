@@ -5,7 +5,8 @@ export function useReferencesForDraft(draftName: string) {
     () => api.documentsReferencesList({ draftName }),
     {
       default: () => [],
-      server: false
+      server: false,
+      lazy: true,
     }
   )
 }

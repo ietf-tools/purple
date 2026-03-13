@@ -28,7 +28,8 @@
                 :value="null">
                 <li
                   :class="[active ? 'bg-indigo-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
-                  <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">Show all documents</span>
+                  <span
+                    :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">Show all documents</span>
                   <span
                     v-if="selected"
                     :class="[active ? 'text-white' : 'text-indigo-600', 'absolute inset-y-0 right-0 flex items-center pr-4']">
@@ -41,7 +42,9 @@
                 :value="role.slug">
                 <li
                   :class="[active ? 'bg-indigo-600 text-white' : 'text-gray-900', 'relative cursor-default select-none py-2 pl-3 pr-9']">
-                  <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">Show documents needing {{ role.name }}</span>
+                  <span :class="[selected ? 'font-semibold' : 'font-normal', 'block truncate']">Show documents needing {{
+                      role.name
+                    }}</span>
                   <span
                     v-if="selected"
                     :class="[active ? 'text-white' : 'text-indigo-600', 'absolute inset-y-0 right-0 flex items-center pr-4']">
@@ -135,7 +138,7 @@ async function saveAssignment(assignment: Pick<Assignment, 'rfcToBe' | 'person'>
     body: {
       rfc_to_be: assignment.rfcToBe,
       person: assignment.person,
-      role,
+      role
     },
     method: 'POST',
     headers: { 'X-CSRFToken': csrf.value?.toString() ?? '' }
@@ -186,19 +189,19 @@ async function refresh() {
 const { data: people, pending: pendingPeople, refresh: refreshPeople } = await useAsyncData<RpcPerson[]>(
   'rpcPersons',
   () => api.rpcPersonList({ isActive: true }),
-  { server: false, default: () => ([]) }
+  { server: false, lazy: true, default: () => ([]) }
 )
 
 const { data: rfcsToBe, pending: pendingDocs, refresh: refreshDocs } = await useAsyncData<QueueItem[]>(
   'rfcsToBe',
   () => api.queueList({ disposition: "in_progress" }),
-  { server: false, default: () => ([]) }
+  { server: false, lazy: true, default: () => ([]) }
 )
 const {
   data: assignments,
   pending: pendingAssignments,
   refresh: refreshAssignments
-} = await useAsyncData('assignments', () => api.assignmentsList())
+} = await useAsyncData('assignments', () => api.assignmentsList(), { server: false, lazy: true })
 
 const { data: roles } = await useAsyncData<RpcRole[]>(
   'roles',
@@ -214,7 +217,7 @@ const { data: roles } = await useAsyncData<RpcRole[]>(
       return []
     }
   },
-  { default: () => ([]) }
+  { server: false, lazy: true, default: () => ([]) }
 )
 
 </script>
