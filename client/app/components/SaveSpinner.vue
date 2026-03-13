@@ -12,7 +12,7 @@
           <span v-else-if="throttledStatus === 'pending'">Pending...</span>
           <span v-else-if="throttledStatus === 'success' ">Success</span>
           <span v-else-if="throttledStatus === 'error' ">
-            Error: {{ props.error }}
+            Error: {{ saveStatusError }}
           </span>
         </TooltipContent>
       </TooltipPortal>

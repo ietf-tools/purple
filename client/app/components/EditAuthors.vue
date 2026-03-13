@@ -84,6 +84,7 @@ const patchAuthor = async (author: (CookedDraft | RfcToBe)["authors"][number]) =
   if (author.id === undefined) return
 
   wrapSaveUpdateFn(async () => {
+    if (author.id === undefined) return
     await api.documentsAuthorsPartialUpdate({
       draftName: props.draftName,
       id: author.id,
