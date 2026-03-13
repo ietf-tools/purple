@@ -1171,9 +1171,9 @@ class ClusterSerializer(serializers.ModelSerializer):
             return cluster.is_active_annotated
 
         return (
-            ClusterMember.objects.filter(cluster=cluster)
-            .exclude(doc__rfctobe__disposition__slug="published")
-            .exclude(doc__rfctobe__disposition__slug="withdrawn")
+            RfcToBe.objects.filter(draft__clustermember__cluster=cluster)
+            .exclude(disposition__slug="published")
+            .exclude(disposition__slug="withdrawn")
             .exists()
         )
 
