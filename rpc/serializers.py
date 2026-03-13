@@ -1162,7 +1162,8 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """A cluster is considered active if at least one of its documents is in_progress."""
+        """A cluster is considered active if at least one of its documents is
+        in_progress."""
 
         # Use annotated value if available
         if hasattr(cluster, "is_active_annotated"):
