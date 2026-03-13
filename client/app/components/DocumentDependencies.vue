@@ -140,7 +140,7 @@ const props = defineProps<Props>()
 const people = computed(() => props.people ?? fetchedPeople.value)
 
 const { data: fetchedPeople } = await useAsyncData(
-  () => api.rpcPersonList(),
+  async () => (props.people === undefined) ? await api.rpcPersonList() : [],
   { server: false, lazy: true, default: () => [] }
 )
 
