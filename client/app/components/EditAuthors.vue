@@ -4,7 +4,12 @@
       <CardHeader title="Edit Authors"/>
     </template>
     <div v-if="draft.authors" class="border-5 border-gray-700 text-gray-500">
-      <p class="italic text-sm">(drag to reorder)</p>
+      <div class="flex justify-between">
+        <p class="italic text-sm">(drag to reorder)</p>
+        <div>
+          <SaveSpinner v-model:status="saveStatus" v-model:error="saveStatusError" />
+        </div>
+      </div>
       <ul ref="parent" class="block min-w-[200px]">
         <li v-for="(author, index) in draft.authors" :index="index" :key="author.id" class="flex items-center justify-between pl-2 cursor-ns-resize pr-1 py-1 mt-1 border rounded-md border-gray-400">
           <Icon name="fluent:re-order-dots-vertical-24-regular" class="mr-2" />
@@ -37,10 +42,14 @@
 <script setup lang="ts">
 import { useDragAndDrop } from "fluid-dnd/vue";
 import type { RfcToBe } from '~/purple_client'
+import { useSaveStatusRef, useSaveStatusErrorRef, wrapSaveUpdateFn } from '../utils/save-spinner'
 
 type Props = {
   draftName: string
 }
+
+const saveStatus = useSaveStatusRef()
+const saveStatusError = useSaveStatusErrorRef()
 
 const props = defineProps<Props>()
 
@@ -74,15 +83,17 @@ const [ parent ] = useDragAndDrop(authorsRef);
 const patchAuthor = async (author: (CookedDraft | RfcToBe)["authors"][number]) => {
   if (author.id === undefined) return
 
-  await api.documentsAuthorsPartialUpdate({
-    draftName: props.draftName,
-    id: author.id,
-    patchedRfcAuthorRequest: {
-      isEditor: Boolean(author.isEditor),
-      titlepageName: author.titlepageName,
-      affiliation: author.affiliation
-    }
-  })
+  wrapSaveUpdateFn(async () => {
+    await api.documentsAuthorsPartialUpdate({
+      draftName: props.draftName,
+      id: author.id,
+      patchedRfcAuthorRequest: {
+        isEditor: Boolean(author.isEditor),
+        titlepageName: author.titlepageName,
+        affiliation: author.affiliation
+      }
+    })
+  }, saveStatus, saveStatusError)
 }
 
 watch(() => draft.value?.authors?.map(author => author.id), async (authorIds) => {
@@ -97,6 +108,7 @@ watch(() => draft.value?.authors?.map(author => author.id), async (authorIds) =>
       order: existingAuthorIds
     }
   })
+
 },
   { deep: false }
 )
