@@ -6,7 +6,6 @@ from base64 import b64decode
 from email.utils import parseaddr
 
 import botocore.config
-
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
 
