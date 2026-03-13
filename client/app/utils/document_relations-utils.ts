@@ -8,8 +8,7 @@ import type { Cluster, RfcToBe } from "~/purple_client";
  */
 export const font_size = 14
 export const line_height = font_size + 2
-export const font_family =
-  '"Inter",system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans","Liberation Sans",Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji"';
+export const font_family = 'Arial,sans-serif';
 export const font = `${font_size}px ${font_family}`
 
 export const green = "#198754"
