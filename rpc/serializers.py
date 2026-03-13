@@ -23,11 +23,11 @@ from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
 
 from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
     AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
-    ASSIGNMENT_INACTIVE_STATES,
     BlockingReason,
     Capability,
     Cluster,
