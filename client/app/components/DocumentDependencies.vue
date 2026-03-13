@@ -34,7 +34,7 @@
 import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
 import { h } from 'vue'
-import { Anchor } from '#components'
+import { Anchor, Icon } from '#components'
 import BaseBadge from './BaseBadge.vue'
 import { snackbarForErrors } from '~/utils/snackbar'
 
@@ -130,7 +130,7 @@ const columns: Column[] = [
     field: 'id' satisfies keyof RpcRelatedDocument,
     classes: 'text-center w-8',
     sortable: false,
-    format: (id: RpcRelatedDocument['id']) => {
+    format: (id: RpcRelatedDocument['id'] | unknown) => {
       if (typeof id !== 'number') return '—'
       return h('button', {
         type: 'button',
