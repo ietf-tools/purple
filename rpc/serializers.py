@@ -340,7 +340,6 @@ class CreateRfcAuthorSerializer(RfcAuthorSerializer):
         allow_null=True,
     )
 
-
     class Meta(RfcAuthorSerializer.Meta):
         fields = RfcAuthorSerializer.Meta.fields + ["person_id", "affiliation"]
 
