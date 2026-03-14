@@ -28,7 +28,7 @@ services:
       context: .
       dockerfile: docker/app.Dockerfile
       # Pass through user UID/GID to Docker build for correct file permissions
-      # you may run `id` in your app container's terminal to find your UID/GID
+      # you may run `id` in your app container's terminal to find your UID/GID;
       # values can be applied via docker-compose.extend-custom.yml or by uncommenting
       # the lines below and setting them here
       # args:
