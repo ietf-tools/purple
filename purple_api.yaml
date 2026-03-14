@@ -3697,10 +3697,6 @@ components:
           type: string
           format: uri
           readOnly: true
-        affiliation:
-          type: string
-          nullable: true
-          maxLength: 255
       required:
       - titlepage_name
     CreateRfcAuthorRequest:
@@ -3714,8 +3710,10 @@ components:
           type: boolean
         affiliation:
           type: string
+          writeOnly: true
           nullable: true
-          maxLength: 255
+          minLength: 1
+          description: Affiliation of the person
         person_id:
           type: integer
           writeOnly: true

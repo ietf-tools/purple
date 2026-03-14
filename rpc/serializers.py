@@ -333,9 +333,16 @@ class CreateRfcAuthorSerializer(RfcAuthorSerializer):
         required=False,
         allow_null=True,
     )
+    affiliation = serializers.CharField(
+        write_only=True,
+        help_text="Affiliation of the person",
+        required=False,
+        allow_null=True,
+    )
+
 
     class Meta(RfcAuthorSerializer.Meta):
-        fields = RfcAuthorSerializer.Meta.fields + ["person_id"]
+        fields = RfcAuthorSerializer.Meta.fields + ["person_id", "affiliation"]
 
 
 class AuthorOrderSerializer(serializers.Serializer):
