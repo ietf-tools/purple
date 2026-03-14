@@ -6,7 +6,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0015_taskrun"),
+        ("rpc", "0016_unique_active_rfctobe_per_draft"),
     ]
 
     operations = [
