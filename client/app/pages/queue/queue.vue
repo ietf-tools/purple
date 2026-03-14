@@ -241,6 +241,22 @@ const columns = [
     }
   ),
   columnHelper.accessor(
+    'actionholderSet',
+    {
+      header: 'Action Holders',
+      cell: data => {
+        const value = data.getValue()
+        if (!value || value.length === 0) {
+          return undefined
+        }
+        return h('ul', { class: 'flex flex-col gap-1' }, value.map(actionHolder =>
+          h('li', actionHolder.body || actionHolder.person?.name || 'No name')
+        ))
+      },
+      sortingFn: 'alphanumeric',
+    }
+  ),
+  columnHelper.accessor(
     'assignmentSet',
     {
       header: 'Assignees',
@@ -334,20 +350,6 @@ const columns = [
         return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
       },
       enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'actionholderSet',
-    {
-      header: 'Action Holders',
-      cell: data => {
-        const value = data.getValue()
-        if (!value) {
-          return undefined
-        }
-        return h('span', {}, value.map(actionHolder => actionHolder.body ?? actionHolder.person?.name ?? 'No name'))
-      },
-      sortingFn: 'alphanumeric',
     }
   ),
   columnHelper.accessor(
