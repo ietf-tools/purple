@@ -14,6 +14,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 import rpcapi_client
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 from rest_framework import serializers
@@ -112,6 +113,87 @@ def suffix_for_type(type_):
     if type_ == "notprepped":
         return ".notprepped.xml"
     return "." + type_
+
+
+_FORMAT_TYPE_TO_LABEL = {
+    "xml": "XML",
+    "txt": "TEXT",
+    "html": "HTML",
+    "pdf": "PDF",
+}
+
+
+def create_rfc_index_json(rfctobe: RfcToBe, chosen_files: dict, tmpdir: Path) -> Path:
+    """Create an RFC index JSON file in tmpdir and return its path."""
+
+    def _rfc_list(queryset) -> list[str]:
+        """Convert a queryset of RfcToBe to a list of 'RFCNNNN' strings."""
+        return [
+            f"RFC{n}"
+            for n in queryset.values_list("rfc_number", flat=True)
+            if n is not None
+        ]
+
+    rfc_number = rfctobe.rfc_number
+    doc_id = f"RFC{rfc_number}"
+
+    authors = []
+    for author in rfctobe.authors.all():
+        name = author.titlepage_name
+        if author.is_editor:
+            name = f"{name}, Ed."
+        authors.append(name)
+
+    formats = [
+        _FORMAT_TYPE_TO_LABEL[t] for t in _FORMAT_TYPE_TO_LABEL if t in chosen_files
+    ]
+
+    std_level = rfctobe.publication_std_level or rfctobe.std_level
+    pub_status = std_level.name.upper() if std_level else ""
+
+    stream = rfctobe.publication_stream or rfctobe.stream
+
+    keywords_raw = rfctobe.keywords.strip() if rfctobe.keywords else ""
+    keywords = (
+        [k.strip() for k in keywords_raw.split(",") if k.strip()]
+        if keywords_raw
+        else []
+    )
+
+    pub_date = None
+    if rfctobe.published_at:
+        # April 1st RFCs get day prepended: "1 April YYYY"
+        if rfctobe.is_april_first_rfc:
+            pub_date = rfctobe.published_at.strftime("1 %B %Y")
+        else:
+            pub_date = rfctobe.published_at.strftime("%B %Y")
+
+    data = {
+        "draft": rfctobe.draft.name if rfctobe.draft else None,
+        "doc_id": doc_id,
+        "title": rfctobe.title,
+        "authors": authors,
+        "format": formats,
+        "page_count": str(rfctobe.pages) if rfctobe.pages is not None else "",
+        "pub_status": pub_status,
+        "status": pub_status,
+        "source": rfctobe.group or (stream.slug if stream else ""),
+        "abstract": rfctobe.abstract,
+        "pub_date": pub_date,
+        "keywords": keywords,
+        "obsoletes": _rfc_list(rfctobe.obsoletes),
+        "obsoleted_by": _rfc_list(rfctobe.obsoleted_by),
+        "updates": _rfc_list(rfctobe.updates),
+        "updated_by": _rfc_list(rfctobe.updated_by),
+        "see_also": [],
+        "doi": f"10.17487/{doc_id}",
+        "errata_url": None,
+    }
+
+    json_path = tmpdir / f"rfc{rfc_number}.json"
+    json_path.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    logger.debug("Created RFC index JSON at %s", json_path)
+    return json_path
 
 
 def begin_publication_attempt(rfctobe: RfcToBe) -> bool:
@@ -225,7 +307,8 @@ def publish_rfctobe(
     chosen_files = choose_files(publication["files"])
     downloaded_files = {}
     # Download the selected files to a temp directory
-    with TemporaryDirectory() as tmpdirname:
+    with TemporaryDirectory(delete=not settings.DEBUG) as tmpdirname:
+        logger.debug("Working in temp directory: %s", tmpdirname)
         output_stem = Path(tmpdirname) / f"rfc{rfctobe.rfc_number}"
         for type_, repo_path in chosen_files.items():
             output_path = output_stem.with_suffix(suffix_for_type(type_))
@@ -280,10 +363,14 @@ def publish_rfctobe(
         rfctobe.save()
         clear_publication_attempt(rfctobe)
 
+        # create the RFC index JSON file and upload all the files to datatracker.
+        json_path = create_rfc_index_json(rfctobe, chosen_files, Path(tmpdirname))
+
         try:
             upload_rfc_contents(
                 rfctobe,
-                filenames=[str(fn) for fn in downloaded_files.values()],
+                filenames=[str(fn) for fn in downloaded_files.values()]
+                + [str(json_path)],
                 mtime=rfctobe.published_at,
                 rpcapi=rpcapi,
             )

@@ -364,9 +364,12 @@ class MetadataComparator:
         if xml_date_obj:
             try:
                 today = datetime.datetime.now(datetime.UTC).date()
-                # Parse month name from XML to month number
-                month_name = xml_date_obj.get("month", "")
-                month_num = datetime.datetime.strptime(month_name, "%B").month
+                # Parse month from XML - may be a name ("January") or number ("1")
+                month_raw = xml_date_obj.get("month", "")
+                if month_raw.isdigit():
+                    month_num = int(month_raw)
+                else:
+                    month_num = datetime.datetime.strptime(month_raw, "%B").month
                 year = int(xml_date_obj.get("year", ""))
                 day_str = xml_date_obj.get("day")
 

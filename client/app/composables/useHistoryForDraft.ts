@@ -3,6 +3,6 @@ export function useHistoryForDraft(draftName: string) {
   return useAsyncData(
     `history-${draftName}`,
     () => api.documentsHistoryList({ draftName: draftName }),
-    { server: false, default: () => [], lazy: false }
+    { server: false, default: () => [], lazy: true }
   )
 }

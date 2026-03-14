@@ -34,7 +34,6 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
                     if author.datatracker_person is not None
                     else None
                 ),
-                email=author.datatracker_person.email,
                 affiliation=author.affiliation or "",
                 country="",  # purple does not model country
             )
@@ -71,6 +70,7 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
             f"{subseries.type.slug}{subseries.number}"
             for subseries in rfctobe.subseriesmember_set.all()
         ],
+        keywords=[kw.strip() for kw in rfctobe.keywords.split(",")],
         # todo changes_status_of (needs datatracker support, too)
     )
     if rfctobe.draft is not None:

@@ -23,6 +23,7 @@ from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
 
 from .models import (
+    ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
     AdditionalEmail,
     ApprovalLogMessage,
@@ -528,6 +529,27 @@ class QueueItemSerializer(serializers.ModelSerializer):
             return None
 
 
+class ApprovalLogMessageSerializer(serializers.Serializer):
+    id = serializers.IntegerField(read_only=True)
+    by = DatatrackerPersonSerializer(read_only=True)
+    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
+    log_message = serializers.CharField()
+    time = serializers.DateTimeField(read_only=True)
+
+    def create(self, validated_data):
+        # Set the 'by' field to the current user
+        request = self.context.get("request")
+        validated_data["by"] = request.user.datatracker_person()
+
+        return ApprovalLogMessage.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
+            **validated_data,
+        )
+        return ApprovalLogMessage.objects.get(pk=instance.pk)
+
+
 class PublicQueueAuthorSerializer(RfcAuthorSerializer):
     class Meta:
         model = RfcAuthorSerializer.Meta.model
@@ -557,6 +579,9 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     assignment_set = PublicAssignmentSerializer(
         source="active_assignments", many=True, read_only=True
     )
+    approval_log_message = ApprovalLogMessageSerializer(
+        source="approvallogmessage_set", many=True, read_only=True
+    )
 
     class Meta:
         model = QueueItemSerializer.Meta.model
@@ -579,6 +604,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "iana_status",
             "blocking_reasons",
             "authors",
+            "approval_log_message",
         ]
 
 
@@ -897,7 +923,11 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
 
         source = validated_data["source"]
 
-        target_rfctobe = RfcToBe.objects.filter(draft__name=target_draft_name).first()
+        target_rfctobe = (
+            RfcToBe.objects.filter(draft__name=target_draft_name)
+            .exclude(disposition_id="withdrawn")
+            .first()
+        )
         target_document = None
         if not target_rfctobe:
             target_document = Document.objects.filter(name=target_draft_name).first()
@@ -1001,6 +1031,7 @@ class ClusterMemberSerializer(serializers.Serializer):
     references = serializers.SerializerMethodField()
     is_received = serializers.SerializerMethodField()
     order = serializers.IntegerField()
+    is_blocked = serializers.SerializerMethodField()
 
     class Meta:
         model = ClusterMember
@@ -1033,6 +1064,24 @@ class ClusterMemberSerializer(serializers.Serializer):
         if rfctobe and rfctobe.disposition:
             return rfctobe.disposition.slug
         return None
+
+    def get_is_blocked(self, clustermember: ClusterMember) -> bool:
+        if hasattr(clustermember.doc, "rfctobe_annotated"):
+            rfctobes = clustermember.doc.rfctobe_annotated
+            rfctobe = rfctobes[0] if rfctobes else None
+        else:
+            rfctobe = clustermember.doc.rfctobe_set.exclude(
+                disposition__slug="withdrawn"
+            ).first()
+
+        if not rfctobe:
+            return False
+
+        return (
+            rfctobe.assignment_set.exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
+            .filter(role__slug="blocked")
+            .exists()
+        )
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     @with_rpcapi
@@ -1133,20 +1182,17 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """A cluster is considered active if at least one of its documents is not in
-        terminal state (published/withdrawn).
-        """
+        """A cluster is considered active if at least one of its documents is
+        in_progress."""
 
         # Use annotated value if available
         if hasattr(cluster, "is_active_annotated"):
             return cluster.is_active_annotated
 
-        return (
-            ClusterMember.objects.filter(cluster=cluster)
-            .exclude(doc__rfctobe__disposition__slug="published")
-            .exclude(doc__rfctobe__disposition__slug="withdrawn")
-            .exists()
-        )
+        return RfcToBe.objects.filter(
+            draft__clustermember__cluster=cluster,
+            disposition__slug="in_progress",
+        ).exists()
 
     def create(self, validated_data):
         draft_names = validated_data.pop("draft_names", [])
@@ -1409,27 +1455,6 @@ class MailTemplateSerializer(serializers.Serializer):
 class MailResponseSerializer(serializers.Serializer):
     type = serializers.ChoiceField(choices=["success", "error"])
     message = serializers.CharField()
-
-
-class ApprovalLogMessageSerializer(serializers.Serializer):
-    id = serializers.IntegerField(read_only=True)
-    by = DatatrackerPersonSerializer(read_only=True)
-    rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
-    log_message = serializers.CharField()
-    time = serializers.DateTimeField(read_only=True)
-
-    def create(self, validated_data):
-        # Set the 'by' field to the current user
-        request = self.context.get("request")
-        validated_data["by"] = request.user.datatracker_person()
-
-        return ApprovalLogMessage.objects.create(**validated_data)
-
-    def update(self, instance, validated_data):
-        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
-            **validated_data,
-        )
-        return ApprovalLogMessage.objects.get(pk=instance.pk)
 
 
 @dataclass

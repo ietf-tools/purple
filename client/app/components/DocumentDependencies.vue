@@ -34,8 +34,9 @@
 import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
 import type { Column } from './DocumentTableTypes';
 import { h } from 'vue'
-import { Anchor } from '#components'
+import { Anchor, Icon } from '#components'
 import BaseBadge from './BaseBadge.vue'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 type RpcRelatedDocumentAsObject = {
   [K in keyof RpcRelatedDocument]: RpcRelatedDocument[K]
@@ -122,6 +123,21 @@ const columns: Column[] = [
       const info = relatedDocsInfo.value?.[row] || {}
       return info.refqueue_count || 0
     }
+  },
+  {
+    key: 'delete',
+    label: '',
+    field: 'id' satisfies keyof RpcRelatedDocument,
+    classes: 'text-center w-8',
+    sortable: false,
+    format: (id: RpcRelatedDocument['id'] | unknown) => {
+      if (typeof id !== 'number') return '—'
+      return h('button', {
+        type: 'button',
+        class: 'text-red-500 hover:text-red-700 border-none bg-transparent p-0.5',
+        onClick: () => handleDeleteDependency(id)
+      }, [h(Icon, { name: 'uil:trash' })])
+    }
   }
 ]
 
@@ -135,17 +151,15 @@ type Props = {
 }
 
 const api = useApi()
+const snackbar = useSnackbar()
 const props = defineProps<Props>()
 
-const people = ref<RpcPerson[]>(props.people ?? [])
+const people = computed(() => props.people ?? fetchedPeople.value)
 
-if (!props.people) {
-  const { data: fetchedPeople } = await useAsyncData(
-    () => api.rpcPersonList(),
-    { server: false, default: () => [] }
-  )
-  if (fetchedPeople.value) people.value = fetchedPeople.value
-}
+const { data: fetchedPeople } = await useAsyncData(
+  async () => (props.people === undefined) ? await api.rpcPersonList() : [],
+  { server: false, lazy: true, default: () => [] }
+)
 
 // Fetch additional info for each related document
 const relatedDocsInfo = ref<Record<string, any>>({})
@@ -181,4 +195,19 @@ watch(
   { immediate: true }
 )
 
+const handleDeleteDependency = async (id: number) => {
+  if (!id) return
+  try {
+    await api.documentsReferencesDestroy({
+      draftName: props.draftName,
+      id
+    })
+    const index = relatedDocuments.value.findIndex(doc => doc.id === id)
+    if (index > -1) {
+      relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
+    }
+  } catch (e) {
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to delete dependency' })
+  }
+}
 </script>

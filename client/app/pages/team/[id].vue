@@ -162,7 +162,16 @@
                             {{ assignment.rfcToBe?.draft?.name }}
                           </Anchor>
                         </h3>
-                        <span v-if="assignment.comment">
+                        <div v-if="assignment.role === 'blocked' && assignment.rfcToBe?.blockingReasons?.length"
+                          class="ml-2 mt-0.5 text-xs text-gray-500 dark:text-neutral-400">
+                          <span class="font-medium">Reasons:</span>
+                          <ul class="list-disc list-inside">
+                            <li v-for="br in assignment.rfcToBe.blockingReasons" :key="br.reason?.slug">
+                              {{ br.reason?.name }}
+                            </li>
+                          </ul>
+                        </div>
+                        <span v-else-if="assignment.comment">
                           {{ assignment.comment }}
                         </span>
                         <div class="mt-2 flex items-center gap-4 text-xs text-gray-500">
@@ -227,7 +236,7 @@ const { data: assignments, status: assignmentsStatus, error: assignmentsError } 
 
 const { data: clusters, status: clustersStatus, error: clustersError } = await useAsyncData(
   () => api.clustersList(),
-  { server: false, lazy: false, default: () => [] as Cluster[] }
+  { server: false, lazy: true, default: () => [] as Cluster[] }
 )
 
 // Handle error state

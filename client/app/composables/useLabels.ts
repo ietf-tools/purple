@@ -5,7 +5,8 @@ export function useLabels() {
     () => api.labelsList(),
     {
       default: () => [],
-      server: false
+      server: false,
+      lazy: true,
     }
   )
 }

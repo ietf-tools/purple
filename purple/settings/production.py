@@ -7,6 +7,8 @@ from base64 import b64decode
 from email.utils import parseaddr
 from hashlib import sha384
 
+import botocore.config
+
 from .base import *
 from .logging.production import LOGGING as _logging
 
@@ -178,3 +180,45 @@ if _APP_API_TOKENS_JSON is not None:
     APP_API_TOKENS = json.loads(_APP_API_TOKENS_JSON)
 else:
     APP_API_TOKENS = {}
+
+
+# Configure blob store access
+_blob_store_endpoint_url = os.environ.get("PURPLE_BLOB_STORE_ENDPOINT_URL")
+_blob_store_access_key = os.environ.get("PURPLE_BLOB_STORE_ACCESS_KEY")
+_blob_store_secret_key = os.environ.get("PURPLE_BLOB_STORE_SECRET_KEY")
+if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret_key):
+    raise RuntimeError(
+        "All of PURPLE_BLOB_STORE_ENDPOINT_URL, PURPLE_BLOB_STORE_ACCESS_KEY, "
+        "and PURPLE_BLOB_STORE_SECRET_KEY must be set"
+    )
+_blob_store_max_attempts = int(os.environ.get("PURPLE_BLOB_STORE_MAX_ATTEMPTS", 5))
+_blob_store_connect_timeout = float(
+    os.environ.get("PURPLE_BLOB_STORE_CONNECT_TIMEOUT", 10)
+)
+_blob_store_read_timeout = float(os.environ.get("PURPLE_BLOB_STORE_READ_TIMEOUT", 10))
+
+_red_bucket_name = os.environ.get("PURPLE_BLOB_STORE_RED_BUCKET_NAME", "").strip()
+if _red_bucket_name == "":
+    raise RuntimeError("PURPLE_BLOB_STORE_RED_BUCKET_NAME must be set")
+
+STORAGES["red_bucket"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": {
+        "endpoint_url": _blob_store_endpoint_url,
+        "access_key": _blob_store_access_key,
+        "secret_key": _blob_store_secret_key,
+        "security_token": None,
+        "client_config": botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+            connect_timeout=_blob_store_connect_timeout,
+            read_timeout=_blob_store_read_timeout,
+            retries={"total_max_attempts": _blob_store_max_attempts},
+        ),
+        "verify": False,
+        "bucket_name": _red_bucket_name,
+    },
+}
+# Needs to match datatracker's DATATRACKER_RFCINDEX_INPUT_PATH
+RFCINDEX_SUPPORT_BLOB_PATH = os.environ.get("PURPLE_RFCINDEX_SUPPORT_BLOB_PATH", "")

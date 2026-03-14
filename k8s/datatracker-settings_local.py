@@ -1,9 +1,11 @@
 # Copyright The IETF Trust 2007-2024, All Rights Reserved
 
 import json
+import os
 from base64 import b64decode
 from email.utils import parseaddr
 
+import botocore.config
 from ietf import __release_hash__
 from ietf.settings import *  # pyflakes:ignore
 
@@ -317,3 +319,46 @@ if _csrf_trusted_origins_str is not None:
 
 # Console logs as JSON instead of plain when running in k8s
 LOGGING["handlers"]["console"]["formatter"] = "json"
+
+# Configure blob store access - this uses purple's credentials for purple staging
+_blob_store_endpoint_url = os.environ.get("PURPLE_BLOB_STORE_ENDPOINT_URL")
+_blob_store_access_key = os.environ.get("PURPLE_BLOB_STORE_ACCESS_KEY")
+_blob_store_secret_key = os.environ.get("PURPLE_BLOB_STORE_SECRET_KEY")
+if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret_key):
+    raise RuntimeError(
+        "All of PURPLE_BLOB_STORE_ENDPOINT_URL, PURPLE_BLOB_STORE_ACCESS_KEY, "
+        "and PURPLE_BLOB_STORE_SECRET_KEY must be set"
+    )
+_blob_store_max_attempts = int(os.environ.get("PURPLE_BLOB_STORE_MAX_ATTEMPTS", 5))
+_blob_store_connect_timeout = float(
+    os.environ.get("PURPLE_BLOB_STORE_CONNECT_TIMEOUT", 10)
+)
+_blob_store_read_timeout = float(os.environ.get("PURPLE_BLOB_STORE_READ_TIMEOUT", 10))
+
+# Configure storage for the red bucket
+_red_bucket_name = os.environ.get("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME", "").strip()
+if _red_bucket_name == "":
+    raise RuntimeError("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME must be set")
+
+STORAGES["red_bucket"] = {
+    "BACKEND": "storages.backends.s3.S3Storage",
+    "OPTIONS": dict(
+        endpoint_url=_blob_store_endpoint_url,
+        access_key=_blob_store_access_key,
+        secret_key=_blob_store_secret_key,
+        security_token=None,
+        client_config=botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+            connect_timeout=_blob_store_connect_timeout,
+            read_timeout=_blob_store_read_timeout,
+            retries={"total_max_attempts": _blob_store_max_attempts},
+        ),
+        verify=False,
+        bucket_name=_red_bucket_name,
+    ),
+}
+RFCINDEX_DELETE_THEN_WRITE = False  # S3Storage allows file_overwrite by default
+RFCINDEX_OUTPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_OUTPUT_PATH", "other/")
+RFCINDEX_INPUT_PATH = os.environ.get("DATATRACKER_RFCINDEX_INPUT_PATH", "")
