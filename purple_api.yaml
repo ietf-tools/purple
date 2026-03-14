@@ -3427,8 +3427,8 @@ components:
         is_active:
           type: boolean
           description: |-
-            A cluster is considered active if at least one of its documents is not in
-            terminal state (published/withdrawn).
+            A cluster is considered active if at least one of its documents is
+            in_progress.
           readOnly: true
       required:
       - number
@@ -3468,6 +3468,9 @@ components:
           readOnly: true
         order:
           type: integer
+        is_blocked:
+          type: boolean
+          readOnly: true
       required:
       - name
       - order
