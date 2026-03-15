@@ -23,6 +23,10 @@ spec:
         - name: datatracker
           image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
           imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              name: http
+              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
@@ -91,10 +95,6 @@ spec:
         - name: celery
           image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
           imagePullPolicy: Always
-          ports:
-            - containerPort: 8000
-              name: http
-              protocol: TCP
           volumeMounts:
             - name: dt-vol
               mountPath: /a
