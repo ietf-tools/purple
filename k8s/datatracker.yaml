@@ -121,6 +121,70 @@ spec:
             readOnlyRootFilesystem: true
             runAsUser: 1000
             runAsGroup: 1000
+        # -----------------------------------------------------
+        # Beat Container
+        # -----------------------------------------------------
+        - name: beat
+          image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: celery-tmp
+              mountPath: /tmp
+            - name: celery-home
+              mountPath: /home/datatracker
+            - name: celery-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: datatracker-settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "beat"
+          envFrom:
+            - secretRef:
+                name: purple-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
+        # -----------------------------------------------------
+        # Replicator Container
+        # -----------------------------------------------------
+        - name: replicator
+          image: "ghcr.io/ietf-tools/datatracker:feat-rpc-api-latest"
+          imagePullPolicy: Always
+          volumeMounts:
+            - name: dt-vol
+              mountPath: /a
+            - name: celery-tmp
+              mountPath: /tmp
+            - name: celery-home
+              mountPath: /home/datatracker
+            - name: celery-xml2rfc-cache
+              mountPath: /var/cache/xml2rfc
+            - name: dt-cfg
+              mountPath: /workspace/ietf/settings_local.py
+              subPath: datatracker-settings_local.py
+          env:
+            - name: "CONTAINER_ROLE"
+              value: "replicator"
+          envFrom:
+            - secretRef:
+                name: purple-secrets-env
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsUser: 1000
+            runAsGroup: 1000
       initContainers:
         - name: fs-setup
           image: busybox:stable
