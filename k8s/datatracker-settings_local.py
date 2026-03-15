@@ -340,14 +340,17 @@ _blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY")
 _blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY")
 if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret_key):
     raise RuntimeError(
-        "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, DATATRACKER_BLOB_STORE_ACCESS_KEY, "
-        "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
+        "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, "
+        "DATATRACKER_BLOB_STORE_ACCESS_KEY, and DATATRACKER_BLOB_STORE_SECRET_KEY "
+        "must be set"
     )
 _blob_store_max_attempts = int(os.environ.get("DATATRACKER_BLOB_STORE_MAX_ATTEMPTS", 5))
 _blob_store_connect_timeout = float(
     os.environ.get("DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", 10)
 )
-_blob_store_read_timeout = float(os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", 10))
+_blob_store_read_timeout = float(
+    os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", 10)
+)
 _blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "")
 _blob_store_enable_profiling = (
     os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
