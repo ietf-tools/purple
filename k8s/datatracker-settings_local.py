@@ -114,7 +114,22 @@ DATABASES = {
 
 DATABASE_ROUTERS = ["ietf.blobdb.routers.BlobdbStorageRouter"]
 BLOBDB_DATABASE = "blobdb"
-BLOBDB_REPLICATION = {"ENABLED": False}  # just to be clear
+# Configure the blobdb app for artifact storage
+_blobdb_replication_enabled = (
+    # unlike production datatracker, this defaults to replication _disabled_
+    os.environ.get("DATATRACKER_BLOBDB_REPLICATION_ENABLED", "false").lower() == "true"
+)
+_blobdb_replication_verbose_logging = (
+    os.environ.get("DATATRACKER_BLOBDB_REPLICATION_VERBOSE_LOGGING", "false").lower()
+    == "true"
+)
+BLOBDB_REPLICATION = {
+    "ENABLED": _blobdb_replication_enabled,
+    "DEST_STORAGE_PATTERN": "r2-{bucket}",
+    "INCLUDE_BUCKETS": ["rfc"],
+    "EXCLUDE_BUCKETS": ["staging"],
+    "VERBOSE_LOGGING": _blobdb_replication_verbose_logging,
+}
 
 # Configure persistent connections. A setting of 0 is Django's default.
 _conn_max_age = os.environ.get("DATATRACKER_DB_CONN_MAX_AGE", "0")
@@ -320,20 +335,49 @@ if _csrf_trusted_origins_str is not None:
 # Console logs as JSON instead of plain when running in k8s
 LOGGING["handlers"]["console"]["formatter"] = "json"
 
-# Configure blob store access - this uses purple's credentials for purple staging
-_blob_store_endpoint_url = os.environ.get("PURPLE_BLOB_STORE_ENDPOINT_URL")
-_blob_store_access_key = os.environ.get("PURPLE_BLOB_STORE_ACCESS_KEY")
-_blob_store_secret_key = os.environ.get("PURPLE_BLOB_STORE_SECRET_KEY")
+_blob_store_endpoint_url = os.environ.get("DATATRACKER_BLOB_STORE_ENDPOINT_URL")
+_blob_store_access_key = os.environ.get("DATATRACKER_BLOB_STORE_ACCESS_KEY")
+_blob_store_secret_key = os.environ.get("DATATRACKER_BLOB_STORE_SECRET_KEY")
 if None in (_blob_store_endpoint_url, _blob_store_access_key, _blob_store_secret_key):
     raise RuntimeError(
-        "All of PURPLE_BLOB_STORE_ENDPOINT_URL, PURPLE_BLOB_STORE_ACCESS_KEY, "
-        "and PURPLE_BLOB_STORE_SECRET_KEY must be set"
+        "All of DATATRACKER_BLOB_STORE_ENDPOINT_URL, DATATRACKER_BLOB_STORE_ACCESS_KEY, "
+        "and DATATRACKER_BLOB_STORE_SECRET_KEY must be set"
     )
-_blob_store_max_attempts = int(os.environ.get("PURPLE_BLOB_STORE_MAX_ATTEMPTS", 5))
+_blob_store_max_attempts = int(os.environ.get("DATATRACKER_BLOB_STORE_MAX_ATTEMPTS", 5))
 _blob_store_connect_timeout = float(
-    os.environ.get("PURPLE_BLOB_STORE_CONNECT_TIMEOUT", 10)
+    os.environ.get("DATATRACKER_BLOB_STORE_CONNECT_TIMEOUT", 10)
 )
-_blob_store_read_timeout = float(os.environ.get("PURPLE_BLOB_STORE_READ_TIMEOUT", 10))
+_blob_store_read_timeout = float(os.environ.get("DATATRACKER_BLOB_STORE_READ_TIMEOUT", 10))
+_blob_store_bucket_prefix = os.environ.get("DATATRACKER_BLOB_STORE_BUCKET_PREFIX", "")
+_blob_store_enable_profiling = (
+    os.environ.get("DATATRACKER_BLOB_STORE_ENABLE_PROFILING", "false").lower() == "true"
+)
+
+# Configure storages used by the replicator. This is not the full set of datatracker
+# buckets, just what's needed for publishing an RFC. If you add more buckets, be sure
+# to add them to the BLOBDB_REPLICATION configuration.
+storagename = "rfc"
+replica_storagename = f"r2-{storagename}"
+STORAGES[replica_storagename] = {
+    "BACKEND": "ietf.doc.storage.MetadataS3Storage",
+    "OPTIONS": dict(
+        endpoint_url=_blob_store_endpoint_url,
+        access_key=_blob_store_access_key,
+        secret_key=_blob_store_secret_key,
+        security_token=None,
+        client_config=botocore.config.Config(
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+            signature_version="s3v4",
+            connect_timeout=_blob_store_connect_timeout,
+            read_timeout=_blob_store_read_timeout,
+            retries={"total_max_attempts": _blob_store_max_attempts},
+        ),
+        verify=False,
+        bucket_name=f"{_blob_store_bucket_prefix}{storagename}".strip(),
+        ietf_log_blob_timing=_blob_store_enable_profiling,
+    ),
+}
 
 # Configure storage for the red bucket
 _red_bucket_name = os.environ.get("DATATRACKER_BLOB_STORE_RED_BUCKET_NAME", "").strip()
