@@ -1277,6 +1277,7 @@ class PublicationAttempt(models.Model):
     rfc_to_be = models.OneToOneField("RfcToBe", on_delete=models.PROTECT)
     started_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
+        max_length=20,
         choices=Status,
         default=Status.PENDING,
         help_text="Record of an RFC publication request",
