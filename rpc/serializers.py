@@ -337,7 +337,6 @@ class CreateRfcAuthorSerializer(RfcAuthorSerializer):
         write_only=True,
         help_text="Affiliation of the person",
         required=False,
-        allow_null=True,
     )
 
     class Meta(RfcAuthorSerializer.Meta):

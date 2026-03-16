@@ -3711,7 +3711,6 @@ components:
         affiliation:
           type: string
           writeOnly: true
-          nullable: true
           minLength: 1
           description: Affiliation of the person
         person_id:
