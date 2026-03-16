@@ -133,6 +133,7 @@ export type NodeParam = {
   id: string
   url?: string
   isReceived?: boolean
+  isBlocked?: boolean
   disposition: Disposition
   rfcNumber?: number | undefined,
   rfcToBe?: RfcToBe

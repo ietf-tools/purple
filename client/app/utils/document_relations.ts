@@ -31,13 +31,9 @@ const DEFAULT_STROKE = 10
 
 type LinesProps = { id?: string, rfcNumber?: number }
 function lines({ id, rfcNumber }: LinesProps): Line[] {
-
-
-
-
   const lines: Line[] = []
   if (rfcNumber) {
-    const newRfcNumber = `RFC ${rfcNumber}`
+    const newRfcNumber = `RFC-to-be ${rfcNumber}`
     lines.push({
       text: newRfcNumber,
       width: newRfcNumber.length,
@@ -306,11 +302,13 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       if (d.disposition === 'published') {
         return blue
       }
-      if (!d.isReceived) {
+      if (d.isBlocked) {
         return red
-      } else {
-        return purple
       }
+      if (!d.isReceived) {
+        return orange
+      }
+      return green
     })
     .each((d) => {
       switch (d.disposition) {

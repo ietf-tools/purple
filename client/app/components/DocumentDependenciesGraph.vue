@@ -180,7 +180,7 @@ const clusterGraphData = computed(() => {
 
   newClusterGraphData.nodes.push(
     ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
-      const { name, rfcNumber, disposition, references, isReceived } = clusterMember
+      const { name, rfcNumber, disposition, references, isReceived, isBlocked } = clusterMember
       const doc = name ? rfcsByDraftName.value[name] : undefined
 
       const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
@@ -201,8 +201,9 @@ const clusterGraphData = computed(() => {
         rfcToBe: doc,
         url: `/docs/${name}`,
         rfcNumber: resolvedRfcNumber,
-        isReceived: Boolean(isReceived),
+        isReceived: isReceived ?? undefined,
         disposition: parseDisposition(disposition),
+        isBlocked,
       }]
     }).filter(isNodeParam)
   )
