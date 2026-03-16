@@ -1,8 +1,5 @@
 <template>
-  <div v-if="allDocuments.length === 0" class="flex items-center justify-center italic pb-3">
-    Loading search
-    <Icon name="ei:spinner-3" size="1.3em" class="animate-spin ml-2" />
-  </div>
+  <div v-if="false"></div>
   <div v-else :class="`flex flex-row items-center ${
   // so that the ComboboxContent is positioned against this
   'relative'}`">
@@ -12,7 +9,7 @@
       <ComboboxAnchor
         class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 leading-none gap-[5px] bg-white dark:bg-gray-700 focus:shadow-[0_0_0_2px] focus:shadow-black outline-none">
         <span v-if="selectedRfcToBe"
-          class="flex flex-row bg-gray-100 text-white dark:bg-gray-500 dark:text-white text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
+          class="flex flex-row bg-gray-100 text-gray-800 dark:bg-gray-500 dark:text-white text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
           <b>{{ selectedRfcToBe.name }}</b>
           <span v-if="selectedRfcToBe.rfcNumber">RFC {{ selectedRfcToBe.rfcNumber }}</span>
           <button type="button"
@@ -20,9 +17,9 @@
             @click="handleClearSelectedDocument"
             :label="`Unselect document ${selectedRfcToBe.name}${selectedRfcToBe.rfcNumber ? `(RFC ${selectedRfcToBe.rfcNumber})` : ''}`">&times;</button>
         </span>
-        <ComboboxInput v-model="inputRef" :id="props.id" :readonly="allDocuments.length === 0"
+        <ComboboxInput v-model="inputRef" :id="props.id"
           class="outline-none bg-white dark:bg-black text-black dark:text-white text-sm py-1 border-none h-full placeholder-gray-400 dark:placeholder-gray-200"
-          :placeholder="allDocuments.length === 0 ? 'Loading search...' : selectedRfcToBe?.name ? `Change draft...` : `Search draft`" />
+          :placeholder="selectedRfcToBe?.name ? `Change draft...` : `Search draft`" />
       </ComboboxAnchor>
 
       <ComboboxContent
@@ -39,6 +36,9 @@
             </span>
             <span class="font-normal ml-1" v-if="searchResult.rfcNumber">
               RFC {{ searchResult.rfcNumber }}
+            </span>
+            <span class="font-normal ml-1 text-gray-500 dark:text-gray-400" v-if="searchResult.disposition">
+              ({{ searchResult.disposition }})
             </span>
           </ComboboxItem>
         </ComboboxViewport>
@@ -71,42 +71,7 @@ const selectedRfcToBe = defineModel<RfcToBe | undefined>()
 
 const api = useApi()
 
-const allDocuments = ref<RfcToBe[]>([])
-
-onMounted(async () => {
-  let limit = 50
-  let offset = 0
-
-  while (true) {
-    console.log("searching...")
-    const documentsList = await api.documentsList({
-      limit,
-      offset
-    })
-    offset = documentsList.results.length
-    if (limit === undefined) {
-      limit = documentsList.results.length
-    }
-    allDocuments.value.push(...documentsList.results)
-    console.log("all docs length", allDocuments.value.length)
-    if (documentsList.results.length > 0) {
-      break
-    }
-  }
-})
-
 const searchResults = ref<RfcToBe[]>([])
-
-type FakeDocSearchProps = {
-  search: string
-}
-
-const fakeDocSearch = async ({ search }: FakeDocSearchProps, { }: { signal: unknown }) => {
-  return allDocuments.value.filter(rfcToBe => {
-    const docString = JSON.stringify(rfcToBe)
-    return docString.includes(search)
-  })
-}
 
 const handleClearSelectedDocument = () => {
   selectedRfcToBe.value = undefined
@@ -114,7 +79,7 @@ const handleClearSelectedDocument = () => {
 
 const inputRef = ref('')
 
-const debouncedInputRef = refDebounced(inputRef, 100)
+const debouncedInputRef = refDebounced(inputRef, 300)
 
 let previousAbortController: AbortController | undefined
 
@@ -122,16 +87,24 @@ watch(
   debouncedInputRef,
   async () => {
     if (previousAbortController) {
-      // abort any fetches in flight to prevent race conditions
-      previousAbortController.abort();
+      previousAbortController.abort()
     }
 
-    previousAbortController = new AbortController();
+    if (!debouncedInputRef.value.trim()) {
+      searchResults.value = []
+      return
+    }
 
-    searchResults.value = await fakeDocSearch({
-      search: debouncedInputRef.value
-    },
-      { signal: previousAbortController.signal }
-    )
-  })
+    previousAbortController = new AbortController()
+
+    try {
+      const result = await api.documentsSearch({ q: debouncedInputRef.value }, { signal: previousAbortController.signal })
+      searchResults.value = result.results
+    } catch (e: any) {
+      if (e?.name !== 'AbortError') {
+        console.error('Document search error:', e)
+      }
+    }
+  }
+)
 </script>

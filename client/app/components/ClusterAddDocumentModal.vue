@@ -8,11 +8,29 @@
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
       </BaseButton>
     </div>
-    <div class="px-3">
-      <DocumentsSearch id="clusterDocument" label="Search for draft" v-model="selectedRfcToBe" />
+    <div class="px-3 mb-3 text-sm text-gray-600 dark:text-gray-400">
+      <p>Use this interface to add documents <strong>without</strong> setting a reference.</p>
+      <p>Use the Publishing Dependencies dialog on the document's individual info page to add a document to the cluster that is a normative reference.</p>
     </div>
-    <div class="flex mx-3 mt-3 py-3 justify-end border-t border-gray-300">
-      <BaseButton @click="handleAdd" :disabled="selectedRfcToBe === undefined">Add to cluster</BaseButton>
+    <div class="px-3 flex flex-row items-center gap-2">
+      <DocumentsSearch id="clusterDocument" label="Add received draft" v-model="selectedRfcToBe" />
+      <BaseButton @click="handleAdd" :disabled="selectedRfcToBe === undefined">Add</BaseButton>
+    </div>
+    <div class="px-3 mt-3 pt-3 border-t border-gray-300">
+      <div class="flex flex-row items-center gap-2">
+        <label class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-1 shrink-0" for="notReceivedDraft">
+          Add not-received draft:
+        </label>
+        <input
+          id="notReceivedDraft"
+          v-model="notReceivedDraftName"
+          type="text"
+          placeholder="draft-ietf-example-document"
+          class="flex-1 rounded-lg border border-gray-500 px-2 py-1 text-sm bg-white dark:bg-gray-700 text-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
+          @keydown.enter="handleAddNotReceived"
+        />
+        <BaseButton @click="handleAddNotReceived" :disabled="!notReceivedDraftName.trim()">Add</BaseButton>
+      </div>
     </div>
   </div>
 </template>
@@ -21,6 +39,7 @@
 import { type RfcToBe, type Cluster } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import BaseButton from './BaseButton.vue'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 type Props = {
   cluster: Cluster
@@ -34,6 +53,8 @@ const props = defineProps<Props>()
 const api = useApi()
 
 const selectedRfcToBe = ref<RfcToBe | undefined>(undefined)
+
+const notReceivedDraftName = ref('')
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
@@ -73,5 +94,22 @@ const handleAdd = async () => {
     snackbarForErrors({ snackbar, defaultTitle: "Couldn't add cluster document", error })
   }
 
+}
+
+const handleAddNotReceived = async () => {
+  const draftName = notReceivedDraftName.value.trim()
+  if (!draftName) return
+  try {
+    await api.clustersAddDocument({
+      number: props.cluster.number,
+      clusterAddRemoveDocumentRequest: { draftName }
+    })
+    snackbar.add({ type: 'success', title: 'Not-received draft added to cluster', text: '' })
+    notReceivedDraftName.value = ''
+    props.onSuccess()
+    closeOverlayModal()
+  } catch (error) {
+    snackbarForErrors({ snackbar, defaultTitle: "Couldn't add draft to cluster", error })
+  }
 }
 </script>

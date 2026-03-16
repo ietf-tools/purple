@@ -641,7 +641,8 @@ class ClusterViewSet(
         url_path="add-document",
         serializer_class=ClusterAddRemoveDocumentSerializer,
     )
-    def add_document(self, request, number=None):
+    @with_rpcapi
+    def add_document(self, request, number=None, *, rpcapi):
         """Add a document to a cluster"""
         cluster = self.get_object()
 
@@ -649,14 +650,20 @@ class ClusterViewSet(
         serializer.is_valid(raise_exception=True)
         draft_name = serializer.validated_data["draft_name"]
 
-        # Get the Document by draft name
+        # Get the Document by draft name; if not in DB, try to fetch from datatracker
         try:
             doc = Document.objects.get(name=draft_name)
         except Document.DoesNotExist:
-            raise serializers.ValidationError(
-                {"draft_name": [f"Document with name '{draft_name}' not found"]},
-                code="document_not_found",
-            ) from None
+            doc = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
+            if doc is None:
+                raise serializers.ValidationError(
+                    {
+                        "draft_name": [
+                            f"Draft '{draft_name}' does not exist in the datatracker"
+                        ]
+                    },
+                    code="document_not_found",
+                ) from None
 
         # Check if document is already in any cluster
         existing_member = ClusterMember.objects.filter(doc=doc).first()

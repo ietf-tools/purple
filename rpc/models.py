@@ -578,7 +578,9 @@ class ClusterQuerySet(models.QuerySet):
             Prefetch(
                 "clustermember_set",
                 queryset=ClusterMember.objects.filter(
-                    doc__rfctobe__disposition__slug="in_progress"
+                    models.Q(doc__rfctobe__disposition__slug="in_progress")
+                    | models.Q(doc__rfctobe__disposition__slug="created")
+                    | models.Q(doc__rfctobe__isnull=True)
                 )
                 .select_related("doc")
                 .prefetch_related(
