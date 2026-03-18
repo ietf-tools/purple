@@ -137,3 +137,33 @@ class RelatedDocumentClusterSyncTests(TestCase):
 
         target.refresh_from_db()
         self.assertEqual(target.cluster.number, cluster.number)
+
+
+class DocumentSearchTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="search-user",
+            password="test-password",
+            name="Search User",
+        )
+        self.client.force_login(self.user)
+
+    def test_search_filters_by_disposition(self):
+        DispositionNameFactory(slug="created")
+        in_progress = RfcToBeFactory(draft__name="draft-search-target-active")
+        RfcToBeFactory(
+            draft__name="draft-search-target-created",
+            disposition=DispositionNameFactory(slug="created"),
+        )
+
+        response = self.client.get(
+            "/api/rpc/documents/search/",
+            {"q": "draft-search-target", "disposition": "in_progress"},
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        payload = response.json()
+        self.assertEqual(payload["count"], 1)
+        self.assertEqual(len(payload["results"]), 1)
+        self.assertEqual(payload["results"][0]["id"], in_progress.id)
+        self.assertEqual(payload["results"][0]["disposition"], "in_progress")

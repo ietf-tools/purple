@@ -15,7 +15,7 @@
             id="targetDraftSearch"
           />
 
-          <p class="mt-2 text-xs text-gray-500">Enter at least 5 characters.</p>
+          <p class="mt-2 text-xs text-gray-500">Enter at least {{ MIN_SEARCH_LENGTH }} characters.</p>
 
           <div v-if="searchQuery.trim().length >= MIN_SEARCH_LENGTH" class="mt-3 max-h-48 overflow-y-auto rounded-md border border-gray-200">
             <div v-if="searchLoading" class="px-3 py-2 text-sm text-gray-500">Searching...</div>
@@ -92,7 +92,7 @@ const props = defineProps<Props>()
 
 const api = useApi()
 
-const MIN_SEARCH_LENGTH = 5
+const MIN_SEARCH_LENGTH = 3
 
 const searchQuery = ref("")
 const searchLoading = ref(false)
@@ -103,18 +103,36 @@ const useNotReceived = ref(false)
 const snackbar = useSnackbar()
 
 const searchMatches = computed(() => {
-  if (!searchResults.value) return []
   if (Array.isArray(searchResults.value)) return searchResults.value
-  if (Array.isArray(searchResults.value.results)) return searchResults.value.results
+  if (Array.isArray(searchResults.value?.results)) return searchResults.value.results
   return []
 })
+
+const resetFormState = () => {
+  searchQuery.value = ""
+  selectedResultName.value = ""
+  useNotReceived.value = false
+  searchResults.value = undefined
+  searchLoading.value = false
+  if (previousAbortController) {
+    previousAbortController.abort()
+    previousAbortController = undefined
+  }
+}
 
 const debouncedSearch = refDebounced(searchQuery, 250)
 let previousAbortController: AbortController | undefined
 
+watch(isOpenDependencyModal, (isOpen) => {
+  if (!isOpen) {
+    resetFormState()
+  }
+})
+
 watch(debouncedSearch, async (q) => {
   if (previousAbortController) {
     previousAbortController.abort()
+    previousAbortController = undefined
   }
 
   selectedResultName.value = ""
@@ -130,12 +148,13 @@ watch(debouncedSearch, async (q) => {
   searchLoading.value = true
   try {
     searchResults.value = await api.documentsSearch(
-      { q: trimmed },
+      { q: trimmed, disposition: "in_progress" },
       { signal: previousAbortController.signal }
     )
   } catch {
     // Ignore aborted and transient search failures.
   } finally {
+    previousAbortController = undefined
     searchLoading.value = false
   }
 })
@@ -190,12 +209,7 @@ const addDependencyItem = async () => {
       title: 'Document reference added',
       text: ''
     })
-    // reset form
     isOpenDependencyModal.value = false
-    searchQuery.value = ''
-    selectedResultName.value = ''
-    useNotReceived.value = false
-    searchResults.value = undefined
   } catch (e: unknown) {
     snackbarForErrors({
       snackbar,
