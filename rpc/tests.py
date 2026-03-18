@@ -1,10 +1,21 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
+import json
+
+from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.exceptions import NotFound
 
+from rpc.models import DocRelationshipName
+from rpc.models import RpcRelatedDocument
+
 from .api import get_rfctobe_for_draft_name
-from .factories import DispositionNameFactory, RfcToBeFactory, UnusableRfcNumberFactory
+from .factories import (
+    ClusterFactory,
+    DispositionNameFactory,
+    RfcToBeFactory,
+    UnusableRfcNumberFactory,
+)
 from .utils import next_rfc_number
 
 
@@ -60,3 +71,69 @@ class UtilsTests(TestCase):
         # self.assertEqual(next_rfc_number(), [4])
         # self.assertEqual(next_rfc_number(2), [4, 5])
         # self.assertEqual(next_rfc_number(5), [7, 8, 9, 10, 11])
+
+
+class RelatedDocumentClusterSyncTests(TestCase):
+    def setUp(self):
+        self.relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug="updates",
+            defaults={
+                "name": "Updates",
+                "desc": "",
+            },
+        )
+        self.user = get_user_model().objects.create_user(
+            username="test-user",
+            password="test-password",
+            name="Test User",
+        )
+        self.client.force_login(self.user)
+
+    def test_create_related_document_creates_new_cluster_for_source_and_target(self):
+        ClusterFactory(number=7)
+        source = RfcToBeFactory(draft__name="draft-source-doc")
+        target = RfcToBeFactory(draft__name="draft-target-doc")
+
+        response = self.client.post(
+            "/api/rpc/documents/draft-source-doc/related/",
+            data=json.dumps(
+                {
+                    "source": source.id,
+                    "relationship": self.relationship.slug,
+                    "target_draft_name": target.draft.name,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+
+        source.refresh_from_db()
+        target.refresh_from_db()
+
+        self.assertIsNotNone(source.cluster)
+        self.assertEqual(source.cluster.number, 8)  # expect incremented cluster number
+        self.assertEqual(target.cluster.number, source.cluster.number)
+
+    def test_create_related_document_adds_target_to_existing_source_cluster(self):
+        source = RfcToBeFactory(draft__name="draft-source-doc")
+        target = RfcToBeFactory(draft__name="draft-target-doc")
+        cluster = ClusterFactory(number=11)
+        cluster.docs.add(source.draft, through_defaults={"order": 1})
+
+        response = self.client.post(
+            "/api/rpc/documents/draft-source-doc/related/",
+            data=json.dumps(
+                {
+                    "source": source.id,
+                    "relationship": self.relationship.slug,
+                    "target_draft_name": target.draft.name,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+
+        target.refresh_from_db()
+        self.assertEqual(target.cluster.number, cluster.number)

@@ -9,7 +9,7 @@ from itertools import pairwise
 
 import rpcapi_client
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
+from django.db.models import Max, QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -924,6 +924,77 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
 
         return ret
 
+    def _get_target_cluster_document(
+        self,
+        *,
+        target_document: Document | None,
+        target_rfctobe: RfcToBe | None,
+    ) -> Document:
+        if target_document is not None:
+            return target_document
+        if target_rfctobe is not None and target_rfctobe.draft is not None:
+            return target_rfctobe.draft
+
+        raise serializers.ValidationError(
+            {"target_draft_name": ["Target draft must resolve to a document"]}
+        )
+
+    def _get_or_create_source_cluster(self, *, source: RfcToBe) -> Cluster:
+        if source.draft is None:
+            raise serializers.ValidationError(
+                {"source": ["Source document must resolve to a draft"]}
+            )
+
+        existing_member = (
+            ClusterMember.objects.select_related("cluster")
+            .filter(doc=source.draft)
+            .first()
+        )
+        if existing_member is not None:
+            return existing_member.cluster
+
+        next_cluster_number = (
+            Cluster.objects.aggregate(max_number=Max("number"))["max_number"] or 0
+        ) + 1
+        cluster = Cluster.objects.create(number=next_cluster_number)
+        ClusterMember.objects.create(cluster=cluster, doc=source.draft, order=1)
+        return cluster
+
+    def _add_target_document_to_cluster(
+        self, *, cluster: Cluster, target_document: Document
+    ) -> None:
+        existing_member = (
+            ClusterMember.objects.select_related("cluster")
+            .filter(doc=target_document)
+            .first()
+        )
+        if existing_member is not None:
+            if existing_member.cluster_id == cluster.id:
+                return
+            raise serializers.ValidationError(
+                {
+                    "target_draft_name": [
+                        (
+                            f"Document {target_document.name} is already in cluster "
+                            f"{existing_member.cluster.number}"
+                        )
+                    ]
+                },
+                code="document_already_in_cluster",
+            )
+
+        max_order = (
+            ClusterMember.objects.filter(cluster=cluster).aggregate(
+                max_order=Max("order")
+            )["max_order"]
+            or 0
+        )
+        ClusterMember.objects.create(
+            cluster=cluster,
+            doc=target_document,
+            order=max_order + 1,
+        )
+
     def create(self, validated_data):
         target_draft_name = validated_data.pop("target_draft_name")
 
@@ -942,14 +1013,25 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                     f"No Document or RfcToBe found for draft name '{target_draft_name}'"
                 )
 
+        target_cluster_document = self._get_target_cluster_document(
+            target_document=target_document,
+            target_rfctobe=target_rfctobe,
+        )
+
         try:
-            data = {
-                "relationship": validated_data["relationship"],
-                "source": source,
-                "target_document": target_document,
-                "target_rfctobe": target_rfctobe,
-            }
-            related_doc = super().create(data)
+            with transaction.atomic():
+                data = {
+                    "relationship": validated_data["relationship"],
+                    "source": source,
+                    "target_document": target_document,
+                    "target_rfctobe": target_rfctobe,
+                }
+                related_doc = super().create(data)
+                cluster = self._get_or_create_source_cluster(source=source)
+                self._add_target_document_to_cluster(
+                    cluster=cluster,
+                    target_document=target_cluster_document,
+                )
         except IntegrityError as err:
             raise serializers.ValidationError(
                 f"Failed to create related document due to a database constraint: {err}"

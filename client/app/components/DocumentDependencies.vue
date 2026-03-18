@@ -202,10 +202,8 @@ const handleDeleteDependency = async (id: number) => {
       draftName: props.draftName,
       id
     })
-    const index = relatedDocuments.value.findIndex(doc => doc.id === id)
-    if (index > -1) {
-      relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
-    }
+    relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
+    snackbar.add({ type: 'success', title: 'Dependency removed', text: '' })
   } catch (e) {
     snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to delete dependency' })
   }
