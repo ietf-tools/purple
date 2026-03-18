@@ -61,6 +61,7 @@ from .models import (
     Capability,
     Cluster,
     ClusterMember,
+    DispositionName,
     DocRelationshipName,
     FinalApproval,
     Label,
@@ -572,12 +573,44 @@ class QueueList(ListAPIView):
     filterset_class = QueueFilter
 
 
+QueueList = extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="disposition",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                enum=DispositionName.SLUGS,
+                description="Filter queue items by disposition slug.",
+            )
+        ]
+    )
+)(QueueList)
+
+
 class PublicQueueList(QueueList):
     """Queue view for the public queue site"""
 
     permission_classes = [HasApiKey]
     api_key_endpoint = PUB_QUEUE_API_KEY_ENDPOINT
     serializer_class = PublicQueueItemSerializer
+
+
+PublicQueueList = extend_schema_view(
+    get=extend_schema(
+        parameters=[
+            OpenApiParameter(
+                name="disposition",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                enum=DispositionName.SLUGS,
+                description="Filter queue items by disposition slug.",
+            )
+        ]
+    )
+)(PublicQueueList)
 
 
 class CapabilityViewSet(viewsets.ReadOnlyModelViewSet):
@@ -839,6 +872,14 @@ class RfcToBeQueryParamsForm(forms.Form):
     list=extend_schema(
         parameters=[
             OpenApiParameter(
+                name="disposition",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                enum=DispositionName.SLUGS,
+                description="Filter documents by disposition slug.",
+            ),
+            OpenApiParameter(
                 name="published_within_days",
                 type=OpenApiTypes.INT,
                 location=OpenApiParameter.QUERY,
@@ -1001,6 +1042,14 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         operation_id="documents_search",
         parameters=[
             OpenApiParameter(
+                name="disposition",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.QUERY,
+                required=False,
+                enum=DispositionName.SLUGS,
+                description="Optional disposition slug to filter matching documents.",
+            ),
+            OpenApiParameter(
                 name="q",
                 type=OpenApiTypes.STR,
                 location=OpenApiParameter.QUERY,
@@ -1015,6 +1064,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     def search(self, request):
         """Search for documents by draft name, RFC number, or author name"""
         query = request.query_params.get("q", "").strip()
+        disposition = request.query_params.get("disposition", "").strip()
 
         if not query:
             return Response({"error": "Search query 'q' is required"}, status=400)
@@ -1049,6 +1099,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             q_filter |= Q(draft__clustermember__cluster__number=cluster_number)
 
         queryset = RfcToBe.objects.filter(q_filter).distinct().order_by("-id")
+        if disposition:
+            queryset = queryset.filter(disposition_id=disposition)
 
         page = self.paginate_queryset(queryset)
         if page is not None:

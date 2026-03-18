@@ -437,7 +437,11 @@ class Name(models.Model):
 
 
 class DispositionName(Name):
-    pass
+    CREATED = "created"
+    IN_PROGRESS = "in_progress"
+    PUBLISHED = "published"
+    WITHDRAWN = "withdrawn"
+    SLUGS = [CREATED, IN_PROGRESS, PUBLISHED, WITHDRAWN]
 
 
 class SourceFormatName(Name):

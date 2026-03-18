@@ -51,6 +51,12 @@ paths:
         name: disposition
         schema:
           type: string
+          enum:
+          - created
+          - in_progress
+          - published
+          - withdrawn
+        description: Filter queue items by disposition slug.
       - in: query
         name: pending_final_approval
         schema:
@@ -522,6 +528,12 @@ paths:
         name: disposition
         schema:
           type: string
+          enum:
+          - created
+          - in_progress
+          - published
+          - withdrawn
+        description: Filter documents by disposition slug.
       - name: limit
         required: false
         in: query
@@ -2198,6 +2210,12 @@ paths:
         name: disposition
         schema:
           type: string
+          enum:
+          - created
+          - in_progress
+          - published
+          - withdrawn
+        description: Optional disposition slug to filter matching documents.
       - name: limit
         required: false
         in: query
@@ -2444,6 +2462,12 @@ paths:
         name: disposition
         schema:
           type: string
+          enum:
+          - created
+          - in_progress
+          - published
+          - withdrawn
+        description: Filter queue items by disposition slug.
       - in: query
         name: pending_final_approval
         schema:
