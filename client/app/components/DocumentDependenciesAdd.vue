@@ -31,7 +31,7 @@
                 </button>
               </li>
             </ul>
-            <div v-else class="p-2">
+            <div v-if="!searchLoading && !hasExactDraftMatch" class="p-2">
               <button
                 type="button"
                 class="w-full rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-left text-sm text-amber-800 hover:bg-amber-100"
@@ -106,6 +106,12 @@ const searchMatches = computed(() => {
   if (Array.isArray(searchResults.value)) return searchResults.value
   if (Array.isArray(searchResults.value?.results)) return searchResults.value.results
   return []
+})
+
+const hasExactDraftMatch = computed(() => {
+  const trimmed = searchQuery.value.trim()
+  if (!trimmed) return false
+  return searchMatches.value.some((result) => result.name === trimmed)
 })
 
 const resetFormState = () => {
