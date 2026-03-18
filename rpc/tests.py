@@ -7,7 +7,6 @@ from django.test import TestCase
 from rest_framework.exceptions import NotFound
 
 from rpc.models import DocRelationshipName
-from rpc.models import RpcRelatedDocument
 
 from .api import get_rfctobe_for_draft_name
 from .factories import (
