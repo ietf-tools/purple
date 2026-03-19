@@ -68,6 +68,7 @@ import { QUEUE_QUEUE_PATH } from '~/utils/url'
 
 const route = useRoute()
 const api = useApi()
+const userStore = useUserStore()
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
@@ -130,6 +131,7 @@ const isAddingToQueue = ref(false)
 const snackbar = useSnackbar()
 
 const IN_PROGRESS = 'in_progress'
+const ENQUEUER_ROLE = 'enqueuer'
 
 const addToQueue = async () => {
   isAddingToQueue.value = true
@@ -143,6 +145,19 @@ const addToQueue = async () => {
     if(rfcToBe.disposition !== IN_PROGRESS) {
       throw Error(`Unable to set RFC to ${IN_PROGRESS}`)
     }
+
+    // Create assignment for current user as enqueuer
+     if (rfcToBe.id) {
+       await api.assignmentsCreate({
+         assignmentRequest: {
+           rfcToBe: rfcToBe.id,
+           person: userStore.rpcPersonId,
+           role: ENQUEUER_ROLE,
+           state: IN_PROGRESS
+         }
+       })
+     }
+
     await navigateTo(QUEUE_QUEUE_PATH)
   } catch(e) {
     snackbarForErrors({ snackbar, error: e, defaultTitle: 'Unable to add to queue'})
