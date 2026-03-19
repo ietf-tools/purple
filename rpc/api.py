@@ -514,9 +514,9 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # Filter out I-Ds that already have an RfcToBe
             reference_ids = [s.id for s in references]
             existing_rfc_to_be = dict(
-                RfcToBe.objects.filter(draft__datatracker_id__in=reference_ids).values_list(
-                    "draft__datatracker_id", "disposition__slug"
-                )
+                RfcToBe.objects.filter(
+                    draft__datatracker_id__in=reference_ids
+                ).values_list("draft__datatracker_id", "disposition__slug")
             )
             reference_docs: list[Document] = []
             received_reference_ids: set[int] = set()
