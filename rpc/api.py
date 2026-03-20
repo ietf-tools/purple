@@ -10,7 +10,8 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Coalesce, F, Max, Prefetch, Q, Subquery, Value
+from django.db.models import F, Max, Prefetch, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
