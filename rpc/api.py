@@ -180,8 +180,12 @@ def apply_submission_cluster_membership(
 
     If any received reference is already clustered, the current document joins that
     cluster. Otherwise, create a new cluster and add the current document and all
-    reference documents that are not already clustered.
+    reference documents that are not already clustered. If there are no references,
+    do not create a cluster.
     """
+
+    if not reference_docs and not received_reference_ids:
+        return None
 
     existing_member = (
         ClusterMember.objects.filter(doc__datatracker_id__in=received_reference_ids)
