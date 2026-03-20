@@ -10,7 +10,7 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import Max, Prefetch, Q, Subquery, Value
+from django.db.models import Coalesce, F, Max, Prefetch, Q, Subquery, Value
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -150,10 +150,6 @@ def get_rfctobe_for_draft_name(draft_name: str) -> RfcToBe:
     return obj
 
 
-def _next_cluster_number() -> int:
-    return (Cluster.objects.aggregate(max_number=Max("number"))["max_number"] or 0) + 1
-
-
 def _add_doc_to_cluster(cluster: Cluster, doc: Document) -> None:
     if ClusterMember.objects.filter(doc=doc).exists():
         return
@@ -211,7 +207,15 @@ def apply_submission_cluster_membership(
     if not docs_to_add:
         return None
 
-    cluster = Cluster.objects.create(number=_next_cluster_number())
+    next_number = Coalesce(
+        Subquery(
+            Cluster.objects.order_by("-number")
+            .annotate(next_num=F("number") + Value(1))
+            .values("next_num")[:1]
+        ),
+        Value(1),
+    )
+    cluster = Cluster.objects.create(number=next_number)
 
     for doc in docs_to_add:
         _add_doc_to_cluster(cluster, doc)
