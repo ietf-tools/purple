@@ -276,11 +276,21 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
   a.append("text")
     .attr("fill", (d) => black)
     .each((d) => {
-      (d as Node).lines = d.disposition === 'published' ? lines({
-        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
-      }) : lines({
-        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
-        id: d.id,
+
+
+      const circleText = getCircleTheme(d)['text'];
+      const textLines = circleText
+        .split(/\s/g)
+        .flatMap(line => line
+          .split(/-/)
+          .map((part, index, arr) => `${part}${index < arr.length ? '-' : ''}`)
+        );
+
+      (d as Node).lines = textLines.map((textLine): Line => {
+        return {
+          text: textLine,
+          width: measureWidth(textLine)
+        }
       });
       (d as Node).r = textRadius((d as Node).lines!)
       max_r = Math.max((d as Node).r, max_r)
@@ -298,34 +308,9 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
   a.append("circle")
     .attr("stroke", black)
     .lower()
-    .attr("fill", (d) => {
-      if (d.disposition === 'published') {
-        return blue
-      }
-      if (d.isBlocked) {
-        return red
-      }
-      if (!d.isReceived) {
-        return orange
-      }
-      return green
-    })
+    .attr("fill", (d) => getCircleTheme(d)['fill'])
     .each((d) => {
-      switch (d.disposition) {
-        case 'created':
-          (d as Node).stroke = 3
-          break
-        case 'published':
-          (d as Node).stroke = 1
-          break
-        case 'in_progress':
-          (d as Node).stroke = 6
-          break
-        case 'withdrawn':
-          (d as Node).stroke = 0
-        default:
-          (d as Node).stroke = 4
-      }
+      (d as Node).stroke = getCircleTheme(d)['strokeWidth']
     })
     .attr("r", (d) => {
       const dNode = d as Node
@@ -335,20 +320,10 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       }
       return (dNode.r ?? 0) + dNode.stroke / 2
     })
-    .attr("stroke-width", (d) => {
-      const dNode = d as Node
-      if (dNode.stroke === undefined) {
-        console.error(d)
-        throw Error("Expected stroke to be defined. See console.")
-      }
-      return dNode.stroke
-    })
-    .attr("stroke-dasharray", (d) => {
-      if (!d.isReceived) {
-        return 4
-      }
-      return 0
-    })
+    .attr("stroke-width", (d) => getCircleTheme(d)['strokeWidth'])
+    .attr("stroke-dasharray", (d) =>
+      getCircleTheme(d)['strokeStyle'] === 'solid' ? 0 : 2
+    )
 
   const adjust = DEFAULT_STROKE / 2
 

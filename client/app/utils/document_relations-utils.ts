@@ -14,6 +14,7 @@ export const font = `${font_size}px ${font_family}`
 export const green = "#198754"
 export const blue = "#4d9efd"
 export const purple = '#bb44bb'
+export const pink = '#bb44bb'
 export const orange = "#fd7e14"
 export const cyan = "#0dcaf0"
 export const yellow = "#ffc107"
@@ -134,6 +135,9 @@ export type NodeParam = {
   url?: string
   isReceived?: boolean
   isBlocked?: boolean
+  isNormRef?: boolean
+  hasNormRef?: boolean
+  hasNormRefInQueue?: boolean
   disposition: Disposition
   rfcNumber?: number | undefined,
   rfcToBe?: RfcToBe
@@ -170,6 +174,103 @@ export const legendData: DataParam = {
     { id: 'draft-withdrawnref-target', isReceived: true, disposition: undefined },
   ],
 };
+
+type CircleTheme = {
+  fill: string
+  strokeWidth: number
+  strokeStyle: 'solid'  | 'dotted',
+  text: string,
+  tooltip?: string
+}
+
+
+/**
+ * based on https://docs.google.com/spreadsheets/d/1WoPNZiFf9Hx4Qc6N5UE1-RKhYYNybBeCYZM72wL5TSM/edit?gid=0#gid=0
+ */
+export const getCircleTheme = (node: NodeParam): CircleTheme => {
+  if (Boolean(node.isReceived) && !Boolean(node.isBlocked) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef) && node.disposition === 'in_progress') {
+    return {
+      fill: green,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: `I-D ${node.id}`,
+      tooltip: 'Received; Disposition: In progress'
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.isBlocked) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef)) {
+    return {
+      fill: pink,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: `I-D ${node.id}`,
+      tooltip: 'Received; Disposition: Blocked' // FIXME: include blocked reason
+    }
+  }
+  if (Boolean(node.isReceived) && !Boolean(node.isBlocked) && !Boolean(node.isNormRef) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && node.disposition === 'in_progress') {
+    return  {
+      fill: green,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: `I-D ${node.id}`,
+      tooltip: 'Received; Disposition: In progress'
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.isBlocked) && !Boolean(node.isNormRef) && Boolean(node.hasNormRef) && !Boolean(node.hasNormRefInQueue) && node.rfcNumber === undefined) {
+    return  {
+      fill: pink,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: `I-D ${node.id}`,
+      tooltip: 'Received; Disposition: Blocked (Reference not received)'
+    }
+  }
+  if (!Boolean(node.isReceived) && Boolean(node.isNormRef) && Boolean(node.hasNormRefInQueue)) {
+    return {
+      fill: orange,
+      strokeWidth: 1,
+      strokeStyle: 'dotted',
+      text: `I-D ${node.id}`,
+      tooltip: 'Not received'
+    }
+  }
+  if(node.isReceived === true && node.isBlocked === undefined && node.hasNormRefInQueue === true && node.disposition === 'published') {
+    return {
+      fill: gray200,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: `I-D ${node.id}`,
+      tooltip: 'Published'
+    }
+  }
+
+  if(node.isReceived === false && node.isBlocked === true) {
+    return {
+      fill: red,
+      strokeStyle: 'solid',
+      strokeWidth: 2,
+      text: node.id,
+      tooltip: 'Not received. Blocked.'
+    }
+  }
+
+  if(node.disposition === 'published') {
+    return {
+      fill: green,
+      strokeStyle: 'solid',
+      strokeWidth: 1,
+      text: `RFC ${node.rfcNumber}`,
+      tooltip: 'Published'
+    }
+  }
+
+  return {
+    fill: blue,
+    strokeWidth: 2,
+    strokeStyle: 'solid',
+    text: `RFC-to-be${node.rfcNumber ? ` ${node.rfcNumber}` : ''}`,
+    tooltip: undefined,
+  }
+}
 
 export const complexClusterExample: Cluster = {
   "number": 535,
