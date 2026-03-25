@@ -95,7 +95,9 @@ class RelatedDocumentClusterSyncTests(TestCase):
         target = RfcToBeFactory(draft__name="draft-target-doc")
 
         response = self.client.post(
-            reverse("documents-related-list", kwargs={"draft_name": "draft-source-doc"}),
+            reverse(
+                "documents-related-list", kwargs={"draft_name": "draft-source-doc"}
+            ),
             data=json.dumps(
                 {
                     "source": source.id,
@@ -122,7 +124,9 @@ class RelatedDocumentClusterSyncTests(TestCase):
         cluster.docs.add(source.draft, through_defaults={"order": 1})
 
         response = self.client.post(
-            reverse("documents-related-list", kwargs={"draft_name": "draft-source-doc"}),
+            reverse(
+                "documents-related-list", kwargs={"draft_name": "draft-source-doc"}
+            ),
             data=json.dumps(
                 {
                     "source": source.id,
