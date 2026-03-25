@@ -10,8 +10,7 @@ import django_filters
 import rpcapi_client
 from django import forms
 from django.db import transaction
-from django.db.models import F, Max, Prefetch, Q, Subquery, Value
-from django.db.models.functions import Coalesce
+from django.db.models import Max, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -130,7 +129,13 @@ from .serializers import (
     check_user_has_role,
 )
 from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
-from .utils import VersionInfo, create_rpc_related_document, get_or_create_draft_by_name
+from .utils import (
+    VersionInfo,
+    add_doc_to_cluster,
+    create_cluster,
+    create_rpc_related_document,
+    get_or_create_draft_by_name,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -149,22 +154,6 @@ def get_rfctobe_for_draft_name(draft_name: str) -> RfcToBe:
     if obj is None:
         raise NotFound(f"No RfcToBe found for draft '{draft_name}'")
     return obj
-
-
-def _add_doc_to_cluster(cluster: Cluster, doc: Document) -> None:
-    if ClusterMember.objects.filter(doc=doc).exists():
-        return
-
-    annotated_clusters = Cluster.objects.annotate(
-        next_order=Max("clustermember__order", default=0) + Value(1)
-    )
-
-    doc.clustermember_set.create(
-        cluster=cluster,
-        order=Subquery(
-            annotated_clusters.filter(pk=cluster.pk).values_list("next_order")
-        ),
-    )
 
 
 def apply_submission_cluster_membership(
@@ -190,7 +179,7 @@ def apply_submission_cluster_membership(
         .first()
     )
     if existing_member is not None:
-        _add_doc_to_cluster(existing_member.cluster, current_doc)
+        add_doc_to_cluster(existing_member.cluster, current_doc)
         return existing_member.cluster
 
     docs_by_id = {current_doc.id: current_doc}
@@ -208,18 +197,10 @@ def apply_submission_cluster_membership(
     if not docs_to_add:
         return None
 
-    next_number = Coalesce(
-        Subquery(
-            Cluster.objects.order_by("-number")
-            .annotate(next_num=F("number") + Value(1))
-            .values("next_num")[:1]
-        ),
-        Value(1),
-    )
-    cluster = Cluster.objects.create(number=next_number)
+    cluster = create_cluster()
 
     for doc in docs_to_add:
-        _add_doc_to_cluster(cluster, doc)
+        add_doc_to_cluster(cluster, doc)
 
     return cluster
 
@@ -808,7 +789,7 @@ class ClusterViewSet(
                 code="document_already_in_cluster",
             )
 
-        _add_doc_to_cluster(cluster, doc)
+        add_doc_to_cluster(cluster, doc)
 
         cluster.refresh_from_db()
 

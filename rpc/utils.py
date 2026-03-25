@@ -1,10 +1,10 @@
 # Copyright The IETF Trust 2023-2024, All Rights Reserved
-from django.db.models import Max
+from django.db.models import F, Max, Subquery, Value
+from django.db.models.functions import Coalesce
 
 from datatracker.models import Document
 
-from .models import DumpInfo, RfcToBe, UnusableRfcNumber
-from .serializers import CreateRpcRelatedDocumentSerializer
+from .models import Cluster, ClusterMember, DumpInfo, RfcToBe, UnusableRfcNumber
 
 
 class VersionInfo:
@@ -35,6 +35,8 @@ def next_rfc_number(count=1) -> list[int]:
 
 
 def create_rpc_related_document(relationship_slug, source, target_draft_name):
+    from .serializers import CreateRpcRelatedDocumentSerializer
+
     data = {
         "relationship": relationship_slug,
         "source": source,
@@ -45,6 +47,35 @@ def create_rpc_related_document(relationship_slug, source, target_draft_name):
     if serializer.is_valid(raise_exception=True):
         return serializer.save()
     return None
+
+
+def create_cluster() -> Cluster:
+    """Create a new Cluster with the next available number."""
+    next_number = Coalesce(
+        Subquery(
+            Cluster.objects.order_by("-number")
+            .annotate(next_num=F("number") + Value(1))
+            .values("next_num")[:1]
+        ),
+        Value(1),
+    )
+    return Cluster.objects.create(number=next_number)
+
+
+def add_doc_to_cluster(cluster: Cluster, doc: Document) -> None:
+    """Add a Document to a Cluster, skipping if already a member of any cluster."""
+    if ClusterMember.objects.filter(doc=doc).exists():
+        return
+
+    annotated_clusters = Cluster.objects.annotate(
+        next_order=Max("clustermember__order", default=0) + Value(1)
+    )
+    doc.clustermember_set.create(
+        cluster=cluster,
+        order=Subquery(
+            annotated_clusters.filter(pk=cluster.pk).values_list("next_order")
+        ),
+    )
 
 
 def get_or_create_draft_by_name(draft_name, *, rpcapi):

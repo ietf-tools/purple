@@ -9,7 +9,7 @@ from itertools import pairwise
 
 import rpcapi_client
 from django.db import IntegrityError, transaction
-from django.db.models import Max, QuerySet
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -51,6 +51,7 @@ from .models import (
     SubseriesTypeName,
     UnusableRfcNumber,
 )
+from .utils import add_doc_to_cluster, create_cluster
 
 
 class VersionInfoSerializer(serializers.Serializer):
@@ -953,11 +954,8 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
         if existing_member is not None:
             return existing_member.cluster
 
-        next_cluster_number = (
-            Cluster.objects.aggregate(max_number=Max("number"))["max_number"] or 0
-        ) + 1
-        cluster = Cluster.objects.create(number=next_cluster_number)
-        ClusterMember.objects.create(cluster=cluster, doc=source.draft, order=1)
+        cluster = create_cluster()
+        add_doc_to_cluster(cluster, source.draft)
         return cluster
 
     def _add_target_document_to_cluster(
@@ -983,17 +981,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                 code="document_already_in_cluster",
             )
 
-        max_order = (
-            ClusterMember.objects.filter(cluster=cluster).aggregate(
-                max_order=Max("order")
-            )["max_order"]
-            or 0
-        )
-        ClusterMember.objects.create(
-            cluster=cluster,
-            doc=target_document,
-            order=max_order + 1,
-        )
+        add_doc_to_cluster(cluster, target_document)
 
     def create(self, validated_data):
         target_draft_name = validated_data.pop("target_draft_name")

@@ -4,6 +4,7 @@ import json
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from django.urls import reverse
 from rest_framework.exceptions import NotFound
 
 from rpc.models import DocRelationshipName
@@ -94,7 +95,7 @@ class RelatedDocumentClusterSyncTests(TestCase):
         target = RfcToBeFactory(draft__name="draft-target-doc")
 
         response = self.client.post(
-            "/api/rpc/documents/draft-source-doc/related/",
+            reverse("documents-related-list", kwargs={"draft_name": "draft-source-doc"}),
             data=json.dumps(
                 {
                     "source": source.id,
@@ -121,7 +122,7 @@ class RelatedDocumentClusterSyncTests(TestCase):
         cluster.docs.add(source.draft, through_defaults={"order": 1})
 
         response = self.client.post(
-            "/api/rpc/documents/draft-source-doc/related/",
+            reverse("documents-related-list", kwargs={"draft_name": "draft-source-doc"}),
             data=json.dumps(
                 {
                     "source": source.id,
