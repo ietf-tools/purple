@@ -161,7 +161,7 @@ class DocumentSearchTests(TestCase):
         )
 
         response = self.client.get(
-            "/api/rpc/documents/search/",
+            reverse("rfctobe-search"),
             {"q": "draft-search-target", "disposition": "in_progress"},
         )
 
