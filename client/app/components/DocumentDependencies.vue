@@ -11,9 +11,9 @@
       <div class="flex items-center gap-2 mb-4">
         <span class="font-medium">Cluster: </span>
         <span class="mr-2">
-          <span v-if="props.clusterNumber">
-            <Anchor :href="`/clusters/${props.clusterNumber}`" class="inline-flex items-center gap-1 text-blue-600">
-              <Icon name="pajamas:group" class="h-5 w-5" />{{ props.clusterNumber }}
+          <span v-if="clusterNumber">
+            <Anchor :href="`/clusters/${clusterNumber}`" class="inline-flex items-center gap-1 text-blue-600">
+              <Icon name="pajamas:group" class="h-5 w-5" />{{ clusterNumber }}
             </Anchor>
           </span>
         <span v-else>-</span>
@@ -147,14 +147,27 @@ type Props = {
   draftName: string
   id: number,
   people?: RpcPerson[],
-  clusterNumber?: number
 }
+
+const clusterNumber = defineModel<number | undefined>('clusterNumber')
 
 const api = useApi()
 const snackbar = useSnackbar()
 const props = defineProps<Props>()
 
 const people = computed(() => props.people ?? fetchedPeople.value)
+
+watch(
+  () => relatedDocuments.value?.length,
+  async (newLen, oldLen) => {
+    if (newLen !== undefined && oldLen !== undefined && newLen > oldLen) {
+      try {
+        const rfcToBe = await api.documentsRetrieve({ draftName: props.draftName })
+        clusterNumber.value = rfcToBe.cluster?.number
+      } catch {}
+    }
+  }
+)
 
 const { data: fetchedPeople } = await useAsyncData(
   async () => (props.people === undefined) ? await api.rpcPersonList() : [],
