@@ -164,7 +164,10 @@ watch(
       try {
         const rfcToBe = await api.documentsRetrieve({ draftName: props.draftName })
         clusterNumber.value = rfcToBe.cluster?.number
-      } catch {}
+      } catch (e) {
+        console.error('Failed to fetch cluster number after adding a dependency: ', e)
+        snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to fetch cluster number' })
+      }
     }
   }
 )
