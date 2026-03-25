@@ -231,7 +231,8 @@ async function importSubmission () {
         stdLevel: state.stdLevel.slug,
         stream: state.stream.slug,
         externalDeadline: DateTime.fromISO(state.deadline, { zone: 'utc' }).toJSDate(),
-        labels: state.labels
+        labels: state.labels,
+        ianaStatusSlug: state.ianaAction
       }
     })
   } catch (e) {
