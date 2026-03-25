@@ -85,9 +85,6 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
   })
 }
 
-const api = useApi()
-
-
 const handleChange = (e: Event) => {
   const { target } = e
   if (!(target instanceof HTMLSelectElement)) {
@@ -159,7 +156,7 @@ const clusterGraphData = computed(() => {
     return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
   }
 
-  const rfcToBeToNodeParam = (rfcToBe: RfcToBe): NodeParam | undefined => {
+  const rfcToBeToNodeParam = (rfcToBe: RfcToBe, partialNodeParam: Partial<NodeParam>): NodeParam | undefined => {
     const { name, disposition } = rfcToBe
     if (!name) {
       console.warn("rfcToBe had no name?", rfcToBe)
@@ -172,7 +169,7 @@ const clusterGraphData = computed(() => {
       rfcNumber: rfcToBe.rfcNumber ?? undefined,
       url: `/docs/${name}`,
       disposition: parseDisposition(disposition),
-      isReceived: true,
+      ...partialNodeParam,
     }
   }
 
@@ -185,14 +182,19 @@ const clusterGraphData = computed(() => {
 
       const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
 
+      const hasNormRef = references ? references.length > 0 : undefined
+      const hasNormRefInQueue = references ? references.some(reference => reference.relationship === 'refqueue') : undefined
+
       referenceNodes.push(...(references ?? []).flatMap(reference => {
         const { draftName, targetDraftName } = reference
         const draft = draftName ? rfcsByDraftName.value[draftName] : undefined
         const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
 
         return [
-          draft ? rfcToBeToNodeParam(draft) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
-          target ? rfcToBeToNodeParam(target) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
+          draft ? rfcToBeToNodeParam(draft, { }) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
+          target ? rfcToBeToNodeParam(target, {
+            isNormRef: true, // all targets are norm refs
+          }) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
         ].filter(isNodeParam)
       }))
 
@@ -204,6 +206,9 @@ const clusterGraphData = computed(() => {
         isReceived: isReceived ?? undefined,
         disposition: parseDisposition(disposition),
         isBlocked,
+        isNormRef: false,
+        hasNormRef,
+        hasNormRefInQueue,
       }]
     }).filter(isNodeParam)
   )

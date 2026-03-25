@@ -18,6 +18,7 @@ export const orange = "#fd7e14"
 export const cyan = "#0dcaf0"
 export const yellow = "#ffc107"
 export const red = "#ee828d"
+export const pink = '#bb44bb'
 export const teal = "#20c997"
 export const white = "#fff"
 export const black = "#212529"
@@ -104,6 +105,125 @@ export const parseRelationship = (maybeRelationship: string): Relationship => {
   return 'not-received'
 }
 
+type CircleTheme = {
+  fill: string
+  textColor: string,
+  strokeWidth: number
+  strokeStyle: 'solid' | 'dotted',
+  text: string[],
+  tooltip?: string[]
+}
+
+const splitDraftName = (id: string): string[] => {
+  return id.split(/-/g).map((part, index) => `${index > 0 ? '-' : ''}${part}`)
+}
+
+const makeTooltip = (node: NodeParam): string[] => {
+  const tooltip: string[] = []
+  if (node.isReceived) {
+    tooltip.push('Received.')
+  }
+  if (node.disposition) {
+    if (node.disposition === 'published') {
+      tooltip.push('Published.')
+    } else {
+      tooltip.push(`Disposition: ${startCase(node.disposition)}.`)
+    }
+  }
+  if (node.isBlocked) {
+    tooltip.push('Blocked.')
+  }
+  return tooltip
+}
+
+/**
+ * based on https://docs.google.com/spreadsheets/d/1WoPNZiFf9Hx4Qc6N5UE1-RKhYYNybBeCYZM72wL5TSM/edit?gid=0#gid=0
+ */
+export const getCircleTheme = (node: NodeParam): CircleTheme => {
+  if (Boolean(node.isReceived) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+    return {
+      fill: blue,
+      textColor: black,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !Boolean(node.hasNormRefBlocked) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+    return {
+      fill: green,
+      textColor: black,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef) && Boolean(node.isBlocked)) {
+    return {
+      fill: pink,
+      textColor: black,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && Boolean(node.hasNormRefBlocked) && Boolean(node.isBlocked)) {
+    return {
+      fill: pink,
+      textColor: black,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && !Boolean(node.hasNormRefInQueue) && Boolean(node.isBlocked) && node.rfcNumber === undefined) {
+    return {
+      fill: pink,
+      textColor: black,
+      strokeWidth: 1,
+      strokeStyle: 'dotted',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+  if (!Boolean(node.isReceived) && Boolean(node.isNormRef)
+    // FIXME: spreadsheet wants disposition==='not in queue' comparision but we can't do that yet)
+  ) {
+    return {
+      fill: orange,
+      textColor: black,
+      strokeWidth: 1,
+      strokeStyle: 'dotted',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+
+  if (Boolean(node.isReceived) && !Boolean(node.hasNormRefInQueue) && !Boolean(node.hasNormRefBlocked) && !Boolean(node.isBlocked) && node.disposition === 'published') {
+    return {
+      fill: gray200,
+      textColor: black,
+      strokeWidth: 2,
+      strokeStyle: 'solid',
+      text: ['I-D', ...splitDraftName(node.id)],
+      tooltip: makeTooltip(node)
+    }
+  }
+
+  return {
+    fill: black,
+    textColor: white,
+    strokeWidth: 2,
+    strokeStyle: 'solid',
+    text: ['I-D', ...splitDraftName(node.id)],
+    tooltip: makeTooltip(node)
+  }
+}
+
 export type Line = {
   text: string
   width: number
@@ -134,6 +254,10 @@ export type NodeParam = {
   url?: string
   isReceived?: boolean
   isBlocked?: boolean
+  isNormRef?: boolean
+  hasNormRef?: boolean
+  hasNormRefBlocked?: boolean
+  hasNormRefInQueue?: boolean
   disposition: Disposition
   rfcNumber?: number | undefined,
   rfcToBe?: RfcToBe
