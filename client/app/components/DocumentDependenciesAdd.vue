@@ -76,7 +76,7 @@ import {
   DialogTitle,
 } from "reka-ui"
 import { refDebounced } from "@vueuse/core"
-import type { DocumentsRelatedCreateRequest, RpcRelatedDocument } from "~/purple_client"
+import type { DocumentsRelatedCreateRequest, RfcToBe, RpcRelatedDocument } from "~/purple_client"
 import { snackbarForErrors } from "~/utils/snackbar"
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>('relatedDocuments', { required: true, default: [] })
@@ -111,7 +111,7 @@ const searchMatches = computed(() => {
 const hasExactDraftMatch = computed(() => {
   const trimmed = searchQuery.value.trim()
   if (!trimmed) return false
-  return searchMatches.value.some((result) => result.name === trimmed)
+  return searchMatches.value.some((result: RfcToBe) => result.name === trimmed)
 })
 
 const resetFormState = () => {
