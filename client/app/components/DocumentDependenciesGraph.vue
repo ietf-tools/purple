@@ -184,6 +184,17 @@ const clusterGraphData = computed(() => {
 
       const hasNormRef = references ? references.length > 0 : undefined
       const hasNormRefInQueue = references ? references.some(reference => reference.relationship === 'refqueue') : undefined
+      const hasNormRefBlocked = references ? references.some(reference => {
+        if (!reference.targetDraftName || !clusterToUse.value.documents) {
+          return
+        }
+        const targetDocument = clusterToUse.value.documents.find(doc => doc.name === reference.targetDraftName)
+        if (!targetDocument) {
+          console.error('Expected to find', reference, clusterToUse.value.documents)
+          throw Error(`Expected to find ${reference.targetDraftName} in documents. See console for more.`)
+        }
+        return targetDocument.isBlocked
+      }) : undefined
 
       referenceNodes.push(...(references ?? []).flatMap(reference => {
         const { draftName, targetDraftName } = reference
@@ -191,7 +202,7 @@ const clusterGraphData = computed(() => {
         const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
 
         return [
-          draft ? rfcToBeToNodeParam(draft, { }) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
+          draft ? rfcToBeToNodeParam(draft, {}) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
           target ? rfcToBeToNodeParam(target, {
             isNormRef: true, // all targets are norm refs
           }) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
@@ -209,6 +220,7 @@ const clusterGraphData = computed(() => {
         isNormRef: false,
         hasNormRef,
         hasNormRefInQueue,
+        hasNormRefBlocked
       }]
     }).filter(isNodeParam)
   )
