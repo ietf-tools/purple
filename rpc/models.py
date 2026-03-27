@@ -341,6 +341,14 @@ class RfcToBe(models.Model):
     def area(self) -> str:
         return "" if self.draft is None else self.draft.area
 
+    @property
+    def wg_chairs(self) -> list:
+        return self.draft.wg_chairs if self.draft else []
+
+    @property
+    def area_directors(self) -> list:
+        return self.draft.area_directors if self.draft else []
+
     # Easier interface to the cluster_set
     @property
     def cluster(self) -> "Cluster | None":
@@ -356,7 +364,7 @@ class RfcToBe(models.Model):
 
     @property
     def updates(self) -> models.QuerySet["RfcToBe"]:
-        """RfcToBes that this RfcToBe obsoletes"""
+        """RfcToBes that this RfcToBe updates"""
         return RfcToBe.objects.filter(
             rpcrelateddocument_target_set__source=self,
             rpcrelateddocument_target_set__relationship_id="updates",

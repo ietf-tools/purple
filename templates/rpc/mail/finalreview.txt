@@ -189,11 +189,12 @@ Thank you for your cooperation,
 RFC Editor
 
 --------------------------------------
-RFCXXXX (RFCDRAFT)
+RFC{{ rfc_to_be.rfc_number }} ({{ rfc_to_be.draft.name }})
 
-Title            : RFCTITLE
-Author(s)        : RFCAUTHORS
-WG Chair(s)      : WGCHAIRNAMES
-Area Director(s) : ADNAMES
+Title            : {{ rfc_to_be.title }}
+{% for author in rfc_to_be.authors.all %}{% if forloop.first %}Author(s)        : {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}
+{% else %}                   {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
+WG Chair(s)      : {% for chair in rfc_to_be.wg_chairs %}{{ chair.name }}{% if not forloop.last %}, {% endif %}{% empty %}N/A{% endfor %}
+Area Director(s) : {% for ad in rfc_to_be.area_directors %}{{ ad.name }}{% if not forloop.last %}, {% endif %}{% empty %}N/A{% endfor %}
 
 {% endautoescape %}

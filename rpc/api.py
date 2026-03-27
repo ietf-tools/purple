@@ -2013,7 +2013,8 @@ class RfcMailTemplatesList(views.APIView):
 
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
-            ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
+            ("enqueueing", "rpc/mail/enqueueing.txt", "Enqueueing Notice"),
+            ("finalapproval", "rpc/mail/finalreview.txt", "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
 
