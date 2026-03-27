@@ -139,6 +139,15 @@ class Document(models.Model):
     def datatracker_url(self) -> str:
         return build_datatracker_url(f"/doc/{self.name}-{self.rev}")
 
+    @property
+    def wg_chairs(self) -> list:
+        return self._fetch("wg_chairs") or []
+
+    @property
+    def area_directors(self) -> list:
+        area = self._fetch("area")
+        return area.ads if area and area.ads else []
+
     @with_rpcapi
     def _fetch(self, field_name, *, rpcapi: rpcapi_client.PurpleApi):
         """Get field_name value for draft (uses cache)"""

@@ -3,7 +3,7 @@
     <div class="flex flex-row bg-gray-200 dark:bg-gray-800 justify-between border-b border-gray-300 dark:border-gray-500">
       <div class="flex flex-row items-end pt-1 pb-2">
         <h1 class="text-xl font-bold pt-4 px-4 inline-block">
-          New Email
+          Send Email
         </h1>
         <div class="flex flex-row items-center">
           <p class="inline-block text-sm ml-4 mr-2 font-bold text-xs text-gray-700 dark:text-gray-300">templates: </p>

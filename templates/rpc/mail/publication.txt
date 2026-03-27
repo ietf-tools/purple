@@ -8,34 +8,20 @@
 {% for author in rfc_to_be.authors.all %}{% if forloop.first %}        Author:     {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}
 {% else %}                    {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
         Status:     Informational
-        Stream:     IRTF
-        Date:       October 2025
-        Mailbox:    cs.ru.nl@viguier.nl,
-                    davidwong.crypto@gmail.com,
-                    gilles.vanassche@st.com,
-                    quynh.dang@nist.gov,
-                    joan@cs.ru.nl
-        Pages:      28
+        Stream:     {{ rfc_to_be.stream.name }}
+        Date:       {{ rfc_to_be.published_at|date:"F Y" }}
+        Mailbox:    {% for author in rfc_to_be.authors.all %}{{ author.datatracker_person.email }}{% if not forloop.last %},
+                    {% endif %}{% endfor %}
+        Pages:      {{ rfc_to_be.pages }}
         Updates/Obsoletes/SeeAlso:   None
 
-        I-D Tag:    draft-irtf-cfrg-kangarootwelve-17.txt
+        I-D Tag:    {{ rfc_to_be.draft.name }}-{{ rfc_to_be.draft.rev }}.txt
 
-        URL:        https://www.rfc-editor.org/info/rfc9861
+        URL:        https://www.rfc-editor.org/info/rfc{{ rfc_to_be.rfc_number }}
 
-        DOI:        10.17487/RFC9861
+        DOI:        10.17487/RFC{{ rfc_to_be.rfc_number }}
 
-This document defines four eXtendable-Output Functions (XOFs), hash
-functions with output of arbitrary length, named TurboSHAKE128,
-TurboSHAKE256, KT128, and KT256.
-
-All four functions provide efficient and secure hashing primitives,
-and the last two are able to exploit the parallelism of the
-implementation in a scalable way.
-
-This document is a product of the Crypto Forum Research Group. It
-builds up on the definitions of the permutations and of the sponge
-construction in NIST FIPS 202 and is meant to serve as a stable
-reference and an implementation guide.
+{{ rfc_to_be.abstract }}
 
 
 INFORMATIONAL: This memo provides information for the Internet community.

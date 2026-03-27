@@ -1,0 +1,60 @@
+{% autoescape off %}{% comment %}
+Original comment:
+
+This is the template file for email messages sent to notify authors
+that their document is enqueued for processing.
+
+Text above the marker "TEXT:" is ignored. The message is below that
+marker. Other markers are substituted based on the table below.
+
+{% endcomment %}*****IMPORTANT*****
+
+TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
+
+Updated {{
+
+Author(s),
+
+Your document {{ rfc_to_be.name }}, which has been approved for publication as
+an RFC, has been added to the RFC Editor queue
+<https://queue.rfc-editor.org/>.
+
+If your XML file was submitted using the I-D submission tool
+<https://datatracker.ietf.org/submit/>, we have already retrieved it
+and have started working on it.
+
+If you did not submit the file via the I-D submission tool, or
+if you have an updated version (e.g., updated contact information),
+please send us the file at this time by attaching it
+in your reply to this message and specifying any differences
+between the approved I-D and the file that you are providing.
+
+If you have any style guidance for the terms used in your document
+(capitalization, hyphenation, use of quotation marks and underscores,
+etc.), please send us mail with your draft string in the subject line.
+This should help increase the pace with which documents move through
+the RFC Editor queue.
+
+The first step that we take as your document moves through the queue
+is converting it to RFCXML (if it is not already in RFCXML) and
+applying the formatting steps listed at
+<https://www.rfc-editor.org/pubprocess/how-we-update/>.
+Next, we will edit for clarity and apply the style guide
+(<https://www.rfc-editor.org/styleguide/>).
+
+You can check the status of your document at
+<https://queue.rfc-editor.org/>.
+
+You will receive automatic notifications as your document changes
+queue state (for more information about these states, please see
+<https://www.rfc-editor.org/about/queue/>). When we have completed
+our edits, we will move your document to AUTH48 state and ask you
+to perform a final review of the document.
+
+Please let us know if you have any questions.
+
+Thank you.
+
+The RFC Editor Team
+
+{% endautoescape %}
