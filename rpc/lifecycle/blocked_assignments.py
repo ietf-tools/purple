@@ -154,6 +154,8 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
                     reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
         if rfc.finalapproval_set.active().exists():
             reasons.add(BlockingReason.FINAL_APPROVAL_PENDING)
+        if rfc.actionholder_set.active().exists():
+            reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
         return reasons
 
     # No active assignments in any gate - return empty set
