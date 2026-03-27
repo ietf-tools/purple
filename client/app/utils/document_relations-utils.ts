@@ -118,7 +118,7 @@ const splitDraftName = (id: string): string[] => {
   return id.split(/-/g).map((part, index) => `${index > 0 ? '-' : ''}${part}`)
 }
 
-const makeTooltip = (node: NodeParam): string[] => {
+const makeTooltip = (node: NodeParam): string[] | undefined => {
   const tooltip: string[] = []
   if (node.isReceived) {
     tooltip.push('Received.')
@@ -133,7 +133,7 @@ const makeTooltip = (node: NodeParam): string[] => {
   if (node.isBlocked) {
     tooltip.push('Blocked.')
   }
-  return tooltip
+  return tooltip.length > 0 ? tooltip : undefined
 }
 
 /**

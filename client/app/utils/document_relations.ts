@@ -184,18 +184,13 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
         console.error("Expected element but received ", target)
         return
       }
-      const titleElement = target.closest('[title]')
-      if (!titleElement) {
-        console.error("Couldn't find title element of ", target, { parents: getAncestors(target) })
+      const group = target.closest('g')
+      if (!(group instanceof SVGElement)) {
+        console.error("Expected svg element but received ", group, ' from ', target)
         return
       }
-      const boundingClientRect = titleElement.getBoundingClientRect()
+      const boundingClientRect = group.getBoundingClientRect()
 
-      const title = titleElement.getAttribute('title')
-      if (!title) {
-        console.warn("couldn't find title attribute for tooltip")
-        return
-      }
       setTooltip({
         text: getLinkTitle(d),
         position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
@@ -220,7 +215,7 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .attr("href", (d) => d.url ??
       '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available
     )
-    .attr("title", (d) => getNodeTitle(d).join(" "))
+    .attr("title", (d) => getCircleTheme(d).tooltip?.join(" ") ?? null)
     .on("focus mouseover", function (e, d) {
       e.preventDefault()
       const { target } = e
@@ -228,22 +223,26 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
         console.error("Expected element but received ", target)
         return
       }
-      const titleElement = target.closest('[title]')
-      if (!titleElement) {
-        console.error("Couldn't find title attribute in parents of ", target, { parents: getAncestors(target) })
-        return
-      }
-      const boundingClientRect = titleElement.getBoundingClientRect()
 
-      const title = titleElement.getAttribute('title')
-      if (!title) {
-        console.warn("couldn't find title attribute for tooltip")
+      const anchor = target.closest('a')
+      if (!(anchor instanceof SVGElement || anchor instanceof HTMLElement)) {
+        console.error("Expected svg element but received ", anchor, ' from ', target)
         return
       }
-      setTooltip({
-        text: getNodeTitle(d),
-        position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
-      })
+      const boundingClientRect = anchor.getBoundingClientRect()
+
+      const { tooltip } = getCircleTheme(d)
+
+      if (tooltip) {
+        console.log("has tooltip", tooltip)
+        setTooltip({
+          text: tooltip,
+          position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
+        })
+      } else {
+        console.log("hide tooltip?")
+        setTooltip()
+      }
     })
     .on('blur mouseout', () => {
       setTooltip()
@@ -495,13 +494,6 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       .stop()
       .on("tick", ticked),
   ]
-}
-
-const getNodeTitle = (d: NodeParam): string[] => {
-  return [
-    d.isReceived ? 'Received' : 'Not received',
-    d.disposition ? `Disposition: ${startCase(d.disposition)}` : 'No disposition',
-  ].filter(line => typeof line === 'string')
 }
 
 const getLinkTitle = (d: LinkParam): string[] => {
