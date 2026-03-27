@@ -26,70 +26,6 @@ const getLinkColor = (rel: Relationship) => {
 
 const DEFAULT_STROKE = 10
 
-// code partially adapted from
-// https://observablehq.com/@mbostock/fit-text-to-circle
-
-type LinesProps = { id?: string, rfcNumber?: number }
-function lines({ id, rfcNumber }: LinesProps): Line[] {
-  const lines: Line[] = []
-  if (rfcNumber) {
-    const newRfcNumber = `RFC-to-be ${rfcNumber}`
-    lines.push({
-      text: newRfcNumber,
-      width: newRfcNumber.length,
-      style: 'font-weight: bold'
-    })
-  }
-  let line_width_0 = Infinity
-  if (!id) return lines;
-
-  let text = id
-  let line: Line = {
-    text,
-    width: line_width_0,
-  }
-
-
-  let sep = "-"
-  let words = text.trim().split(/-/g)
-  if (words.length == 1) {
-    words = text.trim().split(/\s/g)
-    sep = " "
-  }
-  words = words.map((x, i, a) => (i < a.length - 1 ? x + sep : x))
-  if (words.length == 1) {
-    words = text
-      .trim()
-      .split(/rfc/g)
-      .map((x, i, a) => (i < a.length - 1 ? x + "RFC" : x))
-  }
-  const target_width = Math.sqrt(measureWidth(text.trim()) * line_height)
-  for (let i = 0, n = words.length; i < n; ++i) {
-    let line_text = (line ? line.text : "") + words[i]
-    let line_width = measureWidth(line_text) * 1.2
-    if ((line_width_0 + line_width) / 2 < target_width) {
-      line.width = line_width_0 = line_width
-      line.text = line_text
-    } else {
-      line_width_0 = measureWidth(words[i] ?? '') * 1.2
-      line = { width: line_width_0, text: words[i] ?? '' }
-      lines.push(line)
-    }
-  }
-  return lines
-}
-
-function measureWidth(text: string): number {
-  const context = document.createElement("canvas").getContext("2d")
-
-  if (!context) {
-    console.error({ context })
-    throw Error("Unable to get canvas context. See console for more")
-  }
-  context.font = font
-  return context.measureText(text).width
-}
-
 function textRadius(lines: Line[]) {
   let radius = 0
   for (let i = 0, n = lines.length; i < n; ++i) {
@@ -273,14 +209,9 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     })
 
   a.append("text")
-    .attr("fill", (d) => black)
+    .attr("fill", (d) => getCircleTheme(d).textColor)
     .each((d) => {
-      (d as Node).lines = d.disposition === 'published' ? lines({
-        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
-      }) : lines({
-        rfcNumber: d.rfcNumber ?? d.rfcToBe?.rfcNumber ?? undefined,
-        id: d.id,
-      });
+      (d as Node).lines = getCircleTheme(d).text;
       (d as Node).r = textRadius((d as Node).lines!)
       max_r = Math.max((d as Node).r, max_r)
     })
@@ -298,33 +229,10 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
     .attr("stroke", black)
     .lower()
     .attr("fill", (d) => {
-      if (d.disposition === 'published') {
-        return blue
-      }
-      if (d.isBlocked) {
-        return red
-      }
-      if (!d.isReceived) {
-        return orange
-      }
-      return green
+      return getCircleTheme(d).fill
     })
     .each((d) => {
-      switch (d.disposition) {
-        case 'created':
-          (d as Node).stroke = 3
-          break
-        case 'published':
-          (d as Node).stroke = 1
-          break
-        case 'in_progress':
-          (d as Node).stroke = 6
-          break
-        case 'withdrawn':
-          (d as Node).stroke = 0
-        default:
-          (d as Node).stroke = 4
-      }
+      (d as Node).stroke = getCircleTheme(d).strokeWidth
     })
     .attr("r", (d) => {
       const dNode = d as Node

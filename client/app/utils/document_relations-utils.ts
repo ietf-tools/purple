@@ -110,9 +110,55 @@ type CircleTheme = {
   textColor: string,
   strokeWidth: number
   strokeStyle: 'solid' | 'dotted',
-  text: string[],
+  text: Line[],
   tooltip?: string[]
 }
+
+// code partially adapted from
+// https://observablehq.com/@mbostock/fit-text-to-circle
+const wordsToLines = (words: string[]): Line[] => {
+  const lines: Line[] = []
+
+  let line_width_0 = Infinity
+
+  const firstWord = words[0]
+
+  if (!firstWord) {
+    return []
+  }
+
+  let line: Line = {
+    text: firstWord,
+    width: line_width_0,
+  }
+
+  const target_width = Math.sqrt(measureWidth(words.join('').trim()) * line_height)
+  for (let i = 0, n = words.length; i < n; ++i) {
+    let line_text = `${(line.text ? `${line.text} ` : '')}${words[i]}`
+    let line_width = measureWidth(line_text) * 1.2
+    if ((line_width_0 + line_width) / 2 < target_width) {
+      line.width = line_width_0 = line_width
+      line.text = line_text
+    } else {
+      line_width_0 = measureWidth(words[i] ?? '') * 1.5
+      line = { width: line_width_0, text: words[i] ?? '' }
+      lines.push(line)
+    }
+  }
+  return lines
+}
+
+function measureWidth(text: string): number {
+  const context = document.createElement("canvas").getContext("2d")
+
+  if (!context) {
+    console.error({ context })
+    throw Error("Unable to get canvas context. See console for more")
+  }
+  context.font = font
+  return context.measureText(text).width
+}
+
 
 const splitDraftName = (id: string): string[] => {
   return id.split(/-/g).map((part, index) => `${index > 0 ? '-' : ''}${part}`)
@@ -146,7 +192,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -156,7 +202,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -166,7 +212,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -176,7 +222,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -186,19 +232,17 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 1,
       strokeStyle: 'dotted',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
-  if (!Boolean(node.isReceived) && Boolean(node.isNormRef)
-    // FIXME: spreadsheet wants disposition==='not in queue' comparision but we can't do that yet)
-  ) {
+  if (!Boolean(node.isReceived) && Boolean(node.isNormRef) && Boolean(node.hasNormRefBlocked)) {
     return {
       fill: orange,
       textColor: black,
       strokeWidth: 1,
       strokeStyle: 'dotted',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -209,7 +253,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: ['I-D', ...splitDraftName(node.id)],
+      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -219,7 +263,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     textColor: white,
     strokeWidth: 2,
     strokeStyle: 'solid',
-    text: ['I-D', ...splitDraftName(node.id)],
+    text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
     tooltip: makeTooltip(node)
   }
 }
