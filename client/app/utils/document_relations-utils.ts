@@ -140,7 +140,7 @@ const wordsToLines = (words: string[]): Line[] => {
       line.width = line_width_0 = line_width
       line.text = line_text
     } else {
-      line_width_0 = measureWidth(words[i] ?? '') * 1.5
+      line_width_0 = measureWidth(words[i] ?? '')
       line = { width: line_width_0, text: words[i] ?? '' }
       lines.push(line)
     }
