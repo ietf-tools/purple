@@ -30,7 +30,7 @@
             {{ searchResult.name }}
           </span>
           <span class="font-normal ml-1" v-if="searchResult.personId">
-            {{ SPACE }}{{ ` #${searchResult.email ?? ''}` }}
+            {{ SPACE }}{{ ` #${searchResult.personId ?? ''}` }}
           </span>
         </ComboboxItem>
       </ComboboxViewport>
