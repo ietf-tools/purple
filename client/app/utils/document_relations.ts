@@ -251,10 +251,14 @@ export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
       return dNode.stroke
     })
     .attr("stroke-dasharray", (d) => {
-      if (!d.isReceived) {
-        return 4
+      const { strokeStyle } = getCircleTheme(d)
+      switch(strokeStyle) {
+        case 'dotted':
+          return 4
+        case 'solid':
+          return 0
       }
-      return 0
+      assertNever(strokeStyle)
     })
 
   const adjust = DEFAULT_STROKE / 2

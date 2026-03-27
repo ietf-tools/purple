@@ -134,7 +134,7 @@ const wordsToLines = (words: string[]): Line[] => {
 
   const target_width = Math.sqrt(measureWidth(words.join('').trim()) * line_height)
   for (let i = 0, n = words.length; i < n; ++i) {
-    let line_text = `${(line.text ? `${line.text} ` : '')}${words[i]}`
+    let line_text = `${(line.text ? `${line.text}` : '')}${words[i]}`
     let line_width = measureWidth(line_text) * 1.2
     if ((line_width_0 + line_width) / 2 < target_width) {
       line.width = line_width_0 = line_width
@@ -159,8 +159,7 @@ function measureWidth(text: string): number {
   return context.measureText(text).width
 }
 
-
-const splitDraftName = (id: string): string[] => {
+const splitDraftNameIntoWords = (id: string): string[] => {
   return id.split(/-/g).map((part, index) => `${index > 0 ? '-' : ''}${part}`)
 }
 
@@ -168,6 +167,8 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
   const tooltip: string[] = []
   if (node.isReceived) {
     tooltip.push('Received.')
+  } else if(node.isReceived === false) {
+    tooltip.push('Not received.')
   }
   if (node.disposition) {
     if (node.disposition === 'published') {
@@ -192,7 +193,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -202,7 +203,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -212,7 +213,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -222,7 +223,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -232,28 +233,28 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       textColor: black,
       strokeWidth: 1,
       strokeStyle: 'dotted',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
-  if (!Boolean(node.isReceived) && Boolean(node.isNormRef) && Boolean(node.hasNormRefBlocked)) {
+  if (!Boolean(node.isReceived) && Boolean(node.isNormRef) && (Boolean(node.hasNormRefBlocked) || Boolean(node.isBlocked) )) {
     return {
       fill: orange,
       textColor: black,
       strokeWidth: 1,
       strokeStyle: 'dotted',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
 
-  if (Boolean(node.isReceived) && !Boolean(node.hasNormRefInQueue) && !Boolean(node.hasNormRefBlocked) && !Boolean(node.isBlocked) && node.disposition === 'published') {
+  if (Boolean(node.isReceived) && !Boolean(node.hasNormRefInQueue) && (!Boolean(node.hasNormRefBlocked) || !Boolean(node.isBlocked)) && node.disposition === 'published') {
     return {
       fill: gray200,
       textColor: black,
       strokeWidth: 2,
       strokeStyle: 'solid',
-      text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
   }
@@ -263,7 +264,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     textColor: white,
     strokeWidth: 2,
     strokeStyle: 'solid',
-    text: wordsToLines(['I-D', ...splitDraftName(node.id)]),
+    text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
     tooltip: makeTooltip(node)
   }
 }
