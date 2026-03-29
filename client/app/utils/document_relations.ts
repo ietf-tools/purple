@@ -1,9 +1,8 @@
 /**
  * Ported from https://github.com/ietf-tools/datatracker/blob/b3f2756f6b5d6adf853eb7779412950291169c38/ietf/static/js/document_relations.js#L106
  */
-import { startCase } from 'lodash-es'
 import * as d3 from "d3"
-import { black, blue, purple, font, getHumanReadableRelationshipName, gray200, gray800, green, line_height, orange, red, teal, white, yellow, type DataParam, type Line, type Link, type LinkParam, type Node, type NodeParam, type Relationship } from "./document_relations-utils"
+import { black, font, getHumanReadableRelationshipName, green, line_height, orange, red, teal, type DataParam, type Line, type Link, type LinkParam, type Node, type Relationship } from "./document_relations-utils"
 import { getAncestors } from './dom'
 
 const TOOLTIP_BUFFER_Y = 5
@@ -48,7 +47,9 @@ type Props = {
   setTooltip: SetTooltip
 }
 
-export function drawGraph({ data, pushRouter, colorMode, setTooltip }: Props) {
+export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Props) {
+  const data = normalizeData(_data)
+
   const zoom = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([1 / 32, 32])
