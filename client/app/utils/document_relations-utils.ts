@@ -159,6 +159,21 @@ function measureWidth(text: string): number {
   return context.measureText(text).width
 }
 
+/**
+ * If the API says nodes are !isReceived then reset the isBlocked flag
+ */
+export const normalizeData = (data: DataParam) => {
+  return {
+    nodes: data.nodes.map(node => {
+      return {
+        ...node,
+        isBlocked: !node.isReceived ? undefined : node.isBlocked,
+     }
+    }),
+    links: data.links
+  }
+}
+
 const splitDraftNameIntoWords = (id: string): string[] => {
   return id.split(/-/g).map((part, index) => `${index > 0 ? '-' : ''}${part}`)
 }
