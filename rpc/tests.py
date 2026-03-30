@@ -101,7 +101,7 @@ class RelatedDocumentClusterSyncTests(TestCase):
             data=json.dumps(
                 {
                     "source": source.id,
-                    "relationship": self.relationship.slug,
+                    "relationship": "refqueue",
                     "target_draft_name": target.draft.name,
                 }
             ),
@@ -130,7 +130,7 @@ class RelatedDocumentClusterSyncTests(TestCase):
             data=json.dumps(
                 {
                     "source": source.id,
-                    "relationship": self.relationship.slug,
+                    "relationship": "refqueue",
                     "target_draft_name": target.draft.name,
                 }
             ),
