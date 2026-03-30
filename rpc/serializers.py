@@ -1512,6 +1512,9 @@ class AddressListField(serializers.CharField):
 class MailMessageSerializer(serializers.ModelSerializer):
     """Mail message serializer"""
 
+    to = AddressListField()
+    cc = AddressListField(required=False, allow_blank=True)
+
     class Meta:
         model = MailMessage
         fields = [
