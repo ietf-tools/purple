@@ -237,7 +237,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (!Boolean(node.isReceived) && Boolean(node.isNormRef) && (Boolean(node.hasNormRefBlocked) || Boolean(node.isBlocked) )) {
+  if (!Boolean(node.isReceived) && Boolean(node.isNormRef)) {
     return {
       fill: orange,
       textColor: black,

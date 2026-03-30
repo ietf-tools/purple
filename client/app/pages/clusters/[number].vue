@@ -19,6 +19,7 @@
     </TitleBlock>
 
     <DocumentDependenciesGraph v-if="filteredCluster" :cluster="filteredCluster" :rfcs-to-be="rfcsToBe" />
+    <div v-else>No filtered cluster</div>
 
     <ClusterReorder v-if="filteredCluster" :cluster="filteredCluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />
   </div>
@@ -79,8 +80,6 @@ const { data: rfcsToBe, refresh: refreshClusters } = useAsyncData(
     }) ?? []
 
     const uniqueNames = uniq(names)
-
-    console.log({ uniqueNames })
 
     const drafts = await Promise.all(uniqueNames.map((draftName) =>
       api.documentsRetrieve({ draftName })
