@@ -45,6 +45,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
+from .dt_v1_api_utils import datatracker_group_list_email
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     begin_publication_attempt,
@@ -128,7 +129,6 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .dt_v1_api_utils import datatracker_group_list_email
 from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
 from .utils import (
     VersionInfo,
