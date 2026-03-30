@@ -128,6 +128,7 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
+from .dt_v1_api_utils import datatracker_group_list_email
 from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
 from .utils import (
     VersionInfo,
@@ -2057,9 +2058,15 @@ class RfcMailTemplatesList(views.APIView):
         if stream_slug == "editorial":
             publication_cc.add("rswg@rfc-editor.org")
         elif stream_slug == "ietf":
-            publication_cc.add(f"{rfc_to_be.group}@ietf.org")
+            if rfc_to_be.group:
+                ietf_list_email = datatracker_group_list_email(rfc_to_be.group)
+                if ietf_list_email:
+                    publication_cc.add(ietf_list_email)
         elif stream_slug == "irtf":
-            publication_cc.add(f"{rfc_to_be.group}@irtf.org")
+            if rfc_to_be.group:
+                irtf_list_email = datatracker_group_list_email(rfc_to_be.group)
+                if irtf_list_email:
+                    publication_cc.add(irtf_list_email)
 
         template_overrides = {
             "blank": {

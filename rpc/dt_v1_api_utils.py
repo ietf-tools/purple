@@ -40,3 +40,21 @@ def datatracker_stdlevelname(slug: str) -> tuple[str, str, str]:
 
 def datatracker_streamname(slug: str) -> tuple[str, str, str]:
     return datatracker_name("streamname", slug)
+
+
+def datatracker_group_list_email(acronym: str) -> str | None:
+    """Return the mailing list email for a group, or None if not found."""
+    try:
+        response = requests.get(
+            f"{settings.DATATRACKER_API_V1_BASE}/group/group/",
+            params={"acronym": acronym, "fmt": "json"},
+        )
+    except requests.exceptions.ConnectionError:
+        return None
+    if not response.ok:
+        return None
+    api_response = response.json()
+    objects = api_response.get("objects", [])
+    if not objects:
+        return None
+    return objects[0].get("list_email") or None
