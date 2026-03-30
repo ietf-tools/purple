@@ -303,7 +303,7 @@ export type NodeParam = {
   hasNormRef?: boolean
   hasNormRefBlocked?: boolean
   hasNormRefInQueue?: boolean
-  disposition: Disposition
+  disposition?: Disposition
   rfcNumber?: number | undefined,
   rfcToBe?: RfcToBe
 };

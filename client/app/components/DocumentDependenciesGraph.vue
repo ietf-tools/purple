@@ -190,8 +190,11 @@ const clusterGraphData = computed(() => {
         }
         const targetDocument = clusterToUse.value.documents.find(doc => doc.name === reference.targetDraftName)
         if (!targetDocument) {
-          console.error('Expected to find', reference, clusterToUse.value.documents)
-          throw Error(`Expected to find ${reference.targetDraftName} in documents. See console for more.`)
+          referenceNodes.push({
+            id: reference.targetDraftName,
+            url: `/docs/${reference.targetDraftName}`,
+          })
+          return true
         }
         return targetDocument.isBlocked
       }) : undefined
