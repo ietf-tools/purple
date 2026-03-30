@@ -1,19 +1,20 @@
 {% autoescape off %}A new Request for Comments is now available in online RFC libraries.
 
-        TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
-
+        {% for s in rfc_to_be.subseriesmember_set.all %}{{ s.type.slug|upper }} {{ s.number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
         RFC {% firstof rfc_to_be.rfc_number "XXXX" %}
 
         Title:      {{ rfc_to_be.title }}
-{% for author in rfc_to_be.authors.all %}{% if forloop.first %}        Author:     {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}
-{% else %}                    {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
-        Status:     Informational
+{% for author in rfc_to_be.authors.all %}{% if forloop.first %}        Author:     {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% else %}
+                    {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
+        Status:     {{ rfc_to_be.std_level.name }}
         Stream:     {{ rfc_to_be.stream.name }}
         Date:       {{ rfc_to_be.published_at|date:"F Y" }}
         Mailbox:    {% for author in rfc_to_be.authors.all %}{{ author.datatracker_person.email }}{% if not forloop.last %},
                     {% endif %}{% endfor %}
         Pages:      {{ rfc_to_be.pages }}
-        Updates/Obsoletes/SeeAlso:   None
+        Updates:    {% for r in rfc_to_be.updates %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        Obsoletes:  {% for r in rfc_to_be.obsoletes %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+        See Also:   {% for s in rfc_to_be.subseriesmember_set.all %}{{ s.type.slug|upper }} {{ s.number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
 
         I-D Tag:    {{ rfc_to_be.draft.name }}-{{ rfc_to_be.draft.rev }}.txt
 

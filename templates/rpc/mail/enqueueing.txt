@@ -9,10 +9,6 @@ marker. Other markers are substituted based on the table below.
 
 {% endcomment %}*****IMPORTANT*****
 
-TODO - THIS TEMPLATE IS NOT FULLY CONVERTED FOR INTERPOLATION!!
-
-Updated {{
-
 Author(s),
 
 Your document {{ rfc_to_be.name }}, which has been approved for publication as
