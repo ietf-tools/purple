@@ -1001,25 +1001,33 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                     f"No Document or RfcToBe found for draft name '{target_draft_name}'"
                 )
 
-        target_cluster_document = self._get_target_cluster_document(
-            target_document=target_document,
-            target_rfctobe=target_rfctobe,
+        relationship = validated_data["relationship"]
+        is_reference_relationship = (
+            relationship.slug in DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
         )
+
+        target_cluster_document = None
+        if is_reference_relationship:
+            target_cluster_document = self._get_target_cluster_document(
+                target_document=target_document,
+                target_rfctobe=target_rfctobe,
+            )
 
         try:
             with transaction.atomic():
                 data = {
-                    "relationship": validated_data["relationship"],
+                    "relationship": relationship,
                     "source": source,
                     "target_document": target_document,
                     "target_rfctobe": target_rfctobe,
                 }
                 related_doc = super().create(data)
-                cluster = self._get_or_create_source_cluster(source=source)
-                self._add_target_document_to_cluster(
-                    cluster=cluster,
-                    target_document=target_cluster_document,
-                )
+                if is_reference_relationship:
+                    cluster = self._get_or_create_source_cluster(source=source)
+                    self._add_target_document_to_cluster(
+                        cluster=cluster,
+                        target_document=target_cluster_document,
+                    )
         except IntegrityError as err:
             raise serializers.ValidationError(
                 f"Failed to create related document due to a database constraint: {err}"
