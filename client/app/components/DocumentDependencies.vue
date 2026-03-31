@@ -56,11 +56,15 @@ const columns: Column[] = [
     label: 'Target Draft Name',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
-    format: (row: any) => {
-      return h(Anchor, {
-        href: `/docs/${row}`,
-        class: 'inline-flex items-center gap-1 text-blue-600'
-      }, row)
+    format: (name: any) => {
+      const doc = relatedDocuments.value?.find(d => d.targetDraftName === name)
+      if (doc?.relationship === 'refqueue') {
+        return h(Anchor, {
+          href: `/docs/${name}`,
+          class: 'inline-flex items-center gap-1 text-blue-600'
+        }, name)
+      }
+      return name ?? '—'
     }
   },
   {
