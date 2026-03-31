@@ -91,13 +91,7 @@
         <DescriptionListItem term="Stream Manager" :spacing="spacing">
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
-              <span class="flex-1">Ari Drecker (mocked)</span>
-              <span v-if="!props.isReadOnly">
-                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-stream-manger')"
-                  :class="[classForBtnType.outline, 'px-2 py-1']">
-                  <Icon name="uil:pen" />
-                </Anchor>
-              </span>
+              <span class="flex-1">{{ rfcToBe.streamManager?.name || '(none)' }}</span>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>

@@ -27,9 +27,11 @@ from purple.mail import EmailMessage, make_message_id
 
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
+    GroupChair,
     NoSuchSlug,
     datatracker_stdlevelname,
     datatracker_streamname,
+    datatracker_group_chair,
 )
 from .rules import is_comment_author, is_rpc_person
 
@@ -429,6 +431,39 @@ class RfcToBe(models.Model):
         return RpcRole.objects.filter(
             slug__in=[activity.role_slug for activity in pending_activities(self)]
         )
+
+    @property
+    def stream_manager(self) -> "GroupChair | None":
+        """Return id/email/name of the party responsible for this document, based on stream.
+
+        IETF:      Responsible AD (iesg_contact)
+        IRTF:      Document Shepherd
+        ISE:       Independent Submission Editor (chair of 'ise' group in datatracker)
+        IAB:       IAB Chair (chair of 'iab' group in datatracker)
+        Editorial: Document Shepherd
+        """
+        stream = self.stream_id
+        if stream == "ietf":
+            if not self.iesg_contact:
+                return None
+            return GroupChair(
+                id=self.iesg_contact.datatracker_id,
+                email=self.iesg_contact.email or "",
+                name=self.iesg_contact.plain_name or "",
+            )
+        elif stream in ("irtf", "editorial"):
+            if not self.shepherd:
+                return None
+            return GroupChair(
+                id=self.shepherd.datatracker_id,
+                email=self.shepherd.email or "",
+                name=self.shepherd.plain_name or "",
+            )
+        elif stream == "ise":
+            return datatracker_group_chair("ise")
+        elif stream == "iab":
+            return datatracker_group_chair("iab")
+        return None
 
 
 class Name(models.Model):
