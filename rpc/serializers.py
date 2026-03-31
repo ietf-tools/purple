@@ -1002,12 +1002,12 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                 )
 
         relationship = validated_data["relationship"]
-        is_reference_relationship = (
-            relationship.slug in DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
+        should_add_to_cluster = (
+            relationship.slug == DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
         )
 
         target_cluster_document = None
-        if is_reference_relationship:
+        if should_add_to_cluster:
             target_cluster_document = self._get_target_cluster_document(
                 target_document=target_document,
                 target_rfctobe=target_rfctobe,
@@ -1022,7 +1022,7 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                     "target_rfctobe": target_rfctobe,
                 }
                 related_doc = super().create(data)
-                if is_reference_relationship:
+                if should_add_to_cluster:
                     cluster = self._get_or_create_source_cluster(source=source)
                     self._add_target_document_to_cluster(
                         cluster=cluster,
