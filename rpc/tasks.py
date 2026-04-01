@@ -1,8 +1,11 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
+import rpcapi_client
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 
+from datatracker.models import Document
+from datatracker.rpcapi import with_rpcapi
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
@@ -14,8 +17,15 @@ from .lifecycle.publication import (
     publish_rfctobe,
 )
 from .lifecycle.repo import GithubRepository
-from .models import MailMessage, MetadataValidationResults, RfcToBe
+from .models import (
+    DocRelationshipName,
+    MailMessage,
+    MetadataValidationResults,
+    RfcToBe,
+    RpcRelatedDocument,
+)
 from .rfcindex import refresh_rfc_index
+from .utils import get_or_create_draft_by_name
 
 
 @shared_task
@@ -191,3 +201,122 @@ def update_blocked_assignments_for_in_progress_rfcs_task():
     """Process all in_progress RfcToBe instances to apply blocked assignments"""
     for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):
         apply_blocked_assignment_for_rfc(rfc)
+
+
+@with_rpcapi
+def _compute_deep_references(
+    related_doc_id: int,
+    *,
+    rpcapi: rpcapi_client.PurpleApi,
+) -> None:
+    """Compute 2nd and 3rd generation not-received references for an RfcToBe.
+
+    Given an existing RpcRelatedDocument (not-received or refqueue), fetches
+    the target's references from the Datatracker and creates not-received-2g
+    relationships for each, then fetches each 2nd-gen reference's references
+    and creates not-received-3g relationships.
+
+    Duplicates are avoided by checking for existing relationships before creating
+    new ones.
+    """
+    related_doc = RpcRelatedDocument.objects.select_related(
+        "source",
+        "target_document",
+        "target_rfctobe__draft",
+    ).get(pk=related_doc_id)
+    source = related_doc.source
+
+    if related_doc.target_document is not None:
+        target_datatracker_id = related_doc.target_document.datatracker_id
+    elif (
+        related_doc.target_rfctobe is not None
+        and related_doc.target_rfctobe.draft is not None
+    ):
+        target_datatracker_id = related_doc.target_rfctobe.draft.datatracker_id
+    else:
+        logger.warning("RpcRelatedDocument %d has no resolvable target", related_doc_id)
+        return
+
+    if target_datatracker_id is None:
+        logger.warning(
+            "RpcRelatedDocument %d target has no datatracker_id", related_doc_id
+        )
+        return
+
+    # Collect datatracker IDs already linked to this source to avoid duplicates
+    existing_target_dt_ids: set[int] = set(
+        RpcRelatedDocument.objects.filter(
+            source=source,
+            relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
+            target_document__isnull=False,
+        ).values_list("target_document__datatracker_id", flat=True)
+    )
+
+    # Datatracker IDs of drafts that already have an active RfcToBe
+    active_rfctobe_dt_ids: set[int] = set(
+        RfcToBe.objects.exclude(disposition_id="withdrawn")
+        .filter(draft__datatracker_id__isnull=False)
+        .values_list("draft__datatracker_id", flat=True)
+    )
+
+    refs_2g = rpcapi.get_draft_references(target_datatracker_id) or []
+    for ref_2g in refs_2g:
+        if ref_2g.id in active_rfctobe_dt_ids or ref_2g.id in existing_target_dt_ids:
+            continue
+
+        draft_2g = Document.objects.filter(
+            datatracker_id=ref_2g.id
+        ).first() or get_or_create_draft_by_name(ref_2g.name, rpcapi=rpcapi)
+        if draft_2g is None:
+            logger.warning(
+                "Could not get or create document for 2G reference %s (id=%d)",
+                ref_2g.name,
+                ref_2g.id,
+            )
+            continue
+
+        RpcRelatedDocument.objects.get_or_create(
+            source=source,
+            relationship=DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+            target_document=draft_2g,
+        )
+        existing_target_dt_ids.add(ref_2g.id)
+
+        refs_3g = rpcapi.get_draft_references(ref_2g.id) or []
+        for ref_3g in refs_3g:
+            if (
+                ref_3g.id in active_rfctobe_dt_ids
+                or ref_3g.id in existing_target_dt_ids
+            ):
+                continue
+
+            draft_3g = Document.objects.filter(
+                datatracker_id=ref_3g.id
+            ).first() or get_or_create_draft_by_name(ref_3g.name, rpcapi=rpcapi)
+            if draft_3g is None:
+                logger.warning(
+                    "Could not get or create document for 3G reference %s (id=%d)",
+                    ref_3g.name,
+                    ref_3g.id,
+                )
+                continue
+
+            RpcRelatedDocument.objects.get_or_create(
+                source=source,
+                relationship=DocRelationshipName.NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
+                target_document=draft_3g,
+            )
+            existing_target_dt_ids.add(ref_3g.id)
+
+
+@shared_task
+def compute_deep_references_task(related_doc_id: int):
+    """Celery task to asynchronously compute 2G and 3G not-received references."""
+    try:
+        _compute_deep_references(related_doc_id)
+    except Exception as e:
+        logger.error(
+            "Error computing deep references for RpcRelatedDocument %d: %s",
+            related_doc_id,
+            str(e),
+        )
