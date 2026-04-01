@@ -31,17 +31,21 @@
           </div>
         </div>
         <div
-          class="flex flex-row items-center justify-end px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
-          <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess">
-            {{ props.finalApproval ?
-              'Save' :
-              'Add Approver' }}
-          </BaseButton>
-          <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
-            {{ props.finalApproval ?
-              'Saved' :
-              'Approver Added' }}
-          </b>
+          class="flex flex-row items-center justify-between px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
+          <BaseButton v-if="props.finalApproval" btn-type="delete" @click="deleteFinalApproval" :hidden="isFinalReviewApiSuccess || isDeleted">Delete without approval</BaseButton>
+          <div class="flex flex-row items-center ml-auto">
+            <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess || isDeleted">
+              {{ props.finalApproval ?
+                'Save' :
+                'Add Approver' }}
+            </BaseButton>
+            <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
+              {{ props.finalApproval ?
+                'Saved' :
+                'Approver Added' }}
+            </b>
+            <b v-if="isDeleted" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">Deleted</b>
+          </div>
         </div>
       </div>
     </form>
@@ -78,6 +82,7 @@ const overridingApprover = ref<DatatrackerPerson | undefined>(props.finalApprova
 const overlayModalKeyInjection = inject(overlayModalKey)
 
 const isFinalReviewApiSuccess = ref<boolean>(false)
+const isDeleted = ref<boolean>(false)
 
 if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
@@ -210,5 +215,24 @@ const clickFinalApprovalHandler = async () => {
     text: ""
   })
   closeOverlayModal()
+}
+
+const deleteFinalApproval = async () => {
+  if (!props.finalApproval) return
+  const { id } = props.finalApproval
+  if (id === undefined) {
+    snackbar.add({ type: 'error', title: 'Missing final review id', text: '' })
+    return
+  }
+  const { name: draftName } = props
+  try {
+    await api.documentsFinalApprovalsDestroy({ draftName, id })
+    isDeleted.value = true
+    snackbar.add({ type: 'success', title: 'Final Review deleted', text: '' })
+    await props.onSuccess()
+    closeOverlayModal()
+  } catch (e) {
+    snackbarForErrors({ snackbar, defaultTitle: 'Problem deleting Final Review', error: e })
+  }
 }
 </script>

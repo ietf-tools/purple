@@ -1868,6 +1868,7 @@ class ActionHolderViewSet(
     mixins.RetrieveModelMixin,
     mixins.ListModelMixin,
     mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
     """ViewSet for ActionHolder entries related to a draft"""

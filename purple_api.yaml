@@ -917,6 +917,28 @@ paths:
               schema:
                 $ref: '#/components/schemas/ActionHolder'
           description: ''
+    delete:
+      operationId: documents_action_holders_destroy
+      description: ViewSet for ActionHolder entries related to a draft
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this action holder.
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/rpc/documents/{draft_name}/additional_emails/:
     get:
       operationId: documents_additional_emails_list

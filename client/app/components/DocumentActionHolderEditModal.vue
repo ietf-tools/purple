@@ -44,9 +44,13 @@
         </div>
 
         <div
-          class="flex flex-row items-center justify-end px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
-          <BaseButton btn-type="default" @click="save" :hidden="isSuccess">Save</BaseButton>
-          <b v-if="isSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">Saved</b>
+          class="flex flex-row items-center justify-between px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
+          <BaseButton btn-type="delete" @click="deleteActionHolder" :hidden="isSuccess || isDeleted">Delete</BaseButton>
+          <div class="flex flex-row items-center">
+            <BaseButton btn-type="default" @click="save" :hidden="isSuccess || isDeleted">Save</BaseButton>
+            <b v-if="isSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">Saved</b>
+            <b v-if="isDeleted" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">Deleted</b>
+          </div>
         </div>
       </div>
     </form>
@@ -74,6 +78,7 @@ if (!overlayModalKeyInjection) throw Error('Expected injection of overlayModalKe
 const { closeOverlayModal } = overlayModalKeyInjection
 
 const isSuccess = ref(false)
+const isDeleted = ref(false)
 
 const deadlineDateString = ref<string | undefined>(
   props.actionHolder.deadline ? jsDateToInputTypeDate(props.actionHolder.deadline) : undefined
@@ -133,6 +138,23 @@ const save = async () => {
     closeOverlayModal()
   } catch (e) {
     snackbarForErrors({ snackbar, defaultTitle: 'Problem saving action holder', error: e })
+  }
+}
+
+const deleteActionHolder = async () => {
+  const id = props.actionHolder.id
+  if (id === undefined) {
+    snackbar.add({ type: 'error', title: 'Missing action holder id', text: '' })
+    return
+  }
+  try {
+    await api.documentsActionHoldersDestroy({ draftName: props.draftName, id })
+    isDeleted.value = true
+    snackbar.add({ type: 'success', title: 'Action holder deleted', text: '' })
+    await props.onSuccess()
+    closeOverlayModal()
+  } catch (e) {
+    snackbarForErrors({ snackbar, defaultTitle: 'Problem deleting action holder', error: e })
   }
 }
 </script>
