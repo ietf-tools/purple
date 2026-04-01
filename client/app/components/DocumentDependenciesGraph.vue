@@ -193,6 +193,7 @@ const clusterGraphData = computed(() => {
           referenceNodes.push({
             id: reference.targetDraftName,
             url: `/docs/${reference.targetDraftName}`,
+            isNormRef: true,
           })
           return true
         }
@@ -205,10 +206,10 @@ const clusterGraphData = computed(() => {
         const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
 
         return [
-          draft ? rfcToBeToNodeParam(draft, {}) : draftName ? { id: draftName, url: `/docs/${draftName}` } : undefined,
+          draft ? rfcToBeToNodeParam(draft, { isNormRef: false }) : draftName ? { id: draftName, url: `/docs/${draftName}`, isNormRef: false } : undefined,
           target ? rfcToBeToNodeParam(target, {
             isNormRef: true, // all targets are norm refs
-          }) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}` } : undefined,
+          }) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}`, isNormRef: true } : undefined,
         ].filter(isNodeParam)
       }))
 
