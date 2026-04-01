@@ -220,7 +220,7 @@ const clusterGraphData = computed(() => {
         isReceived: isReceived ?? undefined,
         disposition: parseDisposition(disposition),
         isBlocked,
-        isNormRef: false,
+        isNormRef: true,
         hasNormRef,
         hasNormRefInQueue,
         hasNormRefBlocked
