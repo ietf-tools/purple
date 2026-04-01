@@ -1217,6 +1217,14 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
             # If no person_id is provided, save the author without it
             serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
+    def perform_destroy(self, instance: RfcAuthor):
+        if instance.rfc_to_be_id and instance.datatracker_person_id:
+            FinalApproval.objects.filter(
+                rfc_to_be_id=instance.rfc_to_be_id,
+                approver_id=instance.datatracker_person_id,
+            ).delete()
+        instance.delete()
+
     def get_serializer_class(self):
         if self.action == "create":
             return CreateRfcAuthorSerializer
