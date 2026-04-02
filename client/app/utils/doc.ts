@@ -11,7 +11,7 @@ export const docTabsFactory = (draftName: string) => {
     },
     {
       id: 'assignments',
-      name: 'Assignments',
+      name: 'Assignments & Authors',
       to: `/docs/${sanitisedDraftName}/assignments`,
       icon: 'fluent:layer-diagonal-person-16-regular'
     },
