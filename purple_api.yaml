@@ -5133,6 +5133,10 @@ components:
           items:
             $ref: '#/components/schemas/RfcToBeBlockingReason'
           readOnly: true
+        stream_manager:
+          allOf:
+          - $ref: '#/components/schemas/StreamManager'
+          readOnly: true
       required:
       - authors
       - boilerplate
@@ -5445,6 +5449,38 @@ components:
         * `pending` - pending
         * `published` - published
         * `failed` - failed
+    StreamManager:
+      type: object
+      description: Serializes the stream-dependent responsible party for an RfcToBe
+      properties:
+        datatracker_person_id:
+          type: integer
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+      required:
+      - datatracker_person_id
+      - email
+      - name
+    StreamManagerRequest:
+      type: object
+      description: Serializes the stream-dependent responsible party for an RfcToBe
+      properties:
+        datatracker_person_id:
+          type: integer
+        email:
+          type: string
+          format: email
+          minLength: 1
+        name:
+          type: string
+          minLength: 1
+      required:
+      - datatracker_person_id
+      - email
+      - name
     Submission:
       type: object
       description: Serialize a submission

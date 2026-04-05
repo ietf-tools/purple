@@ -70,6 +70,14 @@ class NameSerializer(serializers.Serializer):
     used = serializers.BooleanField(default=True)
 
 
+class StreamManagerSerializer(serializers.Serializer):
+    """Serializes the stream-dependent responsible party for an RfcToBe"""
+
+    datatracker_person_id = serializers.IntegerField()
+    email = serializers.EmailField()
+    name = serializers.CharField()
+
+
 class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize a minimal DatatrackerPerson
 
@@ -704,6 +712,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
 
     iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
     shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+    stream_manager = StreamManagerSerializer(read_only=True)
     additional_emails = AdditionalEmailSerializer(
         source="additionalemail_set", many=True, read_only=True
     )
@@ -746,6 +755,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "additional_emails",
             "repository",
             "blocking_reasons",
+            "stream_manager",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 

@@ -40,3 +40,49 @@ def datatracker_stdlevelname(slug: str) -> tuple[str, str, str]:
 
 def datatracker_streamname(slug: str) -> tuple[str, str, str]:
     return datatracker_name("streamname", slug)
+
+
+from dataclasses import dataclass
+
+
+@dataclass
+class GroupChair:
+    id: int
+    email: str
+    name: str
+
+
+def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
+    """Return id, email and name of the chair of a group, or None if not found."""
+    try:
+        response = requests.get(
+            f"{settings.DATATRACKER_API_V1_BASE}/group/role/",
+            params={"name__slug": "chair", "group__acronym": group_acronym, "format": "json"},
+        )
+    except requests.exceptions.ConnectionError:
+        return None
+    if not response.ok:
+        return None
+    objects = response.json().get("objects", [])
+    if not objects:
+        return None
+    role = objects[0]
+    email = role.get("email", {}).get("address") or ""
+    person_url = role.get("person", "")
+    name = ""
+    if person_url:
+        try:
+            person_response = requests.get(
+                f"{settings.DATATRACKER_BASE}{person_url}",
+                params={"format": "json"},
+            )
+            if person_response.ok:
+                name = person_response.json().get("plain_name") or ""
+        except requests.exceptions.ConnectionError:
+            pass
+    person_id = role.get("person", "").rstrip("/").rsplit("/", 1)[-1]
+    try:
+        person_id_int = int(person_id)
+    except (ValueError, TypeError):
+        person_id_int = 0
+    return GroupChair(id=person_id_int, email=email, name=name)
