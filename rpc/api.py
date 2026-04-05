@@ -45,6 +45,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
+from .dt_v1_api_utils import datatracker_group_list_email
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     begin_publication_attempt,
@@ -2022,9 +2023,82 @@ class RfcMailTemplatesList(views.APIView):
 
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
+            ("enqueueing", "rpc/mail/enqueueing.txt", "Enqueueing Notice"),
             ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
+
+        author_emails = [
+            author.datatracker_person.email
+            for author in rfc_to_be.authors.select_related("datatracker_person").all()
+            if author.datatracker_person is not None
+        ]
+        draft_name = rfc_to_be.name
+        rfc_number = rfc_to_be.rfc_number or "XXXX"
+
+        interested_parties = {"rfc-editor@rfc-editor.org"}
+        if rfc_to_be.shepherd is not None:
+            shepherd_email = rfc_to_be.shepherd.email
+            if shepherd_email:
+                interested_parties.add(shepherd_email)
+        stream_slug = rfc_to_be.stream_id
+        if stream_slug == "iab":
+            interested_parties.add("iab@iab.org")
+        elif stream_slug == "ise":
+            interested_parties.add("rfc-ise@rfc-editor.org")
+        elif stream_slug == "editorial":
+            interested_parties.add("rswg-chairs@rfc-editor.org")
+            interested_parties.add("rsab@rfc-editor.org")
+        elif stream_slug == "ietf":
+            if rfc_to_be.area:
+                interested_parties.add(f"{rfc_to_be.area}-ads@ietf.org")
+            if rfc_to_be.group:
+                interested_parties.add(f"{rfc_to_be.group}-chairs@ietf.org")
+        elif stream_slug == "irtf":
+            for chair in rfc_to_be.wg_chairs:
+                if chair.email:
+                    interested_parties.add(chair.email)
+            interested_parties.add("irsg@irtf.org")
+        for ad in rfc_to_be.area_directors:
+            if ad.email:
+                interested_parties.add(ad.email)
+
+        publication_cc = {"rfc-editor@rfc-editor.org", "drafts-update-ref@iana.org"}
+        if stream_slug == "editorial":
+            publication_cc.add("rswg@rfc-editor.org")
+        elif stream_slug == "ietf":
+            if rfc_to_be.group:
+                ietf_list_email = datatracker_group_list_email(rfc_to_be.group)
+                if ietf_list_email:
+                    publication_cc.add(ietf_list_email)
+        elif stream_slug == "irtf":
+            if rfc_to_be.group:
+                irtf_list_email = datatracker_group_list_email(rfc_to_be.group)
+                if irtf_list_email:
+                    publication_cc.add(irtf_list_email)
+
+        template_overrides = {
+            "blank": {
+                "subject": f"{draft_name} update",
+                "to": [],
+                "cc": [],
+            },
+            "enqueueing": {
+                "subject": f"{draft_name} has been added to the RFC Editor queue",
+                "to": author_emails,
+                "cc": list(interested_parties),
+            },
+            "finalreview": {
+                "subject": f"RFC-to-be {rfc_number} {draft_name} for your review",
+                "to": author_emails,
+                "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
+            },
+            "publication": {
+                "subject": f"RFC {rfc_number} on {rfc_to_be.title}",
+                "to": ["ietf-announce@ietf.org", "rfc-dist@rfc-editor.org"],
+                "cc": list(publication_cc),
+            },
+        }
 
         serializer = MailTemplateSerializer(
             [
@@ -2032,14 +2106,10 @@ class RfcMailTemplatesList(views.APIView):
                     "label": label,
                     "template": {
                         "msgtype": msgtype,
-                        "to": "someone@example.com",
-                        "cc": "nobody@example.com",
-                        "subject": f"Message that is a {label}",
-                        "body": (
-                            render_to_string(
-                                template_filename,
-                                context={"rfc_to_be": rfc_to_be},
-                            )
+                        **template_overrides[msgtype],
+                        "body": render_to_string(
+                            template_filename,
+                            context={"rfc_to_be": rfc_to_be},
                         ),
                     },
                 }

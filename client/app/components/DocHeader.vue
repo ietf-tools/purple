@@ -22,7 +22,7 @@
         </div>
         <div class="flex flex-row gap-5">
           <BaseButton @click="handleOpenEmailModal" class="flex items-center">
-            <span>New Email</span>
+            <span>Send Email</span>
             <span v-if="isLoadingNewEmailModal" class="w-3">
               <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
