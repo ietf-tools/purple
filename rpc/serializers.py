@@ -51,6 +51,7 @@ from .models import (
     SubseriesTypeName,
     UnusableRfcNumber,
 )
+from .tasks import compute_deep_references_task
 from .utils import add_doc_to_cluster, create_cluster
 
 
@@ -1032,6 +1033,12 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             raise serializers.ValidationError(
                 f"Failed to create related document due to a database constraint: {err}"
             ) from err
+
+        if relationship.slug in (
+            DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+            DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+        ):
+            compute_deep_references_task.delay(related_doc.id)
 
         return related_doc
 

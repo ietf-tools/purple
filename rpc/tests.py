@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2023, All Rights Reserved
 
 import json
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -73,6 +74,7 @@ class UtilsTests(TestCase):
         # self.assertEqual(next_rfc_number(5), [7, 8, 9, 10, 11])
 
 
+@patch("rpc.serializers.compute_deep_references_task")
 class RelatedDocumentClusterSyncTests(TestCase):
     def setUp(self):
         self.relationship, _ = DocRelationshipName.objects.get_or_create(
@@ -89,7 +91,9 @@ class RelatedDocumentClusterSyncTests(TestCase):
         )
         self.client.force_login(self.user)
 
-    def test_create_related_document_creates_new_cluster_for_source_and_target(self):
+    def test_create_related_document_creates_new_cluster_for_source_and_target(
+        self, mock_task
+    ):
         ClusterFactory(number=7)
         source = RfcToBeFactory(draft__name="draft-source-doc")
         target = RfcToBeFactory(draft__name="draft-target-doc")
@@ -117,7 +121,9 @@ class RelatedDocumentClusterSyncTests(TestCase):
         self.assertEqual(source.cluster.number, 8)  # expect incremented cluster number
         self.assertEqual(target.cluster.number, source.cluster.number)
 
-    def test_create_related_document_adds_target_to_existing_source_cluster(self):
+    def test_create_related_document_adds_target_to_existing_source_cluster(
+        self, mock_task
+    ):
         source = RfcToBeFactory(draft__name="draft-source-doc")
         target = RfcToBeFactory(draft__name="draft-target-doc")
         cluster = ClusterFactory(number=11)
