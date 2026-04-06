@@ -143,16 +143,23 @@ logger = logging.getLogger(__name__)
 PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
 
 
-def get_rfctobe_for_draft_name(draft_name: str) -> RfcToBe:
+def resolve_rfctobe(identifier: str) -> RfcToBe:
     """Return the preferred RfcToBe for a given draft name.
 
+    If identifier looks like 'rfc1234', look up by rfc_number instead.
     When multiple RfcToBes share a draft name (e.g., one withdrawn and one
     in-progress), the non-withdrawn one is preferred.
     """
-    qs = RfcToBe.objects.filter(draft__name=draft_name)
+    if identifier.lower().startswith("rfc") and identifier[3:].isdigit():
+        rfc_number = int(identifier[3:])
+        obj = RfcToBe.objects.filter(rfc_number=rfc_number).first()
+        if obj is None:
+            raise NotFound(f"No RfcToBe found for RFC number {rfc_number}")
+        return obj
+    qs = RfcToBe.objects.filter(draft__name=identifier)
     obj = qs.exclude(disposition_id="withdrawn").first() or qs.first()
     if obj is None:
-        raise NotFound(f"No RfcToBe found for draft '{draft_name}'")
+        raise NotFound(f"No RfcToBe found for draft '{identifier}'")
     return obj
 
 
@@ -978,7 +985,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             self.lookup_field = "rfc_number"
             self.kwargs[self.lookup_field] = int(lookup_value[3:])
         else:
-            self.kwargs["pk"] = get_rfctobe_for_draft_name(lookup_value).pk
+            self.kwargs["pk"] = resolve_rfctobe(lookup_value).pk
             self.lookup_field = "pk"
         return super().get_object()
 
@@ -1189,11 +1196,11 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
-            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+            .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
         )
 
     def perform_create(self, serializer):
-        rfc_to_be = get_rfctobe_for_draft_name(self.kwargs["draft_name"])
+        rfc_to_be = resolve_rfctobe(self.kwargs["draft_name"])
         # Find the current highest order for this document
         max_order = (
             RfcAuthor.objects.filter(rfc_to_be=rfc_to_be)
@@ -1254,7 +1261,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         order_list = serializer.validated_data["order"]
 
-        authors = list(RfcAuthor.objects.filter(rfc_to_be__draft__name=draft_name))
+        authors = list(RfcAuthor.objects.filter(rfc_to_be=resolve_rfctobe(draft_name)))
         # check that the authors passed in list are identical to the ones currently set
         if len(order_list) != len(authors):
             raise serializers.ValidationError(
@@ -1298,7 +1305,7 @@ class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
             super()
             .get_queryset()
             .filter(
-                source__draft__name=self.kwargs["draft_name"],
+                source=resolve_rfctobe(self.kwargs["draft_name"]),
                 relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
             )
         )
@@ -1323,7 +1330,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
-            .filter(source__draft__name=self.kwargs["draft_name"])
+            .filter(source=resolve_rfctobe(self.kwargs["draft_name"]))
             .exclude(
                 relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS
             )
@@ -1334,6 +1341,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         results = list(queryset)
 
         draft_name = self.kwargs["draft_name"]
+        rfctobe = resolve_rfctobe(draft_name)
         slug_filter = request.query_params.getlist("relationship")
 
         class _ReverseRelationship:
@@ -1354,7 +1362,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 return
 
             reverse_qs = RpcRelatedDocument.objects.filter(
-                target_rfctobe__draft__name=draft_name,
+                target_rfctobe=rfctobe,
                 relationship__slug=rel_slug,
             ).select_related(
                 "source", "source__draft", "target_rfctobe", "target_rfctobe__draft"
@@ -1407,7 +1415,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
     @with_rpcapi
     def create(self, request, rpcapi, *args, **kwargs):
         draft_name = self.kwargs["draft_name"]
-        source = get_rfctobe_for_draft_name(draft_name)
+        source = resolve_rfctobe(draft_name)
 
         data = request.data.copy()
         data["source"] = source.pk
@@ -1451,13 +1459,13 @@ class AdditionalEmailViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         draft_name = self.kwargs.get("draft_name")
         if draft_name:
-            return super().get_queryset().filter(rfc_to_be__draft__name=draft_name)
+            return super().get_queryset().filter(rfc_to_be=resolve_rfctobe(draft_name))
         return super().get_queryset()
 
     def perform_create(self, serializer):
         draft_name = self.kwargs.get("draft_name")
         if draft_name:
-            serializer.save(rfc_to_be=get_rfctobe_for_draft_name(draft_name))
+            serializer.save(rfc_to_be=resolve_rfctobe(draft_name))
         else:
             serializer.save()
 
@@ -1587,10 +1595,11 @@ class DocumentCommentViewSet(
         Includes comments both on the RfcToBe and on the draft it came from.
         """
         draft_name = self.kwargs["draft_name"]
+        rfctobe = resolve_rfctobe(draft_name)
         return (
             super()
             .get_queryset()
-            .filter(Q(rfc_to_be__draft__name=draft_name) | Q(document__name=draft_name))
+            .filter(Q(rfc_to_be=rfctobe) | Q(document__name=rfctobe.draft.name))
             .order_by("-time")
         )
 
@@ -1614,10 +1623,10 @@ class DocumentCommentViewSet(
 
         # First, see if we have an RfcToBe for the draft
         draft_name = self.kwargs["draft_name"]
-        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
-        if rfc_to_be is not None:
+        try:
+            rfc_to_be = resolve_rfctobe(draft_name)
             save_kwargs["rfc_to_be"] = rfc_to_be
-        else:
+        except NotFound:
             # No RfcToBe exists - see if datatracker knows about the draft
             draft = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
             if draft is not None:
@@ -1858,11 +1867,11 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
-            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+            .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
         )
 
     def perform_create(self, serializer):
-        serializer.save(rfc_to_be=get_rfctobe_for_draft_name(self.kwargs["draft_name"]))
+        serializer.save(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -1888,18 +1897,19 @@ class ActionHolderViewSet(
 
     def get_queryset(self):
         draft_name = self.kwargs["draft_name"]
+        rfctobe = resolve_rfctobe(draft_name)
         return (
             super()
             .get_queryset()
             .filter(
-                Q(target_rfctobe__draft__name=draft_name)
-                | Q(target_document__name=draft_name)
+                Q(target_rfctobe=rfctobe)
+                | Q(target_document__name=rfctobe.draft.name)
             )
         )
 
     def perform_create(self, serializer):
         serializer.save(
-            target_rfctobe=get_rfctobe_for_draft_name(self.kwargs["draft_name"])
+            target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"])
         )
 
     def get_serializer_class(self):
@@ -1919,11 +1929,11 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
-            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+            .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
         )
 
     def perform_create(self, serializer):
-        serializer.save(rfc_to_be=get_rfctobe_for_draft_name(self.kwargs["draft_name"]))
+        serializer.save(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
 
 
 class Mail(views.APIView):
@@ -1970,15 +1980,12 @@ class DocumentMail(views.APIView):
         ],
     )
     def post(self, request, draft_name: str, format=None):
-        rfctobe = (
-            RfcToBe.objects.filter(draft__name=draft_name)
-            .exclude(disposition_id="withdrawn")
-            .first()
-        )
-        if rfctobe is None:
-            draft = Document.objects.filter(name=draft_name).first()
-        else:
+        try:
+            rfctobe = resolve_rfctobe(draft_name)
             draft = None
+        except NotFound:
+            rfctobe = None
+            draft = Document.objects.filter(name=draft_name).first()
         if rfctobe is None and draft is None:
             raise NotFound()
         serializer = MailMessageSerializer(data=request.data)
@@ -2068,7 +2075,7 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         return (
             super()
             .get_queryset()
-            .filter(rfc_to_be__draft__name=self.kwargs["draft_name"])
+            .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
         )
 
     @extend_schema(
@@ -2094,12 +2101,7 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
     def create(self, request, *args, **kwargs):
         """Create a pending metadata validation result and enqueue task"""
         draft_name = kwargs.get("draft_name")
-        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
-        if rfc_to_be is None:
-            return Response(
-                {"error": "RfcToBe for draft not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        rfc_to_be = resolve_rfctobe(draft_name)
         if rfc_to_be.repository is None:
             return Response(
                 {"error": "RfcToBe has no associated repository."},
@@ -2147,8 +2149,9 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
         Delete metadata validation results for a given RfcToBe.
         """
         draft_name = kwargs.get("draft_name")
+        rfc_to_be = resolve_rfctobe(draft_name)
         metadata_result = get_object_or_404(
-            MetadataValidationResults, rfc_to_be__draft__name=draft_name
+            MetadataValidationResults, rfc_to_be=rfc_to_be
         )
 
         if metadata_result.status == MetadataValidationResults.Status.PENDING:
@@ -2208,12 +2211,7 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             )
 
         # Find RfcToBe by draft name
-        rfc_to_be = RfcToBe.objects.filter(draft__name=draft_name).first()
-        if rfc_to_be is None:
-            return Response(
-                {"error": "RfcToBe for draft not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        rfc_to_be = resolve_rfctobe(draft_name)
 
         # Find or create metadata validation result
         metadata_result = MetadataValidationResults.objects.filter(

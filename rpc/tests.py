@@ -9,7 +9,7 @@ from rest_framework.exceptions import NotFound
 
 from rpc.models import DocRelationshipName
 
-from .api import get_rfctobe_for_draft_name
+from .api import resolve_rfctobe
 from .factories import (
     ClusterFactory,
     DispositionNameFactory,
@@ -22,25 +22,25 @@ from .utils import next_rfc_number
 class GetRfcToBeForDraftNameTests(TestCase):
     def test_returns_match(self):
         rfctobe = RfcToBeFactory()
-        result = get_rfctobe_for_draft_name(rfctobe.draft.name)
+        result = resolve_rfctobe(rfctobe.draft.name)
         self.assertEqual(result, rfctobe)
 
     def test_raises_not_found_when_missing(self):
         with self.assertRaises(NotFound):
-            get_rfctobe_for_draft_name("draft-does-not-exist")
+            resolve_rfctobe("draft-does-not-exist")
 
     def test_prefers_non_withdrawn_when_multiple(self):
         withdrawn = DispositionNameFactory(slug="withdrawn")
         active = RfcToBeFactory()
         # Create a withdrawn duplicate sharing the same draft
         RfcToBeFactory(draft=active.draft, disposition=withdrawn)
-        result = get_rfctobe_for_draft_name(active.draft.name)
+        result = resolve_rfctobe(active.draft.name)
         self.assertEqual(result, active)
 
     def test_falls_back_to_withdrawn_when_only_option(self):
         withdrawn = DispositionNameFactory(slug="withdrawn")
         rfctobe = RfcToBeFactory(disposition=withdrawn)
-        result = get_rfctobe_for_draft_name(rfctobe.draft.name)
+        result = resolve_rfctobe(rfctobe.draft.name)
         self.assertEqual(result, rfctobe)
 
 
