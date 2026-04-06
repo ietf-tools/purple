@@ -80,6 +80,11 @@ export default defineNuxtConfig({
         'lodash-es',
         'luxon',
         'humanize-duration',
+        '@vue/devtools-core',
+        '@vue/devtools-kit',
+        '@tanstack/vue-table',
+        'canvas-confetti',
+        '@vueuse/core',
         // 'vue3-snackbar'
       ]
     },
