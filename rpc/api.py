@@ -1632,7 +1632,7 @@ class DocumentCommentViewSet(
             if draft is not None:
                 save_kwargs["document"] = draft
             else:
-                raise NotFound  # neither RfcToBe nor draft existed
+                raise NotFound from None  # neither RfcToBe nor draft existed
         # todo permissions check
         serializer.save(**save_kwargs)
 
@@ -1902,15 +1902,12 @@ class ActionHolderViewSet(
             super()
             .get_queryset()
             .filter(
-                Q(target_rfctobe=rfctobe)
-                | Q(target_document__name=rfctobe.draft.name)
+                Q(target_rfctobe=rfctobe) | Q(target_document__name=rfctobe.draft.name)
             )
         )
 
     def perform_create(self, serializer):
-        serializer.save(
-            target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"])
-        )
+        serializer.save(target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"]))
 
     def get_serializer_class(self):
         if self.action == "create":
