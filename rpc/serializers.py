@@ -589,6 +589,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     approval_log_message = ApprovalLogMessageSerializer(
         source="approvallogmessage_set", many=True, read_only=True
     )
+    stream = serializers.SlugRelatedField(slug_field="slug", read_only=True)
 
     class Meta:
         model = QueueItemSerializer.Meta.model
@@ -612,6 +613,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "blocking_reasons",
             "authors",
             "approval_log_message",
+            "stream",
         ]
 
 

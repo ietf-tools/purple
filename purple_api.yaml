@@ -4838,6 +4838,9 @@ components:
           items:
             $ref: '#/components/schemas/ApprovalLogMessage'
           readOnly: true
+        stream:
+          type: string
+          readOnly: true
       required:
       - authors
       - disposition
