@@ -5,6 +5,13 @@
     </Heading>
 
     <RpcTable>
+      <colgroup>
+        <col class="w-8">
+        <col>
+        <col class="w-28">
+        <col class="w-28">
+        <col class="w-60">
+      </colgroup>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
           <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
@@ -81,15 +88,8 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
-  columnHelper.accessor(
-    'labels', {
-    header: 'Labels',
-    cell: _data => '',
-    enableSorting: false,
-  }),
-  columnHelper.accessor(
-    'pages', {
-    header: 'Pages',
+  columnHelper.accessor('rfcNumber', {
+    header: 'RFC Number',
     cell: data => data.getValue(),
     sortingFn: 'alphanumeric',
   }),
@@ -100,7 +100,11 @@ const columns = [
       const clusterNumber = data.getValue()?.number
       return columnFormatterCluster(clusterNumber)
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: (rowA, rowB, columnId) => {
+      const a = (rowA.getValue(columnId) as { number?: number } | null)?.number ?? -1
+      const b = (rowB.getValue(columnId) as { number?: number } | null)?.number ?? -1
+      return a - b
+    },
   }),
   columnHelper.accessor(
     'assignmentSet',
