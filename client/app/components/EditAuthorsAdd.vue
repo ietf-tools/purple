@@ -53,6 +53,12 @@ import { snackbarForErrors } from "~/utils/snackbar"
 
 const draft = defineModel<CookedDraft | RfcToBe>({ required: true })
 
+const abbreviateFirstName = (name: string): string => {
+  const parts = name.trim().split(/\s+/)
+  if (parts.length <= 1) return name
+  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`
+}
+
 const selectedAuthor = ref<BaseDatatrackerPerson | undefined>()
 
 const snackbar = useSnackbar()
@@ -71,7 +77,7 @@ watch(selectedAuthor, async () => {
       const rpcAuthor = await api.documentsAuthorsCreate({
         draftName,
         createRfcAuthorRequest: {
-          titlepageName: value.name ?? `(no name)`,
+          titlepageName: abbreviateFirstName(value.name ?? '(no name)'),
           personId: value.personId,
         }
       })
