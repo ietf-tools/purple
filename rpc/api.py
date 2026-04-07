@@ -152,7 +152,8 @@ def resolve_rfctobe(identifier: str) -> RfcToBe:
     """
     if identifier.lower().startswith("rfc") and identifier[3:].isdigit():
         rfc_number = int(identifier[3:])
-        obj = RfcToBe.objects.filter(rfc_number=rfc_number).first()
+        qs = RfcToBe.objects.filter(rfc_number=rfc_number)
+        obj = qs.exclude(disposition_id="withdrawn").first() or qs.first()
         if obj is None:
             raise NotFound(f"No RfcToBe found for RFC number {rfc_number}")
         return obj
