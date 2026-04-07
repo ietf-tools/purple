@@ -68,11 +68,25 @@
         </BaseButton>
       </div>
     </template>
+    <template v-else-if="props.uiMode.type === 'date'">
+      <input type="date" :id="props.fieldName" v-model="valueStringRef"
+        class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white" />
+      <div class="flex flex-col gap-1 h-full justify-between">
+        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editing">
+          Cancel
+        </BaseButton>
+        <BaseButton @click="updateValue" btn-type="default" size="xs">
+          Save
+          <Icon v-if="isSaving" name="ei:spinner-3" size="1rem" class="animate-spin align-sub" />
+        </BaseButton>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
+import { DateTime } from 'luxon'
 import type { RfcToBe, PatchedRfcToBeRequest } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
@@ -84,6 +98,7 @@ type UIMode =
     options: SelectOption[] | (() => Promise<SelectOption[]>)
     initialValue?: string
   }
+  | { type: 'date', initialValue?: string }
 
 type Props = {
   draftName: NonNullable<RfcToBe["name"]>
@@ -98,7 +113,7 @@ const props = defineProps<Props>()
 const api = useApi()
 const snackbar = useSnackbar()
 
-const valueStringRef = ref<string>(props.uiMode.type === 'select' || props.uiMode.type === 'textbox' ? props.uiMode.initialValue ?? '' : '')
+const valueStringRef = ref<string>(props.uiMode.type === 'select' || props.uiMode.type === 'textbox' || props.uiMode.type === 'date' ? props.uiMode.initialValue ?? '' : '')
 const valueBooleanRef = ref<boolean>(props.uiMode.type === 'checkbox' ? props.uiMode.initialValue ?? false : false)
 
 const isEditing = ref(false)
@@ -139,6 +154,16 @@ const updateValue = async () => {
           draftName: props.draftName,
           patchedRfcToBeRequest: {
             [fieldName]: valueBooleanRef.value
+          }
+        })
+        break
+      case 'date':
+        await api.documentsPartialUpdate({
+          draftName: props.draftName,
+          patchedRfcToBeRequest: {
+            [fieldName]: valueStringRef.value
+              ? DateTime.fromISO(valueStringRef.value, { zone: 'utc' }).toJSDate()
+              : null
           }
         })
         break

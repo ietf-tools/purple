@@ -369,6 +369,15 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="External Deadline" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="externalDeadline" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'date', initialValue: rfcToBe.externalDeadline ? jsDateToInputTypeDate(rfcToBe.externalDeadline) : undefined }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <span>{{ rfcToBe.externalDeadline ? DateTime.fromJSDate(rfcToBe.externalDeadline).toLocaleString(DateTime.DATE_FULL) : '(none)' }}</span>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Keywords" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="keywords" :is-read-only="false"
@@ -387,7 +396,9 @@
 </template>
 
 <script setup lang="ts">
+import { DateTime } from 'luxon'
 import { type RfcToBe, ResponseError } from '~/purple_client'
+import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
 import { draftAssignmentsHref } from '~/utils/url'
