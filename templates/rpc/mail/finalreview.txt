@@ -185,7 +185,7 @@ Thank you for your cooperation,
 RFC Editor
 
 --------------------------------------
-RFC{{ rfc_to_be.rfc_number }} ({{ rfc_to_be.draft.name }})
+RFC {{ rfc_to_be.rfc_number }} ({{ rfc_to_be.draft.name }})
 
 Title            : {{ rfc_to_be.title }}
 {% for author in rfc_to_be.authors.all %}{% if forloop.first %}Author(s)        : {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% else %}
