@@ -15,6 +15,7 @@ from .lifecycle.publication import (
 )
 from .lifecycle.repo import GithubRepository
 from .models import MailMessage, MetadataValidationResults, RfcToBe
+from .rfcindex import refresh_rfc_index
 
 
 @shared_task
@@ -30,8 +31,6 @@ def set_stream_manager_task(rfc_to_be_id: int):
     person = rfctobe.resolve_stream_manager_person()
     RfcToBe.objects.filter(pk=rfc_to_be_id).update(stream_manager=person)
 
-
-from .rfcindex import refresh_rfc_index
 
 logger = get_task_logger(__name__)
 
