@@ -27,8 +27,6 @@ spec:
           volumeMounts:
             - name: backend-tmp
               mountPath: /tmp
-#            - name: backend-home
-#              mountPath: /home/purple
           env:
             - name: "CONTAINER_ROLE"
               value: "backend"

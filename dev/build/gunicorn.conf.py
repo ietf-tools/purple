@@ -1,5 +1,10 @@
-# Copyright The IETF Trust 2024, All Rights Reserved
-"""gunicorn configuration"""
+# Copyright The IETF Trust 2024-2026, All Rights Reserved
+"""gunicorn configuration
+
+n.b., command-line arguments will override any settings here.
+"""
+
+control_socket_disable = True  # Disable the control socket
 
 # Log as JSON on stdout (to distinguish from Django's logs on stderr)
 #
