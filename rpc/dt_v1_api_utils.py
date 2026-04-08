@@ -14,10 +14,16 @@ class NoSuchSlug(Exception):
     pass
 
 
+REQUEST_TIMEOUT = 10  # seconds
+
+
 def datatracker_name(namemodel: str, slug: str) -> tuple[str, str, str]:
     try:
         response = requests.get(
-            f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}"
+            f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}",
+            allow_redirects=True,
+            stream=True,
+            timeout=REQUEST_TIMEOUT,
         )
     except requests.exceptions.ConnectionError as err:
         raise DatatrackerFetchFailure from err
@@ -50,6 +56,9 @@ def datatracker_group_list_email(acronym: str) -> str | None:
         response = requests.get(
             f"{settings.DATATRACKER_API_V1_BASE}/group/group/",
             params={"acronym": acronym, "fmt": "json"},
+            allow_redirects=True,
+            stream=True,
+            timeout=REQUEST_TIMEOUT,
         )
     except requests.exceptions.ConnectionError:
         return None
@@ -80,6 +89,9 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
                 "group__acronym": group_acronym,
                 "format": "json",
             },
+            allow_redirects=True,
+            stream=True,
+            timeout=REQUEST_TIMEOUT,
         )
     except requests.exceptions.ConnectionError:
         return None
@@ -97,6 +109,9 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
             person_response = requests.get(
                 f"{settings.DATATRACKER_BASE}{person_url}",
                 params={"format": "json"},
+                allow_redirects=True,
+                stream=True,
+                timeout=REQUEST_TIMEOUT,
             )
             if person_response.ok:
                 name = person_response.json().get("plain_name") or ""

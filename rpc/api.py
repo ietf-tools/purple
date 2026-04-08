@@ -616,7 +616,9 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                 else:
                     return Response(author_serializer.errors, status=400)
 
-        return Response(RfcToBeSerializer(rfctobe).data)
+            response_data = RfcToBeSerializer(rfctobe).data
+
+        return Response(response_data)
     else:
         return Response(serializer.errors, status=400)
 
