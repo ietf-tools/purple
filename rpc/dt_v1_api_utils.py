@@ -89,7 +89,7 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
     if not objects:
         return None
     role = objects[0]
-    email = role.get("email", {}).get("address") or ""
+    email = role.get("email", "")
     person_url = role.get("person", "")
     name = ""
     if person_url:
