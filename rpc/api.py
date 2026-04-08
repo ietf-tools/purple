@@ -2014,7 +2014,7 @@ class RfcMailTemplatesList(views.APIView):
 
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
-            ("enqueueing", "rpc/mail/enqueueing.txt", "Enqueueing Notice"),
+            ("enqueuing", "rpc/mail/enqueuing.txt", "Enqueuing Notice"),
             ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
@@ -2074,7 +2074,7 @@ class RfcMailTemplatesList(views.APIView):
                 "to": [],
                 "cc": [],
             },
-            "enqueueing": {
+            "enqueuing": {
                 "subject": f"{draft_name} has been added to the RFC Editor queue",
                 "to": author_emails,
                 "cc": list(interested_parties),
