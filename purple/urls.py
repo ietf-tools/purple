@@ -99,6 +99,11 @@ rpc_router.register(
     rpc_api.MetadataValidationResultsViewSet,
     basename="documents-metadata-validation-results",
 )
+rpc_router.register(
+    r"documents/(?P<draft_name>[^/.]+)/assignments",
+    rpc_api.DocumentAssignmentViewSet,
+    basename="documents-assignments",
+)
 rpc_router.register(r"labels", rpc_api.LabelViewSet)
 rpc_router.register(r"rpc_person", rpc_api.RpcPersonViewSet)
 rpc_router.register(
