@@ -70,12 +70,16 @@ class NameSerializer(serializers.Serializer):
     used = serializers.BooleanField(default=True)
 
 
-class StreamManagerSerializer(serializers.Serializer):
+class StreamManagerSerializer(serializers.ModelSerializer):
     """Serializes the stream-dependent responsible party for an RfcToBe"""
 
-    datatracker_person_id = serializers.IntegerField()
-    email = serializers.EmailField()
-    name = serializers.CharField()
+    datatracker_person_id = serializers.IntegerField(source="datatracker_id")
+    name = serializers.CharField(source="plain_name", read_only=True)
+    email = serializers.EmailField(read_only=True)
+
+    class Meta:
+        model = DatatrackerPerson
+        fields = ["datatracker_person_id", "email", "name"]
 
 
 class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
@@ -715,6 +719,15 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
     shepherd = BaseDatatrackerPersonSerializer(read_only=True)
     stream_manager = StreamManagerSerializer(read_only=True)
+    stream_manager_id = serializers.IntegerField(
+        write_only=True,
+        allow_null=True,
+        required=False,
+        help_text=(
+            "Set the stream manager by providing their datatracker person ID. "
+            "The DatatrackerPerson record will be created if it does not exist."
+        ),
+    )
     additional_emails = AdditionalEmailSerializer(
         source="additionalemail_set", many=True, read_only=True
     )
@@ -758,8 +771,21 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "repository",
             "blocking_reasons",
             "stream_manager",
+            "stream_manager_id",
         ]
         read_only_fields = ["id", "draft", "published_at"]
+
+    def update(self, instance, validated_data):
+        sm_id = validated_data.pop("stream_manager_id", ...)
+        if sm_id is not ...:
+            if sm_id is None:
+                validated_data["stream_manager"] = None
+            else:
+                person, _ = DatatrackerPerson.objects.get_or_create(
+                    datatracker_id=sm_id
+                )
+                validated_data["stream_manager"] = person
+        return super().update(instance, validated_data)
 
 
 class RfcToBeHistorySerializer(HistorySerializer):

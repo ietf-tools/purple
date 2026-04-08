@@ -27,11 +27,10 @@ from purple.mail import EmailMessage, make_message_id
 
 from .dt_v1_api_utils import (
     DatatrackerFetchFailure,
-    GroupChair,
     NoSuchSlug,
+    datatracker_group_chair,
     datatracker_stdlevelname,
     datatracker_streamname,
-    datatracker_group_chair,
 )
 from .rules import is_comment_author, is_rpc_person
 
@@ -432,37 +431,47 @@ class RfcToBe(models.Model):
             slug__in=[activity.role_slug for activity in pending_activities(self)]
         )
 
-    @property
-    def stream_manager(self) -> "GroupChair | None":
-        """Return id/email/name of the party responsible for this document, based on stream.
+    stream_manager = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+        help_text="Responsible party for this document based on stream",
+    )
 
-        IETF:      Responsible AD (iesg_contact)
+    def resolve_stream_manager_person(
+        self,
+    ) -> "datatracker.models.DatatrackerPerson | None":
+        """Determine and return the DatatrackerPerson responsible for this document.
+
+        IETF:      Responsible AD (from draft.ad), falling back to iesg_contact
         IRTF:      Document Shepherd
-        ISE:       Independent Submission Editor (chair of 'ise' group in datatracker)
-        IAB:       IAB Chair (chair of 'iab' group in datatracker)
+        ISE:       Independent Submission Editor (chair of 'ise' group in dt)
+        IAB:       IAB Chair (chair of 'iab' group in dt)
         Editorial: Document Shepherd
+
+        Fetches or creates a DatatrackerPerson record as needed.
         """
         stream = self.stream_id
         if stream == "ietf":
-            if not self.iesg_contact:
-                return None
-            return GroupChair(
-                id=self.iesg_contact.datatracker_id,
-                email=self.iesg_contact.email or "",
-                name=self.iesg_contact.plain_name or "",
-            )
+            ad_id = self.draft.ad if self.draft else None
+            if ad_id is not None:
+                person, _ = datatracker.models.DatatrackerPerson.objects.get_or_create(
+                    datatracker_id=ad_id
+                )
+                return person
+            return None
         elif stream in ("irtf", "editorial"):
-            if not self.shepherd:
+            return self.shepherd
+        elif stream in ("ise", "iab"):
+            chair = datatracker_group_chair(stream)
+            if chair is None or chair.datatracker_person_id == 0:
                 return None
-            return GroupChair(
-                id=self.shepherd.datatracker_id,
-                email=self.shepherd.email or "",
-                name=self.shepherd.plain_name or "",
+            person, _ = datatracker.models.DatatrackerPerson.objects.get_or_create(
+                datatracker_id=chair.datatracker_person_id
             )
-        elif stream == "ise":
-            return datatracker_group_chair("ise")
-        elif stream == "iab":
-            return datatracker_group_chair("iab")
+            return person
         return None
 
 

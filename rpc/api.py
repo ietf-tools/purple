@@ -129,7 +129,12 @@ from .serializers import (
     VersionInfoSerializer,
     check_user_has_role,
 )
-from .tasks import publish_rfctobe_task, send_mail_task, validate_metadata_task
+from .tasks import (
+    publish_rfctobe_task,
+    send_mail_task,
+    set_stream_manager_task,
+    validate_metadata_task,
+)
 from .utils import (
     VersionInfo,
     add_doc_to_cluster,
@@ -584,6 +589,8 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                 reference_docs=reference_docs,
                 received_reference_ids=received_reference_ids,
             )
+
+            transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
 
             # create the authors
             if draft_info is None:

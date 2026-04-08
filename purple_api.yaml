@@ -4171,10 +4171,8 @@ components:
           $ref: '#/components/schemas/MsgtypeEnum'
         to:
           type: string
-          maxLength: 1000
         cc:
           type: string
-          maxLength: 1000
         subject:
           type: string
           maxLength: 1000
@@ -4194,10 +4192,8 @@ components:
         to:
           type: string
           minLength: 1
-          maxLength: 1000
         cc:
           type: string
-          maxLength: 1000
         subject:
           type: string
           minLength: 1
@@ -4676,6 +4672,12 @@ components:
           type: string
           description: Repository name (e.g., ietf-tools/purple)
           maxLength: 1000
+        stream_manager_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the stream manager by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -5288,6 +5290,12 @@ components:
           type: string
           description: Repository name (e.g., ietf-tools/purple)
           maxLength: 1000
+        stream_manager_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the stream manager by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
       required:
       - authors
       - boilerplate
@@ -5461,29 +5469,20 @@ components:
         email:
           type: string
           format: email
+          readOnly: true
         name:
           type: string
+          readOnly: true
       required:
       - datatracker_person_id
-      - email
-      - name
     StreamManagerRequest:
       type: object
       description: Serializes the stream-dependent responsible party for an RfcToBe
       properties:
         datatracker_person_id:
           type: integer
-        email:
-          type: string
-          format: email
-          minLength: 1
-        name:
-          type: string
-          minLength: 1
       required:
       - datatracker_person_id
-      - email
-      - name
     Submission:
       type: object
       description: Serialize a submission

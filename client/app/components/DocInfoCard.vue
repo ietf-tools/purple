@@ -91,7 +91,63 @@
         <DescriptionListItem term="Stream Manager" :spacing="spacing">
           <DescriptionListDetails>
             <div class="flex flex-row items-center h-full mx-0 text-sm font-medium">
-              <span class="flex-1">{{ rfcToBe.streamManager?.name || '(none)' }}</span>
+              <template v-if="!isEditingStreamManager">
+                <span v-if="rfcToBe.streamManager" class="flex-1">
+                  <a :href="rfcToBe.streamManager.email ? datatrackerLinks.personByEmail(rfcToBe.streamManager.email) : undefined"
+                    :class="ANCHOR_STYLE">{{ rfcToBe.streamManager.name }}</a>
+                  <span v-if="rfcToBe.streamManager.email" class="text-gray-500 ml-1">({{ rfcToBe.streamManager.email }})</span>
+                </span>
+                <span v-else class="flex-1">(none)</span>
+                <div v-if="!props.isReadOnly" class="flex gap-1">
+                  <button v-if="rfcToBe.streamManager" @click="removeStreamManager" class="text-red-600 hover:text-red-800 px-2 py-1">
+                    <Icon name="uil:times" />
+                  </button>
+                  <button @click="startEditingStreamManager" :class="[classForBtnType.outline, 'px-2 py-1']">
+                    <Icon name="uil:pen" />
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <div class="w-full flex flex-col gap-1">
+                  <ComboboxRoot v-model="selectedStreamManager" class="relative">
+                    <ComboboxAnchor
+                      class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 text-xs leading-none gap-[5px] bg-white hover:bg-stone-50 shadow-sm outline-none"
+                    >
+                      <ComboboxInput
+                        v-model="streamManagerInput"
+                        class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
+                        placeholder="Search for person…"
+                        ref="streamManagerInputRef"
+                      />
+                    </ComboboxAnchor>
+                    <ComboboxContent
+                      class="absolute z-10 w-full mt-1 min-w-[160px] bg-white overflow-hidden rounded-lg shadow-sm border shadow-xl"
+                    >
+                      <ComboboxViewport class="p-[5px]">
+                        <ComboboxEmpty class="text-mauve8 text-xs font-medium text-center py-2">
+                          (no matches)
+                        </ComboboxEmpty>
+                        <ComboboxItem
+                          v-if="streamManagerSearchResults"
+                          v-for="result in streamManagerSearchResults.results"
+                          :key="result.personId"
+                          :value="result"
+                          class="text-xs leading-none rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
+                        >
+                          <span class="font-bold">{{ result.name }}</span>
+                          <span class="font-normal ml-1" v-if="result.personId">#{{ result.personId }}</span>
+                        </ComboboxItem>
+                      </ComboboxViewport>
+                    </ComboboxContent>
+                  </ComboboxRoot>
+                  <div class="flex justify-end">
+                    <button @click="isEditingStreamManager = false"
+                      class="text-xs text-gray-500 hover:text-gray-700 underline">
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </template>
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -390,8 +446,18 @@
 </template>
 
 <script setup lang="ts">
+import { refDebounced } from "@vueuse/core"
 import { DateTime } from 'luxon'
-import { type RfcToBe, ResponseError } from '~/purple_client'
+import {
+  ComboboxAnchor,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxInput,
+  ComboboxItem,
+  ComboboxRoot,
+  ComboboxViewport,
+} from "reka-ui"
+import { type RfcToBe, type BaseDatatrackerPerson, ResponseError } from '~/purple_client'
 import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
@@ -637,4 +703,66 @@ const dispositionOptions = computed((): SelectOption[] => {
 })
 
 const spacing = computed(() => props.isReadOnly ? 'small' : 'large')
+
+// Stream Manager editing
+const isEditingStreamManager = ref(false)
+const streamManagerInput = ref('')
+const streamManagerInputRef = ref<HTMLElement | null>(null)
+const selectedStreamManager = ref<BaseDatatrackerPerson | undefined>()
+
+const debouncedStreamManagerInput = refDebounced(streamManagerInput, 100)
+
+type SearchPersonsResponse = Awaited<ReturnType<typeof api.searchDatatrackerpersons>>
+const streamManagerSearchResults = ref<SearchPersonsResponse>()
+
+let smAbortController: AbortController | undefined
+
+watch(debouncedStreamManagerInput, async () => {
+  smAbortController?.abort()
+  smAbortController = new AbortController()
+  streamManagerSearchResults.value = await api.searchDatatrackerpersons(
+    { search: debouncedStreamManagerInput.value },
+    { signal: smAbortController.signal }
+  )
+})
+
+const startEditingStreamManager = async () => {
+  isEditingStreamManager.value = true
+  streamManagerInput.value = ''
+  streamManagerSearchResults.value = undefined
+  selectedStreamManager.value = undefined
+  await nextTick()
+  streamManagerInputRef.value?.focus()
+}
+
+watch(selectedStreamManager, async (person) => {
+  if (!person || !props.rfcToBe?.name) return
+  try {
+    await api.documentsPartialUpdate({
+      draftName: props.rfcToBe.name,
+      patchedRfcToBeRequest: { streamManagerId: person.personId },
+    })
+    await props.refresh?.()
+  } catch (e: unknown) {
+    snackbar.add({ type: 'error', text: `Failed to set stream manager.` })
+    console.error('Failed to set stream manager:', e)
+  } finally {
+    isEditingStreamManager.value = false
+    selectedStreamManager.value = undefined
+  }
+})
+
+const removeStreamManager = async () => {
+  if (!props.rfcToBe?.name) return
+  try {
+    await api.documentsPartialUpdate({
+      draftName: props.rfcToBe.name,
+      patchedRfcToBeRequest: { streamManagerId: null },
+    })
+    await props.refresh?.()
+  } catch (e: unknown) {
+    snackbar.add({ type: 'error', text: 'Failed to remove stream manager.' })
+    console.error('Failed to remove stream manager:', e)
+  }
+}
 </script>

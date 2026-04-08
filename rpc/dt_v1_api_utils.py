@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+from dataclasses import dataclass
+
 import requests
 from django.conf import settings
 
@@ -60,22 +62,24 @@ def datatracker_group_list_email(acronym: str) -> str | None:
     return objects[0].get("list_email") or None
 
 
-from dataclasses import dataclass
-
-
 @dataclass
 class GroupChair:
-    id: int
+    datatracker_person_id: int | None
     email: str
     name: str
 
 
 def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
-    """Return id, email and name of the chair of a group, or None if not found."""
+    """Return datatracker_person_id, email and name of the chair of a group, or None
+    if not found."""
     try:
         response = requests.get(
             f"{settings.DATATRACKER_API_V1_BASE}/group/role/",
-            params={"name__slug": "chair", "group__acronym": group_acronym, "format": "json"},
+            params={
+                "name__slug": "chair",
+                "group__acronym": group_acronym,
+                "format": "json",
+            },
         )
     except requests.exceptions.ConnectionError:
         return None
@@ -103,4 +107,4 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
         person_id_int = int(person_id)
     except (ValueError, TypeError):
         person_id_int = 0
-    return GroupChair(id=person_id_int, email=email, name=name)
+    return GroupChair(datatracker_person_id=person_id_int, email=email, name=name)
