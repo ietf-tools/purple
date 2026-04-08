@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import requests
 from django.conf import settings
+from django.core.cache import cache
 
 
 class DatatrackerFetchFailure(Exception):
@@ -50,8 +51,12 @@ def datatracker_streamname(slug: str) -> tuple[str, str, str]:
     return datatracker_name("streamname", slug)
 
 
-def datatracker_group_list_email(acronym: str) -> str | None:
-    """Return the mailing list email for a group, or None if not found."""
+def _fetch_group_object(acronym: str) -> dict | None:
+    """Fetch the group object from the datatracker API for a given acronym."""
+    cache_key = f"dt_group_object:{acronym}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
     try:
         response = requests.get(
             f"{settings.DATATRACKER_API_V1_BASE}/group/group/",
@@ -64,11 +69,23 @@ def datatracker_group_list_email(acronym: str) -> str | None:
         return None
     if not response.ok:
         return None
-    api_response = response.json()
-    objects = api_response.get("objects", [])
-    if not objects:
-        return None
-    return objects[0].get("list_email") or None
+    objects = response.json().get("objects", [])
+    result = objects[0] if objects else None
+    if result is not None:
+        cache.set(cache_key, result)
+    return result
+
+
+def datatracker_group_list_email(acronym: str) -> str | None:
+    """Return the mailing list email for a group, or None if not found."""
+    obj = _fetch_group_object(acronym)
+    return obj.get("list_email") or None if obj else None
+
+
+def datatracker_group_name(acronym: str) -> str | None:
+    """Return the full name of a group, or None if not found."""
+    obj = _fetch_group_object(acronym)
+    return obj.get("name") or None if obj else None
 
 
 @dataclass

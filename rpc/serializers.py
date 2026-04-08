@@ -22,6 +22,7 @@ from datatracker.rpcapi import with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
 
+from .dt_v1_api_utils import datatracker_group_name
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
@@ -601,7 +602,22 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     approval_log_message = ApprovalLogMessageSerializer(
         source="approvallogmessage_set", many=True, read_only=True
     )
-    stream = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    references = serializers.SerializerMethodField()
+    group_name = serializers.SerializerMethodField()
+
+    def get_references(self, obj):
+        related = obj.rpcrelateddocument_set.filter(
+            relationship__slug__in=[
+                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+            ]
+        )
+        return RpcRelatedDocumentSerializer(related, many=True).data
+
+    def get_group_name(self, obj) -> str | None:
+        if not obj.group:
+            return None
+        return datatracker_group_name(obj.group)
 
     class Meta:
         model = QueueItemSerializer.Meta.model
@@ -626,6 +642,10 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "authors",
             "approval_log_message",
             "stream",
+            "group",
+            "group_name",
+            "std_level",
+            "references",
         ]
 
 
