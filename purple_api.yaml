@@ -4647,6 +4647,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RfcAuthorRequest'
+        shepherd_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the document shepherd by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
+        iesg_contact_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the IESG contact by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
         rfc_number:
           type: integer
           maximum: 2147483647
@@ -5265,6 +5277,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/RfcAuthorRequest'
+        shepherd_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the document shepherd by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
+        iesg_contact_id:
+          type: integer
+          writeOnly: true
+          nullable: true
+          description: Set the IESG contact by providing their datatracker person
+            ID. The DatatrackerPerson record will be created if it does not exist.
         rfc_number:
           type: integer
           maximum: 2147483647

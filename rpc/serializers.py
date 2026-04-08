@@ -717,7 +717,25 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
 
     iesg_contact = BaseDatatrackerPersonSerializer(read_only=True)
+    iesg_contact_id = serializers.IntegerField(
+        write_only=True,
+        allow_null=True,
+        required=False,
+        help_text=(
+            "Set the IESG contact by providing their datatracker person ID. "
+            "The DatatrackerPerson record will be created if it does not exist."
+        ),
+    )
     shepherd = BaseDatatrackerPersonSerializer(read_only=True)
+    shepherd_id = serializers.IntegerField(
+        write_only=True,
+        allow_null=True,
+        required=False,
+        help_text=(
+            "Set the document shepherd by providing their datatracker person ID. "
+            "The DatatrackerPerson record will be created if it does not exist."
+        ),
+    )
     stream_manager = StreamManagerSerializer(read_only=True)
     stream_manager_id = serializers.IntegerField(
         write_only=True,
@@ -757,7 +775,9 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "publication_stream",
             "authors",
             "shepherd",
+            "shepherd_id",
             "iesg_contact",
+            "iesg_contact_id",
             "assignment_set",
             "actionholder_set",
             "pending_activities",
@@ -776,15 +796,22 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "draft", "published_at"]
 
     def update(self, instance, validated_data):
-        sm_id = validated_data.pop("stream_manager_id", ...)
-        if sm_id is not ...:
-            if sm_id is None:
-                validated_data["stream_manager"] = None
-            else:
-                person, _ = DatatrackerPerson.objects.get_or_create(
-                    datatracker_id=sm_id
-                )
-                validated_data["stream_manager"] = person
+        _UNSET = object()
+
+        def _resolve_person_field(field_name, fk_name):
+            person_id = validated_data.pop(field_name, _UNSET)
+            if person_id is not _UNSET:
+                if person_id is None:
+                    validated_data[fk_name] = None
+                else:
+                    person, _ = DatatrackerPerson.objects.get_or_create(
+                        datatracker_id=person_id
+                    )
+                    validated_data[fk_name] = person
+
+        _resolve_person_field("stream_manager_id", "stream_manager")
+        _resolve_person_field("shepherd_id", "shepherd")
+        _resolve_person_field("iesg_contact_id", "iesg_contact")
         return super().update(instance, validated_data)
 
 
