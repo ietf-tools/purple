@@ -71,18 +71,6 @@ class NameSerializer(serializers.Serializer):
     used = serializers.BooleanField(default=True)
 
 
-class StreamManagerSerializer(serializers.ModelSerializer):
-    """Serializes the stream-dependent responsible party for an RfcToBe"""
-
-    datatracker_person_id = serializers.IntegerField(source="datatracker_id")
-    name = serializers.CharField(source="plain_name", read_only=True)
-    email = serializers.EmailField(read_only=True)
-
-    class Meta:
-        model = DatatrackerPerson
-        fields = ["datatracker_person_id", "email", "name"]
-
-
 class BaseDatatrackerPersonSerializer(serializers.ModelSerializer):
     """Serialize a minimal DatatrackerPerson
 
@@ -756,7 +744,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "The DatatrackerPerson record will be created if it does not exist."
         ),
     )
-    stream_manager = StreamManagerSerializer(read_only=True)
+    stream_manager = BaseDatatrackerPersonSerializer(read_only=True)
     stream_manager_id = serializers.IntegerField(
         write_only=True,
         allow_null=True,
