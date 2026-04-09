@@ -132,6 +132,7 @@ watch(selected, async (person) => {
   if (!person) return
   try {
     await props.onSave(person.personId ?? null)
+    snackbar.add({ type: 'success', text: 'Person updated successfully.' })
   } catch (e: unknown) {
     snackbar.add({ type: 'error', text: 'Failed to update person.' })
     console.error('Failed to update person:', e)
@@ -144,6 +145,7 @@ watch(selected, async (person) => {
 const handleRemove = async () => {
   try {
     await props.onSave(null)
+    snackbar.add({ type: 'success', text: 'Person removed successfully.' })
   } catch (e: unknown) {
     snackbar.add({ type: 'error', text: 'Failed to remove person.' })
     console.error('Failed to remove person:', e)

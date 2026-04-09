@@ -4868,9 +4868,13 @@ components:
           type: string
           description: Current StdLevel
         references:
+<<<<<<< fix/update-purple-api-client
           type: array
           items:
             $ref: '#/components/schemas/RpcRelatedDocument'
+=======
+          type: string
+>>>>>>> main
           readOnly: true
       required:
       - authors
@@ -5171,7 +5175,7 @@ components:
           readOnly: true
         stream_manager:
           allOf:
-          - $ref: '#/components/schemas/StreamManager'
+          - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
       required:
       - authors
@@ -5503,29 +5507,6 @@ components:
         * `pending` - pending
         * `published` - published
         * `failed` - failed
-    StreamManager:
-      type: object
-      description: Serializes the stream-dependent responsible party for an RfcToBe
-      properties:
-        datatracker_person_id:
-          type: integer
-        email:
-          type: string
-          format: email
-          readOnly: true
-        name:
-          type: string
-          readOnly: true
-      required:
-      - datatracker_person_id
-    StreamManagerRequest:
-      type: object
-      description: Serializes the stream-dependent responsible party for an RfcToBe
-      properties:
-        datatracker_person_id:
-          type: integer
-      required:
-      - datatracker_person_id
     Submission:
       type: object
       description: Serialize a submission

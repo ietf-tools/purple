@@ -433,6 +433,7 @@ const emit = defineEmits<{
 }>()
 
 const api = useApi()
+const snackbar = useSnackbar()
 
 const { data: additionalEmails, refresh: refreshEmails } = await useAsyncData(
   () => `additional-emails-${props.draftName}`,
