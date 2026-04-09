@@ -1,6 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
 from dataclasses import dataclass
+from urllib.parse import urlparse
 
 import requests
 from django.conf import settings
@@ -18,13 +19,29 @@ class NoSuchSlug(Exception):
 REQUEST_TIMEOUT = 10  # seconds
 
 
+def _get_cf_headers(url: str) -> dict:
+    """Return CF Access service token headers if the URL host is configured for it."""
+    if getattr(settings, "CF_SERVICE_TOKEN_HOSTS", None) is not None:
+        if urlparse(url).hostname in settings.CF_SERVICE_TOKEN_HOSTS:
+            return {
+                "CF-Access-Client-Id": settings.CF_SERVICE_TOKEN_ID,
+                "CF-Access-Client-Secret": settings.CF_SERVICE_TOKEN_SECRET,
+            }
+    return {}
+
+
 def datatracker_name(namemodel: str, slug: str) -> tuple[str, str, str]:
+    cache_key = f"dt_name:{namemodel}:{slug}"
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    url = f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}"
     try:
         response = requests.get(
-            f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}",
+            url,
             allow_redirects=True,
-            stream=True,
             timeout=REQUEST_TIMEOUT,
+            headers=_get_cf_headers(url),
         )
     except requests.exceptions.ConnectionError as err:
         raise DatatrackerFetchFailure from err
@@ -40,7 +57,9 @@ def datatracker_name(namemodel: str, slug: str) -> tuple[str, str, str]:
         raise NoSuchSlug
     else:
         obj = api_response["objects"][0]
-        return (obj["slug"], obj["name"], obj["desc"])
+        result = (obj["slug"], obj["name"], obj["desc"])
+        cache.set(cache_key, result)
+        return result
 
 
 def datatracker_stdlevelname(slug: str) -> tuple[str, str, str]:
@@ -57,18 +76,24 @@ def _fetch_group_object(acronym: str) -> dict | None:
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
+    url = f"{settings.DATATRACKER_API_V1_BASE}/group/group/"
     try:
         response = requests.get(
-            f"{settings.DATATRACKER_API_V1_BASE}/group/group/",
+            url,
             params={"acronym": acronym, "fmt": "json"},
             allow_redirects=True,
-            stream=True,
             timeout=REQUEST_TIMEOUT,
+            headers=_get_cf_headers(url),
         )
-    except requests.exceptions.ConnectionError:
-        return None
+    except requests.exceptions.ConnectionError as err:
+        raise DatatrackerFetchFailure(
+            f"Connection error fetching group {acronym!r}: {err}"
+        ) from err
     if not response.ok:
-        return None
+        raise DatatrackerFetchFailure(
+            f"Non-OK response fetching group {acronym!r}: HTTP {response.status_code} "
+            f"from {response.url}"
+        )
     objects = response.json().get("objects", [])
     result = objects[0] if objects else None
     if result is not None:
@@ -98,9 +123,10 @@ class GroupChair:
 def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
     """Return datatracker_person_id, email and name of the chair of a group, or None
     if not found."""
+    url = f"{settings.DATATRACKER_API_V1_BASE}/group/role/"
     try:
         response = requests.get(
-            f"{settings.DATATRACKER_API_V1_BASE}/group/role/",
+            url,
             params={
                 "name__slug": "chair",
                 "group__acronym": group_acronym,
@@ -109,6 +135,7 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
             allow_redirects=True,
             stream=True,
             timeout=REQUEST_TIMEOUT,
+            headers=_get_cf_headers(url),
         )
     except requests.exceptions.ConnectionError:
         return None
@@ -123,12 +150,14 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
     name = ""
     if person_url:
         try:
+            person_url_full = f"{settings.DATATRACKER_BASE}{person_url}"
             person_response = requests.get(
-                f"{settings.DATATRACKER_BASE}{person_url}",
+                person_url_full,
                 params={"format": "json"},
                 allow_redirects=True,
                 stream=True,
                 timeout=REQUEST_TIMEOUT,
+                headers=_get_cf_headers(person_url_full),
             )
             if person_response.ok:
                 name = person_response.json().get("plain_name") or ""
