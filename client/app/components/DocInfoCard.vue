@@ -95,7 +95,7 @@
         <DescriptionListItem term="Stream Manager" :spacing="spacing">
           <DescriptionListDetails>
             <PersonSearchField
-              :person="streamManagerAsPerson"
+              :person="rfcToBe.streamManager"
               :is-read-only="props.isReadOnly"
               :on-save="(id) => patchPerson('streamManagerId', id)"
             />
@@ -397,7 +397,7 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { type RfcToBe, ResponseError, type BaseDatatrackerPerson } from '~/purple_client'
+import { type RfcToBe, ResponseError } from '~/purple_client'
 import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
@@ -434,12 +434,6 @@ const emit = defineEmits<{
 
 const api = useApi()
 const snackbar = useSnackbar()
-
-const streamManagerAsPerson = computed<BaseDatatrackerPerson | null>(() => {
-  const sm = props.rfcToBe?.streamManager
-  if (!sm) return null
-  return { personId: sm.datatrackerPersonId, name: sm.name, email: sm.email }
-})
 
 const { data: additionalEmails, refresh: refreshEmails } = await useAsyncData(
   () => `additional-emails-${props.draftName}`,
