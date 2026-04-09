@@ -589,66 +589,6 @@ class PublicAssignmentSerializer(AssignmentSerializer):
         ]
 
 
-class PublicQueueItemSerializer(QueueItemSerializer):
-    """RfcToBe serializer for the public view of the RFC Editor queue"""
-
-    authors = PublicQueueAuthorSerializer(many=True)
-    enqueued_at = serializers.DateTimeField(
-        help_text="Datetime document entered the queue"
-    )
-    assignment_set = PublicAssignmentSerializer(
-        source="active_assignments", many=True, read_only=True
-    )
-    approval_log_message = ApprovalLogMessageSerializer(
-        source="approvallogmessage_set", many=True, read_only=True
-    )
-    references = serializers.SerializerMethodField()
-    group_name = serializers.SerializerMethodField()
-
-    def get_references(self, obj):
-        related = obj.rpcrelateddocument_set.filter(
-            relationship__slug__in=[
-                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
-                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
-            ]
-        )
-        return RpcRelatedDocumentSerializer(related, many=True).data
-
-    def get_group_name(self, obj) -> str | None:
-        if not obj.group:
-            return None
-        return datatracker_group_name(obj.group)
-
-    class Meta:
-        model = QueueItemSerializer.Meta.model
-        fields = [
-            "id",
-            "name",
-            "title",
-            "draft_url",
-            "disposition",
-            "external_deadline",
-            "labels",
-            "cluster",
-            "assignment_set",
-            "actionholder_set",
-            "pending_activities",
-            "rfc_number",
-            "pages",
-            "enqueued_at",
-            "final_approval",
-            "iana_status",
-            "blocking_reasons",
-            "authors",
-            "approval_log_message",
-            "stream",
-            "group",
-            "group_name",
-            "std_level",
-            "references",
-        ]
-
-
 class SubseriesMemberSerializer(serializers.ModelSerializer):
     """Serialize a SubseriesMember"""
 
@@ -1790,3 +1730,64 @@ class PublishRfcSerializer(serializers.Serializer):
 class PublishRfcStatusSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=["none", "pending", "published", "failed"])
     detail = serializers.CharField(max_length=1000, allow_blank=True)
+
+
+class PublicQueueItemSerializer(QueueItemSerializer):
+    """RfcToBe serializer for the public view of the RFC Editor queue"""
+
+    authors = PublicQueueAuthorSerializer(many=True)
+    enqueued_at = serializers.DateTimeField(
+        help_text="Datetime document entered the queue"
+    )
+    assignment_set = PublicAssignmentSerializer(
+        source="active_assignments", many=True, read_only=True
+    )
+    approval_log_message = ApprovalLogMessageSerializer(
+        source="approvallogmessage_set", many=True, read_only=True
+    )
+    references = serializers.SerializerMethodField()
+    group_name = serializers.SerializerMethodField()
+
+    @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
+    def get_references(self, obj):
+        related = obj.rpcrelateddocument_set.filter(
+            relationship__slug__in=[
+                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+            ]
+        )
+        return RpcRelatedDocumentSerializer(related, many=True).data
+
+    def get_group_name(self, obj) -> str | None:
+        if not obj.group:
+            return None
+        return datatracker_group_name(obj.group)
+
+    class Meta:
+        model = QueueItemSerializer.Meta.model
+        fields = [
+            "id",
+            "name",
+            "title",
+            "draft_url",
+            "disposition",
+            "external_deadline",
+            "labels",
+            "cluster",
+            "assignment_set",
+            "actionholder_set",
+            "pending_activities",
+            "rfc_number",
+            "pages",
+            "enqueued_at",
+            "final_approval",
+            "iana_status",
+            "blocking_reasons",
+            "authors",
+            "approval_log_message",
+            "stream",
+            "group",
+            "group_name",
+            "std_level",
+            "references",
+        ]
