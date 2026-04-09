@@ -4868,13 +4868,9 @@ components:
           type: string
           description: Current StdLevel
         references:
-<<<<<<< fix/update-purple-api-client
           type: array
           items:
             $ref: '#/components/schemas/RpcRelatedDocument'
-=======
-          type: string
->>>>>>> main
           readOnly: true
       required:
       - authors
