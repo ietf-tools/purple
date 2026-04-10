@@ -136,8 +136,7 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
 
 
 def datatracker_docevents(type: str, limit: int = 1000):
-    """Yield pages of docevent objects from datatracker v1 API.
-    """
+    """Yield pages of docevent objects from datatracker v1 API."""
     url = (
         f"{settings.DATATRACKER_API_V1_BASE}/doc/docevent/"
         f"?fmt=json&type={type}&limit={limit}"
