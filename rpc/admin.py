@@ -11,6 +11,7 @@ from .models import (
     Capability,
     Cluster,
     ClusterMember,
+    DirtyBits,
     DispositionName,
     DocRelationshipName,
     DumpInfo,
@@ -222,3 +223,8 @@ class TaskRunAdmin(admin.ModelAdmin):
 class PublicationAttemptAdmin(admin.ModelAdmin):
     list_display = ["rfc_to_be", "status", "started_at", "detail"]
     raw_id_fields = ["rfc_to_be"]
+
+
+@admin.register(DirtyBits)
+class DirtyBitsAdmin(admin.ModelAdmin):
+    list_display = ["slug", "dirty_time", "processed_time"]

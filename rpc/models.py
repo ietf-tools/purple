@@ -1341,3 +1341,22 @@ class PublicationAttempt(models.Model):
         help_text="Record of an RFC publication request",
     )
     detail = models.CharField(max_length=1000, blank=True)
+
+
+class DirtyBits(models.Model):
+    """A weak semaphore mechanism for coordination with celery beat tasks
+
+    Web workers will set the "dirty_time" value for a given dirtybit slug.
+    Celery workers will do work if "processed_time" < "dirty_time" and update
+    "processed_time".
+    """
+
+    class Slugs(models.TextChoices):
+        RFCINDEX = "rfcindex", "RFC Index"
+
+    slug = models.CharField(max_length=40, blank=False, choices=Slugs)
+    dirty_time = models.DateTimeField(null=True, blank=True)
+    processed_time = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        verbose_name_plural = "dirty bits"
