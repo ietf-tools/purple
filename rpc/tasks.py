@@ -1,7 +1,8 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.models import F
+from django.db.models import F, Q
+from django.utils import timezone
 
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
@@ -14,7 +15,7 @@ from .lifecycle.publication import (
     publish_rfctobe,
 )
 from .lifecycle.repo import GithubRepository
-from .models import MailMessage, MetadataValidationResults, RfcToBe
+from .models import MailMessage, MetadataValidationResults, RfcToBe, DirtyBits
 from .rfcindex import refresh_rfc_index
 
 
@@ -183,8 +184,38 @@ def process_rfctobe_changes_for_queue_task():
 
 @shared_task
 def refresh_rfc_index_task():
-    refresh_rfc_index()
-
+    rfcindex_slug = DirtyBits.Slugs.RFCINDEX
+    dirty_work, created = DirtyBits.objects.get_or_create(
+        slug=rfcindex_slug, defaults={"dirty_time": timezone.now()}
+    )
+    if created:
+        logger.debug("Created DirtyBits(slug='%(slug)s')", {"slug": rfcindex_slug})
+    logger.debug(
+        "DirtyBits(slug='%(slug)s'): dirty_time=%(dirty_time)s "
+        "processed_time=%(processed_time)s",
+        {
+            "slug": rfcindex_slug,
+            "dirty_time": dirty_work.dirty_time.isoformat(),
+            "processed_time": dirty_work.processed_time.isoformat() if dirty_work.processed_time is not None else "never",
+        }
+    )
+    if (
+        dirty_work.processed_time is None
+        or dirty_work.dirty_time >= dirty_work.processed_time
+    ):
+        logger.info("RFC index data has updates, refreshing")
+        new_processed_time = timezone.now()
+        refresh_rfc_index()
+        DirtyBits.objects.filter(
+            Q(processed_time__isnull=True) | Q(processed_time__lt=new_processed_time),
+            slug=rfcindex_slug,
+        ).update(processed_time=new_processed_time)
+        logger.debug(
+            "processed_time is now %(processed_time)s",
+            {"processed_time": new_processed_time.isoformat()},
+        )
+    else:
+        logger.debug("RFC index not updated, skipping")
 
 @shared_task
 def update_blocked_assignments_for_in_progress_rfcs_task():
