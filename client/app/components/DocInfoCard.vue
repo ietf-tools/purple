@@ -42,7 +42,7 @@
         </DescriptionListItem>
         <DescriptionListItem term="Revision" :spacing="spacing">
           <DescriptionListDetails>
-            <span class="font-mono">{{ rfcToBe.draft.rev ?? '(none)' }}</span>
+            <span class="font-mono">{{ rfcToBe.draft?.rev ?? '(none)' }}</span>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Pages" :spacing="spacing">
