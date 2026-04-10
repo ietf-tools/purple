@@ -72,4 +72,5 @@ const {
   { server: false, lazy: true }
 )
 
+useHead({ title: draftName.value })
 </script>

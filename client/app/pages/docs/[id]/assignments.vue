@@ -207,4 +207,5 @@ const { data: people } = await useAsyncData(
   { server: false, lazy: true }
 )
 
+useHead({ title: draftName.value })
 </script>
