@@ -136,10 +136,7 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
 
 
 def datatracker_docevents(type: str, limit: int = 1000):
-    """Yield pages of docevent objects from the datatracker v1 API.
-
-    Use with itertools.chain.from_iterable() to iterate over all events.
-    Each event is a dict with at least 'doc' and 'time' keys.
+    """Yield pages of docevent objects from datatracker v1 API.
     """
     url = (
         f"{settings.DATATRACKER_API_V1_BASE}/doc/docevent/"
@@ -149,7 +146,7 @@ def datatracker_docevents(type: str, limit: int = 1000):
         api_response = datatracker_api_get(url)
         yield api_response.get("objects", [])
         next_url = api_response.get("meta", {}).get("next")
-        url = f"{settings.DATATRACKER_BASE}{next_url}" if next_url else None
+        url = f"{settings.DATATRACKER_API_V1_BASE[:-7]}{next_url}" if next_url else None
 
 
 def datatracker_api_get(
