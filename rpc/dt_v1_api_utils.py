@@ -35,21 +35,8 @@ def datatracker_name(namemodel: str, slug: str) -> tuple[str, str, str]:
     cached = cache.get(cache_key)
     if cached is not None:
         return cached
-    url = f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}?fmt=json&slug={slug}"
-    try:
-        response = requests.get(
-            url,
-            allow_redirects=True,
-            timeout=REQUEST_TIMEOUT,
-            headers=_get_cf_headers(url),
-        )
-    except requests.exceptions.ConnectionError as err:
-        raise DatatrackerFetchFailure from err
-    if not response.ok:
-        raise DatatrackerFetchFailure
-    api_response = response.json()
-    if "meta" not in api_response:
-        raise DatatrackerFetchFailure
+    url = f"{settings.DATATRACKER_API_V1_BASE}/name/{namemodel}"
+    api_response = datatracker_api_get(url, params={"fmt": "json", "slug": slug})
     hits = api_response["meta"]["total_count"]
     if hits > 1:
         raise DatatrackerFetchFailure
@@ -77,24 +64,8 @@ def _fetch_group_object(acronym: str) -> dict | None:
     if cached is not None:
         return cached
     url = f"{settings.DATATRACKER_API_V1_BASE}/group/group/"
-    try:
-        response = requests.get(
-            url,
-            params={"acronym": acronym, "fmt": "json"},
-            allow_redirects=True,
-            timeout=REQUEST_TIMEOUT,
-            headers=_get_cf_headers(url),
-        )
-    except requests.exceptions.ConnectionError as err:
-        raise DatatrackerFetchFailure(
-            f"Connection error fetching group {acronym!r}: {err}"
-        ) from err
-    if not response.ok:
-        raise DatatrackerFetchFailure(
-            f"Non-OK response fetching group {acronym!r}: HTTP {response.status_code} "
-            f"from {response.url}"
-        )
-    objects = response.json().get("objects", [])
+    api_response = datatracker_api_get(url, params={"acronym": acronym, "fmt": "json"})
+    objects = api_response.get("objects", [])
     result = objects[0] if objects else None
     if result is not None:
         cache.set(cache_key, result)
@@ -125,23 +96,17 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
     if not found."""
     url = f"{settings.DATATRACKER_API_V1_BASE}/group/role/"
     try:
-        response = requests.get(
+        api_response = datatracker_api_get(
             url,
             params={
                 "name__slug": "chair",
                 "group__acronym": group_acronym,
-                "format": "json",
+                "fmt": "json",
             },
-            allow_redirects=True,
-            stream=True,
-            timeout=REQUEST_TIMEOUT,
-            headers=_get_cf_headers(url),
         )
-    except requests.exceptions.ConnectionError:
+    except DatatrackerFetchFailure:
         return None
-    if not response.ok:
-        return None
-    objects = response.json().get("objects", [])
+    objects = api_response.get("objects", [])
     if not objects:
         return None
     role = objects[0]
@@ -155,7 +120,6 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
                 person_url_full,
                 params={"format": "json"},
                 allow_redirects=True,
-                stream=True,
                 timeout=REQUEST_TIMEOUT,
                 headers=_get_cf_headers(person_url_full),
             )
@@ -169,3 +133,41 @@ def datatracker_group_chair(group_acronym: str) -> "GroupChair | None":
     except (ValueError, TypeError):
         person_id_int = 0
     return GroupChair(datatracker_person_id=person_id_int, email=email, name=name)
+
+
+def datatracker_docevents(type: str, limit: int = 1000):
+    """Yield pages of docevent objects from the datatracker v1 API.
+
+    Use with itertools.chain.from_iterable() to iterate over all events.
+    Each event is a dict with at least 'doc' and 'time' keys.
+    """
+    url = (
+        f"{settings.DATATRACKER_API_V1_BASE}/doc/docevent/"
+        f"?fmt=json&type={type}&limit={limit}"
+    )
+    while url:
+        api_response = datatracker_api_get(url)
+        yield api_response.get("objects", [])
+        next_url = api_response.get("meta", {}).get("next")
+        url = f"{settings.DATATRACKER_BASE}{next_url}" if next_url else None
+
+
+def datatracker_api_get(
+    url: str, params: dict | None = None, timeout: int = REQUEST_TIMEOUT
+) -> object:
+    try:
+        response = requests.get(
+            url,
+            params=params,
+            allow_redirects=True,
+            timeout=timeout,
+            headers=_get_cf_headers(url),
+        )
+    except requests.exceptions.ConnectionError as err:
+        raise DatatrackerFetchFailure from err
+    if not response.ok:
+        raise DatatrackerFetchFailure
+    api_response = response.json()
+    if "meta" not in api_response:
+        raise DatatrackerFetchFailure
+    return api_response
