@@ -130,6 +130,7 @@ from .serializers import (
     check_user_has_role,
 )
 from .tasks import (
+    compute_deep_references_task,
     publish_rfctobe_task,
     send_mail_task,
     set_stream_manager_task,
@@ -1320,6 +1321,30 @@ class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
                 relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
             )
         )
+
+    def perform_destroy(self, instance):
+        source = instance.source
+        instance.delete()
+        # Recompute 2G/3G from the remaining 1G relationships whenever one gets removed
+        remaining = RpcRelatedDocument.objects.filter(
+            source=source,
+            relationship__slug__in=[
+                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+            ],
+        ).first()
+        if remaining:
+            compute_deep_references_task.delay(remaining.pk)
+        else:
+            # No 1G refs remain — delete all auto-computed 2G/3G directly, because they
+            # can't exist without a 1G ref
+            RpcRelatedDocument.objects.filter(
+                source=source,
+                relationship__slug__in=[
+                    DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+                    DocRelationshipName.NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
+                ],
+            ).delete()
 
 
 @extend_schema_with_draft_name()
