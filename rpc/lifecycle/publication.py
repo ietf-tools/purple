@@ -26,6 +26,7 @@ from rpc.models import PublicationAttempt, RfcToBe
 from rpcauth.models import User
 
 from .repo import GithubRepository, RepositoryError, TemporaryRepositoryError
+from ..rfcindex import mark_rfcindex_as_dirty
 
 logger = logging.getLogger(__name__)
 
@@ -388,7 +389,8 @@ def publish_rfctobe(
                 f"was published, but uploading its files failed. Manual correction "
                 f"is required."
             ) from err
-
+        else:
+            mark_rfcindex_as_dirty()
 
 class PublicationError(Exception):
     """Base class for publication exceptions"""

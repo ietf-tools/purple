@@ -7,9 +7,10 @@ import rpcapi_client
 from django.conf import settings
 from django.core.files.storage import storages
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from datatracker.rpcapi import with_rpcapi
-from rpc.models import RfcToBe, UnusableRfcNumber
+from rpc.models import RfcToBe, UnusableRfcNumber, DirtyBits
 
 
 def generate_unusable_rfc_numbers_json():
@@ -68,3 +69,10 @@ def refresh_rfc_index(*, rpcapi: rpcapi_client.PurpleApi):
     """
     create_rfc_index_support_blobs()
     rpcapi.refresh_rfc_index()
+
+
+def mark_rfcindex_as_dirty():
+    DirtyBits.objects.update_or_create(
+        slug=DirtyBits.Slugs.RFCINDEX,
+        defaults={"dirty_time": timezone.now()},
+    )
