@@ -558,7 +558,6 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)
-                    reference_docs.append(draft)
                 else:
                     disposition = existing_rfc_to_be[reference.id]
                     if disposition in ("created", "in_progress"):
