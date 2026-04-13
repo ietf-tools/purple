@@ -207,5 +207,5 @@ const { data: people } = await useAsyncData(
   { server: false, lazy: true }
 )
 
-useHead({ title: draftName.value })
+useHeadSafe({ title: draftName.value })
 </script>

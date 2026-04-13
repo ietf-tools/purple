@@ -179,7 +179,7 @@ const { data: relatedDocuments } = await useAsyncData(
   { server: false, lazy: true, default: () => [] }
 )
 
-useHead({
+useHeadSafe({
   title: draftName.value
 })
 </script>

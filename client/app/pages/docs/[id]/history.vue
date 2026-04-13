@@ -81,5 +81,5 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   }
 )
 
-useHead({ title: draftName.value })
+useHeadSafe({ title: draftName.value })
 </script>
