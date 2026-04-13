@@ -1124,8 +1124,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             raise APIException(
                 f"Failed to sync metadata with datatracker: {err}"
             ) from err
-        else:
-            mark_rfcindex_as_dirty()
+
+        mark_rfcindex_as_dirty()
         return Response()
 
     @extend_schema(
