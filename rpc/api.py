@@ -504,6 +504,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # check for existing references where the new draft is the target
             # if "not-received" references exist, change them to "refqueue"
             # if "not-received-2/3g" references exist, delete them
+            recompute_source_ids: set[int] = set()
             existing_references = RpcRelatedDocument.objects.filter(
                 target_document__name=rfctobe.draft.name,
                 relationship__slug__in=(
@@ -520,7 +521,26 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                     )
                     existing_reference.save()
                 else:
+                    if (
+                        existing_reference.relationship.slug
+                        == DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
+                    ):
+                        # schedule recomputation to clean up deleted 2G references.
+                        recompute_source_ids.add(existing_reference.source_id)
                     existing_reference.delete()
+
+            for source_id in recompute_source_ids:
+                ref_1g = RpcRelatedDocument.objects.filter(
+                    source_id=source_id,
+                    relationship__slug__in=[
+                        DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                        DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                    ],
+                ).first()
+                if ref_1g:
+                    transaction.on_commit(
+                        lambda pk=ref_1g.pk: compute_deep_references_task.delay(pk)
+                    )
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
