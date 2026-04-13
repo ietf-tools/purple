@@ -1,16 +1,20 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
+import datetime
 import json
+import logging
 from io import StringIO
 from pathlib import Path
 
 import rpcapi_client
 from django.conf import settings
 from django.core.files.storage import storages
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from django.utils import timezone
 
 from datatracker.rpcapi import with_rpcapi
-from rpc.models import RfcToBe, UnusableRfcNumber, DirtyBits
+from rpc.models import DirtyBits, RfcToBe, UnusableRfcNumber
+
+logger = logging.getLogger(__name__)
 
 
 def generate_unusable_rfc_numbers_json():
@@ -71,8 +75,52 @@ def refresh_rfc_index(*, rpcapi: rpcapi_client.PurpleApi):
     rpcapi.refresh_rfc_index()
 
 
+## DirtyBits management for the RFC index
+
+RFCINDEX_SLUG = DirtyBits.Slugs.RFCINDEX
+
+
 def mark_rfcindex_as_dirty():
-    DirtyBits.objects.update_or_create(
-        slug=DirtyBits.Slugs.RFCINDEX,
-        defaults={"dirty_time": timezone.now()},
+    _, created = DirtyBits.objects.update_or_create(
+        slug=RFCINDEX_SLUG, defaults={"dirty_time": timezone.now()}
+    )
+    if created:
+        logger.debug("Created DirtyBits(slug='%(slug)s')", {"slug": RFCINDEX_SLUG})
+
+
+def mark_rfcindex_as_processed(when: datetime.datetime):
+    n_updated = DirtyBits.objects.filter(
+        Q(processed_time__isnull=True) | Q(processed_time__lt=when),
+        slug=RFCINDEX_SLUG,
+    ).update(processed_time=when)
+    if n_updated > 0:
+        logger.debug(
+            "processed_time is now %(processed_time)s",
+            {"processed_time": when.isoformat()},
+        )
+    else:
+        logger.debug("processed_time not updated, no matching record found")
+
+
+def rfcindex_is_dirty():
+    """Does the rfc index need to be updated?"""
+    dirty_work, created = DirtyBits.objects.get_or_create(
+        slug=RFCINDEX_SLUG, defaults={"dirty_time": timezone.now()}
+    )
+    if created:
+        logger.debug("Created DirtyBits(slug='%(slug)s')", {"slug": RFCINDEX_SLUG})
+    logger.debug(
+        "DirtyBits(slug='%(slug)s'): dirty_time=%(dirty_time)s "
+        "processed_time=%(processed_time)s",
+        {
+            "slug": RFCINDEX_SLUG,
+            "dirty_time": dirty_work.dirty_time.isoformat(),
+            "processed_time": dirty_work.processed_time.isoformat()
+            if dirty_work.processed_time is not None
+            else "never",
+        },
+    )
+    return (
+        dirty_work.processed_time is None
+        or dirty_work.dirty_time >= dirty_work.processed_time
     )
