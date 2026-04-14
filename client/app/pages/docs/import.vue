@@ -120,7 +120,7 @@
     </div>
 
     <div class="mt-6 flex items-center justify-end gap-x-6">
-      <BaseButton btn-type="cancel">Cancel</BaseButton>
+      <BaseButton btn-type="cancel" @click="navigateTo('/queue/submissions')">Cancel</BaseButton>
       <BaseButton btn-type="default" :disabled="!haveRequiredValues" @click="importSubmission">Save</BaseButton>
     </div>
   </div>
