@@ -168,7 +168,7 @@ export const normalizeData = (data: DataParam) => {
       return {
         ...node,
         isBlocked: !node.isReceived ? undefined : node.isBlocked,
-     }
+      }
     }),
     links: data.links
   }
@@ -182,7 +182,7 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
   const tooltip: string[] = []
   if (node.isReceived) {
     tooltip.push('Received.')
-  } else if(node.isReceived === false) {
+  } else if (node.isReceived === false) {
     tooltip.push('Not received.')
   }
   if (node.disposition) {
@@ -246,8 +246,8 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     return {
       fill: pink,
       textColor: black,
-      strokeWidth: 1,
-      strokeStyle: 'dotted',
+      strokeWidth: 2,
+      strokeStyle: 'solid',
       text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
     }
@@ -267,7 +267,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     return {
       fill: gray200,
       textColor: black,
-      strokeWidth: 2,
+      strokeWidth: 0,
       strokeStyle: 'solid',
       text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
       tooltip: makeTooltip(node)
@@ -277,7 +277,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
   return {
     fill: black,
     textColor: white,
-    strokeWidth: 2,
+    strokeWidth: 0,
     strokeStyle: 'solid',
     text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
     tooltip: makeTooltip(node)
