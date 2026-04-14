@@ -494,6 +494,7 @@ class DispositionName(Name):
     PUBLISHED = "published"
     WITHDRAWN = "withdrawn"
     SLUGS = [CREATED, IN_PROGRESS, PUBLISHED, WITHDRAWN]
+    ACTIVE_SLUGS = [CREATED, IN_PROGRESS]
 
 
 class SourceFormatName(Name):
@@ -604,8 +605,21 @@ class DocRelationshipName(Name):
 class ClusterMember(models.Model):
     cluster = models.ForeignKey("rpc.Cluster", on_delete=models.CASCADE)
     doc = models.ForeignKey("datatracker.Document", on_delete=models.CASCADE)
-    order = models.IntegerField(null=False, blank=False)
+    order = models.IntegerField(null=True, blank=True)
     history = HistoricalRecords()
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+
+        if self.order is None and self.doc_id is not None:
+            rfctobe = RfcToBe.objects.filter(
+                draft_id=self.doc_id,
+                disposition__slug__in=DispositionName.ACTIVE_SLUGS,
+            ).first()
+            if rfctobe is not None:
+                raise ValidationError(
+                    {"order": "order must not be null for active cluster members"}
+                )
 
     class Meta:
         constraints = [

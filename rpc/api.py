@@ -914,8 +914,13 @@ class ClusterViewSet(
         serializer.is_valid(raise_exception=True)
         draft_names = serializer.validated_data["draft_names"]
 
-        # Get all documents currently in the cluster
-        cluster_docs = list(ClusterMember.objects.filter(cluster=cluster))
+        # Get all active documents currently in the cluster
+        cluster_docs = list(
+            ClusterMember.objects.filter(
+                cluster=cluster,
+                doc__rfctobe__disposition__slug__in=DispositionName.ACTIVE_SLUGS,
+            ).select_related("doc")
+        )
 
         # Validate that the provided draft names match cluster documents
         cluster_draft_names = {cluster_doc.doc.name for cluster_doc in cluster_docs}
@@ -938,12 +943,19 @@ class ClusterViewSet(
 
         # Update cluster_order for each document
         with transaction.atomic():
+            # Null out order for inactive members (published/withdrawn) so they don't
+            # collide with the sequential order values assigned to active members.
+            ClusterMember.objects.filter(cluster=cluster).exclude(
+                doc__rfctobe__disposition__slug__in=["created", "in_progress"]
+            ).update(order=None)
+
             for idx, draft_name in enumerate(draft_names, start=1):
                 doc = doc_map[draft_name]
-                doc.order = idx
-                doc.save()
+                if doc.order != idx:
+                    doc.order = idx
+                    doc.save()
 
-        cluster.refresh_from_db()
+        cluster = Cluster.objects.with_data_annotated().with_is_active_annotated().get(pk=cluster.pk)
 
         response_serializer = ClusterSerializer(cluster)
         return Response(response_serializer.data)
