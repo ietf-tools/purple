@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 (
                     "slug",
                     models.CharField(
-                        choices=[("rfcindex", "RFC Index")], max_length=40
+                        choices=[("rfcindex", "RFC Index")], max_length=40, unique=True
                     ),
                 ),
                 ("dirty_time", models.DateTimeField(blank=True, null=True)),

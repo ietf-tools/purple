@@ -1354,7 +1354,7 @@ class DirtyBits(models.Model):
     class Slugs(models.TextChoices):
         RFCINDEX = "rfcindex", "RFC Index"
 
-    slug = models.CharField(max_length=40, blank=False, choices=Slugs)
+    slug = models.CharField(max_length=40, blank=False, choices=Slugs, unique=True)
     dirty_time = models.DateTimeField(null=True, blank=True)
     processed_time = models.DateTimeField(null=True, blank=True)
 
