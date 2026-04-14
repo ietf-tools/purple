@@ -946,7 +946,7 @@ class ClusterViewSet(
             # Null out order for inactive members (published/withdrawn) so they don't
             # collide with the sequential order values assigned to active members.
             ClusterMember.objects.filter(cluster=cluster).exclude(
-                doc__rfctobe__disposition__slug__in=["created", "in_progress"]
+                doc__rfctobe__disposition__slug__in=DispositionName.ACTIVE_SLUGS
             ).update(order=None)
 
             for idx, draft_name in enumerate(draft_names, start=1):
@@ -955,7 +955,11 @@ class ClusterViewSet(
                     doc.order = idx
                     doc.save()
 
-        cluster = Cluster.objects.with_data_annotated().with_is_active_annotated().get(pk=cluster.pk)
+        cluster = (
+            Cluster.objects.with_data_annotated()
+            .with_is_active_annotated()
+            .get(pk=cluster.pk)
+        )
 
         response_serializer = ClusterSerializer(cluster)
         return Response(response_serializer.data)
