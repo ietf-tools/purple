@@ -974,8 +974,9 @@ class Migration(migrations.Migration):
                     models.CharField(
                         choices=[
                             ("blank", "freeform"),
-                            ("finalapproval", "final approval"),
+                            ("finalreview", "final review notification"),
                             ("publication", "publication announcement"),
+                            ("enqueuing", "enqueuing notification"),
                         ],
                         max_length=64,
                     ),

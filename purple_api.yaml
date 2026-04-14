@@ -4329,13 +4329,15 @@ components:
     MsgtypeEnum:
       enum:
       - blank
-      - finalapproval
+      - finalreview
       - publication
+      - enqueuing
       type: string
       description: |-
         * `blank` - freeform
-        * `finalapproval` - final approval
+        * `finalreview` - final review notification
         * `publication` - publication announcement
+        * `enqueuing` - enqueuing notification
     Name:
       type: object
       description: Serialize any Name subclass

@@ -60,8 +60,8 @@ if (!firstMailTemplate) {
 
 const snackbar = useSnackbar()
 
-const toEmails = ref<string[]>(firstMailTemplate.template.to.split(','))
-const ccEmails = ref<string[]>(firstMailTemplate.template.cc?.split(',') ?? [])
+const toEmails = ref<string[]>(firstMailTemplate.template.to.split(',').filter(s => s.length > 0))
+const ccEmails = ref<string[]>(firstMailTemplate.template.cc?.split(',').filter(s => s.length > 0) ?? [])
 const subject = ref<string>(firstMailTemplate.template.subject ?? '')
 const body = ref<string>(firstMailTemplate.template.body ?? '')
 const msgType = ref<MailTemplate['template']['msgtype']>(firstMailTemplate.template.msgtype)
@@ -77,29 +77,46 @@ const confirmSend = async () => {
   if (!shouldSend) {
     return
   }
-  const mailSendResponse = await api.documentMailSend({
-    draftName: props.draftName,
-    mailMessageRequest: {
-      msgtype: msgType.value,
-      to: toEmails.value.join(','),
-      subject: subject.value,
-      body: body.value,
-      cc: ccEmails.value.join(',')
-    }
-  })
-  if (mailSendResponse.type === 'success') {
-    await props.onSuccess()
-    snackbar.add({
-      type: 'success',
-      title: 'Email sent',
-      text: 'Email sent'
+  try {
+    const mailSendResponse = await api.documentMailSend({
+      draftName: props.draftName,
+      mailMessageRequest: {
+        msgtype: msgType.value,
+        to: toEmails.value.join(','),
+        subject: subject.value,
+        body: body.value,
+        cc: ccEmails.value.join(',')
+      }
     })
-    closeOverlayModal()
-  } else {
+    if (mailSendResponse.type === 'success') {
+      await props.onSuccess()
+      snackbar.add({
+        type: 'success',
+        title: 'Email sent',
+        text: 'Email sent'
+      })
+      closeOverlayModal()
+    } else {
+      snackbar.add({
+        type: 'error',
+        title: `Email wasn't sent`,
+        text: mailSendResponse.message
+      })
+    }
+  } catch (e) {
+    let errorText = String(e)
+    if (e instanceof Error && e.name === 'ResponseError' && 'response' in e) {
+      try {
+        const data = await (e as { response: Response }).response.json()
+        errorText = Object.entries(data)
+          .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+          .join(' | ')
+      } catch {}
+    }
     snackbar.add({
       type: 'error',
       title: `Email wasn't sent`,
-      text: mailSendResponse.message
+      text: errorText
     })
   }
 }
@@ -111,8 +128,8 @@ const applyEmailTemplate = (mailTemplate: MailTemplate) => {
       return
     }
   }
-  toEmails.value = mailTemplate.template.to.split(',')
-  ccEmails.value = mailTemplate.template.cc?.split(',') ?? []
+  toEmails.value = mailTemplate.template.to.split(',').filter(s => s.length > 0)
+  ccEmails.value = mailTemplate.template.cc?.split(',').filter(s => s.length > 0) ?? []
   subject.value = mailTemplate.template.subject
   body.value = mailTemplate.template.body
   msgType.value = mailTemplate.template.msgtype
