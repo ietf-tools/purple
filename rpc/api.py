@@ -590,6 +590,9 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         create_rpc_related_document(
                             "withdrawnref", rfctobe.pk, reference.name
                         )
+                        received_reference_ids.add(reference.id)
+                    elif disposition == "published":
+                        received_reference_ids.add(reference.id)
                     else:
                         pass  # ignoring references to already published RfcToBe
 
