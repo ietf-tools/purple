@@ -1385,6 +1385,7 @@ class ClusterMemberHistorySerializer(serializers.Serializer):
         except Document.DoesNotExist:
             return None
 
+
 @dataclass
 class SubmissionAuthor:
     id: int
