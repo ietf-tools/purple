@@ -92,6 +92,7 @@ from .serializers import (
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
     ClusterAddRemoveDocumentSerializer,
+    ClusterMemberHistorySerializer,
     ClusterReorderDocumentsSerializer,
     ClusterSerializer,
     CreateActionHolderSerializer,
@@ -940,13 +941,27 @@ class ClusterViewSet(
         with transaction.atomic():
             for idx, draft_name in enumerate(draft_names, start=1):
                 doc = doc_map[draft_name]
-                doc.order = idx
-                doc.save()
+                if doc.order != idx:
+                    doc.order = idx
+                    doc.save()
 
         cluster.refresh_from_db()
 
         response_serializer = ClusterSerializer(cluster)
         return Response(response_serializer.data)
+
+    @extend_schema(responses=ClusterMemberHistorySerializer(many=True))
+    @action(detail=True, methods=["get"], url_path="history", pagination_class=DefaultLimitOffsetPagination, filter_backends=[])
+    def history(self, request, number=None):
+        """List the add/remove/reorder history for a cluster's membership"""
+        cluster = self.get_object()
+        qs = ClusterMember.history.filter(cluster_id=cluster.pk).order_by("-history_date")
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = ClusterMemberHistorySerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = ClusterMemberHistorySerializer(qs, many=True)
+        return Response(serializer.data)
 
 
 class AssignmentViewSet(viewsets.ModelViewSet):

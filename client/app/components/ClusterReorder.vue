@@ -1,7 +1,7 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader :title="`Reorder Cluster ${props.cluster.number}`">
+      <CardHeader :title="`Cluster-Members C${props.cluster.number}`">
         <template #actions>
           <Icon v-if="queueStatus === 'pending' || labelsStatus === 'pending'" name="ei:spinner-3" size="1.3rem" class="animate-spin" title="Loading additional information about cluster documents" />
           <span v-else-if="queueStatus === 'error' || labelsStatus === 'error'" class="text-red-800 dark:text-red-400">

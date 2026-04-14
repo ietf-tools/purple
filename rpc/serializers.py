@@ -1358,6 +1358,33 @@ class ClusterSerializer(serializers.ModelSerializer):
         return instance
 
 
+class ClusterMemberHistorySerializer(serializers.Serializer):
+    """Serialize a HistoricalClusterMember record as a membership change event"""
+
+    time = serializers.DateTimeField(source="history_date", read_only=True)
+    by = serializers.SerializerMethodField()
+    type = serializers.SerializerMethodField()
+    draft_name = serializers.SerializerMethodField()
+
+    def get_by(self, obj):
+        if obj.history_user is None:
+            return None
+        dt_person = obj.history_user.datatracker_person()
+        if dt_person is None:
+            return None
+        return BaseDatatrackerPersonSerializer(dt_person).data
+
+    def get_type(self, obj) -> str:
+        return {"+": "added", "~": "reordered", "-": "removed"}.get(
+            obj.history_type, obj.history_type
+        )
+
+    def get_draft_name(self, obj) -> str | None:
+        try:
+            return Document.objects.get(pk=obj.doc_id).name
+        except Document.DoesNotExist:
+            return None
+
 @dataclass
 class SubmissionAuthor:
     id: int
