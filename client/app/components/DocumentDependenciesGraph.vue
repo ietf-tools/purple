@@ -51,14 +51,13 @@
 
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
-import { type Cluster, type RfcToBe } from '~/purple_client'
+import { type Cluster } from '~/purple_client'
 import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations';
 import { legendData, complexClusterExample, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
 
 type Props = {
   cluster: Cluster
-  rfcsToBe?: RfcToBe[]
 }
 
 const props = defineProps<Props>()
@@ -120,25 +119,7 @@ const setTooltip: SetTooltip = (props) => {
 
 const hasMounted = ref(false)
 
-const rfcsByDraftName = computed(() => {
-  const result: Record<string, RfcToBe> = {}
-  if (props.rfcsToBe) {
-    for (const rfcToBe of props.rfcsToBe) {
-      if (rfcToBe.name) {
-        result[rfcToBe.name] = rfcToBe
-      }
-    }
-  }
-  return result
-})
-
 const clusterGraphData = computed(() => {
-
-  // delay building graph until this is available
-  if (!rfcsByDraftName.value) {
-    return { links: [], nodes: [] }
-  }
-
   const newClusterGraphData: DataParam = {
     links: [],
     nodes: []
@@ -156,72 +137,39 @@ const clusterGraphData = computed(() => {
     return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
   }
 
-  const rfcToBeToNodeParam = (rfcToBe: RfcToBe, partialNodeParam: Partial<NodeParam>): NodeParam | undefined => {
-    const { name, disposition } = rfcToBe
-    if (!name) {
-      console.warn("rfcToBe had no name?", rfcToBe)
-      return
-    }
-
-    return {
-      id: name,
-      rfcToBe,
-      rfcNumber: rfcToBe.rfcNumber ?? undefined,
-      url: `/docs/${name}`,
-      disposition: parseDisposition(disposition),
-      ...partialNodeParam,
-    }
-  }
-
   let referenceNodes: NodeParam[] = []
 
   newClusterGraphData.nodes.push(
     ...(clusterToUse.value.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
-      const { name, rfcNumber, disposition, references, isReceived, isBlocked } = clusterMember
-      const doc = name ? rfcsByDraftName.value[name] : undefined
-
-      const resolvedRfcNumber = doc ? doc.rfcNumber ?? undefined : rfcNumber ?? undefined
+      const { name, rfcNumber, disposition, references, isReceived, isBlocked, isNormref } = clusterMember
 
       const hasNormRef = references ? references.length > 0 : undefined
-      const hasNormRefInQueue = references ? references.some(reference => reference.relationship === 'refqueue') : undefined
-      const hasNormRefBlocked = references ? references.some(reference => {
-        if (!reference.targetDraftName || !clusterToUse.value.documents) {
-          return
-        }
-        const targetDocument = clusterToUse.value.documents.find(doc => doc.name === reference.targetDraftName)
-        if (!targetDocument) {
-          referenceNodes.push({
-            id: reference.targetDraftName,
-            url: `/docs/${reference.targetDraftName}`,
-            isNormRef: true,
-          })
-          return true
-        }
-        return targetDocument.isBlocked
-      }) : undefined
+      const hasNormRefInQueue = references ? references.every(reference => reference.relationship === 'refqueue') : undefined
+      const hasNormRefBlocked = references ? references.some(reference => reference.targetIsBlocked || !reference.targetIsReceived) : undefined
 
       referenceNodes.push(...(references ?? []).flatMap(reference => {
-        const { draftName, targetDraftName } = reference
-        const draft = draftName ? rfcsByDraftName.value[draftName] : undefined
-        const target = targetDraftName ? rfcsByDraftName.value[targetDraftName] : undefined
-
+        const { targetDraftName, targetIsReceived, targetRfcNumber, targetDisposition } = reference
+        // source node is always a cluster member already in the graph; only create target nodes
         return [
-          draft ? rfcToBeToNodeParam(draft, { isNormRef: false }) : draftName ? { id: draftName, url: `/docs/${draftName}`, isNormRef: false } : undefined,
-          target ? rfcToBeToNodeParam(target, {
-            isNormRef: true, // all targets are norm refs
-          }) : targetDraftName ? { id: targetDraftName, url: `/docs/${targetDraftName}`, isNormRef: true } : undefined,
+          targetDraftName ? {
+            id: targetDraftName,
+            url: `/docs/${targetDraftName}`,
+            isNormRef: true,
+            isReceived: targetIsReceived ?? false,
+            rfcNumber: targetRfcNumber ?? undefined,
+            disposition: parseDisposition(targetDisposition),
+          } : undefined,
         ].filter(isNodeParam)
       }))
 
       return [{
         id: name,
-        rfcToBe: doc,
         url: `/docs/${name}`,
-        rfcNumber: resolvedRfcNumber,
+        rfcNumber: rfcNumber ?? undefined,
         isReceived: isReceived ?? undefined,
         disposition: parseDisposition(disposition),
         isBlocked,
-        isNormRef: false,
+        isNormRef: isNormref ?? false,
         hasNormRef,
         hasNormRefInQueue,
         hasNormRefBlocked

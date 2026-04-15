@@ -3550,6 +3550,15 @@ components:
           description: Determine if the document has been received based on related
             documents
           readOnly: true
+        is_normref:
+          type: boolean
+          description: |-
+            True if this document is a normative reference target of any other
+            cluster member.
+
+            Uses the pre-computed set from ClusterMemberListSerializer.to_representation
+            when available, falling back to a direct lookup.
+          readOnly: true
         order:
           type: integer
         is_blocked:
@@ -5417,6 +5426,12 @@ components:
           readOnly: true
         target_disposition:
           type: string
+          readOnly: true
+        target_is_received:
+          type: boolean
+          readOnly: true
+        target_is_blocked:
+          type: boolean
           readOnly: true
       required:
       - relationship

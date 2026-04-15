@@ -18,7 +18,7 @@
       </template>
     </TitleBlock>
 
-    <DocumentDependenciesGraph v-if="filteredCluster" :cluster="filteredCluster" :rfcs-to-be="rfcsToBe" />
+    <DocumentDependenciesGraph v-if="filteredCluster" :cluster="filteredCluster" />
     <div v-else>No filtered cluster</div>
 
     <ClusterReorder v-if="filteredCluster" :cluster="filteredCluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />

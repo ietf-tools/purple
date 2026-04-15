@@ -9,7 +9,7 @@ from itertools import pairwise
 
 import rpcapi_client
 from django.db import IntegrityError, transaction
-from django.db.models import QuerySet
+from django.db.models import Q, QuerySet
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
@@ -848,6 +848,17 @@ class NestedAssignmentSerializer(AssignmentSerializer):
     rfc_to_be = RfcToBeSerializer(read_only=True)
 
 
+def _rfctobe_is_blocked(rfctobe: RfcToBe | None) -> bool:
+    """Return True if the given RfcToBe has an active 'blocked' role assignment."""
+    if not rfctobe:
+        return False
+    return (
+        rfctobe.assignment_set.exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
+        .filter(role__slug="blocked")
+        .exists()
+    )
+
+
 class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     """Serializer for related document for an RfcToBe"""
 
@@ -856,6 +867,8 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     target_rfc_number = serializers.SerializerMethodField()
     source_rfc_number = serializers.SerializerMethodField()
     target_disposition = serializers.SerializerMethodField()
+    target_is_received = serializers.SerializerMethodField()
+    target_is_blocked = serializers.SerializerMethodField()
 
     class Meta:
         model = RpcRelatedDocument
@@ -867,6 +880,8 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
             "target_rfc_number",
             "source_rfc_number",
             "target_disposition",
+            "target_is_received",
+            "target_is_blocked",
         ]
 
     def get_target_draft_name(self, obj: RpcRelatedDocument) -> str:
@@ -897,6 +912,16 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
         if obj.target_rfctobe and obj.target_rfctobe.disposition:
             return obj.target_rfctobe.disposition.slug
         return None
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_target_is_received(self, obj: RpcRelatedDocument) -> bool:
+        """True if the target document has an RfcToBe."""
+        return obj.target_rfctobe is not None
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_target_is_blocked(self, obj: RpcRelatedDocument) -> bool:
+        """True if the target document has an active 'blocked' role assignment."""
+        return _rfctobe_is_blocked(obj.target_rfctobe if obj.target_rfctobe else None)
 
 
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
@@ -1121,6 +1146,50 @@ class ClusterMemberListSerializer(serializers.ListSerializer):
     https://www.django-rest-framework.org/api-guide/serializers/#customizing-listserializer-behavior
     """
 
+    def to_representation(self, data):
+        # Pre-compute the set of all doc names that appear as a reference target
+        target_names: set[str] = set()
+        items = data.all() if hasattr(data, "all") else data
+        for member in items:
+            if (
+                hasattr(member.doc, "rfctobe_annotated")
+                and member.doc.rfctobe_annotated
+            ):
+                refs = (
+                    getattr(
+                        member.doc.rfctobe_annotated[0], "references_annotated", None
+                    )
+                    or []
+                )
+            else:
+                rfctobe = member.doc.rfctobe_set.exclude(
+                    disposition__slug="withdrawn"
+                ).first()
+                refs = (
+                    RpcRelatedDocument.objects.filter(
+                        source=rfctobe,
+                        relationship__slug__in=[
+                            DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                            DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                        ],
+                    ).select_related("target_document", "target_rfctobe__draft")
+                    if rfctobe
+                    else []
+                )
+            _NORMREF_SLUGS = (
+                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+            )
+            for ref in refs:
+                if ref.relationship.slug not in _NORMREF_SLUGS:
+                    continue
+                if ref.target_document:
+                    target_names.add(ref.target_document.name)
+                elif ref.target_rfctobe and ref.target_rfctobe.draft:
+                    target_names.add(ref.target_rfctobe.draft.name)
+        self.child.context["cluster_target_names"] = target_names
+        return super().to_representation(data)
+
     def create(self, validated_data):
         raise NotImplementedError
 
@@ -1134,6 +1203,7 @@ class ClusterMemberSerializer(serializers.Serializer):
     disposition = serializers.SerializerMethodField()
     references = serializers.SerializerMethodField()
     is_received = serializers.SerializerMethodField()
+    is_normref = serializers.SerializerMethodField()
     order = serializers.IntegerField()
     is_blocked = serializers.SerializerMethodField()
 
@@ -1177,15 +1247,7 @@ class ClusterMemberSerializer(serializers.Serializer):
             rfctobe = clustermember.doc.rfctobe_set.exclude(
                 disposition__slug="withdrawn"
             ).first()
-
-        if not rfctobe:
-            return False
-
-        return (
-            rfctobe.assignment_set.exclude(state__in=ASSIGNMENT_INACTIVE_STATES)
-            .filter(role__slug="blocked")
-            .exists()
-        )
+        return _rfctobe_is_blocked(rfctobe)
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     @with_rpcapi
@@ -1260,6 +1322,33 @@ class ClusterMemberSerializer(serializers.Serializer):
 
         # fallback to original logic
         return RfcToBe.objects.filter(draft=clustermember.doc).exists()
+
+    def get_is_normref(self, clustermember: ClusterMember) -> bool:
+        """True if this document is a normative reference target of any other
+        cluster member.
+
+        Uses the pre-computed set from ClusterMemberListSerializer.to_representation
+        when available, falling back to a direct lookup.
+        """
+        doc_name = clustermember.doc.name
+        target_names = self.context.get("cluster_target_names")
+        if target_names is not None:
+            return doc_name in target_names
+        # fallback
+        return (
+            RpcRelatedDocument.objects.filter(
+                source__draft__clustermember__cluster_id=clustermember.cluster_id,
+                relationship__slug__in=[
+                    DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                    DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                ],
+            )
+            .filter(
+                Q(target_document__name=doc_name)
+                | Q(target_rfctobe__draft__name=doc_name)
+            )
+            .exists()
+        )
 
 
 class ClusterSerializer(serializers.ModelSerializer):
