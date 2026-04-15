@@ -8,6 +8,7 @@ export const testIsAuthRoute = (path: string) => path.startsWith(AUTH_PATH)
 export const documentPathBuilder = (document: Pick<ResolvedQueueItem, 'name'>) => `/docs/${document.name}/`
 
 export const QUEUE_QUEUE_PATH = '/queue/queue'
+export const QUEUE_SUBMISSIONS_PATH = '/queue/submissions'
 
 const httpRegex = /^https?:\/\//
 export const isExternalLink = (href?: string): boolean => {

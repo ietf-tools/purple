@@ -120,7 +120,7 @@
     </div>
 
     <div class="mt-6 flex items-center justify-end gap-x-6">
-      <BaseButton btn-type="cancel" @click="navigateTo('/queue/submissions')">Cancel</BaseButton>
+      <BaseButton btn-type="cancel" @click="navigateTo(QUEUE_SUBMISSIONS_PATH)">Cancel</BaseButton>
       <BaseButton btn-type="default" :disabled="!haveRequiredValues" @click="importSubmission">Save</BaseButton>
     </div>
   </div>
@@ -132,7 +132,7 @@ import humanizeDuration from 'humanize-duration'
 import type { PaginatedDocumentCommentList, Name } from '~/purple_client'
 import { computed } from 'vue'
 import { type IANAActionsEnum } from '../../utils/iana'
-import { title } from 'process'
+import { QUEUE_SUBMISSIONS_PATH } from '../../utils/url'
 
 const route = useRoute()
 const api = useApi()
@@ -206,7 +206,7 @@ async function importSubmission () {
     imported = await api.submissionsImport({
       documentId: submission.value.id,
       createRfcToBeRequest: {
-        title: '',
+        title: submission.value.title,
         boilerplate: state.boilerplate.slug,
         submittedFormat: state.sourceFormat.slug,
         stdLevel: state.stdLevel.slug,
