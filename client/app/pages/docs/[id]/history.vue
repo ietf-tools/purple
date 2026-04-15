@@ -81,4 +81,5 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   }
 )
 
+useHeadSafe({ title: draftName.value })
 </script>

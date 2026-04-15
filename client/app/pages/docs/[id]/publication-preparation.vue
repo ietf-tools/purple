@@ -588,4 +588,6 @@ const copyGitHashToClipboard = async (gitHash: string) => {
     })
   }
 }
+
+useHeadSafe({ title: draftName.value })
 </script>

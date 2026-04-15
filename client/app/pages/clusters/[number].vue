@@ -40,7 +40,7 @@ definePageMeta({ validate: route => /^[1-9]\d*$/.test(route.params.number?.toStr
 
 const clusterNumber = computed(() => route.params.number ? parseInt(route.params.number.toString(), 10) : undefined)
 
-useHead({
+useHeadSafe({
   title: `Manage Cluster ${clusterNumber.value}`
 })
 

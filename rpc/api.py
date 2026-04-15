@@ -131,6 +131,7 @@ from .serializers import (
     check_user_has_role,
 )
 from .tasks import (
+    compute_deep_references_task,
     publish_rfctobe_task,
     send_mail_task,
     set_stream_manager_task,
@@ -504,6 +505,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # check for existing references where the new draft is the target
             # if "not-received" references exist, change them to "refqueue"
             # if "not-received-2/3g" references exist, delete them
+            recompute_source_ids: set[int] = set()
             existing_references = RpcRelatedDocument.objects.filter(
                 target_document__name=rfctobe.draft.name,
                 relationship__slug__in=(
@@ -520,7 +522,26 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                     )
                     existing_reference.save()
                 else:
+                    if (
+                        existing_reference.relationship.slug
+                        == DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
+                    ):
+                        # schedule recomputation to clean up deleted 2G references.
+                        recompute_source_ids.add(existing_reference.source_id)
                     existing_reference.delete()
+
+            for source_id in recompute_source_ids:
+                ref_1g = RpcRelatedDocument.objects.filter(
+                    source_id=source_id,
+                    relationship__slug__in=[
+                        DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                        DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+                    ],
+                ).first()
+                if ref_1g:
+                    transaction.on_commit(
+                        lambda pk=ref_1g.pk: compute_deep_references_task.delay(pk)
+                    )
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
@@ -559,7 +580,6 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)
-                    reference_docs.append(draft)
                 else:
                     disposition = existing_rfc_to_be[reference.id]
                     if disposition in ("created", "in_progress"):
@@ -571,6 +591,9 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         create_rpc_related_document(
                             "withdrawnref", rfctobe.pk, reference.name
                         )
+                        received_reference_ids.add(reference.id)
+                    elif disposition == "published":
+                        received_reference_ids.add(reference.id)
                     else:
                         pass  # ignoring references to already published RfcToBe
 
@@ -1322,6 +1345,30 @@ class RpcDocumentReferencesViewSet(viewsets.ModelViewSet):
                 relationship__slug__in=DocRelationshipName.REFERENCE_RELATIONSHIP_SLUGS,
             )
         )
+
+    def perform_destroy(self, instance):
+        source = instance.source
+        instance.delete()
+        # Recompute 2G/3G from the remaining 1G relationships whenever one gets removed
+        remaining = RpcRelatedDocument.objects.filter(
+            source=source,
+            relationship__slug__in=[
+                DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+            ],
+        ).first()
+        if remaining:
+            compute_deep_references_task.delay(remaining.pk)
+        else:
+            # No 1G refs remain — delete all auto-computed 2G/3G directly, because they
+            # can't exist without a 1G ref
+            RpcRelatedDocument.objects.filter(
+                source=source,
+                relationship__slug__in=[
+                    DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+                    DocRelationshipName.NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
+                ],
+            ).delete()
 
 
 @extend_schema_with_draft_name()

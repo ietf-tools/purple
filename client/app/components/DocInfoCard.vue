@@ -40,6 +40,11 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Revision" :spacing="spacing">
+          <DescriptionListDetails>
+            <span class="font-mono">{{ rfcToBe.draft?.rev ?? '(none)' }}</span>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="pages" :is-read-only="false"
