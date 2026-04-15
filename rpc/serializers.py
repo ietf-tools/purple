@@ -1325,7 +1325,7 @@ class ClusterMemberSerializer(serializers.Serializer):
 
     def get_is_normref(self, clustermember: ClusterMember) -> bool:
         """True if this document is a normative reference target of any other
-        cluster member.
+        cluster member in same cluster.
 
         Uses the pre-computed set from ClusterMemberListSerializer.to_representation
         when available, falling back to a direct lookup.

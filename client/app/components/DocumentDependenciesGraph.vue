@@ -44,7 +44,7 @@
       <h3 class="mt-4 font-bold">Cluster</h3>
       <pre>{{ JSON.stringify(clusterToUse, null, 2) }}</pre>
       <h3 class="mt-4 font-bold">RFCsToBe</h3>
-      <pre>{{ JSON.stringify(rfcsToBe, null, 2) }}</pre>
+      <pre>{{ JSON.stringify(clusterToUse.documents?.flatMap(d => d.references ?? []), null, 2) }}</pre>
     </div>
   </details>
 </template>
@@ -147,19 +147,18 @@ const clusterGraphData = computed(() => {
       const hasNormRefInQueue = references ? references.every(reference => reference.relationship === 'refqueue') : undefined
       const hasNormRefBlocked = references ? references.some(reference => reference.targetIsBlocked || !reference.targetIsReceived) : undefined
 
-      referenceNodes.push(...(references ?? []).flatMap(reference => {
+      referenceNodes.push(...(references ?? []).flatMap((reference): NodeParam[] => {
         const { targetDraftName, targetIsReceived, targetRfcNumber, targetDisposition } = reference
         // source node is always a cluster member already in the graph; only create target nodes
-        return [
-          targetDraftName ? {
-            id: targetDraftName,
-            url: `/docs/${targetDraftName}`,
-            isNormRef: true,
-            isReceived: targetIsReceived ?? false,
-            rfcNumber: targetRfcNumber ?? undefined,
-            disposition: parseDisposition(targetDisposition),
-          } : undefined,
-        ].filter(isNodeParam)
+        if (!targetDraftName) return []
+        return [{
+          id: targetDraftName,
+          url: `/docs/${targetDraftName}`,
+          isNormRef: true,
+          isReceived: targetIsReceived ?? false,
+          rfcNumber: targetRfcNumber ?? undefined,
+          disposition: parseDisposition(targetDisposition),
+        }]
       }))
 
       return [{
