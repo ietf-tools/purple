@@ -126,12 +126,15 @@
         </DescriptionListItem>
         <DescriptionListItem term="Status (Standards Track)" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="stdLevel" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="stdLevel"
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               {{ rfcToBe.stdLevel }}
               <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
-                (submitted as {{ rfcToBe.publicationStdLevel }})
+                (published as {{ rfcToBe.publicationStdLevel }})
+              </span>
+              <span v-if="rfcToBe.draft.intendedStdLevel && rfcToBe.draft.intendedStdLevel !== rfcToBe.stdLevel">
+                (intended as {{ rfcToBe.draft.intendedStdLevel }})
               </span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
