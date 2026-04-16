@@ -349,7 +349,6 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     serializer_class = NestedAssignmentSerializer
 
     def get_queryset(self):
-        user = self.request.user
         req_person_id = int(self.kwargs["person_id"])
 
         queryset = (
