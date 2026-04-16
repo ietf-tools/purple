@@ -3554,7 +3554,7 @@ components:
           type: boolean
           description: |-
             True if this document is a normative reference target of any other
-            cluster member.
+            cluster member in same cluster.
 
             Uses the pre-computed set from ClusterMemberListSerializer.to_representation
             when available, falling back to a direct lookup.
