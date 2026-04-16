@@ -368,15 +368,6 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
             )
         )
 
-        is_manager = check_user_has_role(user, "manager")
-        if user.is_superuser or is_manager:
-            return queryset
-
-        # Non-superusers/managers should only see their own assignments
-        rpcperson = user.rpcperson() if hasattr(user, "rpcperson") else None
-        if rpcperson is None or rpcperson.id != req_person_id:
-            raise PermissionDenied("Unauthorized request")
-
         return queryset
 
 
