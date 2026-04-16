@@ -5,10 +5,6 @@
 
     <QueueTabs :current-tab="currentTab" />
 
-    <ErrorAlert v-if="error">
-      {{ error }}
-    </ErrorAlert>
-
     <div class="p-2">
       <RpcTable>
         <RpcThead>
@@ -61,6 +57,7 @@ import { ANCHOR_STYLE } from '~/utils/html'
 import { sortDate, type QueueTabId } from '~/utils/queue'
 
 const api = useApi()
+const snackbar = useSnackbar()
 
 const currentTab: QueueTabId = 'submissions'
 
@@ -79,6 +76,12 @@ const {
     default: () => [] as SubmissionListItem[],
   }
 )
+
+watch(error, (err) => {
+  if (err) {
+    snackbarForErrors({ snackbar, error: err, defaultTitle: 'Failed to load submissions' })
+  }
+})
 
 const columnHelper = createColumnHelper<SubmissionListItem>()
 

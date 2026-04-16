@@ -9,6 +9,7 @@ from dataclasses import dataclass
 import django_filters
 import rpcapi_client
 from django import forms
+from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Max, Prefetch, Q
 from django.http import JsonResponse
@@ -42,7 +43,7 @@ from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
-from datatracker.rpcapi import with_rpcapi
+from datatracker.rpcapi import datatracker_api, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
 from .dt_v1_api_utils import datatracker_group_list_email
@@ -319,24 +320,32 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
 
+    _NAME_MAP_CACHE_KEY = "rpc_person_name_map"
+
     @with_rpcapi
     def get_serializer_context(self, rpcapi: rpcapi_client.PurpleApi):
         """Add context to the serializer"""
-        # todo don't fetch _everybody_; use memcache
         person_ids = list(
             RpcPerson.objects.values_list(
                 "datatracker_person__datatracker_id", flat=True
             )
         )
-        # use bulk endpoint to get names
-        name_map = {
-            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
-        }
-        name_map |= {
-            missing_id: "Unknown"
-            for missing_id in person_ids
-            if missing_id not in name_map
-        }
+
+        name_map: dict[int, str] | None = cache.get(self._NAME_MAP_CACHE_KEY)
+        if name_map is None:
+            # Cache miss — fetch from Datatracker
+            with datatracker_api():
+                name_map = {
+                    person.id: person.plain_name
+                    for person in rpcapi.get_persons(person_ids)
+                }
+            name_map |= {
+                missing_id: "Unknown"
+                for missing_id in person_ids
+                if missing_id not in name_map
+            }
+            cache.set(self._NAME_MAP_CACHE_KEY, name_map)
+
         return super().get_serializer_context() | {"name_map": name_map}
 
 
@@ -415,7 +424,8 @@ def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
     This api will filter those out.
     """
     # Get submissions list from Datatracker
-    submitted = rpcapi.submitted_to_rpc()
+    with datatracker_api():
+        submitted = rpcapi.submitted_to_rpc()
     # Filter out I-Ds that already have an RfcToBe
     already_in_queue = RfcToBe.objects.filter(
         draft__datatracker_id__in=[s.id for s in submitted]
@@ -430,7 +440,10 @@ def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
 def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     # Create a Document to which the RfcToBe can refer. If it already exists, update
     # its values with whatever the datatracker currently says.
-    draft = rpcapi.get_draft_by_id(document_id)
+    with datatracker_api():
+        draft = rpcapi.get_draft_by_id(document_id)
+    if draft is None:
+        raise NotFound(f"No draft found with id {document_id}")
     subm = Submission.from_rpcapi_draft(draft)
     return Response(SubmissionSerializer(subm).data)
 
@@ -536,7 +549,8 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 
             # Find normative references and store them as RelatedDocs
             # Get ref list from Datatracker
-            references = rpcapi.get_draft_references(document_id)
+            with datatracker_api():
+                references = rpcapi.get_draft_references(document_id)
             # Filter out I-Ds that already have an RfcToBe
             reference_ids = [s.id for s in references]
             existing_rfc_to_be = dict(
@@ -798,7 +812,8 @@ class ClusterViewSet(
         try:
             doc = Document.objects.get(name=draft_name)
         except Document.DoesNotExist:
-            doc = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
+            with datatracker_api():
+                doc = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
             if doc is None:
                 raise serializers.ValidationError(
                     {
@@ -1518,12 +1533,10 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         # Try to find target as Document first
         target_document = Document.objects.filter(name=target_draft_name).first()
         if target_document is None:
-            try:
+            with datatracker_api():
                 target_document = get_or_create_draft_by_name(
                     target_draft_name, rpcapi=rpcapi
                 )
-            except Exception as err:
-                raise NotFound(f"Error creating draft {target_draft_name}") from err
             if target_document is None:
                 raise NotFound(f"Draft with name {target_draft_name} does not exist")
 
@@ -1724,7 +1737,8 @@ class DocumentCommentViewSet(
             save_kwargs["rfc_to_be"] = rfc_to_be
         except NotFound:
             # No RfcToBe exists - see if datatracker knows about the draft
-            draft = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
+            with datatracker_api():
+                draft = get_or_create_draft_by_name(draft_name, rpcapi=rpcapi)
             if draft is not None:
                 save_kwargs["document"] = draft
             else:
@@ -1862,7 +1876,8 @@ class SearchDatatrackerPersons(ListAPIView):
     def upstream_search(
         self, search, limit, offset, *, rpcapi: rpcapi_client.PurpleApi
     ):
-        return rpcapi.search_person(search=search, limit=limit, offset=offset)
+        with datatracker_api():
+            return rpcapi.search_person(search=search, limit=limit, offset=offset)
 
 
 class SubseriesMemberViewSet(viewsets.ModelViewSet):

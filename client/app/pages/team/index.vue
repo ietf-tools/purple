@@ -13,10 +13,6 @@
       </template>
     </TitleBlock>
 
-    <ErrorAlert v-if="error">
-      {{ error }}
-    </ErrorAlert>
-
     <h2 class="font-bold mt-5">Filters</h2>
     <div class="ml-1">
       <RpcCheckbox
@@ -90,6 +86,7 @@ useHead({
 })
 
 const userStore = useUserStore()
+const snackbar = useSnackbar()
 
 const api = useApi()
 
@@ -115,6 +112,12 @@ const { data: people, pending, status, error, refresh } = await useAsyncData(
     server: false,
   }
 )
+
+watch(error, (err) => {
+  if (err) {
+    snackbarForErrors({ snackbar, error: err, defaultTitle: 'Failed to load team members' })
+  }
+})
 
 const columnHelper = createColumnHelper<RpcPerson>()
 

@@ -8,6 +8,7 @@ from email.policy import EmailPolicy
 from itertools import pairwise
 
 import rpcapi_client
+import urllib3.exceptions
 from django.db import IntegrityError, transaction
 from django.db.models import Q, QuerySet
 from drf_spectacular.utils import extend_schema_field
@@ -1266,9 +1267,16 @@ class ClusterMemberSerializer(serializers.Serializer):
 
         if not rfctobe:
             # if the doc is not received, get references on-the-fly from dt
-            api_references = rpcapi.get_draft_references(
-                clustermember.doc.datatracker_id
-            )
+            try:
+                api_references = rpcapi.get_draft_references(
+                    clustermember.doc.datatracker_id
+                )
+            except (
+                rpcapi_client.exceptions.ApiException,
+                urllib3.exceptions.MaxRetryError,
+                urllib3.exceptions.NewConnectionError,
+            ):
+                return None
             if not api_references:
                 return None
 

@@ -1,9 +1,32 @@
 # Copyright The IETF Trust 2023-2025, All Rights Reserved
+from contextlib import contextmanager
 from functools import wraps
 from urllib.parse import urlparse
 
 import rpcapi_client
+import urllib3.exceptions
 from django.conf import settings
+from rest_framework.exceptions import APIException
+
+
+class DataTrackerUnavailable(APIException):
+    status_code = 503
+    default_detail = "Datatracker is currently unavailable. Please try again later."
+    default_code = "datatracker_unavailable"
+
+
+@contextmanager
+def datatracker_api():
+    """Context manager that converts DT connection errors into
+    DataTrackerUnavailable."""
+    try:
+        yield
+    except (
+        urllib3.exceptions.MaxRetryError,
+        urllib3.exceptions.NewConnectionError,
+        rpcapi_client.exceptions.ApiException,
+    ) as exc:
+        raise DataTrackerUnavailable() from exc
 
 
 class ApiClient(rpcapi_client.ApiClient):

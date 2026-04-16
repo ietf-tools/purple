@@ -17,12 +17,9 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   console.error("Snackbar error", defaultTitle, error)
 
   if(error) {
-    if (
-      typeof error === 'object' &&
-      'response' in error &&
-      error.response instanceof Response
-    ) {
-      text = await getErrorTextFromFetchResponse(error.response, text)
+    const fetchResponse = getFetchResponse(error)
+    if (fetchResponse) {
+      text = await getErrorTextFromFetchResponse(fetchResponse, text)
     } else if (isNuxtError(error)) {
       text = await getErrorTextFromNuxtError(error, text)
     } else {
@@ -47,6 +44,21 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
     title,
     text
   })
+}
+
+const getFetchResponse = (error: unknown): Response | null => {
+  // Direct ResponseError (error.response is a fetch Response)
+  if (typeof error === 'object' && error !== null && 'response' in error && error.response instanceof Response) {
+    return error.response as Response
+  }
+  // NuxtError wraps the original error as `cause` (via h3's createError)
+  if (typeof error === 'object' && error !== null && 'cause' in error) {
+    const cause = (error as { cause?: unknown }).cause
+    if (typeof cause === 'object' && cause !== null && 'response' in cause && (cause as { response?: unknown }).response instanceof Response) {
+      return (cause as { response: Response }).response
+    }
+  }
+  return null
 }
 
 const getErrorTextFromFetchResponse = async (response: Response, text: string): Promise<string> => {
@@ -89,6 +101,13 @@ const getErrorTextFromFetchResponse = async (response: Response, text: string): 
 }
 
 const getErrorTextFromNuxtError = async (error: NuxtError, _text: string): Promise<string> => {
+  if (error.data && typeof error.data === 'object') {
+    const keys = Object.keys(error.data)
+    if (keys.length === 1) {
+      const value = (error.data as Record<string, unknown>)[keys[0]!]
+      return Array.isArray(value) ? value.join(', ') : `${value}`
+    }
+  }
   return `HTTP ${error.statusCode}: ${error.message}`
 }
 
