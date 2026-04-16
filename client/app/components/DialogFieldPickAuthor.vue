@@ -11,6 +11,7 @@
           <button type="button" :disabled="props.disabled" class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none" @click="handleClearSelectedAuthor" :label="`Unselect author ${selectedAuthor.name} ${selectedAuthor.email ?? ''}`">&times;</button>
         </span>
         <ComboboxInput v-model="inputRef" :id="props.id" :disabled="props.disabled" class="outline-none text-sm py-1 border-none h-full placeholder-gray-400" :placeholder=" selectedAuthor?.personId ? `Change ${personTerm}...` : `Search ${personTerm}`" />
+        <span class="text-xs text-gray-400 whitespace-nowrap ml-1">up to 20 results — type to narrow</span>
       </ComboboxAnchor>
 
       <ComboboxContent
@@ -90,7 +91,8 @@ watch(
     previousAbortController = new AbortController();
 
     searchResults.value = await api.searchDatatrackerpersons({
-      search: debouncedInputRef.value
+      search: debouncedInputRef.value,
+      limit: 20,
     },
       { signal: previousAbortController.signal }
     )

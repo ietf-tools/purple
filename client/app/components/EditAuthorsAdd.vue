@@ -8,6 +8,7 @@
         class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
         placeholder="Search authors to add..."
       />
+      <span class="text-xs text-gray-400 whitespace-nowrap ml-1">up to 20 results — type to narrow</span>
     </ComboboxAnchor>
 
     <ComboboxContent
@@ -50,6 +51,7 @@ import {
 } from "reka-ui"
 import type { RfcToBe, BaseDatatrackerPerson } from "~/purple_client"
 import { snackbarForErrors } from "~/utils/snackbar"
+import { SPACE } from '~/utils/strings'
 
 const draft = defineModel<CookedDraft | RfcToBe>({ required: true })
 
@@ -100,6 +102,11 @@ let previousAbortController: AbortController | undefined;
 watch(
   debouncedInputRef,
   async () => {
+    if (debouncedInputRef.value.length < 3) {
+      searchResults.value = undefined
+      return
+    }
+
     if(previousAbortController) {
       // abort any fetches in flight to prevent race conditions
       previousAbortController.abort();
@@ -108,7 +115,8 @@ watch(
     previousAbortController = new AbortController();
 
     searchResults.value = await api.searchDatatrackerpersons({
-      search: debouncedInputRef.value
+      search: debouncedInputRef.value,
+      limit: 20,
     },
       { signal: previousAbortController.signal }
     )
