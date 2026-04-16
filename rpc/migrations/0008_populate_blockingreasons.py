@@ -7,7 +7,7 @@ def forward(apps, schema_editor):
     BlockingReason = apps.get_model("rpc", "BlockingReason")
 
     reasons = [
-        ("actionholder_active", "Unresolved Action Holder"),
+        ("actionholder_active", "Waiting for Action Holder"),
         ("label_stream_hold", "Stream Hold"),
         ("label_extref_hold", "External Reference Hold"),
         ("label_author_input_required", "Author Input Required"),
