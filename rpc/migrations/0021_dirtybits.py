@@ -5,7 +5,7 @@ from django.db import migrations, models
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0019_add_stream_manager_fk"),
+        ("rpc", "0020_clustermember_order_nullable"),
     ]
 
     operations = [
@@ -30,6 +30,8 @@ class Migration(migrations.Migration):
                 ("dirty_time", models.DateTimeField(blank=True, null=True)),
                 ("processed_time", models.DateTimeField(blank=True, null=True)),
             ],
-            options={"verbose_name_plural": "dirty bits"},
+            options={
+                "verbose_name_plural": "dirty bits",
+            },
         ),
     ]
