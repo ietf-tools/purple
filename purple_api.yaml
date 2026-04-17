@@ -4055,6 +4055,9 @@ components:
           type: integer
           readOnly: true
           description: Number of pages
+        intended_std_level:
+          type: string
+          readOnly: true
     FinalApproval:
       type: object
       description: Serialize final approval information for an RfcToBe

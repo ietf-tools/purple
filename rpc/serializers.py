@@ -368,6 +368,7 @@ class DraftSerializer(serializers.ModelSerializer):
             "rev",
             "title",
             "pages",
+            "intended_std_level",
         ]
         read_only_fields = fields
 
