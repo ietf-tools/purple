@@ -134,7 +134,7 @@
                 (published as {{ rfcToBe.publicationStdLevel }})
               </span>
               <span v-if="rfcToBe.draft.intendedStdLevel && rfcToBe.draft.intendedStdLevel !== rfcToBe.stdLevel">
-                (intended as {{ rfcToBe.draft.intendedStdLevel }})
+                (draft intended as {{ rfcToBe.draft.intendedStdLevel }})
               </span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
