@@ -7,10 +7,11 @@ import requests
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.utils.encoding import smart_str
-from rpc.models import RpcRole
 from josepy.jws import JWS, Header
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend, import_from_settings
 from requests.auth import HTTPBasicAuth
+
+from rpc.models import RpcRole
 
 
 class ServiceTokenOIDCAuthenticationBackend(OIDCAuthenticationBackend):
