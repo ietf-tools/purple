@@ -222,27 +222,18 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (Boolean(node.isReceived) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef) && Boolean(node.isBlocked)) {
-    return {
-      fill: pink,
-      textColor: black,
-      strokeWidth: 2,
-      strokeStyle: 'solid',
-      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
-      tooltip: makeTooltip(node)
-    }
-  }
-  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && Boolean(node.hasNormRefBlocked) && Boolean(node.isBlocked)) {
-    return {
-      fill: pink,
-      textColor: black,
-      strokeWidth: 2,
-      strokeStyle: 'solid',
-      text: wordsToLines([...splitDraftNameIntoWords(node.id)]),
-      tooltip: makeTooltip(node)
-    }
-  }
-  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && !Boolean(node.hasNormRefInQueue) && Boolean(node.isBlocked) && node.rfcNumber === undefined) {
+  if (
+    node.isReceived && (
+      (node.isBlocked && (
+        (node.isNormRef && !node.hasNormRef) ||
+        (node.hasNormRef && (
+          (node.hasNormRefInQueue && node.hasNormRefBlocked) ||
+          (!node.hasNormRefInQueue && node.rfcNumber === undefined)
+        ))
+      )) ||
+      (!node.isBlocked && node.hasNormRef && node.hasNormRefInQueue && node.hasNormRefBlocked)
+    )
+  ) {
     return {
       fill: pink,
       textColor: black,
