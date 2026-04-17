@@ -7,6 +7,7 @@ import requests
 from django.core.exceptions import SuspiciousOperation
 from django.db import IntegrityError
 from django.utils.encoding import smart_str
+from rpc.models import RpcRole
 from josepy.jws import JWS, Header
 from mozilla_django_oidc.auth import OIDCAuthenticationBackend, import_from_settings
 from requests.auth import HTTPBasicAuth
@@ -126,6 +127,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
     """
 
     ADMIN_ACCESS_ROLE = ["leadmaintainer", "tools"]
+    MANAGER_ACCESS_ROLE = ["chair", "rpc"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -151,6 +153,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
             raise SuspiciousOperation(
                 f"User already exists for datatracker user {subject_id}"
             ) from err
+        self._sync_manager_role(new_user, claims)
         return new_user
 
     def update_user(self, user, claims):
@@ -173,7 +176,22 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
 
         if updated:
             user.save()
+        self._sync_manager_role(user, claims)
         return user
+
+    def _sync_manager_role(self, user, claims):
+        """Sync manager can_hold_role on RpcPerson based on OIDC claims"""
+        has_manager_access = self.MANAGER_ACCESS_ROLE in claims["roles"]
+        rpcperson = user.rpcperson()
+        if rpcperson is None:
+            return
+        manager_role = RpcRole.objects.filter(slug="manager").first()
+        if manager_role is None:
+            return
+        if has_manager_access:
+            rpcperson.can_hold_role.add(manager_role)
+        else:
+            rpcperson.can_hold_role.remove(manager_role)
 
     def filter_users_by_claims(self, claims):
         """Return list or queryset of users who satisfy claims
