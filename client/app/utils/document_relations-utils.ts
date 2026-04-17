@@ -223,15 +223,10 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     }
   }
   if (
-    node.isReceived && (
-      (node.isBlocked && (
-        (node.isNormRef && !node.hasNormRef) ||
-        (node.hasNormRef && (
-          (node.hasNormRefInQueue && node.hasNormRefBlocked) ||
-          (!node.hasNormRefInQueue && node.rfcNumber === undefined)
-        ))
-      )) ||
-      (!node.isBlocked && node.hasNormRef && node.hasNormRefInQueue && node.hasNormRefBlocked)
+    Boolean(node.isReceived) && (
+      (Boolean(node.isBlocked) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef)) ||
+      (Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && Boolean(node.hasNormRefBlocked)) ||
+      (Boolean(node.isBlocked) && Boolean(node.hasNormRef) && !Boolean(node.hasNormRefInQueue) && node.rfcNumber === undefined)
     )
   ) {
     return {
