@@ -17,11 +17,13 @@ import rpcapi_client
 from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.utils import timezone
+from requests import HTTPError
 from rest_framework import serializers
 from rpcapi_client import ApiException
 
 from datatracker.rpcapi import with_rpcapi
 from datatracker.utils.publication import publish_rfc_metadata, upload_rfc_contents
+from purple.crossref import submit as submit_to_crossref
 from rpc.models import PublicationAttempt, RfcToBe
 from rpcauth.models import User
 
@@ -388,6 +390,17 @@ def publish_rfctobe(
                 f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
                 f"was published, but uploading its files failed. Manual correction "
                 f"is required."
+            ) from err
+        else:
+            mark_rfcindex_as_dirty()
+
+        try:
+            submit_to_crossref(rfctobe.rpc_number)
+        except HTTPError as err:
+            raise PublicationError(
+                f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
+                f"was published, and files was uploaded. But crossref subsicrion "
+                f"failed. HTTP Error: {err}"
             ) from err
         else:
             mark_rfcindex_as_dirty()
