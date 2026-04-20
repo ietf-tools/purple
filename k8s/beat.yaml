@@ -52,5 +52,5 @@ spec:
             sizeLimit: "2Gi"
       dnsPolicy: ClusterFirst
       restartPolicy: Always
-      terminationGracePeriodSeconds: 30
+      terminationGracePeriodSeconds: 10
 
