@@ -399,7 +399,7 @@ def publish_rfctobe(
         except HTTPError as err:
             raise PublicationError(
                 f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
-                f"was published, and files was uploaded. But crossref subsicrion "
+                f"was published, and files was uploaded. But crossref submission "
                 f"failed. HTTP Error: {err}"
             ) from err
         else:
