@@ -8,7 +8,6 @@ from email.policy import EmailPolicy
 from itertools import pairwise
 
 import rpcapi_client
-import urllib3.exceptions
 from django.db import IntegrityError, transaction
 from django.db.models import Q, QuerySet
 from drf_spectacular.utils import extend_schema_field
