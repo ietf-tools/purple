@@ -1,13 +1,12 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 import rpcapi_client
-import urllib3.exceptions
 from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 from django.utils import timezone
 
 from datatracker.models import Document
-from datatracker.rpcapi import with_rpcapi
+from datatracker.rpcapi import datatracker_api, with_rpcapi
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
@@ -286,12 +285,9 @@ def _compute_deep_references(
             continue
 
         try:
-            refs_2g = rpcapi.get_draft_references(target_dt_id) or []
-        except (
-            urllib3.exceptions.MaxRetryError,
-            urllib3.exceptions.NewConnectionError,
-            rpcapi_client.exceptions.ApiException,
-        ):
+            with datatracker_api():
+                refs_2g = rpcapi.get_draft_references(target_dt_id) or []
+        except Exception:
             logger.warning(
                 "Datatracker unavailable fetching 2G refs for dt_id=%d; skipping",
                 target_dt_id,
@@ -325,12 +321,9 @@ def _compute_deep_references(
 
         for ref_2g_id in created_2g_ids:
             try:
-                refs_3g = rpcapi.get_draft_references(ref_2g_id) or []
-            except (
-                urllib3.exceptions.MaxRetryError,
-                urllib3.exceptions.NewConnectionError,
-                rpcapi_client.exceptions.ApiException,
-            ):
+                with datatracker_api():
+                    refs_3g = rpcapi.get_draft_references(ref_2g_id) or []
+            except Exception:
                 logger.warning(
                     "Datatracker unavailable fetching 3G refs for dt_id=%d; skipping",
                     ref_2g_id,
