@@ -1,5 +1,6 @@
 # Copyright The IETF Trust 2025, All Rights Reserved
 
+import logging
 from uuid import uuid4
 from xml.etree import ElementTree
 
@@ -8,6 +9,8 @@ from django.utils import timezone
 from requests import post
 
 from rpc.models import RfcToBe
+
+logger = logging.getLogger(__name__)
 
 DATETIME_FMT = "%Y%m%d%H%M%S"
 CROSSREF_VERSION = "4.4.2"
@@ -175,22 +178,35 @@ def _generate_crossref_xml(rfc_number):
 def submit(rfc_number):
     """Post DOI data to crossref"""
 
-    xml = _generate_crossref_xml(rfc_number)
-    data = {
-        "operation": "doMDUpload",
-        "login_id": settings.CROSSREF_USER,
-        "login_passwd": settings.CROSSREF_PASSWORD,
-    }
+    if all(
+        getattr(settings.CROSSREF_API, None),
+        getattr(settings.CROSSREF_USER, None),
+        getattr(settings.CROSSREF_PASSWORD, None),
+    ):
+        xml = _generate_crossref_xml(rfc_number)
+        data = {
+            "operation": "doMDUpload",
+            "login_id": settings.CROSSREF_USER,
+            "login_passwd": settings.CROSSREF_PASSWORD,
+        }
 
-    files = {
-        "fname": (
-            f"rfc{rfc_number}.xml",
-            ElementTree.tostring(xml, encoding="unicode"),
-            "application/xml",
+        files = {
+            "fname": (
+                f"rfc{rfc_number}.xml",
+                ElementTree.tostring(xml, encoding="unicode"),
+                "application/xml",
+            )
+        }
+
+        response = post(
+            settings.CROSSREF_API,
+            data=data,
+            files=files,
+            timeout=settings.CROSSREF_TIMEOUT,
         )
-    }
-
-    response = post(
-        settings.CROSSREF_API, data=data, files=files, timeout=settings.CROSSREF_TIMEOUT
-    )
-    response.raise_for_status()
+        response.raise_for_status()
+    else:
+        logger.warning(
+            f"RFC {rfc_number} is not submitted crossref "
+            f"because crossref settings are not set."
+        )
