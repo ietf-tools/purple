@@ -394,16 +394,24 @@ def publish_rfctobe(
         else:
             mark_rfcindex_as_dirty()
 
-        try:
-            submit_to_crossref(rfctobe.rpc_number)
-        except HTTPError as err:
-            raise PublicationError(
-                f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
-                f"was published, and files was uploaded. But crossref submission "
-                f"failed. HTTP Error: {err}"
-            ) from err
+        if all(
+            [settings.CROSSREF_API, settings.CROSSREF_USER, settings.CROSSREF_PASSWORD]
+        ):
+            try:
+                submit_to_crossref(rfctobe.rpc_number)
+            except HTTPError as err:
+                raise PublicationError(
+                    f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
+                    f"was published, and files was uploaded. But crossref submission "
+                    f"failed. HTTP Error: {err}"
+                ) from err
+            else:
+                mark_rfcindex_as_dirty()
         else:
-            mark_rfcindex_as_dirty()
+            logger.warning(
+                f"RFC {rfctobe.rfc_number} is not submitted crossref "
+                f"because crossref settings are not set."
+            )
 
 
 class PublicationError(Exception):
