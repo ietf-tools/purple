@@ -133,7 +133,7 @@
               <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
                 (published as {{ rfcToBe.publicationStdLevel }})
               </span>
-              <span v-if="rfcToBe.draft.intendedStdLevel && rfcToBe.draft.intendedStdLevel !== rfcToBe.stdLevel">
+              <span v-if="rfcToBe.draft?.intendedStdLevel && rfcToBe.draft.intendedStdLevel !== rfcToBe.stdLevel">
                 (draft intended as {{ rfcToBe.draft.intendedStdLevel }})
               </span>
             </PatchRfcToBeField>

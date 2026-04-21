@@ -742,6 +742,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "blocking_reasons",
             "stream_manager",
             "stream_manager_id",
+            "is_april_first_rfc",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 

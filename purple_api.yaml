@@ -4781,6 +4781,8 @@ components:
           nullable: true
           description: Set the stream manager by providing their datatracker person
             ID. The DatatrackerPerson record will be created if it does not exist.
+        is_april_first_rfc:
+          type: boolean
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -5268,6 +5270,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
+        is_april_first_rfc:
+          type: boolean
       required:
       - authors
       - boilerplate
@@ -5434,6 +5438,8 @@ components:
           nullable: true
           description: Set the stream manager by providing their datatracker person
             ID. The DatatrackerPerson record will be created if it does not exist.
+        is_april_first_rfc:
+          type: boolean
       required:
       - authors
       - boilerplate

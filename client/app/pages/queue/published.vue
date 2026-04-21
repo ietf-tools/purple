@@ -113,7 +113,7 @@ const columns = [
   columnHelper.accessor('name', {
     header: 'Document',
     cell: data => {
-      return h(Anchor, { href: `/docs/${data.row.original.name}`, 'class': ANCHOR_STYLE }, () => [
+      return h(Anchor, { href: `/docs/rfc${data.row.original.rfcNumber}`, 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
       ])
     },
