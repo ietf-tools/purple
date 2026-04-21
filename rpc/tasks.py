@@ -367,6 +367,5 @@ def crossref_submission_task(self, rfctobe_id):
         submit_to_crossref(rfc_number)
     except HTTPError as err:
         raise TemporaryPublicationError(
-            f"Crossref submission failed for RFC {rfc_number}. "
-            f"HTTP Error: {err}"
+            f"Crossref submission failed for RFC {rfc_number}. HTTP Error: {err}"
         ) from err
