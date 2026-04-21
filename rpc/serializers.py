@@ -1135,7 +1135,7 @@ class RpcPersonSerializer(serializers.ModelSerializer):
 
 
 class FinalApprovalCountsSerializer(serializers.Serializer):
-    received = serializers.IntegerField()
+    approved = serializers.IntegerField()
     total = serializers.IntegerField()
 
 
@@ -1267,7 +1267,9 @@ class ClusterMemberSerializer(serializers.Serializer):
         approved = FinalApproval.objects.filter(
             rfc_to_be=rfctobe, approved__isnull=False
         ).count()
-        return {"approved": approved, "total": total}
+        return FinalApprovalCountsSerializer(
+            {"approved": approved, "total": total}
+        ).data
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     @with_rpcapi

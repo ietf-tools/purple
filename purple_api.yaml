@@ -4095,12 +4095,12 @@ components:
     FinalApprovalCounts:
       type: object
       properties:
-        received:
+        approved:
           type: integer
         total:
           type: integer
       required:
-      - received
+      - approved
       - total
     FinalApprovalRequest:
       type: object
