@@ -22,8 +22,8 @@ from rpcapi_client import ApiException
 
 from datatracker.rpcapi import with_rpcapi
 from datatracker.utils.publication import publish_rfc_metadata, upload_rfc_contents
-from purple import crossref_submission_task
 from rpc.models import PublicationAttempt, RfcToBe
+from rpc.tasks import crossref_submission_task
 from rpcauth.models import User
 
 from ..rfcindex import mark_rfcindex_as_dirty
