@@ -6,9 +6,9 @@ import responses
 from django.conf import settings
 from django.test import TestCase, override_settings
 from django.utils import timezone
-from requests.exceptions import HTTPError
 
 from purple.crossref import (
+    CrossrefError,
     _generate_crossref_xml,
     _get_contributors,
     _get_name_parts,
@@ -183,5 +183,5 @@ class CrossrefTests(TestCase):
         )
         rfc.authors.set([rfc_author_1, rfc_author_2])
 
-        with self.assertRaises(HTTPError):
+        with self.assertRaises(CrossrefError):
             submit(RFC)
