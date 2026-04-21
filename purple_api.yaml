@@ -3599,6 +3599,10 @@ components:
         is_blocked:
           type: boolean
           readOnly: true
+        final_approval_counts:
+          allOf:
+          - $ref: '#/components/schemas/FinalApprovalCounts'
+          readOnly: true
       required:
       - name
       - order
@@ -4088,6 +4092,16 @@ components:
           nullable: true
         comment:
           type: string
+    FinalApprovalCounts:
+      type: object
+      properties:
+        received:
+          type: integer
+        total:
+          type: integer
+      required:
+      - received
+      - total
     FinalApprovalRequest:
       type: object
       description: Serialize final approval information for an RfcToBe
