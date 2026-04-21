@@ -126,6 +126,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
     """
 
     ADMIN_ACCESS_ROLE = ["leadmaintainer", "tools"]
+    MANAGER_ACCESS_ROLE = ["chair", "rpc"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -151,6 +152,7 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
             raise SuspiciousOperation(
                 f"User already exists for datatracker user {subject_id}"
             ) from err
+        self._sync_manager_role(new_user, claims)
         return new_user
 
     def update_user(self, user, claims):
@@ -173,7 +175,12 @@ class RpcOIDCAuthBackend(ServiceTokenOIDCAuthenticationBackend):
 
         if updated:
             user.save()
+        self._sync_manager_role(user, claims)
         return user
+
+    def _sync_manager_role(self, user, claims):
+        """Sync manager can_hold_role on RpcPerson based on OIDC claims"""
+        user.set_is_manager(self.MANAGER_ACCESS_ROLE in claims["roles"])
 
     def filter_users_by_claims(self, claims):
         """Return list or queryset of users who satisfy claims

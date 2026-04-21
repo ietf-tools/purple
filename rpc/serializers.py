@@ -1860,6 +1860,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     )
     references = serializers.SerializerMethodField()
     group_name = serializers.SerializerMethodField()
+    rev = serializers.CharField(source="draft.rev", read_only=True, allow_null=True)
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):
@@ -1903,4 +1904,5 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "group_name",
             "std_level",
             "references",
+            "rev",
         ]
