@@ -1,6 +1,6 @@
 import { Anchor, Icon, BaseBadge } from '#components'
 import { groupBy } from 'lodash-es'
-import type { Assignment, Cluster, RpcPerson } from '~/purple_client'
+import type { Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
 
 export const columnFormatterCluster = (clusterNumber?: Cluster["number"]) => {
   if (!clusterNumber) {
@@ -22,7 +22,7 @@ type ColumnFormatterAssignmentsProps = {
   rfcToBeId?: number,
   people: RpcPerson[],
   queueItemsIsPending: boolean,
-  blockingReasons?: { reason: { name: string } }[],
+  blockingReasons?: RfcToBeBlockingReason[],
   rowForDebug: unknown,
 }
 
@@ -67,7 +67,7 @@ export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, que
 
     const badgeChildren: VNode[] = [h(BaseBadge, { label: role, class: 'mr-1' })]
     if (role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
-      const reasons = blockingReasons.map(br => br.reason.name).join(', ')
+      const reasons = blockingReasons.map(br => br.reason?.name).filter(Boolean).join(', ')
       badgeChildren.push(h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400' }, reasons))
     }
 
