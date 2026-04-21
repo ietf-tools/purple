@@ -179,9 +179,9 @@ def submit(rfc_number):
     """Post DOI data to crossref"""
 
     if all(
-        getattr(settings.CROSSREF_API, None),
-        getattr(settings.CROSSREF_USER, None),
-        getattr(settings.CROSSREF_PASSWORD, None),
+        getattr(settings, "CROSSREF_API", None),
+        getattr(settings, "CROSSREF_USER", None),
+        getattr(settings, "CROSSREF_PASSWORD", None),
     ):
         xml = _generate_crossref_xml(rfc_number)
         data = {
