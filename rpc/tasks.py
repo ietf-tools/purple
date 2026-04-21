@@ -4,9 +4,11 @@ from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import F
 from django.utils import timezone
+from requests import HTTPError
 
 from datatracker.models import Document
 from datatracker.rpcapi import with_rpcapi
+from purple.crossref import submit as submit_to_crossref
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
@@ -347,3 +349,24 @@ def compute_deep_references_task(related_doc_id: int):
             related_doc_id,
             str(e),
         )
+
+
+class CrossrefSubmissionTask(RetryTask):
+    max_retries = 4 * 24 * 3  # every 15 minutes for 3 days
+
+
+@shared_task(
+    bind=True,
+    base=CrossrefSubmissionTask,
+    throws=(RfcToBe.DoesNotExist),
+    autoretry_for=(TemporaryPublicationError,),
+)
+def crossref_submission_task(self, rfctobe_id):
+    rfc_number = RfcToBe.objects.get(pk=rfctobe_id).rfc_number
+    try:
+        submit_to_crossref(rfc_number)
+    except HTTPError as err:
+        raise TemporaryPublicationError(
+            f"Crossref submission failed for RFC {rfc_number}. "
+            f"HTTP Error: {err}"
+        ) from err
