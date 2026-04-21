@@ -23,7 +23,6 @@ from rpcapi_client import ApiException
 from datatracker.rpcapi import with_rpcapi
 from datatracker.utils.publication import publish_rfc_metadata, upload_rfc_contents
 from rpc.models import PublicationAttempt, RfcToBe
-from rpc.tasks import crossref_submission_task
 from rpcauth.models import User
 
 from ..rfcindex import mark_rfcindex_as_dirty
@@ -392,9 +391,6 @@ def publish_rfctobe(
             ) from err
         else:
             mark_rfcindex_as_dirty()
-
-        # Submit to corssref
-        crossref_submission_task.delay(rfctobe_id=rfctobe.pk)
 
 
 class PublicationError(Exception):
