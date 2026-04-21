@@ -742,6 +742,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "blocking_reasons",
             "stream_manager",
             "stream_manager_id",
+            "is_april_first_rfc",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
@@ -1133,6 +1134,11 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         return cached_name or rpc_person.datatracker_person.plain_name
 
 
+class FinalApprovalCountsSerializer(serializers.Serializer):
+    approved = serializers.IntegerField()
+    total = serializers.IntegerField()
+
+
 class ClusterMemberListSerializer(serializers.ListSerializer):
     """ListSerializer for ClusterMembers to allow multiple updates
 
@@ -1207,6 +1213,7 @@ class ClusterMemberSerializer(serializers.Serializer):
     is_normref = serializers.SerializerMethodField()
     order = serializers.IntegerField()
     is_blocked = serializers.SerializerMethodField()
+    final_approval_counts = serializers.SerializerMethodField()
 
     class Meta:
         model = ClusterMember
@@ -1241,14 +1248,28 @@ class ClusterMemberSerializer(serializers.Serializer):
         return None
 
     def get_is_blocked(self, clustermember: ClusterMember) -> bool:
+        return _rfctobe_is_blocked(self._get_rfctobe(clustermember))
+
+    def _get_rfctobe(self, clustermember: ClusterMember):
         if hasattr(clustermember.doc, "rfctobe_annotated"):
             rfctobes = clustermember.doc.rfctobe_annotated
-            rfctobe = rfctobes[0] if rfctobes else None
-        else:
-            rfctobe = clustermember.doc.rfctobe_set.exclude(
-                disposition__slug="withdrawn"
-            ).first()
-        return _rfctobe_is_blocked(rfctobe)
+            return rfctobes[0] if rfctobes else None
+        return clustermember.doc.rfctobe_set.exclude(
+            disposition__slug="withdrawn"
+        ).first()
+
+    @extend_schema_field(FinalApprovalCountsSerializer())
+    def get_final_approval_counts(self, clustermember: ClusterMember) -> dict | None:
+        rfctobe = self._get_rfctobe(clustermember)
+        if rfctobe is None:
+            return None
+        total = FinalApproval.objects.filter(rfc_to_be=rfctobe).count()
+        approved = FinalApproval.objects.filter(
+            rfc_to_be=rfctobe, approved__isnull=False
+        ).count()
+        return FinalApprovalCountsSerializer(
+            {"approved": approved, "total": total}
+        ).data
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     @with_rpcapi
@@ -1256,13 +1277,7 @@ class ClusterMemberSerializer(serializers.Serializer):
         self, clustermember: ClusterMember, rpcapi: rpcapi_client.PurpleApi
     ) -> list[dict] | None:
         """Get related documents for this cluster member"""
-        if hasattr(clustermember.doc, "rfctobe_annotated"):
-            rfctobes = clustermember.doc.rfctobe_annotated
-            rfctobe = rfctobes[0] if rfctobes else None
-        else:
-            rfctobe = clustermember.doc.rfctobe_set.exclude(
-                disposition__slug="withdrawn"
-            ).first()
+        rfctobe = self._get_rfctobe(clustermember)
 
         if not rfctobe:
             # if the doc is not received, get references on-the-fly from dt

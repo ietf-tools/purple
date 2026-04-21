@@ -12,7 +12,7 @@
         <col>
         <col class="w-28">
         <col class="w-28">
-        <col class="w-60">
+        <col class="w-96">
       </colgroup>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -134,6 +134,7 @@ const columns = [
           rfcToBeId: data.row.original.id,
           people: props.people,
           queueItemsIsPending: pending.value,
+          blockingReasons: data.row.original.blockingReasons,
           rowForDebug: data.row.original
         })
       },

@@ -50,6 +50,7 @@
     "vue-tsc": "3.2.6"
   },
   "dependencies": {
+    "@iconify-json/streamline-ultimate-color": "1.2.2",
     "@tanstack/vue-table": "8.21.3",
     "@vueuse/core": "14.0.0",
     "canvas-confetti": "1.9.4",

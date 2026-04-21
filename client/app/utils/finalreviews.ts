@@ -1,6 +1,6 @@
 import { Anchor, Icon, BaseBadge } from '#components'
 import { groupBy } from 'lodash-es'
-import type { Assignment, Cluster, RpcPerson } from '~/purple_client'
+import type { Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
 
 export const columnFormatterCluster = (clusterNumber?: Cluster["number"]) => {
   if (!clusterNumber) {
@@ -22,10 +22,11 @@ type ColumnFormatterAssignmentsProps = {
   rfcToBeId?: number,
   people: RpcPerson[],
   queueItemsIsPending: boolean,
+  blockingReasons?: RfcToBeBlockingReason[],
   rowForDebug: unknown,
 }
 
-export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, queueItemsIsPending, rowForDebug }: ColumnFormatterAssignmentsProps) => {
+export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, queueItemsIsPending, blockingReasons, rowForDebug }: ColumnFormatterAssignmentsProps) => {
   if (!assignments) {
     return 'No assignments'
   }
@@ -64,9 +65,14 @@ export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, que
       return assignment.id !== firstAssignmentOfPersonToRole.id
     })
 
+    const badgeChildren: VNode[] = [h(BaseBadge, { label: role, class: 'mr-1' })]
+    if (role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
+      const reasons = blockingReasons.map(br => br.reason?.name).filter(Boolean).join(', ')
+      badgeChildren.push(h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400' }, reasons))
+    }
+
     listItems.push(h('li', { class: 'flex gap-3' }, [
-      h('span',
-        h(BaseBadge, { label: role, class: 'mr-1' })),
+      h('span', { class: 'flex items-baseline gap-1' }, badgeChildren),
       h('ul', { class: 'flex flex-col gap-2' }, [
         ...assignmentsOfRole.map(assignment => {
           const rpcPerson = people.find((p) => p.id === assignment.person)
