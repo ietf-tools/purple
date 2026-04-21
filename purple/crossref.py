@@ -6,7 +6,7 @@ from xml.etree import ElementTree
 
 from django.conf import settings
 from django.utils import timezone
-from requests import post
+from requests import HTTPError, post
 
 from rpc.models import RfcToBe
 
@@ -14,6 +14,10 @@ logger = logging.getLogger(__name__)
 
 DATETIME_FMT = "%Y%m%d%H%M%S"
 CROSSREF_VERSION = "4.4.2"
+
+
+class CrossrefError(Exception):
+    pass
 
 
 def _get_name_parts(name):
@@ -206,9 +210,15 @@ def submit(rfc_number):
             files=files,
             timeout=settings.CROSSREF_TIMEOUT,
         )
-        response.raise_for_status()
+
+        try:
+            response.raise_for_status()
+        except HTTPError as err:
+            raise CrossrefError(
+                f"Crossref submission failed for RFC {rfc_number}. HTTP Error: {err}"
+            ) from err
     else:
         logger.warning(
-            f"RFC {rfc_number} is not submitted crossref "
-            f"because crossref settings are not set."
+            f"RFC {rfc_number} was not submitted to Crossref because Crossref "
+            f"settings are not configured."
         )
