@@ -1695,12 +1695,7 @@ class DocumentCommentViewSet(
         q = Q(rfc_to_be=rfctobe)
         if rfctobe.draft is not None:
             q |= Q(document__name=rfctobe.draft.name)
-        return (
-            super()
-            .get_queryset()
-            .filter(q)
-            .order_by("-time")
-        )
+        return super().get_queryset().filter(q).order_by("-time")
 
     @with_rpcapi
     def perform_create(self, serializer, rpcapi):
@@ -2000,11 +1995,7 @@ class ActionHolderViewSet(
         q = Q(target_rfctobe=rfctobe)
         if rfctobe.draft is not None:
             q |= Q(target_document__name=rfctobe.draft.name)
-        return (
-            super()
-            .get_queryset()
-            .filter(q)
-        )
+        return super().get_queryset().filter(q)
 
     def perform_create(self, serializer):
         serializer.save(target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"]))
