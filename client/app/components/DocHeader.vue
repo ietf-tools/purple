@@ -16,12 +16,12 @@
             <h1>
               <span class="mt-1 text-xl font-semibold leading-6">
                 <template v-if="props.rfcToBe?.disposition === 'published'">
-                  <span v-if="props.rfcToBe?.rfcNumber">RFC {{ props.rfcToBe?.rfcNumber }}<template v-if="isAprilFirst"> <span title="April 1st RFC"> 🤡</span></template></span>
+                  <span v-if="props.rfcToBe?.rfcNumber">RFC {{ props.rfcToBe?.rfcNumber }}<template v-if="isAprilFirst"> <span title="April 1st RFC"><Icon name="streamline-ultimate-color:circus-clown-1" mode="svg" class="inline w-5 h-5 align-middle -mt-0.5 ml-1" /></span></template></span>
                   <span v-if="props.rfcToBe?.draft?.name" class="ml-2 text-gray-500">({{ props.rfcToBe?.draft?.name }})</span>
                 </template>
                 <template v-else>
                   <span v-if="props.rfcToBe?.draft?.name">{{ props.rfcToBe?.draft?.name }}</span>
-                  <span v-if="props.rfcToBe?.rfcNumber" class="ml-2 text-gray-500">(RFC {{ props.rfcToBe?.rfcNumber }}<template v-if="isAprilFirst"> <span title="April 1st RFC"> 🤡</span></template>)</span>
+                  <span v-if="props.rfcToBe?.rfcNumber" class="ml-2 text-gray-500">(RFC {{ props.rfcToBe?.rfcNumber }}<template v-if="isAprilFirst"> <span title="April 1st RFC"><Icon name="streamline-ultimate-color:circus-clown-1" mode="svg" class="inline w-5 h-5 align-middle -mt-0.5 ml-1" /></span></template>)</span>
                 </template>
               </span>
             </h1>
