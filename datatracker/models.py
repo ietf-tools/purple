@@ -5,7 +5,7 @@ from django.core.cache import cache
 from django.db import models
 from simple_history.models import HistoricalRecords
 
-from .rpcapi import with_rpcapi
+from .rpcapi import DataTrackerUnavailable, with_rpcapi
 from .utils import build_datatracker_url
 
 
@@ -87,9 +87,9 @@ class DatatrackerPerson(models.Model):
                 urllib3.exceptions.MaxRetryError,
                 urllib3.exceptions.NewConnectionError,
                 rpcapi_client.exceptions.ApiException,
-            ):
-                # DT unavailable — return None without caching
-                return None
+            ) as exc:
+                # DT unavailable — raise so callers can surface the error
+                raise DataTrackerUnavailable() from exc
             else:
                 cached_value = person.json()
             cache.set(cache_key, cached_value)
@@ -171,9 +171,8 @@ class Document(models.Model):
                 urllib3.exceptions.MaxRetryError,
                 urllib3.exceptions.NewConnectionError,
                 rpcapi_client.exceptions.ApiException,
-            ):
-                # DT unavailable — return None without caching so next request retries
-                return None
+            ) as exc:
+                raise DataTrackerUnavailable() from exc
             else:
                 cached_value = document.json()
             cache.set(cache_key, cached_value)

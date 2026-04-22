@@ -2,6 +2,7 @@
 import rpcapi_client
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.core.cache import cache
 from django.db.models import F
 from django.utils import timezone
 
@@ -23,10 +24,39 @@ from .models import (
     MailMessage,
     MetadataValidationResults,
     RfcToBe,
+    RpcPerson,
     RpcRelatedDocument,
 )
 from .rfcindex import mark_rfcindex_as_processed, refresh_rfc_index, rfcindex_is_dirty
 from .utils import get_or_create_draft_by_name
+
+RPC_PERSON_NAME_MAP_CACHE_KEY = "rpc_person_name_map"
+RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
+
+
+@with_rpcapi
+def _refresh_rpc_person_name_map_cache(*, rpcapi: rpcapi_client.PurpleApi):
+    """Fetch RPC person names from Datatracker and populate the cache."""
+    person_ids = list(
+        RpcPerson.objects.values_list("datatracker_person__datatracker_id", flat=True)
+    )
+    with datatracker_api():
+        name_map = {
+            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
+        }
+    name_map |= {
+        missing_id: "Unknown" for missing_id in person_ids if missing_id not in name_map
+    }
+    cache.set(RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL)
+
+
+@shared_task
+def refresh_rpc_person_name_map_cache_task():
+    """Refresh the RPC person name map in the cache.
+
+    Intended to be run periodically by Celery Beat to keep the cache up to date.
+    """
+    _refresh_rpc_person_name_map_cache()
 
 
 @shared_task

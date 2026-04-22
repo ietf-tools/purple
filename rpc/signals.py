@@ -16,6 +16,7 @@ from .models import (
     RpcPerson,
     RpcRelatedDocument,
 )
+from .tasks import RPC_PERSON_NAME_MAP_CACHE_KEY
 
 
 def defer_apply(rfc: RfcToBe | None):
@@ -62,9 +63,7 @@ def final_approval_changed(sender, instance: FinalApproval, **kwargs):
 @receiver([post_save, post_delete], sender=RpcPerson)
 def rpc_person_changed(sender, instance: RpcPerson, **kwargs):
     """Invalidate the person name map cache when RpcPerson records change."""
-    from .api import RpcPersonViewSet
-
-    cache.delete(RpcPersonViewSet._NAME_MAP_CACHE_KEY)
+    cache.delete(RPC_PERSON_NAME_MAP_CACHE_KEY)
 
 
 @receiver(m2m_changed, sender=RfcToBe.labels.through)

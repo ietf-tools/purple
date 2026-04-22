@@ -133,6 +133,8 @@ from .serializers import (
     check_user_has_role,
 )
 from .tasks import (
+    RPC_PERSON_NAME_MAP_CACHE_KEY,
+    RPC_PERSON_NAME_MAP_CACHE_TTL,
     compute_deep_references_task,
     publish_rfctobe_task,
     send_mail_task,
@@ -320,8 +322,6 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
 
-    _NAME_MAP_CACHE_KEY = "rpc_person_name_map"
-
     @with_rpcapi
     def get_serializer_context(self, rpcapi: rpcapi_client.PurpleApi):
         """Add context to the serializer"""
@@ -331,7 +331,7 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
             )
         )
 
-        name_map: dict[int, str] | None = cache.get(self._NAME_MAP_CACHE_KEY)
+        name_map: dict[int, str] | None = cache.get(RPC_PERSON_NAME_MAP_CACHE_KEY)
         if name_map is None:
             # Cache miss — fetch from Datatracker
             with datatracker_api():
@@ -344,7 +344,9 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
                 for missing_id in person_ids
                 if missing_id not in name_map
             }
-            cache.set(self._NAME_MAP_CACHE_KEY, name_map)
+            cache.set(
+                RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL
+            )
 
         return super().get_serializer_context() | {"name_map": name_map}
 
