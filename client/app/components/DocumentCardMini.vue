@@ -17,11 +17,12 @@
     <span class="font-mono font-normal">
       {{ props.document.name }}
     </span>
+    <BaseBadge v-if="props.document.isBlocked" label="blocked" color="red" class="ml-1" />
   </Anchor>
 </template>
 
 <script setup lang="ts">
-import { Anchor } from '#components'
+import { Anchor, BaseBadge } from '#components'
 import type { ClusterMember } from '~/purple_client';
 
 type Props = {
