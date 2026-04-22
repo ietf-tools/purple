@@ -1860,19 +1860,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetadataValidationResults'
           description: ''
+  /api/rpc/documents/{draft_name}/metadata_validation_results/delete/:
     delete:
-      operationId: documents_metadata_validation_results_destroy
+      operationId: metadata_validation_results_delete
+      description: Delete metadata validation results for a given RfcToBe.
       parameters:
       - in: path
         name: draft_name
         schema:
           type: string
-        required: true
-      - in: path
-        name: head_sha
-        schema:
-          type: string
-          description: Head SHA of the commit that was validated
+        description: Draft name
         required: true
       tags:
       - purple
@@ -1881,6 +1878,18 @@ paths:
       responses:
         '204':
           description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteMetadataBadRequestResponse'
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeleteMetadataNotFoundResponse'
+          description: ''
   /api/rpc/documents/{draft_name}/metadata_validation_results/sync/:
     post:
       operationId: metadata_validation_results_sync
@@ -4008,6 +4017,20 @@ components:
           type: integer
       required:
       - person_id
+    DeleteMetadataBadRequestResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
+    DeleteMetadataNotFoundResponse:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     DocumentComment:
       type: object
       description: Serialize a comment on an RfcToBe

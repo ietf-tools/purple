@@ -2301,6 +2301,7 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             ),
         },
     )
+    @action(detail=False, methods=["delete"])
     def delete(self, request, *args, **kwargs):
         """
         Delete metadata validation results for a given RfcToBe.

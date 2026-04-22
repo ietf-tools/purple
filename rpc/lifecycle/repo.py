@@ -104,7 +104,14 @@ class GithubRepository(Repository):
             if auth_token is not None:
                 auth = GithubAuthToken(auth_token)
         self.gh = Github(auth=auth)
-        self.repo = self.gh.get_repo(repo_id)
+        try:
+            self.repo = self.gh.get_repo(repo_id)
+        except GithubException as err:
+            if err.status == 404:
+                raise RepositoryError(
+                    f"Repository '{repo_id}' was not found or is not accessible."
+                ) from err
+            raise
         self._ref: str | None = None
 
     def get_manifest(self):
