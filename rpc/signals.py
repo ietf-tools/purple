@@ -1,6 +1,5 @@
 from contextlib import contextmanager
 
-from django.core.cache import cache
 from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
@@ -13,11 +12,8 @@ from .models import (
     FinalApproval,
     RfcToBe,
     RfcToBeLabel,
-    RpcPerson,
     RpcRelatedDocument,
 )
-from .tasks import RPC_PERSON_NAME_MAP_CACHE_KEY
-
 
 def defer_apply(rfc: RfcToBe | None):
     if not rfc:
@@ -59,11 +55,6 @@ def cluster_member_changed(sender, instance: ClusterMember, **kwargs):
 def final_approval_changed(sender, instance: FinalApproval, **kwargs):
     defer_apply(getattr(instance, "rfc_to_be", None))
 
-
-@receiver([post_save, post_delete], sender=RpcPerson)
-def rpc_person_changed(sender, instance: RpcPerson, **kwargs):
-    """Invalidate the person name map cache when RpcPerson records change."""
-    cache.delete(RPC_PERSON_NAME_MAP_CACHE_KEY)
 
 
 @receiver(m2m_changed, sender=RfcToBe.labels.through)

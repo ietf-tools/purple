@@ -7,7 +7,7 @@ from django.db.models import F
 from django.utils import timezone
 
 from datatracker.models import Document
-from datatracker.rpcapi import datatracker_api, with_rpcapi
+from datatracker.rpcapi import DataTrackerUnavailable, datatracker_api, with_rpcapi
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
@@ -24,7 +24,6 @@ from .models import (
     MailMessage,
     MetadataValidationResults,
     RfcToBe,
-    RpcPerson,
     RpcRelatedDocument,
 )
 from .rfcindex import mark_rfcindex_as_processed, refresh_rfc_index, rfcindex_is_dirty
@@ -33,30 +32,6 @@ from .utils import get_or_create_draft_by_name
 RPC_PERSON_NAME_MAP_CACHE_KEY = "rpc_person_name_map"
 RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
 
-
-@with_rpcapi
-def _refresh_rpc_person_name_map_cache(*, rpcapi: rpcapi_client.PurpleApi):
-    """Fetch RPC person names from Datatracker and populate the cache."""
-    person_ids = list(
-        RpcPerson.objects.values_list("datatracker_person__datatracker_id", flat=True)
-    )
-    with datatracker_api():
-        name_map = {
-            person.id: person.plain_name for person in rpcapi.get_persons(person_ids)
-        }
-    name_map |= {
-        missing_id: "Unknown" for missing_id in person_ids if missing_id not in name_map
-    }
-    cache.set(RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL)
-
-
-@shared_task
-def refresh_rpc_person_name_map_cache_task():
-    """Refresh the RPC person name map in the cache.
-
-    Intended to be run periodically by Celery Beat to keep the cache up to date.
-    """
-    _refresh_rpc_person_name_map_cache()
 
 
 @shared_task
@@ -314,15 +289,8 @@ def _compute_deep_references(
             )
             continue
 
-        try:
-            with datatracker_api():
-                refs_2g = rpcapi.get_draft_references(target_dt_id) or []
-        except Exception:
-            logger.warning(
-                "Datatracker unavailable fetching 2G refs for dt_id=%d; skipping",
-                target_dt_id,
-            )
-            continue
+        with datatracker_api():
+            refs_2g = rpcapi.get_draft_references(target_dt_id) or []
         created_2g_ids: list[int] = []
 
         for ref_2g in refs_2g:
@@ -350,15 +318,8 @@ def _compute_deep_references(
             created_2g_ids.append(ref_2g.id)
 
         for ref_2g_id in created_2g_ids:
-            try:
-                with datatracker_api():
-                    refs_3g = rpcapi.get_draft_references(ref_2g_id) or []
-            except Exception:
-                logger.warning(
-                    "Datatracker unavailable fetching 3G refs for dt_id=%d; skipping",
-                    ref_2g_id,
-                )
-                continue
+            with datatracker_api():
+                refs_3g = rpcapi.get_draft_references(ref_2g_id) or []
             for ref_3g in refs_3g:
                 if ref_3g.id in received_dt_ids:
                     continue
@@ -382,14 +343,7 @@ def _compute_deep_references(
                 received_dt_ids.add(ref_3g.id)
 
 
-@shared_task
+@shared_task(base=RetryTask, autoretry_for=(DataTrackerUnavailable,))
 def compute_deep_references_task(related_doc_id: int):
     """Celery task to asynchronously compute 2G and 3G not-received references."""
-    try:
-        _compute_deep_references(related_doc_id)
-    except Exception as e:
-        logger.error(
-            "Error computing deep references for RpcRelatedDocument %d: %s",
-            related_doc_id,
-            str(e),
-        )
+    _compute_deep_references(related_doc_id)

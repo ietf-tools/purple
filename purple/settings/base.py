@@ -195,12 +195,7 @@ CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 CELERY_BEAT_SYNC_EVERY = 1  # update DB after every event
 # Window after after a missed deadline before abandoning a cron task
 CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds
-CELERY_BEAT_SCHEDULE = {
-    "refresh-rpc-person-name-map-cache": {
-        "task": "rpc.tasks.refresh_rpc_person_name_map_cache_task",
-        "schedule": 10 * 60,  # every 10 minutes
-    },
-}
+CELERY_BEAT_SCHEDULE = {}
 
 TRIGGER_QUEUE_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_QUEUE_PRECOMPUTE_URL")
 
