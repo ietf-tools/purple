@@ -15,6 +15,7 @@ from .models import (
     RpcRelatedDocument,
 )
 
+
 def defer_apply(rfc: RfcToBe | None):
     if not rfc:
         return
@@ -54,7 +55,6 @@ def cluster_member_changed(sender, instance: ClusterMember, **kwargs):
 @receiver([post_save, post_delete], sender=FinalApproval)
 def final_approval_changed(sender, instance: FinalApproval, **kwargs):
     defer_apply(getattr(instance, "rfc_to_be", None))
-
 
 
 @receiver(m2m_changed, sender=RfcToBe.labels.through)

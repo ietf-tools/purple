@@ -2,7 +2,6 @@
 import rpcapi_client
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.core.cache import cache
 from django.db.models import F
 from django.utils import timezone
 
@@ -33,7 +32,6 @@ from .utils import get_or_create_draft_by_name
 
 RPC_PERSON_NAME_MAP_CACHE_KEY = "rpc_person_name_map"
 RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
-
 
 
 @shared_task
