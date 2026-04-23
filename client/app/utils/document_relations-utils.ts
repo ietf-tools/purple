@@ -322,23 +322,19 @@ export type DataParam = {
 
 export const legendData: DataParam = {
   links: [
-    { source: "draft-one", target: 'draft-two', rel: 'refqueue' },
-    { source: "draft-one", target: 'draft-three-a', rel: 'refqueue' },
-    { source: "draft-one", target: 'draft-three-b', rel: 'refqueue' },
-    { source: "draft-one", target: 'draft-three-c', rel: 'refqueue' },
-    { source: "draft-one", target: "draft-four", rel: 'refqueue' },
-    { source: "draft-one", target: 'draft-five-a', rel: 'refqueue' },
-    { source: "draft-one", target: 'draft-five-b', rel: 'refqueue' },
+    { source: "draft-has-normrefs-inqueue", target: 'draft-no-normref', rel: 'refqueue' },
+    { source: "draft-has-normrefs-inqueue", target: 'draft-blocked-normref', rel: 'refqueue' },
+    { source: "draft-blocked-normref", target: 'draft-not-received-2g', rel: 'not-received-2g' },
+    { source: "draft-blocked-normref", target: 'draft-not-received-3g', rel: 'not-received-3g' },
+    { source: "draft-has-normrefs-inqueue", target: "draft-not-received-normref", rel: 'not-received' },
   ],
   nodes: [
-    { id: 'draft-one', isReceived: true, isNormRef: true, hasNormRef: false, isBlocked: false, disposition: 'in_progress' },
-    { id: 'draft-two', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: false, isBlocked: false, disposition: "in_progress" },
-    { id: 'draft-three-a', isReceived: true, isBlocked: true, isNormRef: true, hasNormRef: false },
-    { id: 'draft-three-b', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: true },
-    { id: 'draft-three-c', isReceived: true, isBlocked: true, hasNormRef: true, hasNormRefInQueue: false, rfcNumber: undefined },
-    { id: 'draft-four', isReceived: false, isNormRef: true },
-    { id: 'draft-five-a', isReceived: true, hasNormRefInQueue: false, hasNormRefBlocked: false, disposition: 'published' },
-    { id: 'draft-five-b', isReceived: true, hasNormRefInQueue: false, isBlocked: false, disposition: 'published' },
+    { id: 'draft-no-normref', isReceived: true, isNormRef: true, hasNormRef: false, isBlocked: false, disposition: 'in_progress' }, // Normative reference, in progress
+    { id: 'draft-has-normrefs-inqueue', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: false, isBlocked: false, disposition: "in_progress" }, // Has normative ref in queue
+    { id: 'draft-blocked-normref', isReceived: true, isBlocked: true, isNormRef: true, hasNormRef: false }, // Blocked normative reference
+    { id: 'draft-not-received-normref', isReceived: false, isNormRef: true }, // Not received, normative reference
+    { id: 'draft-not-received-2g', isReceived: false, isNormRef: true }, // Not received, 2g
+    { id: 'draft-not-received-3g', isReceived: false, isNormRef: true }, // Not received, 3g
   ],
 };
 
