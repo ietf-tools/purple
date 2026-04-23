@@ -29,6 +29,10 @@
           <li class="whitespace-nowrap inline-block" v-for="(document, index) in cluster.documents" :key="index">
             <DocumentCardMini :document="document" />
           </li>
+          <li class="whitespace-nowrap inline-flex items-center gap-1" v-for="name in notReceivedRefs(cluster)" :key="`notreceived-${name}`">
+            <span class="font-mono font-normal p-1">{{ name }}</span>
+            <BaseBadge label="not received" color="yellow" />
+          </li>
         </ul>
       </div>
     </div>
@@ -37,6 +41,7 @@
 
 <script setup lang="ts">
 import RefreshButton from '~/components/RefreshButton.vue'
+import type { Cluster } from '~/purple_client'
 
 useHead({
   title: 'Manage Clusters'
@@ -63,6 +68,19 @@ const lastClusterNumber = computed(() => {
 const showInactive = ref(false)
 
 const clusterSearch = computed(() => clusters.value ? clusters.value.map(cluster => JSON.stringify(cluster)) : [])
+
+function notReceivedRefs(cluster: Cluster): string[] {
+  const memberNames = new Set((cluster.documents ?? []).map(d => d.name))
+  const seen = new Set<string>()
+  for (const doc of cluster.documents ?? []) {
+    for (const ref of doc.references ?? []) {
+      if (ref.relationship === 'not-received' && ref.targetDraftName && !memberNames.has(ref.targetDraftName)) {
+        seen.add(ref.targetDraftName)
+      }
+    }
+  }
+  return [...seen]
+}
 
 const filteredClusters = computed(() => clusters.value ? clusters.value
   .filter(
