@@ -127,7 +127,9 @@ const columns = [
     cell: data => {
       return h(Anchor, { href: `/team/${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
         data.getValue(),
-        h('span', { class: 'font-normal text-gray-600 dark:text-gray-200 ml-1' }, ` (#${data.row.original.id}${isActiveFilter.value === false ? `, ${data.row.original.isActive ? 'active' : 'inactive' }` : ''})`)
+        isActiveFilter.value === false && !data.row.original.isActive
+          ? h(BaseBadge, { label: 'inactive', color: 'red', class: 'ml-2' })
+          : null,
       ])
     },
     sortingFn: 'alphanumeric',
@@ -143,10 +145,9 @@ const columns = [
       }
 
       return h('ul', { class: ''}, roles.map(
-        role => h('li', { class: ''}, [
-          h(BaseBadge, { label: role.slug, class: 'mr-1' }),
-          JSON.stringify(role)
-        ])
+        role => h('li', { class: ''},
+          h(BaseBadge, { label: role.name, class: 'mr-1' }),
+        )
       ))
     },
     enableSorting: false,
