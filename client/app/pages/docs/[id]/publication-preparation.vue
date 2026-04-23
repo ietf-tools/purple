@@ -320,7 +320,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     step.value = {
       type: 'error',
       errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
-      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) ? { headSha: precomputedResult.headSha ?? NO_HEAD_SHA_SENTINEL } : undefined,
+      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) ? { headSha: precomputedResult.headSha! } : undefined,
       showResyncButton: true
     }
     return
@@ -429,7 +429,7 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha ?? NO_HEAD_SHA_SENTINEL } : undefined,
+      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha } : undefined,
       showResyncButton: true
     }
     if (!resultsCreate) {
@@ -454,22 +454,19 @@ const fetchAndVerifyMetadata = async () => {
   }
 }
 
-const NO_HEAD_SHA_SENTINEL = 'no_head_sha'
-
-const deleteMetadataValidationAndRetry = async (headSha: string | null | undefined) => {
-  const resolvedHeadSha = headSha ?? NO_HEAD_SHA_SENTINEL
+const deleteMetadataValidationAndRetry = async (headSha: string) => {
   step.value = { type: 'loading' }
   try {
     await api.metadataValidationResultsDelete({
       draftName: draftName.value,
-      headSha: resolvedHeadSha,
+      headSha,
     })
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't delete validation results" })
     step.value = {
       type: 'error',
       errorText: "Couldn't delete validation results",
-      showDeleteAndRetryButton: { headSha: resolvedHeadSha },
+      showDeleteAndRetryButton: { headSha },
       showResyncButton: true
     }
     return

@@ -1786,8 +1786,12 @@ class MetadataComparisonTableSerializer(serializers.Serializer):
         return super().to_representation(obj)
 
 
+NO_HEAD_SHA_SENTINEL = "no_head_sha"
+
+
 class MetadataValidationResultsSerializer(serializers.ModelSerializer):
     repository = serializers.CharField(source="rfc_to_be.repository", read_only=True)
+    head_sha = serializers.SerializerMethodField()
     can_autofix = serializers.SerializerMethodField()
     is_match = serializers.SerializerMethodField()
     metadata_compare = serializers.SerializerMethodField()
@@ -1809,6 +1813,10 @@ class MetadataValidationResultsSerializer(serializers.ModelSerializer):
             "is_error",
             "received_at",
         ]
+
+    @extend_schema_field(serializers.CharField())
+    def get_head_sha(self, obj):
+        return obj.head_sha if obj.head_sha is not None else NO_HEAD_SHA_SENTINEL
 
     def _get_comparator(self, obj):
         """Get or create a cached MetadataComparator for this object"""

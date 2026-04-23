@@ -85,6 +85,7 @@ from .models import (
 from .pagination import DefaultLimitOffsetPagination
 from .rfcindex import mark_rfcindex_as_dirty
 from .serializers import (
+    NO_HEAD_SHA_SENTINEL,
     ActionHolderSerializer,
     AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
@@ -2219,9 +2220,6 @@ class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
 
     queryset = SubseriesTypeName.objects.all()
     serializer_class = SubseriesTypeNameSerializer
-
-
-NO_HEAD_SHA_SENTINEL = "no_head_sha"
 
 
 @extend_schema_with_draft_name()

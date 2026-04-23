@@ -4388,9 +4388,7 @@ components:
           readOnly: true
         head_sha:
           type: string
-          nullable: true
-          description: Head SHA of the commit that was validated
-          maxLength: 40
+          readOnly: true
         can_autofix:
           type: boolean
           readOnly: true
