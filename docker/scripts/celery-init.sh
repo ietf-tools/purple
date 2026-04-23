@@ -12,6 +12,9 @@ pip3 --disable-pip-version-check --no-cache-dir install --user --no-warn-script-
 # specify celery location
 CELERY=/home/dev/.local/bin/celery
 
+# Bare call to trap seems to help TERM signals exit during sleep
+trap
+
 # Wait for DB container
 echo "Waiting for DB container to come online..."
 /usr/local/bin/wait-for db:5432 -- echo "PostgreSQL ready"

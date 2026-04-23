@@ -3599,6 +3599,10 @@ components:
         is_blocked:
           type: boolean
           readOnly: true
+        final_approval_counts:
+          allOf:
+          - $ref: '#/components/schemas/FinalApprovalCounts'
+          readOnly: true
       required:
       - name
       - order
@@ -4088,6 +4092,16 @@ components:
           nullable: true
         comment:
           type: string
+    FinalApprovalCounts:
+      type: object
+      properties:
+        approved:
+          type: integer
+        total:
+          type: integer
+      required:
+      - approved
+      - total
     FinalApprovalRequest:
       type: object
       description: Serialize final approval information for an RfcToBe
@@ -4781,6 +4795,8 @@ components:
           nullable: true
           description: Set the stream manager by providing their datatracker person
             ID. The DatatrackerPerson record will be created if it does not exist.
+        is_april_first_rfc:
+          type: boolean
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -5268,6 +5284,8 @@ components:
           allOf:
           - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
+        is_april_first_rfc:
+          type: boolean
       required:
       - authors
       - boilerplate
@@ -5434,6 +5452,8 @@ components:
           nullable: true
           description: Set the stream manager by providing their datatracker person
             ID. The DatatrackerPerson record will be created if it does not exist.
+        is_april_first_rfc:
+          type: boolean
       required:
       - authors
       - boilerplate

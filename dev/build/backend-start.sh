@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+# Bare call to trap seems to help TERM signals exit during sleep
+trap
+
 if ! ./manage.py migrate --check ; then
     echo "Unapplied migrations found, waiting to start..."
     sleep 5

@@ -8,6 +8,8 @@ from django.utils import timezone
 
 from datatracker.models import Document
 from datatracker.rpcapi import DataTrackerUnavailable, datatracker_api, with_rpcapi
+from purple.crossref import CrossrefError
+from purple.crossref import submit as submit_to_crossref
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
@@ -187,6 +189,9 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
     publish_rfctobe(rfctobe, expected_head=expected_head)
 
+    # Submit to crossref
+    crossref_submission_task.delay(rfctobe_id=rfctobe_id)
+
 
 @shared_task
 def process_rfctobe_changes_for_queue_task():
@@ -346,4 +351,29 @@ def _compute_deep_references(
 @shared_task(base=RetryTask, autoretry_for=(DataTrackerUnavailable,))
 def compute_deep_references_task(related_doc_id: int):
     """Celery task to asynchronously compute 2G and 3G not-received references."""
-    _compute_deep_references(related_doc_id)
+    try:
+        _compute_deep_references(related_doc_id)
+    except Exception as e:
+        logger.error(
+            "Error computing deep references for RpcRelatedDocument %d: %s",
+            related_doc_id,
+            str(e),
+        )
+
+
+class CrossrefSubmissionTask(RetryTask):
+    max_retries = 4 * 24 * 3  # every 15 minutes for 3 days
+
+
+@shared_task(
+    bind=True,
+    base=CrossrefSubmissionTask,
+    throws=(
+        RfcToBe.DoesNotExist,
+        CrossrefError,
+    ),
+    autoretry_for=(CrossrefError,),
+)
+def crossref_submission_task(self, rfctobe_id):
+    rfc_number = RfcToBe.objects.get(pk=rfctobe_id).rfc_number
+    submit_to_crossref(rfc_number)

@@ -10,6 +10,9 @@
 CELERY=/usr/local/bin/celery
 MANAGE_PY=./manage.py
 
+# Bare call to trap seems to help TERM signals exit during sleep
+trap
+
 migrations_applied_for () {
     local DATABASE=${1:-default}
     $MANAGE_PY migrate --check --database "$DATABASE"
