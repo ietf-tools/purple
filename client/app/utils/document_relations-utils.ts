@@ -322,22 +322,23 @@ export type DataParam = {
 
 export const legendData: DataParam = {
   links: [
-    { source: "draft-one-with-rfc", target: "draft-is-not-received", rel: "not-received" },
-    { source: "draft-one-with-rfc", target: "draft-refnorm-target", rel: 'not-received-2g' },
-    { source: "draft-one-with-rfc", target: "draft-refqueue-target", rel: 'not-received-3g' },
-    { source: "draft-one-with-rfc", target: "draft-relinfo-target", rel: 'refqueue' },
-    { source: "draft-one-with-rfc", target: "draft-withdrawnref-target", rel: 'not-received' },
-    { source: "draft-one-with-rfc", target: 'draft-is-received', rel: 'not-received' },
+    { source: "draft-one", target: 'draft-two', rel: 'refqueue' },
+    { source: "draft-one", target: 'draft-three-a', rel: 'refqueue' },
+    { source: "draft-one", target: 'draft-three-b', rel: 'refqueue' },
+    { source: "draft-one", target: 'draft-three-c', rel: 'refqueue' },
+    { source: "draft-one", target: "draft-four", rel: 'refqueue' },
+    { source: "draft-one", target: 'draft-five-a', rel: 'refqueue' },
+    { source: "draft-one", target: 'draft-five-b', rel: 'refqueue' },
   ],
   nodes: [
-    { id: 'draft-one-with-rfc', rfcToBe: { rfcNumber: 100, disposition: '', labels: [], submittedFormat: '', title: '', boilerplate: '', stdLevel: '', stream: '', publicationStdLevel: '', publicationStream: '', authors: [], group: '' }, disposition: undefined },
-    { id: 'draft-one-without-rfc', disposition: undefined },
-    { id: 'draft-is-not-received', isReceived: false, disposition: undefined },
-    { id: 'draft-is-received', isReceived: true, disposition: undefined },
-    { id: 'draft-refnorm-target', isReceived: true, disposition: undefined },
-    { id: 'draft-refqueue-target', isReceived: true, disposition: undefined },
-    { id: 'draft-relinfo-target', isReceived: true, disposition: undefined },
-    { id: 'draft-withdrawnref-target', isReceived: true, disposition: undefined },
+    { id: 'draft-one', isReceived: true, isNormRef: true, hasNormRef: false, isBlocked: false, disposition: 'in_progress' },
+    { id: 'draft-two', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: false, isBlocked: false, disposition: "in_progress" },
+    { id: 'draft-three-a', isReceived: true, isBlocked: true, isNormRef: true, hasNormRef: false },
+    { id: 'draft-three-b', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: true },
+    { id: 'draft-three-c', isReceived: true, isBlocked: true, hasNormRef: true, hasNormRefInQueue: false, rfcNumber: undefined },
+    { id: 'draft-four', isReceived: false, isNormRef: true },
+    { id: 'draft-five-a', isReceived: true, hasNormRefInQueue: false, hasNormRefBlocked: false, disposition: 'published' },
+    { id: 'draft-five-b', isReceived: true, hasNormRefInQueue: false, isBlocked: false, disposition: 'published' },
   ],
 };
 
