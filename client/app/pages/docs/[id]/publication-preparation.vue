@@ -11,7 +11,7 @@
         </div>
         <div class="text-center">
           <BaseButton btn-type="default"
-            @click="deleteMetadataValidationAndRetry(step.headSha)"
+            @click="deleteMetadataValidationAndRetry(step.headSha!)"
             class="ml-2">
             Try again
           </BaseButton>
@@ -70,7 +70,7 @@
           </p>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="default"
-              @click="() => step.type === 'diff' ? deleteMetadataValidationAndRetry(step.headSha) : undefined">
+              @click="() => step.type === 'diff' ? deleteMetadataValidationAndRetry(step.headSha!) : undefined">
               Try again
             </BaseButton>
           </div>
@@ -140,7 +140,7 @@
             </div>
             <div>
               <BaseButton btn-type="secondary"
-                @click="deleteMetadataValidationAndRetry(step.headSha)">
+                @click="deleteMetadataValidationAndRetry(step.headSha!)">
                 Redo metadata validation
               </BaseButton>
             </div>
@@ -429,7 +429,7 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha } : undefined,
+      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha! } : undefined,
       showResyncButton: true
     }
     if (!resultsCreate) {
