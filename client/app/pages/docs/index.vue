@@ -40,7 +40,6 @@ const columns: Column[] = [
     link: row => `/docs/${ row.name }`
   },
   {
-    field: 'labels',
     key: 'labels',
     label: 'Labels',
     labels: row => {
