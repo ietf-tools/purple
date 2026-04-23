@@ -2221,12 +2221,23 @@ class SubseriesTypeNameViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = SubseriesTypeNameSerializer
 
 
+NO_HEAD_SHA_SENTINEL = "no_head_sha"
+
+
 @extend_schema_with_draft_name()
 class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
     queryset = MetadataValidationResults.objects.all()
     serializer_class = MetadataValidationResultsSerializer
     http_method_names = ["get", "post", "delete"]
     lookup_field = "head_sha"
+
+    def get_object(self):
+        if self.kwargs.get(self.lookup_field) == NO_HEAD_SHA_SENTINEL:
+            queryset = self.filter_queryset(self.get_queryset())
+            obj = get_object_or_404(queryset, head_sha__isnull=True)
+            self.check_object_permissions(self.request, obj)
+            return obj
+        return super().get_object()
 
     def get_queryset(self):
         return (
@@ -2288,6 +2299,12 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
                 location=OpenApiParameter.PATH,
                 description="Draft name",
             ),
+            OpenApiParameter(
+                name="head_sha",
+                type=OpenApiTypes.STR,
+                location=OpenApiParameter.PATH,
+                description="Head SHA of the git commit the validation was run against",
+            ),
         ],
         responses={
             204: None,
@@ -2301,16 +2318,13 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
             ),
         },
     )
-    @action(detail=False, methods=["delete"])
-    def delete(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         """
-        Delete metadata validation results for a given RfcToBe.
+        Delete metadata validation results for a given RfcToBe, identified by head_sha.
+        Pass the sentinel value "no_head_sha" to delete a record whose head_sha is NULL
+        (i.e. the validation task failed before a git commit was fetched).
         """
-        draft_name = kwargs.get("draft_name")
-        rfc_to_be = resolve_rfctobe(draft_name)
-        metadata_result = get_object_or_404(
-            MetadataValidationResults, rfc_to_be=rfc_to_be
-        )
+        metadata_result = self.get_object()
 
         if metadata_result.status == MetadataValidationResults.Status.PENDING:
             return Response(

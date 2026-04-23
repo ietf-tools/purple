@@ -1860,16 +1860,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/MetadataValidationResults'
           description: ''
-  /api/rpc/documents/{draft_name}/metadata_validation_results/delete/:
     delete:
       operationId: metadata_validation_results_delete
-      description: Delete metadata validation results for a given RfcToBe.
+      description: |-
+        Delete metadata validation results for a given RfcToBe, identified by head_sha.
+        Pass the sentinel value "no_head_sha" to delete a record whose head_sha is NULL
+        (i.e. the validation task failed before a git commit was fetched).
       parameters:
       - in: path
         name: draft_name
         schema:
           type: string
-        description: Draft name
+        required: true
+      - in: path
+        name: head_sha
+        schema:
+          type: string
+        description: Head SHA of the git commit the validation was run against
         required: true
       tags:
       - purple

@@ -11,7 +11,7 @@
         </div>
         <div class="text-center">
           <BaseButton btn-type="default"
-            @click="deleteMetadataValidationAndRetry()"
+            @click="deleteMetadataValidationAndRetry(step.headSha)"
             class="ml-2">
             Try again
           </BaseButton>
@@ -45,7 +45,7 @@
         </div>
         <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
           <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
-            @click="deleteMetadataValidationAndRetry()">
+            @click="deleteMetadataValidationAndRetry(step.showDeleteAndRetryButton.headSha)">
             Retry metadata validation
           </BaseButton>
           <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
@@ -70,7 +70,7 @@
           </p>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
             <BaseButton btn-type="default"
-              @click="() => step.type === 'diff' ? deleteMetadataValidationAndRetry() : undefined">
+              @click="() => step.type === 'diff' ? deleteMetadataValidationAndRetry(step.headSha) : undefined">
               Try again
             </BaseButton>
           </div>
@@ -140,7 +140,7 @@
             </div>
             <div>
               <BaseButton btn-type="secondary"
-                @click="deleteMetadataValidationAndRetry">
+                @click="deleteMetadataValidationAndRetry(step.headSha)">
                 Redo metadata validation
               </BaseButton>
             </div>
@@ -248,12 +248,12 @@ type Step =
   | { type: 'getMetadataValidationResults' }
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
-  | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: boolean }
+  | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: { headSha: string } }
   | {
     type: 'diff'
     error?: string
   } & MetadataValidationResults
-  | { type: 'cancelled' }
+  | { type: 'cancelled', headSha?: string }
   | { type: 'databaseUpdated', error?: string }
   | { type: 'rfcPosted', error?: string }
   | { type: 'alreadyPublished' }
@@ -320,7 +320,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     step.value = {
       type: 'error',
       errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
-      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) && !!precomputedResult?.headSha,
+      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) ? { headSha: precomputedResult.headSha ?? NO_HEAD_SHA_SENTINEL } : undefined,
       showResyncButton: true
     }
     return
@@ -429,7 +429,7 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: !!resultsCreate?.headSha,
+      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha ?? NO_HEAD_SHA_SENTINEL } : undefined,
       showResyncButton: true
     }
     if (!resultsCreate) {
@@ -454,18 +454,22 @@ const fetchAndVerifyMetadata = async () => {
   }
 }
 
-const deleteMetadataValidationAndRetry = async () => {
+const NO_HEAD_SHA_SENTINEL = 'no_head_sha'
+
+const deleteMetadataValidationAndRetry = async (headSha: string | null | undefined) => {
+  const resolvedHeadSha = headSha ?? NO_HEAD_SHA_SENTINEL
   step.value = { type: 'loading' }
   try {
-    await api.documentsMetadataValidationResultsDestroy({
-      draftName: draftName.value
+    await api.metadataValidationResultsDelete({
+      draftName: draftName.value,
+      headSha: resolvedHeadSha,
     })
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't delete validation results" })
     step.value = {
       type: 'error',
       errorText: "Couldn't delete validation results",
-      showDeleteAndRetryButton: true,
+      showDeleteAndRetryButton: { headSha: resolvedHeadSha },
       showResyncButton: true
     }
     return
@@ -542,7 +546,8 @@ const metadataValidationResultsSyncHandler = async () => {
 }
 
 const cancel = () => {
-  step.value = { type: 'cancelled' }
+  const headSha = step.value.type === 'diff' ? step.value.headSha ?? undefined : undefined
+  step.value = { type: 'cancelled', headSha }
 }
 
 const syncCurrentMetadata = async () => {
