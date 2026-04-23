@@ -331,16 +331,24 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
             )
         )
 
-        name_map: dict[int, str] | None = cache.get(RPC_PERSON_NAME_MAP_CACHE_KEY)
-        if name_map is None or any(pid not in name_map for pid in person_ids):
+        name_map: dict[int, str] = cache.get(RPC_PERSON_NAME_MAP_CACHE_KEY) or {}
+        missing_ids = [pid for pid in person_ids if pid not in name_map]
+        if missing_ids:
             with datatracker_api():
-                name_map = {
+                fetched = {
                     person.id: person.plain_name
-                    for person in rpcapi.get_persons(person_ids)
+                    for person in rpcapi.get_persons(missing_ids)
                 }
+            name_map = {**name_map, **fetched}
             cache.set(
                 RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL
             )
+            # Add "Unknown" for IDs not returned by the API
+            name_map = name_map | {
+                missing_id: "Unknown"
+                for missing_id in missing_ids
+                if missing_id not in name_map
+            }
 
         return super().get_serializer_context() | {"name_map": name_map}
 
