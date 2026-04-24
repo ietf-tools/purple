@@ -60,7 +60,10 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
     """
     if rfctobe.disposition_id != "in_progress":
         raise serializers.ValidationError(
-            {"disposition": f"disposition is '{rfctobe.disposition}', not 'In Progress'"},
+            {
+                "disposition": f"disposition is '{rfctobe.disposition}', "
+                "not 'In Progress'"
+            },
             code="rfctobe-bad-disposition",
         )
     if rfctobe.assignment_set.active().exclude(role_id="publisher").exists():
