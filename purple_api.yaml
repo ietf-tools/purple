@@ -3630,6 +3630,7 @@ components:
         final_approval_counts:
           allOf:
           - $ref: '#/components/schemas/FinalApprovalCounts'
+          nullable: true
           readOnly: true
       required:
       - name
