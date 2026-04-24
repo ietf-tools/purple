@@ -1258,12 +1258,14 @@ class ClusterMemberSerializer(serializers.Serializer):
             disposition__slug="withdrawn"
         ).first()
 
-    @extend_schema_field(FinalApprovalCountsSerializer())
+    @extend_schema_field(FinalApprovalCountsSerializer(allow_null=True))
     def get_final_approval_counts(self, clustermember: ClusterMember) -> dict | None:
         rfctobe = self._get_rfctobe(clustermember)
         if rfctobe is None:
             return None
         total = FinalApproval.objects.filter(rfc_to_be=rfctobe).count()
+        if total == 0:
+            return None
         approved = FinalApproval.objects.filter(
             rfc_to_be=rfctobe, approved__isnull=False
         ).count()
