@@ -505,8 +505,9 @@ const publishRfc = async () => {
     let errorText = `${e}`
     if (typeof e === 'object' && e !== null && 'response' in e) {
       try {
-        const { detail } = await (e as { response: Response }).response.json()
-        if (detail) errorText = String(detail)
+        const body = await (e as { response: Response }).response.json()
+        const msg = body.non_field_errors ?? body.detail ?? Object.values(body)[0]
+        if (msg) errorText = String(msg)
       } catch { /* keep default */ }
     }
     snackbar.add({ type: 'error', title: 'Cannot publish', text: errorText })

@@ -60,36 +60,36 @@ def validate_ready_to_publish(rfctobe: RfcToBe):
     """
     if rfctobe.disposition_id != "in_progress":
         raise serializers.ValidationError(
-            {"detail": f"disposition is '{rfctobe.disposition}, not 'In Progress'"},
+            {"disposition": f"disposition is '{rfctobe.disposition}', not 'In Progress'"},
             code="rfctobe-bad-disposition",
         )
     if rfctobe.assignment_set.active().exclude(role_id="publisher").exists():
         raise serializers.ValidationError(
-            {"detail": "document has open assignments other than publisher"},
+            {"non_field_errors": "document has open assignments other than publisher"},
             code="rfctobe-open-assignments",
         )
     if not rfctobe.assignment_set.active().filter(role_id="publisher").exists():
         raise serializers.ValidationError(
-            {"detail": "document is not assigned a publisher"},
+            {"non_field_errors": "document is not assigned a publisher"},
             code="rfctobe-no-publisher",
         )
     if rfctobe.finalapproval_set.count() == 0:
         raise serializers.ValidationError(
-            {"detail": "no final approvals have been completed"},
+            {"non_field_errors": "no final approvals have been completed"},
             code="rfctobe-no-final-approvals",
         )
     if rfctobe.finalapproval_set.active().exists():
         raise serializers.ValidationError(
-            {"detail": "final approvals are pending"},
+            {"non_field_errors": "final approvals are pending"},
             code="rfctobe-pending-final-approvals",
         )
     if rfctobe.rfc_number is None:
         raise serializers.ValidationError(
-            {"detail": "no RFC number is assigned"},
+            {"rfc_number": "no RFC number is assigned"},
             code="rfctobe-no-rfc-number",
         )
     if rfctobe.repository.strip() == "":
-        raise serializers.ValidationError({"detail": "no repository is configured"})
+        raise serializers.ValidationError({"repository": "no repository is configured"})
     # todo IANA check, what else?
 
 
@@ -273,7 +273,9 @@ def publish_rfctobe(
     try:
         validate_ready_to_publish(rfctobe)
     except serializers.ValidationError as err:
-        raise PublicationError(f"Cannot publish because {err}") from err
+        errors = err.detail.get("non_field_errors", [])
+        msg = str(errors[0]) if errors else str(err.detail)
+        raise PublicationError(f"Cannot publish because {msg}") from err
 
     repo = GithubRepository(rfctobe.repository)
     # Check that head commit matches expected_head. This check defines the instant
