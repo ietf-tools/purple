@@ -502,10 +502,15 @@ const publishRfc = async () => {
     }
     setTimeout(publicationStatusRefresh, PUBLICATION_STATUS_POLL_INTERVAL_MS)
   } catch (e: unknown) {
-    step.value = {
-      type: 'rfcPosted',
-      error: `Problem publishing: ${e}`
+    let errorText = `${e}`
+    if (typeof e === 'object' && e !== null && 'response' in e) {
+      try {
+        const { detail } = await (e as { response: Response }).response.json()
+        if (detail) errorText = String(detail)
+      } catch { /* keep default */ }
     }
+    snackbar.add({ type: 'error', title: 'Cannot publish', text: errorText })
+    step.value = { type: 'rfcPosted', error: errorText }
   }
 }
 
