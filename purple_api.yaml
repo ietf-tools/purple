@@ -794,6 +794,18 @@ paths:
       responses:
         '200':
           description: No response body
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishValidationError'
+          description: Document is not ready to publish
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublishPermissionDenied'
+          description: User is not permitted to publish this RFC
   /api/rpc/documents/{draft__name}/sync_metadata/:
     post:
       operationId: documents_sync_metadata
@@ -5019,6 +5031,13 @@ components:
       - std_level
       - stream
       - title
+    PublishPermissionDenied:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+      - detail
     PublishRfcRequest:
       type: object
       properties:
@@ -5040,6 +5059,17 @@ components:
       required:
       - detail
       - status
+    PublishValidationError:
+      type: object
+      properties:
+        non_field_errors:
+          type: string
+        disposition:
+          type: string
+        rfc_number:
+          type: string
+        repository:
+          type: string
     QueueItem:
       type: object
       description: RfcToBe serializer suitable for displaying a queue of many

@@ -276,8 +276,8 @@ def publish_rfctobe(
     try:
         validate_ready_to_publish(rfctobe)
     except serializers.ValidationError as err:
-        errors = err.detail.get("non_field_errors", [])
-        msg = str(errors[0]) if errors else str(err.detail)
+        first = next(iter(err.detail.values()), None)
+        msg = str(first) if first is not None else str(err.detail)
         raise PublicationError(f"Cannot publish because {msg}") from err
 
     repo = GithubRepository(rfctobe.repository)

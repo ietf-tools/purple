@@ -230,7 +230,7 @@ import { TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTri
 import { useAsyncData } from '#app'
 import { DateTime } from 'luxon'
 import BaseButton from '~/components/BaseButton.vue'
-import type { MetadataValidationResults } from '~/purple_client'
+import { ResponseError, type MetadataValidationResults } from '~/purple_client'
 import { type DocTabId } from '~/utils/doc'
 
 const route = useRoute()
@@ -503,10 +503,10 @@ const publishRfc = async () => {
     setTimeout(publicationStatusRefresh, PUBLICATION_STATUS_POLL_INTERVAL_MS)
   } catch (e: unknown) {
     let errorText = `${e}`
-    if (typeof e === 'object' && e !== null && 'response' in e) {
+    if (e instanceof ResponseError) {
       try {
-        const body = await (e as { response: Response }).response.json()
-        const msg = body.non_field_errors ?? body.detail ?? Object.values(body)[0]
+        const body = await e.response.json()
+        const msg = body.detail ?? Object.values(body)[0]
         if (msg) errorText = String(msg)
       } catch { /* keep default */ }
     }

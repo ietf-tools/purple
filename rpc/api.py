@@ -21,6 +21,7 @@ from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import (
     OpenApiExample,
     OpenApiParameter,
+    OpenApiResponse,
     extend_schema,
     extend_schema_view,
     inline_serializer,
@@ -1094,7 +1095,28 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     @extend_schema(
         operation_id="documents_publish",
         request=PublishRfcSerializer,
-        responses=None,
+        responses={
+            200: None,
+            400: OpenApiResponse(
+                description="Document is not ready to publish",
+                response=inline_serializer(
+                    "PublishValidationError",
+                    fields={
+                        "non_field_errors": serializers.CharField(required=False),
+                        "disposition": serializers.CharField(required=False),
+                        "rfc_number": serializers.CharField(required=False),
+                        "repository": serializers.CharField(required=False),
+                    },
+                ),
+            ),
+            403: OpenApiResponse(
+                description="User is not permitted to publish this RFC",
+                response=inline_serializer(
+                    "PublishPermissionDenied",
+                    fields={"detail": serializers.CharField()},
+                ),
+            ),
+        },
     )
     @action(detail=True, methods=["post"])
     def publish(self, request, draft__name=None):
