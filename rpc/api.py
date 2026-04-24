@@ -91,6 +91,7 @@ from .serializers import (
     AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
+    DocumentAssignmentSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
@@ -996,6 +997,22 @@ class ClusterViewSet(
             return self.get_paginated_response(serializer.data)
         serializer = ClusterMemberHistorySerializer(qs, many=True)
         return Response(serializer.data)
+
+
+@extend_schema_with_draft_name()
+class DocumentAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Assignments for a specific document, including per-assignment history"""
+
+    serializer_class = DocumentAssignmentSerializer
+
+    def get_queryset(self):
+        return (
+            Assignment.objects.filter(
+                rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"])
+            )
+            .select_related("person__datatracker_person", "role")
+            .order_by("-id")
+        )
 
 
 class AssignmentViewSet(viewsets.ModelViewSet):

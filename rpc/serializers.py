@@ -133,7 +133,7 @@ class HistoryListSerializer(serializers.ListSerializer):
         elif hasattr(self.child, method_name):
             method = getattr(self.child, method_name)
         else:
-            return self._default_model_change_description
+            return self._default_model_change_description(delta)
         return method(delta)
 
     def to_representation(self, data):
@@ -275,6 +275,26 @@ class AssignmentSerializer(serializers.ModelSerializer):
                 data["state"] = self.instance.state
 
         return super().to_internal_value(data)
+
+
+class AssignmentHistorySerializer(HistorySerializer):
+    """History serializer for Assignment"""
+
+
+class DocumentAssignmentSerializer(serializers.ModelSerializer):
+    """Assignment serializer for document-scoped endpoint, with person name and history"""
+
+    person_name = serializers.CharField(
+        source="person.datatracker_person.plain_name",
+        read_only=True,
+        allow_null=True,
+    )
+    role = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    history = AssignmentHistorySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Assignment
+        fields = ["id", "person_name", "role", "state", "comment", "history"]
 
 
 class LabelSerializer(serializers.ModelSerializer):
