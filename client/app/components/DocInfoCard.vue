@@ -5,6 +5,20 @@
     </template>
     <div v-if="rfcToBe">
       <DescriptionList>
+        <DescriptionListItem term="Disposition" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="disposition" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="flex items-center gap-2">
+                <BaseBadge :label="rfcToBe.disposition" :color="dispositionColor(rfcToBe.disposition)" />
+                <span v-if="rfcToBe.disposition === 'published' && rfcToBe.publishedAt" class="text-sm text-gray-600">
+                  {{ DateTime.fromJSDate(rfcToBe.publishedAt).toLocaleString(DateTime.DATE_FULL) }}
+                </span>
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="title" :is-read-only="props.isReadOnly"
@@ -153,15 +167,6 @@
                 (none)
               </EditSubseries>
             </template>
-          </DescriptionListDetails>
-        </DescriptionListItem>
-        <DescriptionListItem term="Disposition" :spacing="spacing">
-          <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="disposition" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              {{ rfcToBe.disposition }}
-            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="RFC Number" :spacing="spacing">
@@ -405,7 +410,7 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { type RfcToBe, ResponseError } from '~/purple_client'
+import { type RfcToBe, type ColorEnum, ResponseError } from '~/purple_client'
 import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
@@ -648,6 +653,15 @@ const loadStandardLevels = async (): Promise<SelectOption[]> => {
         label: standardLevel.name
       }
     })
+}
+
+const dispositionColor = (disposition: string | undefined): ColorEnum => {
+  switch (disposition) {
+    case 'withdrawn': return 'red'
+    case 'in_progress': return 'yellow'
+    case 'published': return 'green'
+    default: return 'gray'
+  }
 }
 
 const dispositionOptions = computed((): SelectOption[] => {
