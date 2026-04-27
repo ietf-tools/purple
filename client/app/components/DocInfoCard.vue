@@ -657,10 +657,11 @@ const loadStandardLevels = async (): Promise<SelectOption[]> => {
 
 const dispositionColor = (disposition: string | undefined): ColorEnum => {
   switch (disposition) {
-    case 'withdrawn': return 'red'
-    case 'in_progress': return 'yellow'
-    case 'published': return 'green'
-    default: return 'gray'
+    case 'created':     return 'blue'
+    case 'in_progress': return 'amber'
+    case 'published':   return 'green'
+    case 'withdrawn':   return 'red'
+    default:            return 'gray'
   }
 }
 
