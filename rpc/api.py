@@ -183,16 +183,17 @@ def apply_submission_cluster_membership(
     current_doc: Document,
     reference_docs: list[Document],
     received_reference_ids: set[int],
+    has_not_received_refs: bool = False,
 ) -> Cluster | None:
     """Place imported document into an existing reference cluster or create a new one.
 
     If any received reference is already clustered, the current document joins that
     cluster. Otherwise, create a new cluster and add the current document and all
-    reference documents that are not already clustered. If there are no references,
-    do not create a cluster.
+    reference documents that are not already clustered. If there are no references
+    received or not, do not create a cluster.
     """
 
-    if not reference_docs and not received_reference_ids:
+    if not reference_docs and not received_reference_ids and not has_not_received_refs:
         return None
 
     existing_member = (
@@ -516,12 +517,14 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             # if "not-received" references exist, change them to "refqueue"
             # if "not-received-2/3g" references exist, delete them
             recompute_source_ids: set[int] = set()
+            upgraded_source_docs: list[Document] = []
+            upgraded_source_datatracker_ids: set[int] = set()
             existing_references = RpcRelatedDocument.objects.filter(
                 target_document__name=rfctobe.draft.name,
                 relationship__slug__in=(
                     DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
                 ),
-            )
+            ).select_related("source__draft")
             for existing_reference in existing_references:
                 if (
                     existing_reference.relationship.slug
@@ -531,6 +534,10 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         slug=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
                     )
                     existing_reference.save()
+                    source_draft = existing_reference.source.draft
+                    upgraded_source_docs.append(source_draft)
+                    if source_draft.datatracker_id is not None:
+                        upgraded_source_datatracker_ids.add(source_draft.datatracker_id)
                 else:
                     if (
                         existing_reference.relationship.slug
@@ -539,6 +546,13 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         # schedule recomputation to clean up deleted 2G references.
                         recompute_source_ids.add(existing_reference.source_id)
                     existing_reference.delete()
+
+            if upgraded_source_docs:
+                apply_submission_cluster_membership(
+                    current_doc=rfctobe.draft,
+                    reference_docs=upgraded_source_docs,
+                    received_reference_ids=upgraded_source_datatracker_ids,
+                )
 
             for source_id in recompute_source_ids:
                 ref_1g = RpcRelatedDocument.objects.filter(
@@ -566,6 +580,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             )
             reference_docs: list[Document] = []
             received_reference_ids: set[int] = set()
+            has_not_received_refs = False
             for reference in references:
                 # Create a RelatedDoc for each normative reference
                 if reference.id not in existing_rfc_to_be:
@@ -591,6 +606,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)
+                    has_not_received_refs = True
                 else:
                     disposition = existing_rfc_to_be[reference.id]
                     if disposition in ("created", "in_progress"):
@@ -623,6 +639,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                 current_doc=rfctobe.draft,
                 reference_docs=reference_docs,
                 received_reference_ids=received_reference_ids,
+                has_not_received_refs=has_not_received_refs,
             )
 
             transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
