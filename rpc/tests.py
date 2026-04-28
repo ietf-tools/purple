@@ -4,6 +4,8 @@ import json
 from datetime import date, timedelta
 from unittest.mock import MagicMock, patch
 
+import rpcapi_client
+
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
@@ -28,22 +30,6 @@ from .factories import (
 from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts
-_FULL_DRAFT_BASE = {
-    "rev": "00",
-    "stream": "ietf",
-    "title": "",
-    "group": "",
-    "abstract": "",
-    "pages": 10,
-    "shepherd": None,
-    "ad": None,
-    "consensus": None,
-    "source_format": None,
-    "intended_std_level": None,
-    "authors": [],
-    "wg_chairs": [],
-}
-
 
 class GetRfcToBeForDraftNameTests(TestCase):
     def test_returns_match(self):
@@ -298,7 +284,7 @@ class ImportSubmissionClusteringTests(TestCase):
         mock = MagicMock()
 
         def _draft(doc_id, name):
-            d = MagicMock()
+            d = MagicMock(spec=rpcapi_client.FullDraft)
             d.name = name
             d.rev = "00"
             d.title = f"Test: {name}"
@@ -307,9 +293,6 @@ class ImportSubmissionClusteringTests(TestCase):
             d.pages = 10
             d.intended_std_level = ""
             d.consensus = None
-            d.json.return_value = json.dumps(
-                _FULL_DRAFT_BASE | {"id": doc_id, "name": name}
-            )
             return d
 
         draft_map = {
