@@ -7,7 +7,7 @@
       <DescriptionList>
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="disposition" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="disposition" :is-read-only="true"
               :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <div class="flex items-center gap-2">
