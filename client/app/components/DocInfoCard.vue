@@ -99,7 +99,7 @@
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="stream" :is-read-only="props.isReadOnly"
+            <PatchRfcToBeField fieldName="stream" :is-read-only="false"
               :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.stream }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <span class="flex-1">

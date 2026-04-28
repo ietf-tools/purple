@@ -1195,14 +1195,10 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 )
                 for author in rfctobe.authors.all()
             ],
-            stream=rfctobe.publication_stream.slug
-            if rfctobe.publication_stream
-            else None,
+            stream=rfctobe.stream.slug,
             abstract=rfctobe.abstract,
             pages=rfctobe.pages,
-            std_level=rfctobe.publication_std_level.slug
-            if rfctobe.publication_std_level
-            else None,
+            std_level=rfctobe.std_level.slug,
             subseries=[
                 f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
             ],
