@@ -189,7 +189,7 @@ def apply_submission_cluster_membership(
 
     If any received reference is already clustered, the current document joins that
     cluster. Otherwise, create a new cluster and add the current document and all
-    reference documents that are not already clustered. If there are no references
+    reference documents that are not already clustered. If there are no references,
     received or not, do not create a cluster.
     """
 
