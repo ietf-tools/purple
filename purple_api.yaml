@@ -733,6 +733,47 @@ paths:
                 items:
                   $ref: '#/components/schemas/RfcToBeHistory'
           description: ''
+  /api/rpc/documents/{draft__name}/manual_block/:
+    post:
+      operationId: documents_manual_block
+      description: Set a manual hold on a draft, preventing automatic unblocking.
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualBlockRequestRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+    delete:
+      operationId: documents_manual_unblock
+      description: Clear the manual hold; draft may still remain blocked by other
+        reasons.
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/rpc/documents/{draft__name}/pub_status/:
     get:
       operationId: documents_pub_status_retrieve
@@ -4350,6 +4391,13 @@ components:
       required:
       - label
       - template
+    ManualBlockRequestRequest:
+      type: object
+      properties:
+        comment:
+          type: string
+          minLength: 1
+          default: ''
     MetadataTableRow:
       type: object
       properties:
@@ -5369,6 +5417,9 @@ components:
         resolved:
           type: string
           format: date-time
+          readOnly: true
+        comment:
+          type: string
           readOnly: true
     RfcToBeHistory:
       type: object

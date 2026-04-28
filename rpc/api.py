@@ -48,6 +48,7 @@ from datatracker.rpcapi import datatracker_api, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
 from .dt_v1_api_utils import datatracker_group_list_email
+from .lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     begin_publication_attempt,
@@ -71,6 +72,7 @@ from .models import (
     MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
+    BlockingReason,
     RfcToBeBlockingReason,
     RpcDocumentComment,
     RpcPerson,
@@ -1180,6 +1182,43 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     def pub_status_delete(self, request, draft__name=None):
         rfctobe = self.get_object()
         clear_failed_publication_attempt(rfctobe)
+        return Response(status=204)
+
+    @extend_schema(
+        operation_id="documents_manual_block",
+        request=inline_serializer(
+            "ManualBlockRequest",
+            fields={"comment": serializers.CharField(required=False, default="")},
+        ),
+        responses={204: None},
+    )
+    @action(detail=True, methods=["post"], url_path="manual_block")
+    def manual_block(self, request, draft__name=None):
+        """Set a manual hold on a draft, preventing automatic unblocking."""
+        rfctobe = self.get_object()
+        comment = request.data.get("comment", "")
+        reason = BlockingReason.objects.get(slug=BlockingReason.MANUAL_HOLD)
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfctobe, reason=reason, comment=comment
+        )
+        apply_blocked_assignment_for_rfc(rfctobe)
+        return Response(status=204)
+
+    @extend_schema(
+        operation_id="documents_manual_unblock",
+        request=None,
+        responses={204: None},
+    )
+    @action(detail=True, methods=["delete"], url_path="manual_block")
+    def manual_unblock(self, request, draft__name=None):
+        """Clear the manual hold; draft may still remain blocked by other reasons."""
+        rfctobe = self.get_object()
+        RfcToBeBlockingReason.objects.filter(
+            rfc_to_be=rfctobe,
+            reason__slug=BlockingReason.MANUAL_HOLD,
+            resolved__isnull=True,
+        ).update(resolved=timezone.now())
+        apply_blocked_assignment_for_rfc(rfctobe)
         return Response(status=204)
 
     @extend_schema(

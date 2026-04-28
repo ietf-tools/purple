@@ -33,6 +33,15 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     """Compute whether blocked and collect blocking reasons."""
     reasons: set[str] = set()
 
+    # Gate 0: Manual hold blocks all progress regardless of assignment state,
+    # and is only cleared by explicit action
+    if RfcToBeBlockingReason.objects.filter(
+        rfc_to_be=rfc,
+        reason__slug=BlockingReason.MANUAL_HOLD,
+        resolved__isnull=True,
+    ).exists():
+        reasons.add(BlockingReason.MANUAL_HOLD)
+
     # Gate 1: Blocks formatting / reference checks
     slugs = ["ref_checker", "formatting"]
     if _is_active_or_pending_assignment(rfc, slugs):
@@ -288,10 +297,11 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
                     },
                 )
 
-    # Resolve all active blocking reasons
-    RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc, resolved__isnull=True).update(
-        resolved=timezone.now()
-    )
+    # Resolve all active blocking reasons except manual_hold, which only the
+    # explicit API action may clear.
+    RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc, resolved__isnull=True).exclude(
+        reason__slug=BlockingReason.MANUAL_HOLD
+    ).update(resolved=timezone.now())
 
     return True
 

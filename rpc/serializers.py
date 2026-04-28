@@ -473,6 +473,7 @@ class RfcToBeBlockingReasonSerializer(serializers.Serializer):
     reason = BlockingReasonSerializer(read_only=True)
     since_when = serializers.DateTimeField(read_only=True)
     resolved = serializers.DateTimeField(read_only=True)
+    comment = serializers.CharField(read_only=True)
 
 
 class QueueItemSerializer(serializers.ModelSerializer):

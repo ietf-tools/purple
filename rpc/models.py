@@ -521,6 +521,7 @@ class BlockingReason(Name):
     REFQUEUE_PUBLISH_INCOMPLETE = "refqueue_publish_incomplete"
     FINAL_APPROVAL_PENDING = "final_approval_pending"
     TOOLS_ISSUE = "tools_issue"
+    MANUAL_HOLD = "manual_hold"
 
 
 class RfcToBeBlockingReason(models.Model):
@@ -530,6 +531,7 @@ class RfcToBeBlockingReason(models.Model):
     reason = models.ForeignKey(BlockingReason, on_delete=models.PROTECT)
     since_when = models.DateTimeField(default=timezone.now)
     resolved = models.DateTimeField(null=True, blank=True)
+    comment = models.TextField(blank=True)
     history = HistoricalRecords()
 
     class Meta:
