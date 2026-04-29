@@ -216,7 +216,9 @@ STORAGES["red_bucket"] = {
             read_timeout=_blob_store_read_timeout,
             retries={"total_max_attempts": _blob_store_max_attempts},
         ),
-        "verify": False,
+        "verify": (
+            os.environ.get("PURPLE_BLOB_STORE_VERIFY_CERT", "true").lower() != "false"
+        ),
         "bucket_name": _red_bucket_name,
     },
 }
