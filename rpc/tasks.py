@@ -45,7 +45,8 @@ def set_stream_manager_task(rfc_to_be_id: int):
     if rfctobe.stream_manager_id is not None:
         return
     person = rfctobe.resolve_stream_manager_person()
-    RfcToBe.objects.filter(pk=rfc_to_be_id).update(stream_manager=person)
+    rfctobe.stream_manager = person
+    rfctobe.save(update_fields=["stream_manager"])
 
 
 logger = get_task_logger(__name__)
