@@ -31,6 +31,7 @@ from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts
 
+
 class GetRfcToBeForDraftNameTests(TestCase):
     def test_returns_match(self):
         rfctobe = RfcToBeFactory()
