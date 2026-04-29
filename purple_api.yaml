@@ -736,7 +736,6 @@ paths:
   /api/rpc/documents/{draft__name}/manual_block/:
     post:
       operationId: documents_manual_block
-      description: Set a manual hold on a draft, preventing automatic unblocking.
       parameters:
       - in: path
         name: draft__name
@@ -758,8 +757,6 @@ paths:
           description: No response body
     delete:
       operationId: documents_manual_unblock
-      description: Clear the manual hold; draft may still remain blocked by other
-        reasons.
       parameters:
       - in: path
         name: draft__name
