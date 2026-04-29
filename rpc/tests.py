@@ -284,16 +284,19 @@ class ImportSubmissionClusteringTests(TestCase):
         mock = MagicMock()
 
         def _draft(doc_id, name):
-            d = MagicMock(spec=rpcapi_client.FullDraft)
-            d.name = name
-            d.rev = "00"
-            d.title = f"Test: {name}"
-            d.group = ""
-            d.stream = "ietf"
-            d.pages = 10
-            d.intended_std_level = ""
-            d.consensus = None
-            return d
+            return rpcapi_client.FullDraft(
+                id=doc_id,
+                name=name,
+                rev="00",
+                title=f"Test: {name}",
+                abstract="",
+                group="",
+                stream="ietf",
+                pages=10,
+                intended_std_level="",
+                consensus=None,
+                authors=[],
+            )
 
         draft_map = {
             doc_id: _draft(doc_id, name) for doc_id, name in drafts_by_id.items()
@@ -301,13 +304,10 @@ class ImportSubmissionClusteringTests(TestCase):
         mock.get_draft_by_id.side_effect = lambda doc_id: draft_map.get(doc_id)
 
         def _refs(doc_id):
-            result = []
-            for ref_id, ref_name in refs_by_id.get(doc_id, {}).items():
-                ref = MagicMock()
-                ref.id = ref_id
-                ref.name = ref_name
-                result.append(ref)
-            return result
+            return [
+                rpcapi_client.Reference(id=ref_id, name=ref_name)
+                for ref_id, ref_name in refs_by_id.get(doc_id, {}).items()
+            ]
 
         mock.get_draft_references.side_effect = _refs
         return mock
