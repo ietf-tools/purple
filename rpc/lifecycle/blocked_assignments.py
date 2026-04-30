@@ -356,7 +356,7 @@ def apply_manual_block(rfc: RfcToBe, comment: str = "") -> None:
             )
             if _has_active_blocked_assignment(locked):
                 logger.info(
-                    "RFC %s already blocked; skipping assignment creation for manual hold",
+                    "RFC %s already blocked; skip assignment creation for manual hold",
                     locked.pk,
                 )
                 return
