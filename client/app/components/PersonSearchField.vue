@@ -5,8 +5,7 @@
         <a
           :href="person.email ? datatrackerLinks.personByEmail(person.email) : undefined"
           :class="ANCHOR_STYLE"
-        >{{ person.name }}</a>
-        <span v-if="person.email" class="text-gray-500 ml-1">({{ person.email }})</span>
+        >{{ person.name }}<span v-if="person.email" :class="PERSON_ID_STYLE">({{ person.email }})</span></a>
       </span>
       <span v-else class="flex-1">(none)</span>
       <div v-if="!isReadOnly" class="flex gap-1">
@@ -50,7 +49,7 @@
                 v-for="result in searchResults.results"
                 :key="result.personId"
                 :value="result"
-                class="text-xs rounded-[3px] flex flex-col px-3 py-1.5 relative select-none cursor-pointer data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
+                class="text-xs rounded-[3px] flex flex-col px-3 py-1.5 relative select-none cursor-default data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
               >
                 <span class="font-semibold">{{ result.name }}</span>
                 <a
@@ -89,7 +88,7 @@ import {
   ComboboxViewport,
 } from "reka-ui"
 import type { BaseDatatrackerPerson } from '~/purple_client'
-import { ANCHOR_STYLE } from '~/utils/html'
+import { ANCHOR_STYLE, PERSON_ID_STYLE } from '~/utils/html'
 import { classForBtnType } from '~/utils/button'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
 
