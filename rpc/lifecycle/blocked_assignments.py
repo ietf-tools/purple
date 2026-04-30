@@ -196,9 +196,7 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
                 assignment.comment = "Closed due to blocked state"
                 assignment.save(update_fields=["state", "comment"])
 
-                comment = (
-                    f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
-                )
+                comment = f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
                 Assignment.objects.update_or_create(
                     rfc_to_be=rfc,
                     role=role,
@@ -211,9 +209,7 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
 
         else:
             logger.info("Creating new blocked assignment for rfc %s", rfc.pk)
-            comment = (
-                f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
-            )
+            comment = f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
             Assignment.objects.create(
                 rfc_to_be=rfc,
                 role=role,
@@ -367,7 +363,7 @@ def apply_manual_block(rfc: RfcToBe, comment: str = "") -> None:
                 )
                 return
             # if not already blocked, create blocked assignment
-            # pass empty reasons since the current block reason is being added above
+            # don't pass reasons since the current block reason is being added above
             _create_blocked_assignments(locked)
             logger.info("Created manual-hold blocked assignment for rfc %s", locked.pk)
     except Exception as err:
