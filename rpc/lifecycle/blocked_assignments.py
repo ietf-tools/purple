@@ -214,21 +214,6 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str]) -> bool:
                 comment=comment,
             )
 
-        # Store blocking reasons in RfcToBeBlockingReason
-        for reason_slug in reasons:
-            try:
-                reason_model = BlockingReason.objects.get(slug=reason_slug)
-                RfcToBeBlockingReason.objects.get_or_create(
-                    rfc_to_be=rfc,
-                    reason=reason_model,
-                    resolved=None,
-                )
-            except BlockingReason.DoesNotExist as err:
-                logger.exception(
-                    "Invalid blocking reason slug '%s' for rfc %s", reason_slug, rfc.pk
-                )
-                raise NotFound(f"Invalid blocking reason slug: {reason_slug}") from err
-
     except Exception as err:
         logger.exception(
             "Failed to create blocked assignment for rfc %s", getattr(rfc, "pk", None)
@@ -291,9 +276,12 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
 
     # Resolve all active blocking reasons except manual_hold, which only the
     # explicit API action may clear.
-    RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc, resolved__isnull=True).exclude(
-        reason__slug=BlockingReason.MANUAL_HOLD
-    ).update(resolved=timezone.now())
+    now = timezone.now()
+    for reason in RfcToBeBlockingReason.objects.filter(
+        rfc_to_be=rfc, resolved__isnull=True
+    ).exclude(reason__slug=BlockingReason.MANUAL_HOLD):
+        reason.resolved = now
+        reason.save(update_fields=["resolved"])
 
     return True
 
@@ -350,9 +338,8 @@ def apply_manual_block(rfc: RfcToBe, comment: str = "") -> None:
     try:
         with transaction.atomic():
             locked = RfcToBe.objects.select_for_update().get(pk=rfc.pk)
-            reason = BlockingReason.objects.get(slug=BlockingReason.MANUAL_HOLD)
             RfcToBeBlockingReason.objects.create(
-                rfc_to_be=locked, reason=reason, comment=comment
+                rfc_to_be=locked, reason_id=BlockingReason.MANUAL_HOLD, comment=comment
             )
             if _has_active_blocked_assignment(locked):
                 logger.info(
@@ -378,11 +365,14 @@ def apply_manual_unblock(rfc: RfcToBe) -> None:
     try:
         with transaction.atomic():
             locked = RfcToBe.objects.select_for_update().get(pk=rfc.pk)
-            RfcToBeBlockingReason.objects.filter(
+            now = timezone.now()
+            for reason in RfcToBeBlockingReason.objects.filter(
                 rfc_to_be=locked,
                 reason__slug=BlockingReason.MANUAL_HOLD,
                 resolved__isnull=True,
-            ).update(resolved=timezone.now())
+            ):
+                reason.resolved = now
+                reason.save(update_fields=["resolved"])
             remaining_reasons = get_block_reasons(locked)
             if not remaining_reasons and _has_active_blocked_assignment(locked):
                 _close_blocked_assignments(locked)
