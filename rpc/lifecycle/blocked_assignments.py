@@ -185,31 +185,31 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
             )
 
         role = RpcRole.objects.get(slug="blocked")
+        comment = (
+            f"blocked because of blocking condition(s): {', '.join(reasons)}; "
+            if reasons
+            else ""
+        )
 
         if active_assignment_qs.exists():
             logger.info(
                 "Setting active assignments to closed_for_hold for rfc %s", rfc.pk
             )
             for assignment in active_assignment_qs:
-                # Close the current assignment
                 assignment.state = Assignment.State.CLOSED_FOR_HOLD
                 assignment.comment = "Closed due to blocked state"
                 assignment.save(update_fields=["state", "comment"])
 
-                comment = f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
                 Assignment.objects.update_or_create(
                     rfc_to_be=rfc,
                     role=role,
                     person=assignment.person,
                     state=Assignment.State.IN_PROGRESS,
-                    defaults={
-                        "comment": comment,
-                    },
+                    defaults={"comment": comment},
                 )
 
         else:
             logger.info("Creating new blocked assignment for rfc %s", rfc.pk)
-            comment = f"blocked because of blocking condition(s): {', '.join(reasons or [])}; "
             Assignment.objects.create(
                 rfc_to_be=rfc,
                 role=role,
