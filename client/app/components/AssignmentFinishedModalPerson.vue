@@ -8,13 +8,19 @@
         <input type="text" size="4" :id="props.assignment.id?.toString() ?? 'assignment'"
           v-model="hours" class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
           @blur="patchTimeSpent"
-        >
+        > <span class="ml-1">h</span>
       </label>
-      <BaseButton v-if="props.assignment.state !== 'done'" btnType="default" @mousedown="isFinishing = true" @click="finishAssignment" size="xs"
-        :disabled="isSaving">
-        Finish
-      </BaseButton>
-      <BaseBadge v-else color="green">{{ props.assignment.state }}</BaseBadge>
+      <div class="w-[13em] flex justify-end items-center gap-2">
+        <AssignmentState :state="props.assignment.state" />
+        <BaseButton v-if="props.assignment.state === 'assigned'" btnType="default" @click="startAssignment" size="xs"
+          :disabled="isSaving">
+          Start
+        </BaseButton>
+        <BaseButton v-else-if="props.assignment.state === 'in_progress'" btnType="default" @mousedown="isFinishing = true" @click="finishAssignment" size="xs"
+          :disabled="isSaving">
+          Finish
+        </BaseButton>
+      </div>
     </form>
   </li>
 </template>
@@ -38,6 +44,26 @@ const api = useApi()
 const snackbar = useSnackbar()
 
 const hours = ref(durationStringToHours(props.assignment.timeSpent))
+
+const startAssignment = async () => {
+  isSaving.value = true
+  const { id } = props.assignment
+  if (id === undefined) {
+    throw Error('Internal error: expected assignment to have id')
+  }
+  try {
+    const updatedAssignment = await api.assignmentsPartialUpdate({
+      id,
+      patchedAssignmentRequest: { state: 'in_progress' }
+    })
+    props.assignment.state = updatedAssignment.state
+  } catch (e) {
+    console.error("Unable to start assignment", e)
+    snackbarForErrors({ snackbar, defaultTitle: "Unable to start assignment", error: e })
+  }
+  isSaving.value = false
+  props.onSuccess()
+}
 
 const finishAssignment = async () => {
   isSaving.value = true

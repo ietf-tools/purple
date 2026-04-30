@@ -35,7 +35,7 @@
             </span>
           </BaseButton>
           <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
-            <span>Finish assignments</span>
+            <span>Manage Assignments</span>
             <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
               <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
@@ -115,7 +115,6 @@ const openAssignmentFinishedModal = async () => {
         rfcToBe: props.rfcToBe,
         onSuccess: () => { }
       },
-      mode: 'side',
     }).catch(e => {
       if (e === undefined) {
         // ignore... it's just signalling that the modal has closed

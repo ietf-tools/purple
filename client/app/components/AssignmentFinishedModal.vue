@@ -2,7 +2,7 @@
   <div class="h-full flex flex-col bg-white text-black dark:bg-black dark:text-white">
     <div class="flex flex-row justify-between border-b border-gray-300">
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
-        Finish Assignments of
+        Manage Assignments of
         <span class="mt-1 text-xl font-semibold leading-6">
           {{ props.rfcToBe.name }}
         </span>
@@ -15,10 +15,10 @@
       <ul class="flex flex-col gap-4">
         <li v-if="assignments.length > 0" v-for="([role, assignments], assignmentIndex) in assignmentsByRoles"
           :key="role" class="w-full flex mx-1 flex-row gap-4 items-start">
-          <h2 class="text-lg font-bold w-[10em]">
+          <div class="w-[15em] shrink-0 flex items-start">
             <BaseBadge :label="role" size="xl"></BaseBadge>
-          </h2>
-          <ul>
+          </div>
+          <ul class="flex-1 min-w-0">
             <AssignmentFinishedModalPerson
               v-for="assignment in assignments"
               :assignment="assignment"
