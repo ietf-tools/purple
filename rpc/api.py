@@ -65,7 +65,6 @@ from .models import (
     AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
-    BlockingReason,
     Capability,
     Cluster,
     ClusterMember,
@@ -1207,17 +1206,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         rfctobe = self.get_object()
         if request.method == "POST":
             comment = request.data.get("comment", "")
-            reason = BlockingReason.objects.get(slug=BlockingReason.MANUAL_HOLD)
-            RfcToBeBlockingReason.objects.create(
-                rfc_to_be=rfctobe, reason=reason, comment=comment
-            )
-            apply_manual_block(rfctobe)
+            apply_manual_block(rfctobe, comment=comment)
         else:
-            RfcToBeBlockingReason.objects.filter(
-                rfc_to_be=rfctobe,
-                reason__slug=BlockingReason.MANUAL_HOLD,
-                resolved__isnull=True,
-            ).update(resolved=timezone.now())
             apply_manual_unblock(rfctobe)
         return Response(status=204)
 
