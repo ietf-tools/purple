@@ -1846,6 +1846,7 @@ class DatatrackerPersonModelShim:
 
     datatracker_id: int
     plain_name: str
+    email: str
     picture: str
 
     @classmethod
@@ -1853,6 +1854,7 @@ class DatatrackerPersonModelShim:
         return cls(
             datatracker_id=obj.id,
             plain_name=obj.plain_name,
+            email=obj.email,
             picture=obj.picture,
         )
 

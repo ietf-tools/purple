@@ -27,12 +27,14 @@
           :value="searchResult"
           class="text-xs leading-none text-grass11 rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
         >
-          <span class="font-bold">
-            {{ searchResult.name }}
-          </span>
-          <span class="font-normal ml-1" v-if="searchResult.personId">
-            {{ SPACE }}{{ ` #${searchResult.personId ?? ''}` }}
-          </span>
+          <span class="font-bold">{{ searchResult.name }}</span>
+          <a
+            v-if="searchResult.email"
+            :href="datatrackerLinks.personByEmail(searchResult.email)"
+            target="_blank"
+            class="font-normal ml-1 text-gray-500 hover:underline"
+            @click.stop
+          >({{ searchResult.email }})</a>
         </ComboboxItem>
       </ComboboxViewport>
     </ComboboxContent>
@@ -51,7 +53,9 @@ import {
 } from "reka-ui"
 import type { RfcToBe, BaseDatatrackerPerson } from "~/purple_client"
 import { snackbarForErrors } from "~/utils/snackbar"
-import { SPACE } from '~/utils/strings'
+import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
+
+const datatrackerLinks = useDatatrackerLinks()
 
 const draft = defineModel<CookedDraft | RfcToBe>({ required: true })
 
