@@ -10,6 +10,17 @@ type Props = {
 
 const MAX_TEXT_LENGTH = 100
 
+export const getApiErrorMessage = async (error: unknown): Promise<string> => {
+  const fetchResponse = getFetchResponse(error)
+  if (fetchResponse) {
+    return getErrorTextFromFetchResponse(fetchResponse, String(error))
+  }
+  if (isNuxtError(error)) {
+    return getErrorTextFromNuxtError(error, String(error))
+  }
+  return String(error)
+}
+
 export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props) => {
   let title = defaultTitle ?? 'Error.'
   let text = `${error}`

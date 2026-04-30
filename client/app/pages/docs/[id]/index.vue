@@ -6,7 +6,7 @@
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ErrorAlert v-if="rawRfcToBeError" title="API Error">
-        API error while requesting draft: {{ rawRfcToBeError }}
+        {{ rfcToBeErrorMessage }}
       </ErrorAlert>
       <div v-else
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
@@ -58,7 +58,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
-import { snackbarForErrors } from "~/utils/snackbar"
+import { snackbarForErrors, getApiErrorMessage } from "~/utils/snackbar"
 import { type DocTabId } from '~/utils/doc'
 
 const route = useRoute()
@@ -78,7 +78,7 @@ const {
   refresh: commentsReload
 } = await useCommentsForDraft(draftName.value)
 
-const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
+const { data: rawRfcToBe, error: rawRfcToBeError, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
@@ -87,6 +87,14 @@ const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh
     deep: true // author editing relies on deep reactivity
   }
 )
+
+const rfcToBeErrorMessage = ref('')
+watch(rawRfcToBeError, async (err) => {
+  if (!err) { rfcToBeErrorMessage.value = ''; return }
+  const message = await getApiErrorMessage(err)
+  rfcToBeErrorMessage.value = message
+  snackbar.add({ type: 'error', title: 'API Error', text: message })
+}, { immediate: true })
 
 const initialSelectedLabelIds = computed(() => {
   console.log("recomputing initial selected label ids")

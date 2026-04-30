@@ -164,8 +164,8 @@ def resolve_rfctobe(identifier: str) -> RfcToBe:
     When multiple RfcToBes share a draft name (e.g., one withdrawn and one
     in-progress), the non-withdrawn one is preferred.
     """
-    if identifier.lower().startswith("rfc") and identifier[3:].isdigit():
-        rfc_number = int(identifier[3:])
+    if identifier.lower().startswith("rfc") and identifier[3:].strip().isdigit():
+        rfc_number = int(identifier[3:].strip())
         qs = RfcToBe.objects.filter(rfc_number=rfc_number)
         obj = qs.exclude(disposition_id="withdrawn").first() or qs.first()
         if obj is None:
@@ -174,7 +174,7 @@ def resolve_rfctobe(identifier: str) -> RfcToBe:
     qs = RfcToBe.objects.filter(draft__name=identifier)
     obj = qs.exclude(disposition_id="withdrawn").first() or qs.first()
     if obj is None:
-        raise NotFound(f"No RfcToBe found for draft '{identifier}'")
+        raise NotFound(f"No record found for '{identifier}'")
     return obj
 
 
@@ -1082,12 +1082,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
 
     def get_object(self):
         lookup_value = self.kwargs.get(self.lookup_field)
-        if lookup_value and str(lookup_value).startswith("rfc"):
-            self.lookup_field = "rfc_number"
-            self.kwargs[self.lookup_field] = int(lookup_value[3:])
-        else:
-            self.kwargs["pk"] = resolve_rfctobe(lookup_value).pk
-            self.lookup_field = "pk"
+        self.kwargs["pk"] = resolve_rfctobe(lookup_value).pk
+        self.lookup_field = "pk"
         return super().get_object()
 
     def get_queryset(self):
@@ -1281,7 +1277,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         cluster_number = None
         if query.isdigit():
             rfc_number = int(query)
-        elif query.lower().startswith("rfc") and query[3:].isdigit():
+        elif query.lower().startswith("rfc") and query[3:].strip().isdigit():
             rfc_number = int(query[3:])
         elif query.lower().startswith("c") and query[1:].isdigit():
             cluster_number = int(query[1:])
