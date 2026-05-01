@@ -133,6 +133,7 @@ import type { PaginatedDocumentCommentList, Name } from '~/purple_client'
 import { computed } from 'vue'
 import { type IANAActionsEnum } from '../../utils/iana'
 import { QUEUE_SUBMISSIONS_PATH } from '../../utils/url'
+import { snackbarForErrors } from '~/utils/snackbar'
 
 const route = useRoute()
 const api = useApi()
@@ -217,11 +218,7 @@ async function importSubmission () {
       }
     })
   } catch (e) {
-    snackbar.add({
-      type: 'error',
-      title: 'Error saving',
-      text: String(e)
-    })
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Error saving' })
   }
   if (imported) {
     snackbar.add({

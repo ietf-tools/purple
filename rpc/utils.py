@@ -59,7 +59,9 @@ def create_cluster() -> Cluster:
         ),
         Value(1),
     )
-    return Cluster.objects.create(number=next_number)
+    cluster = Cluster.objects.create(number=next_number)
+    cluster.refresh_from_db()
+    return cluster
 
 
 def add_doc_to_cluster(cluster: Cluster, doc: Document) -> None:

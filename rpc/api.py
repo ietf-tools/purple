@@ -191,44 +191,33 @@ def apply_submission_cluster_membership(
 ) -> Cluster | None:
     """Place imported document into an existing reference cluster or create a new one.
 
-    If any received reference is already clustered, the current document joins that
-    cluster. Otherwise, create a new cluster and add the current document and all
-    reference documents that are not already clustered. If there are no references,
-    received or not, do not create a cluster.
+    If either the current document or any of its references is already in a cluster,
+    all unclustered documents join that cluster. Otherwise a new cluster is created
+    and all documents are added to it. If there are no references (received or not),
+    no cluster is created.
     """
 
     if not reference_docs and not received_reference_ids and not has_not_received_refs:
         return None
 
+    all_docs = {current_doc.pk: current_doc}
+    for doc in reference_docs:
+        all_docs.setdefault(doc.pk, doc)
+
     existing_member = (
-        ClusterMember.objects.filter(doc__datatracker_id__in=received_reference_ids)
-        .select_related("cluster")
+        ClusterMember.objects.select_related("cluster")
+        .filter(doc_id__in=all_docs)
         .first()
     )
+
     if existing_member is not None:
-        add_doc_to_cluster(existing_member.cluster, current_doc)
+        for doc in all_docs.values():
+            add_doc_to_cluster(existing_member.cluster, doc)
         return existing_member.cluster
 
-    docs_by_id = {current_doc.id: current_doc}
-    for reference_doc in reference_docs:
-        docs_by_id.setdefault(reference_doc.id, reference_doc)
-
-    clustered_doc_ids = set(
-        ClusterMember.objects.filter(doc_id__in=docs_by_id).values_list(
-            "doc_id", flat=True
-        )
-    )
-    docs_to_add = [
-        doc for doc_id, doc in docs_by_id.items() if doc_id not in clustered_doc_ids
-    ]
-    if not docs_to_add:
-        return None
-
     cluster = create_cluster()
-
-    for doc in docs_to_add:
+    for doc in all_docs.values():
         add_doc_to_cluster(cluster, doc)
-
     return cluster
 
 

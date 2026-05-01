@@ -205,6 +205,26 @@ class ApplySubmissionClusterMembershipTests(TestCase):
         doc_b.refresh_from_db()
         self.assertEqual(doc_b.clustermember_set.get().cluster, cluster_a)
 
+    def test_current_doc_already_clustered_reference_joins_it(self):
+        """If current doc is already in a cluster, unclustered references join it."""
+        doc_a = RfcToBeFactory().draft
+        cluster_a = apply_submission_cluster_membership(
+            current_doc=doc_a,
+            reference_docs=[],
+            received_reference_ids=set(),
+            has_not_received_refs=True,
+        )
+
+        doc_b = DocumentFactory(pages=1)
+        apply_submission_cluster_membership(
+            current_doc=doc_a,
+            reference_docs=[doc_b],
+            received_reference_ids={doc_b.datatracker_id},
+        )
+
+        doc_b.refresh_from_db()
+        self.assertEqual(doc_b.clustermember_set.get().cluster, cluster_a)
+
     def test_later_received_doc_creates_cluster_if_source_unclustered(self):
         """If A somehow has no cluster, importing B creates one for both."""
         doc_a = RfcToBeFactory().draft

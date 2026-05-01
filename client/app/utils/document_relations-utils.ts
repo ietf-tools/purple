@@ -185,15 +185,14 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
   } else if (node.isReceived === false) {
     tooltip.push('Not received.')
   }
-  if (node.disposition) {
+  if (node.isBlocked) {
+    tooltip.push('Blocked.')
+  } else if (node.disposition) {
     if (node.disposition === 'published') {
       tooltip.push('Published.')
     } else {
       tooltip.push(`Disposition: ${startCase(node.disposition)}.`)
     }
-  }
-  if (node.isBlocked) {
-    tooltip.push('Blocked.')
   }
   return tooltip.length > 0 ? tooltip : undefined
 }

@@ -1065,11 +1065,21 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
                 }
                 related_doc = super().create(data)
                 if should_add_to_cluster:
-                    cluster = self._get_or_create_source_cluster(source=source)
-                    self._add_target_document_to_cluster(
-                        cluster=cluster,
-                        target_document=target_cluster_document,
+                    target_member = (
+                        ClusterMember.objects.select_related("cluster")
+                        .filter(doc=target_cluster_document)
+                        .first()
                     )
+                    if target_member is not None:
+                        # Target is already in a cluster; source joins it.
+                        if source.draft:
+                            add_doc_to_cluster(target_member.cluster, source.draft)
+                    else:
+                        cluster = self._get_or_create_source_cluster(source=source)
+                        self._add_target_document_to_cluster(
+                            cluster=cluster,
+                            target_document=target_cluster_document,
+                        )
         except IntegrityError as err:
             raise serializers.ValidationError(
                 f"Failed to create related document due to a database constraint: {err}"
