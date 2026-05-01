@@ -33,13 +33,13 @@ export function sortAssignmentsByRole<T extends { id?: number | null; role: stri
   const result: T[] = []
   let bi = 0
   for (const assignment of nonBlocked) {
-    while (bi < blocked.length && (blocked[bi].id ?? 0) < (assignment.id ?? 0)) {
-      result.push(blocked[bi++])
+    while (bi < blocked.length && (blocked[bi]!.id ?? 0) < (assignment.id ?? 0)) {
+      result.push(blocked[bi++]!)
     }
     result.push(assignment)
   }
   while (bi < blocked.length) {
-    result.push(blocked[bi++])
+    result.push(blocked[bi++]!)
   }
   return result
 }

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @assignments-changed="() => Promise.all([rfcToBeRefresh(), refreshAssignments()])" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @assignments-changed="refreshAll" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -157,6 +157,8 @@ const setManualHold = () => {
     },
   }).catch(() => {})
 }
+
+const refreshAll = () => Promise.all([rfcToBeRefresh(), refreshAssignments()])
 
 const clearManualHold = async () => {
   try {
