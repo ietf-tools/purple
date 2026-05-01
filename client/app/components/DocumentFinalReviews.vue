@@ -237,7 +237,6 @@ const openEditModal = (finalApproval: FinalApproval) => {
       name: props.name,
       onSuccess: reloadEverything
     },
-    mode: 'side',
   }).catch(e => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
@@ -260,7 +259,6 @@ const openAddModal = () => {
       name: props.name,
       onSuccess: reloadEverything
     },
-    mode: 'side',
   }).catch(e => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed

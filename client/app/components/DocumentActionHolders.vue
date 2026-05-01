@@ -224,7 +224,6 @@ const openAddModal = () => {
       draftName: props.name,
       onSuccess: reloadEverything,
     },
-    mode: 'side',
   }).catch(e => {
     if (e === undefined) {
       // modal closed normally
@@ -248,7 +247,6 @@ const openEditModal = (actionHolder: ActionHolder) => {
       draftName: props.name,
       onSuccess: reloadEverything,
     },
-    mode: 'side',
   }).catch(e => {
     if (e === undefined) {
       // modal closed normally

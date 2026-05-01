@@ -1,55 +1,60 @@
 <template>
-  <div
-    class="h-full bg-gray-100 text-black dark:bg-gray-800 dark:text-black flex flex-col justify-between gap-5 px-2 pt-10 pb-2">
-    <BaseButton btnType="outline" class="absolute right-1 top-1 z-50" @click="closeOverlayModal">
-      <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
-    </BaseButton>
-    <form novalidate class="border rounded-md border-gray-500 bg-white dark:bg-black">
-      <Heading :heading-level="3" class="p-5">
+  <form novalidate class="text-black dark:text-white" @submit.prevent>
+    <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <Heading :heading-level="3">
         {{ props.finalApproval ? 'Edit Final Review Approver' : 'Add Final Review Approver' }}
       </Heading>
-      <div class="flex flex-col gap-3 justify-between">
-        <div class="flex flex-col gap-3">
-          <DialogFieldPickAuthor v-model="approver" id="approver" label="Approver"
-            :disabled="isFinalReviewApiSuccess" person-term="approver" />
-          <DialogFieldDate v-if="props.finalApproval" v-model="approvedDateString" id="approvedDate" label="Date of approval"
-            :disabled="isFinalReviewApiSuccess" />
+      <BaseButton btnType="outline" @click="closeOverlayModal">
+        <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
+      </BaseButton>
+    </div>
 
-          <div v-if="props.finalApproval" class="flex flex-col gap-1">
-            <div class="flex flex-row">
-              <span class="w-[160px] mr-1"></span>
-              <div>
-                <RpcCheckbox id="override-approval"
-                  label="Set a proxy approver, approving on behalf of the original approver?"
-                  :checked="hasApprovalOverride" @change="handleOverrideChange" :disabled="isFinalReviewApiSuccess" />
-              </div>
-            </div>
-            <div v-if="hasApprovalOverride">
-              <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Proxy Approver"
-                :disabled="isFinalReviewApiSuccess" person-term="approver" />
-            </div>
-          </div>
+    <div class="flex flex-col gap-4 px-6 py-5">
+      <DialogFieldPickAuthor v-model="approver" id="approver" label="Approver"
+        :disabled="isFinalReviewApiSuccess" person-term="approver" />
+
+      <DialogFieldDate v-if="props.finalApproval" v-model="approvedDateString" id="approvedDate" label="Date of approval"
+        :disabled="isFinalReviewApiSuccess" />
+
+      <div v-if="props.finalApproval" class="flex flex-col gap-1">
+        <div class="flex flex-row">
+          <span class="w-[160px] mr-1"></span>
+          <RpcCheckbox id="override-approval"
+            label="Set a proxy approver, approving on behalf of the original approver?"
+            :checked="hasApprovalOverride" @change="handleOverrideChange" :disabled="isFinalReviewApiSuccess" />
         </div>
-        <div
-          class="flex flex-row items-center justify-between px-5 py-3 border-t-2 border-gray-500 bg-gray-200 dark:bg-gray-800">
-          <BaseButton v-if="props.finalApproval" btn-type="delete" @click="deleteFinalApproval" :hidden="isFinalReviewApiSuccess || isDeleted">Delete without approval</BaseButton>
-          <div class="flex flex-row items-center ml-auto">
-            <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess || isDeleted">
-              {{ props.finalApproval ?
-                'Save' :
-                'Add Approver' }}
-            </BaseButton>
-            <b v-if="isFinalReviewApiSuccess" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">
-              {{ props.finalApproval ?
-                'Saved' :
-                'Approver Added' }}
-            </b>
-            <b v-if="isDeleted" class="text-green-800 font-bold ml-3" aria-atomic aria-live="polite">Deleted</b>
-          </div>
+        <div v-if="hasApprovalOverride">
+          <DialogFieldPickAuthor id="overridingApprover" v-model="overridingApprover" label="Proxy Approver"
+            :disabled="isFinalReviewApiSuccess" person-term="approver" />
         </div>
       </div>
-    </form>
-  </div>
+
+      <div class="flex flex-col gap-1">
+        <label for="final-review-comment" class="text-sm font-medium">Comment <span class="text-gray-500 font-normal">(optional)</span></label>
+        <textarea
+          id="final-review-comment"
+          v-model="comment"
+          rows="3"
+          :disabled="isFinalReviewApiSuccess"
+          class="w-full rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-neutral-800 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50"
+          placeholder="Optional comment..."
+        />
+      </div>
+    </div>
+
+    <div class="flex flex-row items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
+      <BaseButton v-if="props.finalApproval" btn-type="delete" @click="deleteFinalApproval" :hidden="isFinalReviewApiSuccess || isDeleted">Delete without approval</BaseButton>
+      <div class="flex flex-row items-center ml-auto gap-3">
+        <b v-if="isFinalReviewApiSuccess" class="text-green-700 dark:text-green-400 font-bold" aria-atomic aria-live="polite">
+          {{ props.finalApproval ? 'Saved' : 'Approver Added' }}
+        </b>
+        <b v-if="isDeleted" class="text-green-700 dark:text-green-400 font-bold" aria-atomic aria-live="polite">Deleted</b>
+        <BaseButton btn-type="default" @click="clickFinalApprovalHandler" :hidden="isFinalReviewApiSuccess || isDeleted">
+          {{ props.finalApproval ? 'Save' : 'Add Approver' }}
+        </BaseButton>
+      </div>
+    </div>
+  </form>
 </template>
 
 <script setup lang="ts">
@@ -75,6 +80,7 @@ const api = useApi()
 
 const approver = ref<DatatrackerPerson | undefined>(props.finalApproval?.approver ?? undefined)
 const approvedDateString = ref<string | undefined>(props.finalApproval?.approved ? jsDateToInputTypeDate(props.finalApproval.approved) : undefined)
+const comment = ref<string>(props.finalApproval?.comment ?? '')
 
 const hasApprovalOverride = ref(Boolean(props.finalApproval?.overridingApprover))
 const overridingApprover = ref<DatatrackerPerson | undefined>(props.finalApproval?.overridingApprover ?? undefined)
@@ -104,7 +110,6 @@ const clickFinalApprovalHandler = async () => {
   let overridingApproverPersonId
   let approvedDateTime: undefined | DateTime = undefined
   let approverPersonId: undefined | number = undefined
-  let bodyText: string | undefined = undefined
 
   const validationError = (title: string) => {
     snackbar.add({
@@ -157,7 +162,7 @@ const clickFinalApprovalHandler = async () => {
         id,
         patchedFinalApprovalRequest: {
           approved,
-          comment: bodyText,
+          comment: comment.value || undefined,
           approverPersonId,
           overridingApproverPersonId
         }
@@ -186,6 +191,7 @@ const clickFinalApprovalHandler = async () => {
           approverPersonId,
           approved,
           overridingApproverPersonId,
+          comment: comment.value || undefined,
         }
       })
 
