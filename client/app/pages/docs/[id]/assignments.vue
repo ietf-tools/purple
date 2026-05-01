@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @assignments-changed="() => Promise.all([rfcToBeRefresh(), refreshAssignments()])" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -77,6 +77,7 @@ import { teamMemberLink }  from '~/utils/url'
 import type { Assignment } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { ManualHoldModal } from '#components'
+import { sortAssignmentsByRole } from '~/utils/sort'
 
 const route = useRoute()
 const api = useApi()
@@ -112,44 +113,9 @@ const { data: assignments, refresh: refreshAssignments } = await useAsyncData(
   { server: false, lazy: true, default: () => [] as Assignment[] }
 )
 
-const assignmentOrder = [
-  'enqueuer',
-  'formatting',
-  'ref_checker',
-  'first_editor',
-  'second_editor',
-  'final_review_editor',
-  'publisher',
-]
-
 const rfcToBeAssignments = computed(() => {
   const forThisRfc = assignments.value.filter((a) => a.rfcToBe === rfcToBe.value?.id)
-
-  const nonBlocked = forThisRfc
-    .filter((a) => a.role !== 'blocked')
-    .sort((a, b) => {
-      const roleDiff = assignmentOrder.indexOf(a.role) - assignmentOrder.indexOf(b.role)
-      if (roleDiff !== 0) return roleDiff
-      return (a.id ?? 0) - (b.id ?? 0)
-    })
-
-  const blocked = forThisRfc
-    .filter((a) => a.role === 'blocked')
-    .sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
-
-  // Merge blocked into the role-ordered list at their chronological (ID) position
-  const result: typeof forThisRfc = []
-  let bi = 0
-  for (const assignment of nonBlocked) {
-    while (bi < blocked.length && (blocked[bi].id ?? 0) < (assignment.id ?? 0)) {
-      result.push(blocked[bi++])
-    }
-    result.push(assignment)
-  }
-  while (bi < blocked.length) {
-    result.push(blocked[bi++])
-  }
-  return result
+  return sortAssignmentsByRole(forThisRfc)
 })
 
 const initialSelectedLabelIds = computed(() => {

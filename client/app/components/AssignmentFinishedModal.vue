@@ -40,6 +40,7 @@ import { BaseButton } from '#components'
 import type { Assignment, RpcPerson } from '~/purple_client';
 import { overlayModalKey } from '~/providers/providerKeys';
 import { groupBy } from 'lodash-es';
+import { assignmentRoleOrder } from '~/utils/sort';
 
 type Props = {
   rfcToBe: CookedDraft
@@ -54,7 +55,11 @@ const assignmentsByRolesObj = groupBy(
   (assignment) => assignment.role
 )
 
-const assignmentsByRoles = ref(Object.entries(assignmentsByRolesObj).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)))
+const assignmentsByRoles = ref(Object.entries(assignmentsByRolesObj).sort(([keyA], [keyB]) => {
+  const a = assignmentRoleOrder.indexOf(keyA as typeof assignmentRoleOrder[number])
+  const b = assignmentRoleOrder.indexOf(keyB as typeof assignmentRoleOrder[number])
+  return (a === -1 ? Infinity : a) - (b === -1 ? Infinity : b)
+}))
 
 const getPersonNameById = (personId?: number | null): string => {
   if (personId === undefined || personId === null) return '(System)'

@@ -58,6 +58,7 @@ type Props = {
 }
 
 const props = defineProps<Props>()
+const emit = defineEmits<{ assignmentsChanged: [] }>()
 
 const overlayModal = inject(overlayModalKey)
 const isAprilFirst = computed(() => props.rfcToBe?.isAprilFirstRfc === true)
@@ -113,7 +114,7 @@ const openAssignmentFinishedModal = async () => {
         assignments: rfcToBeAssignments,
         people: rpcPersonList,
         rfcToBe: props.rfcToBe,
-        onSuccess: () => { }
+        onSuccess: () => emit('assignmentsChanged')
       },
     }).catch(e => {
       if (e === undefined) {

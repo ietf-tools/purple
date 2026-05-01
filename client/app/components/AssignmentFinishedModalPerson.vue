@@ -12,14 +12,16 @@
       </label>
       <div class="w-[13em] flex justify-end items-center gap-2">
         <AssignmentState :state="props.assignment.state" />
-        <BaseButton v-if="props.assignment.state === 'assigned'" btnType="default" @click="startAssignment" size="xs"
-          :disabled="isSaving">
-          Start
-        </BaseButton>
-        <BaseButton v-else-if="props.assignment.state === 'in_progress'" btnType="default" @mousedown="isFinishing = true" @click="finishAssignment" size="xs"
-          :disabled="isSaving">
-          Finish
-        </BaseButton>
+        <template v-if="props.assignment.role !== 'blocked'">
+          <BaseButton v-if="props.assignment.state === 'assigned'" btnType="default" @click="startAssignment" size="xs"
+            :disabled="isSaving">
+            Start
+          </BaseButton>
+          <BaseButton v-else-if="props.assignment.state === 'in_progress'" btnType="default" @mousedown="isFinishing = true" @click="finishAssignment" size="xs"
+            :disabled="isSaving">
+            Finish
+          </BaseButton>
+        </template>
       </div>
     </form>
   </li>
