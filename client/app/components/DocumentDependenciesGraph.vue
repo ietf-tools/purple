@@ -44,7 +44,7 @@
       <h3 class="mt-4 font-bold">Cluster</h3>
       <pre>{{ JSON.stringify(clusterToUse, null, 2) }}</pre>
       <h3 class="mt-4 font-bold">RFCsToBe</h3>
-      <pre>{{ JSON.stringify(clusterToUse.documents?.flatMap(d => d.references ?? []), null, 2) }}</pre>
+      <pre>{{JSON.stringify(clusterToUse.documents?.flatMap(d => d.references ?? []), null, 2)}}</pre>
     </div>
   </details>
 </template>
@@ -222,14 +222,13 @@ const attemptToRenderGraph = () => {
     return
   }
 
-  const graphData = structuredClone(
+  const chosenGraphData: DrawGraphParameters[0]["data"] = structuredClone(
     // the D3 code will mutate arg data so we'll make a copy
-    clusterGraphData.value
+    // rendering bugs can be caused by not doing this
+    showLegend.value
+      ? legendData
+      : clusterGraphData.value
   )
-
-  const chosenGraphData: DrawGraphParameters[0]["data"] = showLegend.value
-    ? legendData
-    : graphData
 
   let [leg_el, leg_sim] = drawGraph({
     data: chosenGraphData,
