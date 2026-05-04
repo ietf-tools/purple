@@ -367,10 +367,14 @@ const columns = [
           throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
         }
 
+        const isBlocked = data.row.original.assignmentSet?.some(
+          a => a.role === 'blocked' && a.state === 'in_progress'
+        ) ?? false
+
         return h('ul', { class: 'flex flex-col gap-3' }, value.map(rpcRole =>
           h('li', { class: 'flex flex-row gap-2' }, [
             h('div', h(BaseBadge, { label: rpcRole.slug })),
-            h('div', h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign')),
+            !isBlocked && h('div', h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign')),
           ])
         ))
       },
