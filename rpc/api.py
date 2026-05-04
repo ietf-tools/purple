@@ -1271,15 +1271,22 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 {"error": "Search query too long (max 200 characters)"}, status=400
             )
 
-        # Check if query looks like an RFC number or cluster number
+        # Check if query looks like an RFC number, cluster number, or subseries number
         rfc_number = None
         cluster_number = None
+        subseries_type = None
+        subseries_number = None
         if query.isdigit():
             rfc_number = int(query)
         elif query.lower().startswith("rfc") and query[3:].strip().isdigit():
             rfc_number = int(query[3:])
         elif query.lower().startswith("c") and query[1:].isdigit():
             cluster_number = int(query[1:])
+        else:
+            subseries_match = re.match(r"^(bcp|std|fyi)\s*(\d+)$", query.lower())
+            if subseries_match:
+                subseries_type = subseries_match.group(1)
+                subseries_number = int(subseries_match.group(2))
 
         q_filter = Q(draft__name__icontains=query) | Q(
             authors__titlepage_name__icontains=query
@@ -1288,6 +1295,11 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             q_filter |= Q(rfc_number=rfc_number)
         if cluster_number:
             q_filter |= Q(draft__clustermember__cluster__number=cluster_number)
+        if subseries_type and subseries_number:
+            q_filter |= Q(
+                subseriesmember__type__slug=subseries_type,
+                subseriesmember__number=subseries_number,
+            )
 
         queryset = RfcToBe.objects.filter(q_filter).distinct().order_by("-id")
         if disposition:
