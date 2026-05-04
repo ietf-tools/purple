@@ -1283,6 +1283,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         elif query.lower().startswith("c") and query[1:].isdigit():
             cluster_number = int(query[1:])
         else:
+            # hardcoded regex for subseries to avoid additional query overhead getting
+            # subseries types dynamically; needs update if new subseries types are added
             subseries_match = re.match(r"^(bcp|std|fyi)\s*(\d+)$", query.lower())
             if subseries_match:
                 subseries_type = subseries_match.group(1)
