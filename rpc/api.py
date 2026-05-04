@@ -136,7 +136,6 @@ from .serializers import (
     SubseriesTypeNameSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
-    check_user_has_role,
 )
 from .tasks import (
     RPC_PERSON_NAME_MAP_CACHE_KEY,
