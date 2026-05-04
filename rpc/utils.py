@@ -60,6 +60,7 @@ def create_cluster() -> Cluster:
         Value(1),
     )
     cluster = Cluster.objects.create(number=next_number)
+    # Refresh from DB to get the actual assigned number, not Coalesce expression
     cluster.refresh_from_db()
     return cluster
 
