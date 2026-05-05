@@ -158,7 +158,7 @@ const columns = [
   }),
   columnHelper.accessor(
     'approved', {
-    header: 'Date Approved / (N/A)',
+    header: 'Date Approved',
     cell: data => {
       const date = data.getValue()
       if (!date) {
