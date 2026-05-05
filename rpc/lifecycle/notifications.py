@@ -9,6 +9,7 @@ from rpc.models import (
     AdditionalEmail,
     Assignment,
     ClusterMember,
+    FinalApproval,
     RfcAuthor,
     RfcToBe,
     RpcRelatedDocument,
@@ -117,6 +118,7 @@ def get_recent_changes(check_time):
         or AdditionalEmail.history.filter(history_date__gt=check_time).exists()
         or ClusterMember.history.filter(history_date__gt=check_time).exists()
         or SubseriesMember.history.filter(history_date__gt=check_time).exists()
+        or FinalApproval.history.filter(history_date__gt=check_time).exists()
     )
 
 
