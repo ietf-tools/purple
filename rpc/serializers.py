@@ -1942,4 +1942,5 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "std_level",
             "references",
             "rev",
+            "rfc_number",
         ]
