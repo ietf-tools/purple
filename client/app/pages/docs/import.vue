@@ -134,6 +134,7 @@ import { computed } from 'vue'
 import { type IANAActionsEnum } from '../../utils/iana'
 import { QUEUE_SUBMISSIONS_PATH } from '../../utils/url'
 import { snackbarForErrors } from '~/utils/snackbar'
+import { inputTypeDateToDateTime } from '~/utils/form'
 
 const route = useRoute()
 const api = useApi()
@@ -212,7 +213,7 @@ async function importSubmission () {
         submittedFormat: state.sourceFormat.slug,
         stdLevel: state.stdLevel.slug,
         stream: state.stream.slug,
-        externalDeadline: DateTime.fromISO(state.deadline, { zone: 'utc' }).toJSDate(),
+        externalDeadline: inputTypeDateToDateTime(state.deadline).toJSDate(),
         labels: state.labels,
         ianaStatusSlug: state.ianaAction
       }

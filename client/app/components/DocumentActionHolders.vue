@@ -123,7 +123,7 @@ const columns = [
       if (!date) {
         return '(N/A)'
       }
-      const dateTime = DateTime.fromJSDate(date)
+      const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
       return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
         DateTime.DATE_MED_WITH_WEEKDAY
       ))
@@ -136,7 +136,7 @@ const columns = [
     cell: data => {
       const completed = data.row.original.completed
       if (completed) {
-        const dateTime = DateTime.fromJSDate(completed)
+        const dateTime = DateTime.fromJSDate(completed, { zone: 'utc' })
         return h('div', { class: 'flex flex-row items-center gap-1' }, [
           h(Icon, { name: 'duo-icons:approved', size: '1.25em', class: 'text-green-500' }),
           h('time', { datetime: dateTime.toISO(), class: 'text-green-700 text-sm' },
@@ -154,7 +154,7 @@ const columns = [
     cell: data => {
       const date = data.getValue()
       if (!date) return h('span', { class: 'text-gray-400' }, '(none)')
-      const dateTime = DateTime.fromJSDate(date)
+      const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
       return h('time', { datetime: dateTime.toISO() }, dateTime.toLocaleString(DateTime.DATE_MED))
     },
     sortingFn: 'alphanumeric',

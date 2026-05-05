@@ -179,7 +179,7 @@ const rfcToBe = computed((): CookedDraft | null => {
       ...rawRfcToBe.value,
       externalDeadline:
         rawRfcToBe.value.externalDeadline
-          ? DateTime.fromJSDate(rawRfcToBe.value.externalDeadline)
+          ? DateTime.fromJSDate(rawRfcToBe.value.externalDeadline, { zone: 'utc' })
           : null
     }
   }

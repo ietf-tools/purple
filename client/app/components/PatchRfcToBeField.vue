@@ -87,6 +87,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { DateTime } from 'luxon'
+import { inputTypeDateToDateTime } from '~/utils/form'
 import type { RfcToBe, PatchedRfcToBeRequest } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
@@ -162,7 +163,7 @@ const updateValue = async () => {
           draftName: props.draftName,
           patchedRfcToBeRequest: {
             [fieldName]: valueStringRef.value
-              ? DateTime.fromISO(valueStringRef.value, { zone: 'utc' }).toJSDate()
+              ? inputTypeDateToDateTime(valueStringRef.value).toJSDate()
               : null
           }
         })

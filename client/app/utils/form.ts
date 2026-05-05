@@ -24,7 +24,7 @@ export const hoursToDurationString = (hours: number): string => {
   return duration.toFormat('d hh:mm:ss')
 }
 
-export const jsDateToInputTypeDate = (date: Date): string => DateTime.fromJSDate(date).toISODate() ?? ''
+export const jsDateToInputTypeDate = (date: Date): string => DateTime.fromJSDate(date, { zone: 'utc' }).toISODate() ?? ''
 
-export const inputTypeDateToDateTime = (isoDateString: string): DateTime => DateTime.fromISO(isoDateString, { zone: 'utc' })
+export const inputTypeDateToDateTime = (isoDateString: string): DateTime => DateTime.fromISO(isoDateString, { zone: 'utc' }).set({ hour: 12 })
 

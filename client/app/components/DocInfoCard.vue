@@ -387,7 +387,7 @@
             <PatchRfcToBeField fieldName="externalDeadline" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'date', initialValue: rfcToBe.externalDeadline ? jsDateToInputTypeDate(rfcToBe.externalDeadline) : undefined }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <span>{{ rfcToBe.externalDeadline ? DateTime.fromJSDate(rfcToBe.externalDeadline).toLocaleString(DateTime.DATE_FULL) : '(none)' }}</span>
+              <span>{{ rfcToBe.externalDeadline ? DateTime.fromJSDate(rfcToBe.externalDeadline, { zone: 'utc' }).toLocaleString(DateTime.DATE_FULL) : '(none)' }}</span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
