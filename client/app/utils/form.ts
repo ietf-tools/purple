@@ -26,5 +26,6 @@ export const hoursToDurationString = (hours: number): string => {
 
 export const jsDateToInputTypeDate = (date: Date): string => DateTime.fromJSDate(date, { zone: 'utc' }).toISODate() ?? ''
 
+// use 12:00 UTC to minimize date ambiguity across time zones
 export const inputTypeDateToDateTime = (isoDateString: string): DateTime => DateTime.fromISO(isoDateString, { zone: 'utc' }).set({ hour: 12 })
 
