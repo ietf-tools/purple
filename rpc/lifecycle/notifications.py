@@ -104,6 +104,13 @@ def get_updated_rfcs_since(current_check_time):
         if _should_notify_queue(hist.rfc_to_be):
             queue_rfcs.add(hist.rfc_to_be.id)
 
+    # Check FinalApproval changes
+    for hist in FinalApproval.history.filter(
+        history_date__gt=current_check_time
+    ).select_related("rfc_to_be__disposition"):
+        if _should_notify_queue(hist.rfc_to_be):
+            queue_rfcs.add(hist.rfc_to_be.id)
+
     return queue_rfcs
 
 
