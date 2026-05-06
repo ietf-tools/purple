@@ -81,8 +81,8 @@ class DatatrackerPerson(models.Model):
         persons in a response are cached together, their entries also expire together,
         causing N simultaneous API calls on the next cache miss.
 
-        Calling this before serialization replaces those N individual calls with a single
-        batch request. Only persons not already in cache are fetched.
+        Calling this before serialization replaces those N individual calls with a
+        single batch request. Only persons not already in cache are fetched.
         """
         no_value = object()
         missing = [
