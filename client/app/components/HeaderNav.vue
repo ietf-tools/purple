@@ -13,7 +13,7 @@
         <label for="search-field" class="sr-only">Search</label>
         <Icon name="uil:search" class="pointer-events-none absolute inset-y-0 left-0 h-full w-5 text-gray-400" aria-hidden="true" />
         <input id="search-field" v-model="navSearch" class="block h-full w-full border-0 py-0 pl-8 pr-0 bg-white dark:bg-neutral-900 text-gray-900 dark:text-neutral-200 placeholder:text-gray-400 dark:placeholder:text-neutral-400 focus:ring-0 sm:text-sm"
-          placeholder="Search docs by draft name, RFC number or author" type="search" name="search" autocomplete="off" @focus="showResults = true" @blur="onSearchBlur" >
+          placeholder="Search docs by draft name, RFC number, Subseries (e.g. BCP5) or author" type="search" name="search" autocomplete="off" @focus="showResults = true" @blur="onSearchBlur" >
         <div
           v-if="showResults && navSearch.length >= 4"
           class="absolute left-0 top-full z-50 mt-1 w-full min-w-[280px] max-h-[60vh] overflow-y-auto rounded-lg border bg-white dark:bg-neutral-800 shadow-xl"
