@@ -56,7 +56,7 @@ import {
   getSortedRowModel,
   type SortingState,
 } from '@tanstack/vue-table'
-import type { PaginatedRfcToBeList } from '~/purple_client'
+import type { QueueItem } from '~/purple_client'
 import { type QueueTabId } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import BaseButton from '~/components/BaseButton.vue'
@@ -68,7 +68,7 @@ const overlayModal = inject(overlayModalKey)
 
 const currentTab: QueueTabId = 'pending-announcement'
 
-type Row = PaginatedRfcToBeList["results"][number]
+type Row = QueueItem
 
 const {
   data,
@@ -78,20 +78,20 @@ const {
   error,
 } = await useAsyncData(
   'queue2-pending-announcement',
-  () => api.documentsList({ }),
+  () => api.queueList({ pendingFinalApproval: false }),
   {
     server: false,
     lazy: true,
-    default: () => {
-      const defaultValue: PaginatedRfcToBeList = {
-        count: 0,
-        next: '',
-        previous: '',
-        results: []
-      }
-      return defaultValue
-    }
+    default: () => [] as QueueItem[],
   }
+)
+
+const ASSIGNMENT_SET_ROLE_PUBLISHER = 'publisher'
+
+const queueItems = computed(() =>
+  data.value.filter(
+    item => item.assignmentSet?.some(a => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER)
+  )
 )
 
 const columnHelper = createColumnHelper<Row>()
@@ -175,7 +175,7 @@ const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return data.value.results
+    return queueItems.value
   },
   columns,
   getCoreRowModel: getCoreRowModel(),
