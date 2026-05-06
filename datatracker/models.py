@@ -75,10 +75,14 @@ class DatatrackerPerson(models.Model):
     @classmethod
     @with_rpcapi
     def warm_cache(cls, datatracker_ids: list[int], *, rpcapi: rpcapi_client.PurpleApi):
-        """Batch-fetch person data and populate the per-person cache.
+        """Batch-fetch person data from datatracker and populate the per-person cache.
 
-        Replaces N individual get_person_by_id() calls with one get_persons() call.
-        Call this before serializing many DatatrackerPerson objects.
+        Without this, _fetch() makes one API call per person per response. Because all
+        persons in a response are cached together, their entries also expire together,
+        causing N simultaneous API calls on the next cache miss.
+
+        Calling this before serialization replaces those N individual calls with a single
+        batch request. Only persons not already in cache are fetched.
         """
         no_value = object()
         missing = [
