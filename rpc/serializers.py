@@ -247,7 +247,9 @@ class CreateActionHolderSerializer(ActionHolderSerializer):
 
     def create(self, validated_data):
         person_id = validated_data.pop("person_id")
-        dt_person = DatatrackerPerson.objects.get(datatracker_id=person_id)
+        dt_person, _ = DatatrackerPerson.objects.first_or_create(
+            datatracker_id=person_id
+        )
         return ActionHolder.objects.create(
             datatracker_person=dt_person, **validated_data
         )

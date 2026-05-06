@@ -21,7 +21,7 @@
       <DialogFieldDate v-model="completedDateString" id="completed" label="Date Completed" :disabled="isSuccess" />
 
       <div class="flex flex-row items-start">
-        <label for="body" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Action:</label>
+        <label for="body" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Body:</label>
         <input v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess"
           class="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
           placeholder="Short description (optional)" />
