@@ -382,6 +382,14 @@ const columns = [
     }
   ),
   columnHelper.accessor(
+    'pages',
+    {
+      header: 'Pages',
+      cell: data => data.getValue() ?? '-',
+      sortingFn: 'alphanumeric',
+    }
+  ),
+  columnHelper.accessor(
     'cluster',
     {
       header: 'Cluster',
