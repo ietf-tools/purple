@@ -56,7 +56,7 @@ import {
   getSortedRowModel,
   type SortingState,
 } from '@tanstack/vue-table'
-import type { QueueItem } from '~/purple_client'
+import type { QueueItem, RpcPerson } from '~/purple_client'
 import { type QueueTabId } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import BaseButton from '~/components/BaseButton.vue'
@@ -83,6 +83,16 @@ const {
     server: false,
     lazy: true,
     default: () => [] as QueueItem[],
+  }
+)
+
+const { data: people } = await useAsyncData(
+  'pending-announcement-people',
+  () => api.rpcPersonList(),
+  {
+    server: false,
+    lazy: true,
+    default: () => [] as RpcPerson[],
   }
 )
 
@@ -117,6 +127,18 @@ const columns = [
       ])
     },
     sortingFn: 'alphanumeric',
+  }),
+  columnHelper.display({
+    id: 'pubOwner',
+    header: 'PUB Owner',
+    cell: (data) => {
+      const assignment = data.row.original.assignmentSet?.find(
+        a => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER
+      )
+      if (!assignment?.person) return '-'
+      const person = people.value.find(p => p.id === assignment.person)
+      return person?.name ?? (status.value === 'pending' ? '...' : '-')
+    },
   }),
   columnHelper.display({
     id: 'icon',
