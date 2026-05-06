@@ -163,6 +163,26 @@ class RfcToBeQuerySet(models.QuerySet):
             )
         )
 
+    def with_final_approvals(self):
+        return self.prefetch_related(
+            Prefetch(
+                "finalapproval_set",
+                queryset=FinalApproval.objects.select_related(
+                    "approver", "overriding_approver"
+                ),
+            )
+        )
+
+    def with_authors(self):
+        return self.prefetch_related(
+            Prefetch(
+                "authors",
+                queryset=RfcAuthor.objects.select_related(
+                    "datatracker_person"
+                ).order_by("order"),
+            )
+        )
+
 
 class RfcToBe(models.Model):
     """RPC representation of a pre-publication RFC"""

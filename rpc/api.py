@@ -750,6 +750,21 @@ class QueueCounts(views.APIView):
         return Response(data)
 
 
+def _collect_queue_person_ids(items) -> list[int]:
+    """Collect all DatatrackerPerson IDs from action holders and final approvals."""
+    ids: set[int] = set()
+    for item in items:
+        for ah in item.active_actionholders:
+            if ah.datatracker_person_id is not None:
+                ids.add(ah.datatracker_person.datatracker_id)
+        for fa in item.finalapproval_set.all():
+            if fa.approver_id is not None:
+                ids.add(fa.approver.datatracker_id)
+            if fa.overriding_approver_id is not None:
+                ids.add(fa.overriding_approver.datatracker_id)
+    return list(ids)
+
+
 class QueueList(ListAPIView):
     """Queue view for purple application"""
 
@@ -761,10 +776,21 @@ class QueueList(ListAPIView):
         .with_active_assignments()
         .with_active_actionholders()
         .with_blocking_reasons()
+        .with_final_approvals()
     )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_class = QueueFilter
+
+    def list(self, request, *args, **kwargs):
+        queryset = list(self.filter_queryset(self.get_queryset()))
+        DatatrackerPerson.warm_cache(_collect_queue_person_ids(queryset))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
 
 
 QueueList = extend_schema_view(
@@ -1075,6 +1101,20 @@ class RfcToBeQueryParamsForm(forms.Form):
     published_within_days = forms.IntegerField(required=False, min_value=0)
 
 
+def _collect_document_person_ids(items) -> list[int]:
+    """Collect all DatatrackerPerson IDs from authors, shepherd, IESG contact, and
+    stream manager."""
+    ids: set[int] = set()
+    for item in items:
+        for author in item.authors.all():
+            if author.datatracker_person_id is not None:
+                ids.add(author.datatracker_person.datatracker_id)
+        for person in (item.iesg_contact, item.shepherd, item.stream_manager):
+            if person is not None:
+                ids.add(person.datatracker_id)
+    return list(ids)
+
+
 @extend_schema_view(
     list=extend_schema(
         parameters=[
@@ -1097,7 +1137,12 @@ class RfcToBeQueryParamsForm(forms.Form):
     ),
 )
 class RfcToBeViewSet(viewsets.ModelViewSet):
-    queryset = RfcToBe.objects.all().with_blocking_reasons()
+    queryset = (
+        RfcToBe.objects.all()
+        .select_related("iesg_contact", "shepherd", "stream_manager")
+        .with_blocking_reasons()
+        .with_authors()
+    )
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
     filter_backends = (
@@ -1108,6 +1153,24 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     ordering_fields = ["id", "published_at", "draft__name"]
     ordering = ["-id"]
     pagination_class = DefaultLimitOffsetPagination
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            DatatrackerPerson.warm_cache(_collect_document_person_ids(page))
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        items = list(queryset)
+        DatatrackerPerson.warm_cache(_collect_document_person_ids(items))
+        serializer = self.get_serializer(items, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        DatatrackerPerson.warm_cache(_collect_document_person_ids([instance]))
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
 
     def get_object(self):
         lookup_value = self.kwargs.get(self.lookup_field)
