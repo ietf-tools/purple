@@ -32,6 +32,8 @@ const { data: counts } = await useAsyncData(
 
 const tabs = computed<Tab[]>(() =>
   queueTabs.map(tab => {
+    // map tab id to the corresponding count key
+    // e.g. "pending-announcement" → "pendingAnnouncement"
     const countKey = tab.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as keyof QueueCounts
     return {
       ...tab,
