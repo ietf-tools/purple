@@ -1162,6 +1162,45 @@ class FinalApprovalCountsSerializer(serializers.Serializer):
     total = serializers.IntegerField()
 
 
+class NotReceivedClusterMemberSerializer(serializers.Serializer):
+    """ClusterMember shape for documents referenced but not yet received
+    into the queue."""
+
+    name = serializers.CharField()
+    rfc_number = serializers.SerializerMethodField()
+    disposition = serializers.SerializerMethodField()
+    references = serializers.SerializerMethodField()
+    is_received = serializers.SerializerMethodField()
+    is_normref = serializers.SerializerMethodField()
+    order = serializers.SerializerMethodField()
+    is_blocked = serializers.SerializerMethodField()
+    final_approval_counts = serializers.SerializerMethodField()
+
+    def get_rfc_number(self, obj):
+        return None
+
+    def get_disposition(self, obj):
+        return None
+
+    def get_references(self, obj):
+        return None
+
+    def get_is_received(self, obj):
+        return False
+
+    def get_is_normref(self, obj):
+        return True
+
+    def get_order(self, obj):
+        return None
+
+    def get_is_blocked(self, obj):
+        return False
+
+    def get_final_approval_counts(self, obj):
+        return None
+
+
 class ClusterMemberListSerializer(serializers.ListSerializer):
     """ListSerializer for ClusterMembers to allow multiple updates
 
@@ -1487,6 +1526,61 @@ class ClusterSerializer(serializers.ModelSerializer):
 
         instance.refresh_from_db()
         return instance
+
+
+class PublicClusterMemberListSerializer(ClusterMemberListSerializer):
+    """Extends ClusterMemberListSerializer to append not-received referenced docs."""
+
+    def to_representation(self, data):
+        items = data.all() if hasattr(data, "all") else data
+        existing_names: set[str] = {member.doc.name for member in items}
+        not_received_targets: dict[str, Document] = {}
+        for member in items:
+            if (
+                hasattr(member.doc, "rfctobe_annotated")
+                and member.doc.rfctobe_annotated
+            ):
+                refs = (
+                    getattr(
+                        member.doc.rfctobe_annotated[0], "references_annotated", None
+                    )
+                    or []
+                )
+            else:
+                rfctobe = member.doc.rfctobe_set.exclude(
+                    disposition__slug="withdrawn"
+                ).first()
+                refs = (
+                    RpcRelatedDocument.objects.filter(
+                        source=rfctobe,
+                        relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG,
+                    ).select_related("target_document")
+                    if rfctobe
+                    else []
+                )
+            for ref in refs:
+                if (
+                    ref.relationship.slug
+                    == DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+                    and ref.target_document
+                    and ref.target_document.name not in existing_names
+                ):
+                    not_received_targets[ref.target_document.name] = ref.target_document
+        result = list(super().to_representation(data))
+        for doc in not_received_targets.values():
+            result.append(NotReceivedClusterMemberSerializer(doc).data)
+        return result
+
+
+class PublicClusterMemberSerializer(ClusterMemberSerializer):
+    class Meta(ClusterMemberSerializer.Meta):
+        list_serializer_class = PublicClusterMemberListSerializer
+
+
+class PublicClusterSerializer(ClusterSerializer):
+    documents = PublicClusterMemberSerializer(
+        source="clustermember_set", many=True, read_only=True
+    )
 
 
 class ClusterMemberHistorySerializer(serializers.Serializer):

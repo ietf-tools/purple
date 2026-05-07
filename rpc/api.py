@@ -117,6 +117,7 @@ from .serializers import (
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
+    PublicClusterSerializer,
     PublicQueueItemSerializer,
     PublishRfcSerializer,
     PublishRfcStatusSerializer,
@@ -832,7 +833,7 @@ class PublicClusterViewSet(viewsets.ReadOnlyModelViewSet):
         .filter(is_active_annotated=True)
         .order_by("number")
     )
-    serializer_class = ClusterSerializer
+    serializer_class = PublicClusterSerializer
     lookup_field = "number"
 
 

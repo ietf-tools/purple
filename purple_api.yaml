@@ -18,7 +18,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Cluster'
+                  $ref: '#/components/schemas/PublicCluster'
           description: ''
   /api/pubq/clusters/{number}/:
     get:
@@ -40,7 +40,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Cluster'
+                $ref: '#/components/schemas/PublicCluster'
           description: ''
   /api/pubq/queue/:
     get:
@@ -4967,6 +4967,78 @@ components:
       required:
       - rfc_to_be
       - role
+    PublicCluster:
+      type: object
+      description: |-
+        Serialize a Cluster instance
+
+        Uses a nested representation for `documents` rather than the ModelSerializer's
+        handling of relations so we can work with the through model. Specifically, we
+        want to respect the `order_by` setting of the `ClusterMember` class.
+      properties:
+        number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicClusterMember'
+          readOnly: true
+        is_active:
+          type: boolean
+          description: |-
+            A cluster is considered active if at least one of its documents is
+            in_progress.
+          readOnly: true
+      required:
+      - number
+    PublicClusterMember:
+      type: object
+      properties:
+        name:
+          type: string
+        rfc_number:
+          type: integer
+          nullable: true
+          readOnly: true
+        disposition:
+          type: string
+          nullable: true
+          readOnly: true
+        references:
+          type: array
+          items:
+            $ref: '#/components/schemas/RpcRelatedDocument'
+          readOnly: true
+        is_received:
+          type: boolean
+          nullable: true
+          description: Determine if the document has been received based on related
+            documents
+          readOnly: true
+        is_normref:
+          type: boolean
+          description: |-
+            True if this document is a normative reference target of any other
+            cluster member in same cluster.
+
+            Uses the pre-computed set from ClusterMemberListSerializer.to_representation
+            when available, falling back to a direct lookup.
+          readOnly: true
+        order:
+          type: integer
+        is_blocked:
+          type: boolean
+          readOnly: true
+        final_approval_counts:
+          allOf:
+          - $ref: '#/components/schemas/FinalApprovalCounts'
+          nullable: true
+          readOnly: true
+      required:
+      - name
+      - order
     PublicQueueAuthor:
       type: object
       properties:
