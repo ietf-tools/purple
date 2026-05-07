@@ -130,6 +130,7 @@ urlpatterns = [
     path("oidc/", include("mozilla_django_oidc.urls")),
     path("login/", views.index),
     path("api/pubq/queue/", rpc_api.PublicQueueList.as_view()),
+    path("api/rpc/queue/counts/", rpc_api.QueueCounts.as_view()),
     path("api/rpc/queue/", rpc_api.QueueList.as_view()),
     path(
         "api/rpc/search/datatrackerpersons/", rpc_api.SearchDatatrackerPersons.as_view()

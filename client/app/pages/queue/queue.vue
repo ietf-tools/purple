@@ -79,6 +79,7 @@
       </div>
     </div>
 
+    <div class="p-2">
     <RpcTable>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
@@ -111,6 +112,7 @@
         </tr>
       </RpcTfoot>
     </RpcTable>
+    </div>
   </div>
 
 

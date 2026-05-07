@@ -4,4 +4,5 @@ export type Tab = {
   to: string
   icon: string
   iconAnimate?: boolean
+  count?: number | null
 }

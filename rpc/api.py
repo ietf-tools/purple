@@ -44,7 +44,7 @@ from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
 from datatracker.models import DatatrackerPerson, Document
-from datatracker.rpcapi import datatracker_api, with_rpcapi
+from datatracker.rpcapi import datatracker_api, get_rpcapi_client, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
 from .dt_v1_api_utils import datatracker_group_list_email
@@ -120,6 +120,7 @@ from .serializers import (
     PublicQueueItemSerializer,
     PublishRfcSerializer,
     PublishRfcStatusSerializer,
+    QueueCountsSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
     RfcToBeHistorySerializer,
@@ -693,6 +694,59 @@ class QueueFilter(django_filters.FilterSet):
     class Meta:
         model = RfcToBe
         fields = ["disposition", "pending_final_approval"]
+
+
+@extend_schema(operation_id="queue_counts", responses={200: QueueCountsSerializer})
+class QueueCounts(views.APIView):
+    """Item counts for each queue tab"""
+
+    CACHE_KEY = "queue_counts"
+    CACHE_TTL = 60  # seconds
+
+    def get(self, request):
+        cached = cache.get(self.CACHE_KEY)
+        if cached is not None:
+            return Response(cached)
+
+        enqueuing = RfcToBe.objects.filter(disposition__slug="created").count()
+        queue = RfcToBe.objects.filter(disposition__slug="in_progress").count()
+        days_ago = datetime.date.today() - datetime.timedelta(days=30)
+        published = RfcToBe.objects.filter(
+            disposition__slug="published", published_at__gte=days_ago
+        ).count()
+        pending_announcement = (
+            RfcToBe.objects.in_queue()
+            .filter(finalapproval__isnull=False)
+            .exclude(finalapproval__approved__isnull=True)
+            .filter(assignment__role__slug="publisher")
+            .exclude(assignment__state__in=ASSIGNMENT_INACTIVE_STATES)
+            .distinct()
+            .count()
+        )
+        try:
+            rpcapi = get_rpcapi_client()
+            with datatracker_api():
+                submitted = rpcapi.submitted_to_rpc()
+            already_in_queue = set(
+                RfcToBe.objects.filter(
+                    draft__datatracker_id__in=[s.id for s in submitted]
+                ).values_list("draft__datatracker_id", flat=True)
+            )
+            submissions = sum(1 for s in submitted if s.id not in already_in_queue)
+        except Exception:
+            submissions = None
+
+        data = QueueCountsSerializer(
+            {
+                "submissions": submissions,
+                "enqueuing": enqueuing,
+                "queue": queue,
+                "pending_announcement": pending_announcement,
+                "published": published,
+            }
+        ).data
+        cache.set(self.CACHE_KEY, data, self.CACHE_TTL)
+        return Response(data)
 
 
 class QueueList(ListAPIView):

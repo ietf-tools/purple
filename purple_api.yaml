@@ -2611,6 +2611,21 @@ paths:
                 items:
                   $ref: '#/components/schemas/QueueItem'
           description: ''
+  /api/rpc/queue/counts/:
+    get:
+      operationId: queue_counts
+      description: Item counts for each queue tab
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueCounts'
+          description: ''
   /api/rpc/rpc_person/:
     get:
       operationId: rpc_person_list
@@ -5116,6 +5131,27 @@ components:
           type: string
         repository:
           type: string
+    QueueCounts:
+      type: object
+      description: Counts of items for each queue tab
+      properties:
+        submissions:
+          type: integer
+          nullable: true
+        enqueuing:
+          type: integer
+        queue:
+          type: integer
+        pending_announcement:
+          type: integer
+        published:
+          type: integer
+      required:
+      - enqueuing
+      - pending_announcement
+      - published
+      - queue
+      - submissions
     QueueItem:
       type: object
       description: RfcToBe serializer suitable for displaying a queue of many

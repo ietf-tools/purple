@@ -24,6 +24,7 @@
         aria-hidden="true"
       />
       <span>{{ tab.name }}</span>
+      <span v-if="tab.count != null" class="ml-1 text-xs opacity-60">({{ tab.count }})</span>
       <span
         aria-hidden="true"
         :class="[

@@ -9,6 +9,13 @@
       {{ error }}
     </ErrorAlert>
 
+    <div class="flex justify-between items-center mb-2">
+      <div></div>
+      <div class="text-sm text-gray-500 dark:text-neutral-400">
+        {{ table.getRowModel().rows.length }} records
+      </div>
+    </div>
+
     <div class="p-2">
       <RpcTable>
         <RpcThead>

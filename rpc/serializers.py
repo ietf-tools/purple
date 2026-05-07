@@ -63,6 +63,16 @@ class VersionInfoSerializer(serializers.Serializer):
     dump_timestamp = serializers.DateTimeField(required=False, read_only=True)
 
 
+class QueueCountsSerializer(serializers.Serializer):
+    """Counts of items for each queue tab"""
+
+    submissions = serializers.IntegerField(allow_null=True)
+    enqueuing = serializers.IntegerField()
+    queue = serializers.IntegerField()
+    pending_announcement = serializers.IntegerField()
+    published = serializers.IntegerField()
+
+
 class NameSerializer(serializers.Serializer):
     """Serialize any Name subclass"""
 
