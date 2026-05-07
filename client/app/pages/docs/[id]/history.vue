@@ -70,10 +70,11 @@ const currentTab: DocTabId = 'history'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-type FilterValue = 'all' | 'cluster' | 'reference' | 'author' | 'metadata'
+type FilterValue = 'all' | 'assignment' | 'cluster' | 'reference' | 'author' | 'metadata'
 const FILTERS: { value: FilterValue; label: string; model: string | null }[] = [
   { value: 'all', label: 'All', model: null },
   { value: 'metadata', label: 'Metadata', model: 'rfctobe' },
+  { value: 'assignment', label: 'Assignment', model: 'assignment' },
   { value: 'cluster', label: 'Cluster', model: 'cluster_member' },
   { value: 'reference', label: 'Reference', model: 'reference' },
   { value: 'author', label: 'Author', model: 'rfc_author' },
