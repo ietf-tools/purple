@@ -835,7 +835,11 @@ def _process_history_qs(qs, describe_delta=None, *, model=None) -> list[HistoryR
                     f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
                     for c in delta.changes
                 ]
-            field = delta.changes[0].field.removesuffix("_id") if len(delta.changes) == 1 else None
+            field = (
+                delta.changes[0].field.removesuffix("_id")
+                if len(delta.changes) == 1
+                else None
+            )
         elif newer.history_change_reason:
             parts = [newer.history_change_reason]
             field = None
@@ -843,23 +847,36 @@ def _process_history_qs(qs, describe_delta=None, *, model=None) -> list[HistoryR
             parts = []
             field = None
         if parts:
-            records.append(HistoryRecord.from_simple_history(newer, "; ".join(parts), model=model, field=field))
+            records.append(
+                HistoryRecord.from_simple_history(
+                    newer, "; ".join(parts), model=model, field=field
+                )
+            )
     first = model_histories[-1]
     records.append(
         HistoryRecord.from_simple_history(
-            first, first.history_change_reason or "Record created", model=model, field=None
+            first,
+            first.history_change_reason or "Record created",
+            model=model,
+            field=None,
         )
     )
     return records
 
 
-def _instance_history_records(histories: list, prefix: str, *, model=None, field=None) -> list[HistoryRecord]:
+def _instance_history_records(
+    histories: list, prefix: str, *, model=None, field=None
+) -> list[HistoryRecord]:
     """Convert per-instance history records (newest-first) to HistoryRecord objects."""
     records = []
     if histories[0].history_type == "-":
         h = histories[0]
         desc = h.history_change_reason or "Removed"
-        records.append(HistoryRecord.from_simple_history(h, f"{prefix}: {desc}", model=model, field=field))
+        records.append(
+            HistoryRecord.from_simple_history(
+                h, f"{prefix}: {desc}", model=model, field=field
+            )
+        )
         histories = histories[1:]
     if not histories:
         return records
@@ -870,7 +887,11 @@ def _instance_history_records(histories: list, prefix: str, *, model=None, field
                 f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
                 for c in delta.changes
             ]
-            inferred_field = delta.changes[0].field.removesuffix("_id") if len(delta.changes) == 1 else None
+            inferred_field = (
+                delta.changes[0].field.removesuffix("_id")
+                if len(delta.changes) == 1
+                else None
+            )
         elif newer.history_change_reason:
             parts = [newer.history_change_reason]
             inferred_field = None
@@ -880,16 +901,25 @@ def _instance_history_records(histories: list, prefix: str, *, model=None, field
         if parts:
             records.append(
                 HistoryRecord.from_simple_history(
-                    newer, f"{prefix}: {'; '.join(parts)}", model=model, field=field or inferred_field
+                    newer,
+                    f"{prefix}: {'; '.join(parts)}",
+                    model=model,
+                    field=field or inferred_field,
                 )
             )
     first = histories[-1]
     desc = first.history_change_reason or "Added"
-    records.append(HistoryRecord.from_simple_history(first, f"{prefix}: {desc}", model=model, field=field))
+    records.append(
+        HistoryRecord.from_simple_history(
+            first, f"{prefix}: {desc}", model=model, field=field
+        )
+    )
     return records
 
 
-def _related_history(history_qs, make_prefix, *, model=None, field=None) -> list[HistoryRecord]:
+def _related_history(
+    history_qs, make_prefix, *, model=None, field=None
+) -> list[HistoryRecord]:
     """Collect HistoryRecord objects from a related model's history queryset.
 
     Processes each instance's history with _instance_history_records.
@@ -900,7 +930,11 @@ def _related_history(history_qs, make_prefix, *, model=None, field=None) -> list
         by_pk.setdefault(h.id, []).append(h)
     records = []
     for _pk, histories in by_pk.items():
-        records.extend(_instance_history_records(histories, make_prefix(histories[0]), model=model, field=field))
+        records.extend(
+            _instance_history_records(
+                histories, make_prefix(histories[0]), model=model, field=field
+            )
+        )
     return records
 
 
@@ -927,7 +961,9 @@ def _rfctobe_describe_delta(delta: ModelDelta):
 
 def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
     """Collect and merge all history for an RfcToBe and its related models."""
-    records = _process_history_qs(rfc_to_be.history, _rfctobe_describe_delta, model="rfctobe")
+    records = _process_history_qs(
+        rfc_to_be.history, _rfctobe_describe_delta, model="rfctobe"
+    )
 
     def _assignment_prefix(h):
         try:
@@ -999,7 +1035,10 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
 
         def _cluster_member_prefix(h):
             try:
-                return f"Cluster membership (cluster #{Cluster.objects.get(pk=h.cluster_id).number})"
+                return (
+                    "Cluster membership (cluster "
+                    f"#{Cluster.objects.get(pk=h.cluster_id).number})"
+                )
             except Cluster.DoesNotExist:
                 return "Cluster membership"
 
