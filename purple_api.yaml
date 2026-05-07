@@ -3493,10 +3493,18 @@ components:
           $ref: '#/components/schemas/DatatrackerPerson'
         desc:
           type: string
+        model:
+          type: string
+          nullable: true
+        field:
+          type: string
+          nullable: true
       required:
       - by
       - desc
+      - field
       - id
+      - model
       - time
     AssignmentRequest:
       type: object
@@ -4278,10 +4286,18 @@ components:
           $ref: '#/components/schemas/DatatrackerPerson'
         desc:
           type: string
+        model:
+          type: string
+          nullable: true
+        field:
+          type: string
+          nullable: true
       required:
       - by
       - desc
+      - field
       - id
+      - model
       - time
     HistoryLastEdit:
       type: object

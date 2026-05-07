@@ -105,9 +105,11 @@ class HistoryRecord:
     date: datetime.datetime
     by: DatatrackerPerson | None
     desc: str
+    model: str | None = None
+    field: str | None = None
 
     @classmethod
-    def from_simple_history(cls, sh, desc):
+    def from_simple_history(cls, sh, desc, *, model=None, field=None):
         dt_person = (
             None if sh.history_user is None else sh.history_user.datatracker_person()
         )
@@ -116,6 +118,8 @@ class HistoryRecord:
             date=sh.history_date,
             by=dt_person,
             desc=desc,
+            model=model,
+            field=field,
         )
 
 
@@ -170,6 +174,8 @@ class HistorySerializer(serializers.Serializer):
     time = serializers.DateTimeField(source="date")
     by = DatatrackerPersonSerializer()
     desc = serializers.CharField()
+    model = serializers.CharField(allow_null=True)
+    field = serializers.CharField(allow_null=True)
 
     class Meta:
         list_serializer_class = HistoryListSerializer
@@ -813,7 +819,7 @@ _PERSON_FK_FIELDS = {
 }
 
 
-def _process_history_qs(qs, describe_delta=None) -> list[HistoryRecord]:
+def _process_history_qs(qs, describe_delta=None, *, model=None) -> list[HistoryRecord]:
     """Convert a simple-history queryset to HistoryRecord objects."""
     records = []
     model_histories = list(qs.all())
@@ -829,28 +835,31 @@ def _process_history_qs(qs, describe_delta=None) -> list[HistoryRecord]:
                     f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
                     for c in delta.changes
                 ]
+            field = delta.changes[0].field.removesuffix("_id") if len(delta.changes) == 1 else None
         elif newer.history_change_reason:
             parts = [newer.history_change_reason]
+            field = None
         else:
             parts = []
+            field = None
         if parts:
-            records.append(HistoryRecord.from_simple_history(newer, "; ".join(parts)))
+            records.append(HistoryRecord.from_simple_history(newer, "; ".join(parts), model=model, field=field))
     first = model_histories[-1]
     records.append(
         HistoryRecord.from_simple_history(
-            first, first.history_change_reason or "Record created"
+            first, first.history_change_reason or "Record created", model=model, field=None
         )
     )
     return records
 
 
-def _instance_history_records(histories: list, prefix: str) -> list[HistoryRecord]:
+def _instance_history_records(histories: list, prefix: str, *, model=None, field=None) -> list[HistoryRecord]:
     """Convert per-instance history records (newest-first) to HistoryRecord objects."""
     records = []
     if histories[0].history_type == "-":
         h = histories[0]
         desc = h.history_change_reason or "Removed"
-        records.append(HistoryRecord.from_simple_history(h, f"{prefix}: {desc}"))
+        records.append(HistoryRecord.from_simple_history(h, f"{prefix}: {desc}", model=model, field=field))
         histories = histories[1:]
     if not histories:
         return records
@@ -861,23 +870,26 @@ def _instance_history_records(histories: list, prefix: str) -> list[HistoryRecor
                 f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
                 for c in delta.changes
             ]
+            inferred_field = delta.changes[0].field.removesuffix("_id") if len(delta.changes) == 1 else None
         elif newer.history_change_reason:
             parts = [newer.history_change_reason]
+            inferred_field = None
         else:
             parts = []
+            inferred_field = None
         if parts:
             records.append(
                 HistoryRecord.from_simple_history(
-                    newer, f"{prefix}: {'; '.join(parts)}"
+                    newer, f"{prefix}: {'; '.join(parts)}", model=model, field=field or inferred_field
                 )
             )
     first = histories[-1]
     desc = first.history_change_reason or "Added"
-    records.append(HistoryRecord.from_simple_history(first, f"{prefix}: {desc}"))
+    records.append(HistoryRecord.from_simple_history(first, f"{prefix}: {desc}", model=model, field=field))
     return records
 
 
-def _related_history(history_qs, make_prefix) -> list[HistoryRecord]:
+def _related_history(history_qs, make_prefix, *, model=None, field=None) -> list[HistoryRecord]:
     """Collect HistoryRecord objects from a related model's history queryset.
 
     Processes each instance's history with _instance_history_records.
@@ -888,7 +900,7 @@ def _related_history(history_qs, make_prefix) -> list[HistoryRecord]:
         by_pk.setdefault(h.id, []).append(h)
     records = []
     for _pk, histories in by_pk.items():
-        records.extend(_instance_history_records(histories, make_prefix(histories[0])))
+        records.extend(_instance_history_records(histories, make_prefix(histories[0]), model=model, field=field))
     return records
 
 
@@ -915,7 +927,7 @@ def _rfctobe_describe_delta(delta: ModelDelta):
 
 def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
     """Collect and merge all history for an RfcToBe and its related models."""
-    records = _process_history_qs(rfc_to_be.history, _rfctobe_describe_delta)
+    records = _process_history_qs(rfc_to_be.history, _rfctobe_describe_delta, model="rfctobe")
 
     def _assignment_prefix(h):
         try:
@@ -935,6 +947,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             Assignment.history.filter(rfc_to_be=rfc_to_be.pk),
             _assignment_prefix,
+            model="assignment",
         )
     )
 
@@ -949,6 +962,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             SubseriesMember.history.filter(rfc_to_be=rfc_to_be.pk),
             _subseries_prefix,
+            model="subseries",
         )
     )
 
@@ -977,6 +991,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             RpcRelatedDocument.history.filter(source=rfc_to_be.pk),
             _related_doc_prefix,
+            model="reference",
         )
     )
 
@@ -984,8 +999,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
 
         def _cluster_member_prefix(h):
             try:
-                return "Cluster membership (cluster "
-                f"#{Cluster.objects.get(pk=h.cluster_id).number})"
+                return f"Cluster membership (cluster #{Cluster.objects.get(pk=h.cluster_id).number})"
             except Cluster.DoesNotExist:
                 return "Cluster membership"
 
@@ -993,6 +1007,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
             _related_history(
                 ClusterMember.history.filter(doc=rfc_to_be.draft_id),
                 _cluster_member_prefix,
+                model="cluster_member",
             )
         )
 
@@ -1009,6 +1024,7 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             FinalApproval.history.filter(rfc_to_be=rfc_to_be.pk),
             _final_approval_prefix,
+            model="final_approval",
         )
     )
 
@@ -1016,6 +1032,8 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             RfcAuthor.history.filter(rfc_to_be=rfc_to_be.pk),
             lambda h: f"Author ({h.titlepage_name})",
+            model="rfc_author",
+            field="titlepage_author",
         )
     )
 
@@ -1030,15 +1048,11 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         _related_history(
             RfcToBeBlockingReason.history.filter(rfc_to_be=rfc_to_be.pk),
             _blocking_reason_prefix,
+            model="blocking_reason",
         )
     )
 
     return sorted(records, key=lambda r: r.date, reverse=True)
-
-
-class RfcToBeHistorySerializer(HistorySerializer):
-    def describe_model_delta(self, delta: ModelDelta):
-        return _rfctobe_describe_delta(delta)
 
 
 class CreateRfcToBeSerializer(serializers.ModelSerializer):
