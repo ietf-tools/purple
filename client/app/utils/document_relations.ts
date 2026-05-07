@@ -144,7 +144,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
   const a = node
     .append("a")
     .attr("href", (d) =>
-      d.url ?? '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available. Accessibility-wise we should probably sue a <button> rather than a '#' link.
+      d.url ?? '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available. Accessibility-wise we should probably use a <button> rather than a '#' link.
     )
     .attr("rel", (d) => {
       if (isExternalLink(d.url)) {
