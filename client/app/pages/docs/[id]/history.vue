@@ -11,10 +11,19 @@
 
       <!-- History -->
       <BaseCard class="w-full lg:col-span-full grid place-items-stretch">
-        <h3 class="text-base font-semibold leading-7">
-          History
-          <Icon v-show="historyStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
-        </h3>
+        <div class="flex items-center justify-between">
+          <h3 class="text-base font-semibold leading-7">
+            History
+            <Icon v-show="historyStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+          </h3>
+          <div class="flex gap-1 text-sm">
+            <button v-for="f in FILTERS" :key="f.value" type="button"
+              :class="['px-2.5 py-1 rounded-md border transition-colors', filter === f.value ? 'bg-violet-100 border-violet-400 text-violet-900 dark:bg-violet-900/30 dark:border-violet-500 dark:text-violet-200' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700']"
+              @click="filter = f.value">
+              {{ f.label }}
+            </button>
+          </div>
+        </div>
         <div v-if="historyStatus === 'success'" class="w-full flex">
           <table class="w-full divide-y divide-gray-300">
             <thead class="bg-gray-50 dark:bg-neutral-800">
@@ -25,7 +34,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
-              <tr v-for="entry of history ?? []" :key="entry.id">
+              <tr v-for="(entry, index) of filteredHistory" :key="index">
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium sm:pl-6">
                   <time :datetime="DateTime.fromJSDate(entry.time).toString()">
                     {{ DateTime.fromJSDate(entry.time).toLocaleString(DateTime.DATE_MED) }}
@@ -37,10 +46,10 @@
                     {{ entry.by.name }}
                   </NuxtLink>
                   <span v-else>
-                    {{ entry.by ? entry.by.name ? entry.by.name : '(nnnamed)' : '(System)' }}
+                    {{ entry.by ? entry.by.name ? entry.by.name : '(unnamed)' : '(System)' }}
                   </span>
                 </td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm">{{ entry.desc }}</td>
+                <td class="px-3 py-4 text-sm">{{ entry.desc }}</td>
               </tr>
             </tbody>
           </table>
@@ -52,26 +61,37 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { useAsyncData } from '#app'
 import { type DocTabId } from '~/utils/doc'
 
 const route = useRoute()
 const api = useApi()
 
-// COMPUTED
-
 const currentTab: DocTabId = 'history'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
+
+type FilterValue = 'all' | 'cluster' | 'reference' | 'author'
+const FILTERS: { value: FilterValue; label: string; prefix: string | null }[] = [
+  { value: 'all', label: 'All', prefix: null },
+  { value: 'cluster', label: 'Cluster', prefix: 'Cluster' },
+  { value: 'reference', label: 'Reference', prefix: 'Reference' },
+  { value: 'author', label: 'Author', prefix: 'Author' },
+]
+const filter = ref<FilterValue>('all')
 
 const {
   data: history,
   error: historyError,
   status: historyStatus,
-  refresh: historyRefresh
 } = await useHistoryForDraft(draftName.value)
 
-const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
+const filteredHistory = computed(() => {
+  const prefix = FILTERS.find(f => f.value === filter.value)?.prefix
+  if (!prefix) return history.value ?? []
+  return (history.value ?? []).filter(e => e.desc.startsWith(prefix))
+})
+
+const { data: rfcToBe } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {

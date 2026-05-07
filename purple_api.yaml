@@ -731,7 +731,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RfcToBeHistory'
+                  $ref: '#/components/schemas/History'
           description: ''
   /api/rpc/documents/{draft__name}/manual_block/:
     post:
@@ -1334,6 +1334,29 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/rpc/documents/{draft_name}/assignments/:
+    get:
+      operationId: documents_assignments_list
+      description: Assignments for a specific document, including per-assignment history
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DocumentAssignment'
+          description: ''
   /api/rpc/documents/{draft_name}/authors/:
     get:
       operationId: documents_authors_list
@@ -3457,6 +3480,24 @@ components:
       required:
       - rfc_to_be
       - role
+    AssignmentHistory:
+      type: object
+      description: History serializer for Assignment
+      properties:
+        id:
+          type: integer
+        time:
+          type: string
+          format: date-time
+        by:
+          $ref: '#/components/schemas/DatatrackerPerson'
+        desc:
+          type: string
+      required:
+      - by
+      - desc
+      - id
+      - time
     AssignmentRequest:
       type: object
       description: Assignment serializer with PK reference to RfcToBe
@@ -4089,6 +4130,31 @@ components:
           type: string
       required:
       - detail
+    DocumentAssignment:
+      type: object
+      description: |-
+        Assignment serializer for document-scoped endpoint,
+        with person name and history
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        person_name:
+          type: string
+          readOnly: true
+          nullable: true
+        role:
+          type: string
+          readOnly: true
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        comment:
+          type: string
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssignmentHistory'
+          readOnly: true
     DocumentComment:
       type: object
       description: Serialize a comment on an RfcToBe
@@ -4199,6 +4265,24 @@ components:
           writeOnly: true
         comment:
           type: string
+    History:
+      type: object
+      description: Serialize a HistoricalRecord
+      properties:
+        id:
+          type: integer
+        time:
+          type: string
+          format: date-time
+        by:
+          $ref: '#/components/schemas/DatatrackerPerson'
+        desc:
+          type: string
+      required:
+      - by
+      - desc
+      - id
+      - time
     HistoryLastEdit:
       type: object
       description: Serialize the most recent change in a HistoricalRecord
@@ -5418,24 +5502,6 @@ components:
         comment:
           type: string
           readOnly: true
-    RfcToBeHistory:
-      type: object
-      description: Serialize a HistoricalRecord
-      properties:
-        id:
-          type: integer
-        time:
-          type: string
-          format: date-time
-        by:
-          $ref: '#/components/schemas/DatatrackerPerson'
-        desc:
-          type: string
-      required:
-      - by
-      - desc
-      - id
-      - time
     RfcToBeNotFoundResponse:
       type: object
       properties:

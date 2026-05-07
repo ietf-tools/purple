@@ -96,7 +96,6 @@ from .serializers import (
     AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
-    DocumentAssignmentSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
@@ -109,6 +108,7 @@ from .serializers import (
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
     CreateRpcRelatedDocumentSerializer,
+    DocumentAssignmentSerializer,
     DocumentCommentSerializer,
     FinalApprovalSerializer,
     LabelSerializer,
@@ -123,7 +123,9 @@ from .serializers import (
     PublishRfcStatusSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
+    HistorySerializer,
     RfcToBeHistorySerializer,
+    collect_rfctobe_history,
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
@@ -1089,12 +1091,12 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(form.errors)
         return queryset
 
-    @extend_schema(responses=RfcToBeHistorySerializer(many=True))
+    @extend_schema(responses=HistorySerializer(many=True))
     @action(detail=True, pagination_class=None, filter_backends=[])
     def history(self, request, draft__name=None):
         rfc_to_be = self.get_object()
-        serializer = RfcToBeHistorySerializer(rfc_to_be.history, many=True)
-        return Response(serializer.data)
+        records = collect_rfctobe_history(rfc_to_be)
+        return Response([HistorySerializer(r).data for r in records])
 
     @extend_schema(
         operation_id="documents_publish",

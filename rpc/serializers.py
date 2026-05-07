@@ -41,6 +41,7 @@ from .models import (
     MetadataValidationResults,
     RfcAuthor,
     RfcToBe,
+    RfcToBeBlockingReason,
     RpcDocumentComment,
     RpcPerson,
     RpcRelatedDocument,
@@ -111,7 +112,7 @@ class HistoryRecord:
             None if sh.history_user is None else sh.history_user.datatracker_person()
         )
         return cls(
-            id=sh.id,
+            id=sh.history_id,
             date=sh.history_date,
             by=dt_person,
             desc=desc,
@@ -122,7 +123,7 @@ class HistoryListSerializer(serializers.ListSerializer):
     @staticmethod
     def _default_model_change_description(delta):
         return (
-            f"{change.field} changed from {change.old} to {change.new}"
+            f"{change.field.capitalize()} ({change.old} → {change.new}): Changed"
             for change in delta.changes
         )
 
@@ -141,12 +142,13 @@ class HistoryListSerializer(serializers.ListSerializer):
         model_histories = list(data.all())
         if len(model_histories) > 0:
             for newer, older in pairwise(model_histories):
-                parts = []
-                if newer.history_change_reason:
-                    parts.append(newer.history_change_reason)
                 delta = newer.diff_against(older)
                 if len(delta.changes) > 0:
-                    parts.extend(self.describe_model_delta(delta))
+                    parts = list(self.describe_model_delta(delta))
+                elif newer.history_change_reason:
+                    parts = [newer.history_change_reason]
+                else:
+                    parts = []
                 if len(parts) > 0:
                     records.append(
                         HistoryRecord.from_simple_history(newer, "; ".join(parts))
@@ -284,7 +286,8 @@ class AssignmentHistorySerializer(HistorySerializer):
 
 
 class DocumentAssignmentSerializer(serializers.ModelSerializer):
-    """Assignment serializer for document-scoped endpoint, with person name and history"""
+    """Assignment serializer for document-scoped endpoint,
+    with person name and history"""
 
     person_name = serializers.CharField(
         source="person.datatracker_person.plain_name",
@@ -789,36 +792,251 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+def _person_label(pk) -> str:
+    """Resolve a DatatrackerPerson pk to 'Name (#datatracker_id)'."""
+    if pk is None:
+        return "none"
+    try:
+        person = DatatrackerPerson.objects.get(pk=int(pk))
+        return f"{person.plain_name} (#{person.datatracker_id})"
+    except (DatatrackerPerson.DoesNotExist, ValueError, TypeError):
+        return f"#{pk}"
+
+
+_PERSON_FK_FIELDS = {
+    "stream_manager",
+    "stream_manager_id",
+    "iesg_contact",
+    "iesg_contact_id",
+    "shepherd",
+    "shepherd_id",
+}
+
+
+def _process_history_qs(qs, describe_delta=None) -> list[HistoryRecord]:
+    """Convert a simple-history queryset to HistoryRecord objects."""
+    records = []
+    model_histories = list(qs.all())
+    if not model_histories:
+        return records
+    for newer, older in pairwise(model_histories):
+        delta = newer.diff_against(older)
+        if delta.changes:
+            if describe_delta:
+                parts = list(describe_delta(delta))
+            else:
+                parts = [
+                    f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
+                    for c in delta.changes
+                ]
+        elif newer.history_change_reason:
+            parts = [newer.history_change_reason]
+        else:
+            parts = []
+        if parts:
+            records.append(HistoryRecord.from_simple_history(newer, "; ".join(parts)))
+    first = model_histories[-1]
+    records.append(
+        HistoryRecord.from_simple_history(
+            first, first.history_change_reason or "Record created"
+        )
+    )
+    return records
+
+
+def _instance_history_records(histories: list, prefix: str) -> list[HistoryRecord]:
+    """Convert per-instance history records (newest-first) to HistoryRecord objects."""
+    records = []
+    if histories[0].history_type == "-":
+        h = histories[0]
+        desc = h.history_change_reason or "Removed"
+        records.append(HistoryRecord.from_simple_history(h, f"{prefix}: {desc}"))
+        histories = histories[1:]
+    if not histories:
+        return records
+    for newer, older in pairwise(histories):
+        delta = newer.diff_against(older)
+        if delta.changes:
+            parts = [
+                f"{c.field.capitalize()} ({c.old} → {c.new}): Changed" for c in delta.changes
+            ]
+        elif newer.history_change_reason:
+            parts = [newer.history_change_reason]
+        else:
+            parts = []
+        if parts:
+            records.append(
+                HistoryRecord.from_simple_history(
+                    newer, f"{prefix}: {'; '.join(parts)}"
+                )
+            )
+    first = histories[-1]
+    desc = first.history_change_reason or "Added"
+    records.append(HistoryRecord.from_simple_history(first, f"{prefix}: {desc}"))
+    return records
+
+
+def _related_history(history_qs, make_prefix) -> list[HistoryRecord]:
+    """Collect HistoryRecord objects from a related model's history queryset.
+
+    Groups by instance pk, processes each instance's history with _instance_history_records.
+    make_prefix(newest_history_record) -> str prefix for descriptions.
+    """
+    by_pk: dict[int, list] = {}
+    for h in history_qs.order_by("id", "-history_date"):
+        by_pk.setdefault(h.id, []).append(h)
+    records = []
+    for pk, histories in by_pk.items():
+        records.extend(_instance_history_records(histories, make_prefix(histories[0])))
+    return records
+
+
+def _rfctobe_describe_delta(delta: ModelDelta):
+    for change in delta.changes:
+        if change.field == "labels":
+            old = set(delta.old_record.labels.values_list("label__pk", flat=True))
+            new = set(delta.new_record.labels.values_list("label__pk", flat=True))
+            added = new - old
+            removed = old - new
+            hist_labels = Label.history.as_of(delta.new_record.history_date)
+            for label in hist_labels.filter(id__in=added):
+                yield f"Label ({label.slug}): Added"
+            for label in hist_labels.filter(id__in=removed):
+                yield f"Label ({label.slug}): Removed"
+        elif change.field in _PERSON_FK_FIELDS:
+            display_field = change.field.removesuffix("_id")
+            old_label = _person_label(change.old)
+            new_label = _person_label(change.new)
+            yield f"{display_field.capitalize()} ({old_label} → {new_label}): Changed"
+        else:
+            yield f"{change.field.capitalize()} ({change.old} → {change.new}): Changed"
+
+
+def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
+    """Collect and merge all history for an RfcToBe and its related models."""
+    records = _process_history_qs(rfc_to_be.history, _rfctobe_describe_delta)
+
+    def _assignment_prefix(h):
+        try:
+            role_slug = RpcRole.objects.get(pk=h.role_id).slug
+        except (RpcRole.DoesNotExist, AttributeError):
+            role_slug = str(h.role_id) if h.role_id else "unknown"
+        try:
+            person_name = RpcPerson.objects.get(
+                pk=h.person_id
+            ).datatracker_person.plain_name
+        except Exception:
+            person_name = None
+        person_part = f", {person_name}" if person_name else ""
+        return f"Assignment ({role_slug}{person_part})"
+
+    records.extend(
+        _related_history(
+            Assignment.history.filter(rfc_to_be=rfc_to_be.pk),
+            _assignment_prefix,
+        )
+    )
+
+    def _subseries_prefix(h):
+        try:
+            type_slug = SubseriesTypeName.objects.get(pk=h.type_id).slug.upper()
+        except Exception:
+            type_slug = str(h.type_id)
+        return f"Subseries ({type_slug} {h.number})"
+
+    records.extend(
+        _related_history(
+            SubseriesMember.history.filter(rfc_to_be=rfc_to_be.pk),
+            _subseries_prefix,
+        )
+    )
+
+    def _related_doc_prefix(h):
+        try:
+            rel_slug = DocRelationshipName.objects.get(pk=h.relationship_id).slug
+        except Exception:
+            rel_slug = str(h.relationship_id)
+        target = None
+        if h.target_document_id:
+            try:
+                target = Document.objects.get(pk=h.target_document_id).name
+            except Document.DoesNotExist:
+                target = f"doc#{h.target_document_id}"
+        elif h.target_rfctobe_id:
+            try:
+                rt = RfcToBe.objects.get(pk=h.target_rfctobe_id)
+                target = rt.name or (
+                    f"RFC {rt.rfc_number}" if rt.rfc_number else f"#{rt.pk}"
+                )
+            except RfcToBe.DoesNotExist:
+                target = f"#{h.target_rfctobe_id}"
+        return f"Reference ({rel_slug}{', ' + target if target else ''})"
+
+    records.extend(
+        _related_history(
+            RpcRelatedDocument.history.filter(source=rfc_to_be.pk),
+            _related_doc_prefix,
+        )
+    )
+
+    if rfc_to_be.draft_id:
+
+        def _cluster_member_prefix(h):
+            try:
+                return f"Cluster membership (cluster #{Cluster.objects.get(pk=h.cluster_id).number})"
+            except Cluster.DoesNotExist:
+                return "Cluster membership"
+
+        records.extend(
+            _related_history(
+                ClusterMember.history.filter(doc=rfc_to_be.draft_id),
+                _cluster_member_prefix,
+            )
+        )
+
+    def _final_approval_prefix(h):
+        if h.approver_id:
+            try:
+                name = DatatrackerPerson.objects.get(pk=h.approver_id).plain_name
+                return f"Final approval ({name})"
+            except DatatrackerPerson.DoesNotExist:
+                pass
+        return "Final approval"
+
+    records.extend(
+        _related_history(
+            FinalApproval.history.filter(rfc_to_be=rfc_to_be.pk),
+            _final_approval_prefix,
+        )
+    )
+
+    records.extend(
+        _related_history(
+            RfcAuthor.history.filter(rfc_to_be=rfc_to_be.pk),
+            lambda h: f"Author ({h.titlepage_name})",
+        )
+    )
+
+    def _blocking_reason_prefix(h):
+        try:
+            slug = BlockingReason.objects.get(pk=h.reason_id).slug
+            return f"Blocking reason ({slug})"
+        except BlockingReason.DoesNotExist:
+            return "Blocking reason"
+
+    records.extend(
+        _related_history(
+            RfcToBeBlockingReason.history.filter(rfc_to_be=rfc_to_be.pk),
+            _blocking_reason_prefix,
+        )
+    )
+
+    return sorted(records, key=lambda r: r.date, reverse=True)
+
+
 class RfcToBeHistorySerializer(HistorySerializer):
     def describe_model_delta(self, delta: ModelDelta):
-        for change in delta.changes:
-            if change.field == "labels":
-                old = set(delta.old_record.labels.values_list("label__pk", flat=True))
-                new = set(delta.new_record.labels.values_list("label__pk", flat=True))
-                added = new - old
-                removed = old - new
-                changes = []
-                hist_labels = Label.history.as_of(delta.new_record.history_date)
-                if added:
-                    added_strs = [
-                        f'"{label.slug}"' for label in hist_labels.filter(id__in=added)
-                    ]
-                    changes.append(
-                        f"Added label{'s' if len(added_strs) > 1 else ''} "
-                        f"{', '.join(added_strs)}"
-                    )
-                if removed:
-                    removed_strs = [
-                        f'"{label.slug}"'
-                        for label in hist_labels.filter(id__in=removed)
-                    ]
-                    changes.append(
-                        f"Removed label{'s' if len(removed_strs) > 1 else ''} "
-                        f"{', '.join(removed_strs)}"
-                    )
-                yield " and ".join(changes)
-            else:
-                yield f'Changed {change.field} from "{change.old}" to "{change.new}"'
+        return _rfctobe_describe_delta(delta)
 
 
 class CreateRfcToBeSerializer(serializers.ModelSerializer):
