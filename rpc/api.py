@@ -111,6 +111,7 @@ from .serializers import (
     DocumentAssignmentSerializer,
     DocumentCommentSerializer,
     FinalApprovalSerializer,
+    HistorySerializer,
     LabelSerializer,
     MailMessageSerializer,
     MailResponseSerializer,
@@ -123,9 +124,6 @@ from .serializers import (
     PublishRfcStatusSerializer,
     QueueItemSerializer,
     RfcAuthorSerializer,
-    HistorySerializer,
-    RfcToBeHistorySerializer,
-    collect_rfctobe_history,
     RfcToBeSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
@@ -139,6 +137,7 @@ from .serializers import (
     SubseriesTypeNameSerializer,
     UnusableRfcNumberSerializer,
     VersionInfoSerializer,
+    collect_rfctobe_history,
 )
 from .tasks import (
     RPC_PERSON_NAME_MAP_CACHE_KEY,

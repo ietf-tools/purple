@@ -858,7 +858,8 @@ def _instance_history_records(histories: list, prefix: str) -> list[HistoryRecor
         delta = newer.diff_against(older)
         if delta.changes:
             parts = [
-                f"{c.field.capitalize()} ({c.old} → {c.new}): Changed" for c in delta.changes
+                f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
+                for c in delta.changes
             ]
         elif newer.history_change_reason:
             parts = [newer.history_change_reason]
@@ -879,14 +880,14 @@ def _instance_history_records(histories: list, prefix: str) -> list[HistoryRecor
 def _related_history(history_qs, make_prefix) -> list[HistoryRecord]:
     """Collect HistoryRecord objects from a related model's history queryset.
 
-    Groups by instance pk, processes each instance's history with _instance_history_records.
+    Processes each instance's history with _instance_history_records.
     make_prefix(newest_history_record) -> str prefix for descriptions.
     """
     by_pk: dict[int, list] = {}
     for h in history_qs.order_by("id", "-history_date"):
         by_pk.setdefault(h.id, []).append(h)
     records = []
-    for pk, histories in by_pk.items():
+    for _pk, histories in by_pk.items():
         records.extend(_instance_history_records(histories, make_prefix(histories[0])))
     return records
 
@@ -983,7 +984,8 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
 
         def _cluster_member_prefix(h):
             try:
-                return f"Cluster membership (cluster #{Cluster.objects.get(pk=h.cluster_id).number})"
+                return "Cluster membership (cluster "
+                f"#{Cluster.objects.get(pk=h.cluster_id).number})"
             except Cluster.DoesNotExist:
                 return "Cluster membership"
 
