@@ -16,6 +16,7 @@ spec:
     metadata:
       labels:
         app: beat
+        workload: app
     spec:
       securityContext:
         runAsNonRoot: true

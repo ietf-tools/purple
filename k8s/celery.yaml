@@ -16,6 +16,7 @@ spec:
     metadata:
       labels:
         app: celery
+        workload: app
     spec:
       securityContext:
         runAsNonRoot: true

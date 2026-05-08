@@ -12,6 +12,7 @@ spec:
     metadata:
       labels:
         app: memcached
+        workload: app
     spec:
       securityContext:
         runAsNonRoot: true
