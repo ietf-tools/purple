@@ -195,15 +195,12 @@ class PublishRfcToBeTask(RetryTask):
 @shared_task(
     bind=True,
     base=PublishRfcToBeTask,
-    throws=(RfcToBe.DoesNotExist, PublicationError),
+    throws=(RfcToBe.DoesNotExist,),
     autoretry_for=(TemporaryPublicationError,),
 )
 def publish_rfctobe_task(self, rfctobe_id, expected_head):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
     publish_rfctobe(rfctobe, expected_head=expected_head)
-
-    # Submit to crossref
-    crossref_submission_task.delay(rfctobe_id=rfctobe_id)
 
 
 @shared_task
