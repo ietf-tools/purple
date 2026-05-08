@@ -128,7 +128,7 @@ const columns = [
   }),
   columnHelper.accessor('pubOwner', {
     header: 'PUB Owner',
-    cell: data => data.getValue() ?? '',
+    cell: data => data.getValue() ?? '-',
   }),
   columnHelper.accessor(
     'publishedAt', {
