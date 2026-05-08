@@ -713,6 +713,21 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="additionalemail_set", many=True, read_only=True
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
+    pub_owner = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField(allow_null=True))
+    def get_pub_owner(self, obj: RfcToBe) -> str | None:
+        assignments = getattr(obj, "publisher_assignments", None)
+        if assignments is None:
+            assignments = list(
+                obj.assignment_set.filter(role__slug="publisher").select_related(
+                    "person__datatracker_person"
+                )
+            )
+        if not assignments:
+            return None
+        person = assignments[0].person
+        return person.datatracker_person.plain_name if person else None
 
     class Meta:
         model = RfcToBe
@@ -746,6 +761,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "pending_activities",
             "rfc_number",
             "published_at",
+            "pub_owner",
             "consensus",
             "subseries",
             "iana_status",

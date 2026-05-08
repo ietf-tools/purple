@@ -126,10 +126,9 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
-  columnHelper.display({
-    id: 'owner', // FIXME: this doesn't exist yet
+  columnHelper.accessor('pubOwner', {
     header: 'PUB Owner',
-    cell: () => 'Unknown'
+    cell: data => data.getValue() ?? '',
   }),
   columnHelper.accessor(
     'publishedAt', {

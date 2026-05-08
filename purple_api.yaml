@@ -5465,6 +5465,10 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        pub_owner:
+          type: string
+          nullable: true
+          readOnly: true
         consensus:
           type: boolean
           nullable: true

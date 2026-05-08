@@ -1142,6 +1142,15 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         .select_related("iesg_contact", "shepherd", "stream_manager")
         .with_blocking_reasons()
         .with_authors()
+        .prefetch_related(
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.filter(
+                    role__slug="publisher"
+                ).select_related("person__datatracker_person"),
+                to_attr="publisher_assignments",
+            )
+        )
     )
     serializer_class = RfcToBeSerializer
     lookup_field = "draft__name"
