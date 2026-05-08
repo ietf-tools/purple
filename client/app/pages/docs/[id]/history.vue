@@ -71,13 +71,13 @@ const currentTab: DocTabId = 'history'
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
 type FilterValue = 'all' | 'assignment' | 'cluster' | 'reference' | 'author' | 'metadata'
-const FILTERS: { value: FilterValue; label: string; model: string | null }[] = [
-  { value: 'all', label: 'All', model: null },
-  { value: 'metadata', label: 'Metadata', model: 'rfctobe' },
-  { value: 'assignment', label: 'Assignment', model: 'assignment' },
-  { value: 'cluster', label: 'Cluster', model: 'cluster_member' },
-  { value: 'reference', label: 'Reference', model: 'reference' },
-  { value: 'author', label: 'Author', model: 'rfc_author' },
+const FILTERS: { value: FilterValue; label: string; models: string[] }[] = [
+  { value: 'all', label: 'All', models: [] },
+  { value: 'metadata', label: 'Metadata', models: ['rfctobe'] },
+  { value: 'assignment', label: 'Assignment', models: ['assignment', 'blocking_reason'] },
+  { value: 'cluster', label: 'Cluster', models: ['cluster_member'] },
+  { value: 'reference', label: 'Reference', models: ['reference'] },
+  { value: 'author', label: 'Author', models: ['rfc_author'] },
 ]
 const filter = ref<FilterValue>('all')
 
@@ -90,9 +90,9 @@ const {
 const filteredHistory = computed(() => {
   const entries = history.value ?? []
   if (filter.value === 'all') return entries
-  const model = FILTERS.find(f => f.value === filter.value)?.model
-  if (!model) return entries
-  return entries.filter(e => e.model === model)
+  const models = FILTERS.find(f => f.value === filter.value)?.models ?? []
+  if (!models.length) return entries
+  return entries.filter(e => e.model !== null && models.includes(e.model))
 })
 
 const { data: rfcToBe } = await useAsyncData(
