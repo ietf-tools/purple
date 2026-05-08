@@ -340,6 +340,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
         setTimeout(publicationStatusRefresh, PUBLICATION_STATUS_POLL_INTERVAL_MS)
         return
       case 'failed':
+        snackbar.add({ type: 'error', title: 'Publication failed', text: publicationStatus.value.detail })
         step.value = {
           type: 'publicationFailed',
           errorText: publicationStatus.value.detail,

@@ -18,6 +18,7 @@ from .lifecycle.publication import (
     PublicationError,
     TemporaryPublicationError,
     publish_rfctobe,
+    record_failed_publication_attempt,
 )
 from .lifecycle.repo import GithubRepository
 from .models import (
@@ -175,7 +176,20 @@ def validate_metadata_task(self, rfc_to_be_id):
 
 
 class PublishRfcToBeTask(RetryTask):
-    pass
+    def on_failure(self, exc, task_id, args, kwargs, einfo):
+        super().on_failure(exc, task_id, args, kwargs, einfo)
+        rfctobe_id = args[0] if args else kwargs.get("rfctobe_id")
+        if rfctobe_id is None:
+            return
+        try:
+            from .models import RfcToBe
+
+            rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
+            record_failed_publication_attempt(rfctobe, str(exc) or repr(exc))
+        except Exception:
+            logger.exception(
+                "Failed to record publication failure for rfctobe_id=%s", rfctobe_id
+            )
 
 
 @shared_task(

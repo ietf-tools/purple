@@ -246,12 +246,12 @@ def record_failed_publication_attempt(rfctobe: RfcToBe, detail: str):
                     f"PublicationAttempt created by another process during execution "
                     f"of record_failed_publication_attempt() for {rfctobe}"
                 )
-        elif pub_attempt.status != PublicationAttempt.Status.PENDING:
-            logger.warning(
-                f"PublicationAttempt status was {pub_attempt.status} when recording "
-                f"failure for {rfctobe}"
-            )
         else:
+            if pub_attempt.status != PublicationAttempt.Status.PENDING:
+                logger.warning(
+                    f"PublicationAttempt status was {pub_attempt.status} when "
+                    f"recording failure for {rfctobe}"
+                )
             pub_attempt.status = PublicationAttempt.Status.FAILED
             pub_attempt.detail = detail
             pub_attempt.save()
@@ -271,14 +271,32 @@ def clear_failed_publication_attempt(rfctobe: RfcToBe):
 def publish_rfctobe(
     rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.PurpleApi
 ):
+    try:
+        _do_publish_rfctobe(rfctobe, expected_head=expected_head, rpcapi=rpcapi)
+    except PublicationError:
+        raise
+    except Exception:
+        record_failed_publication_attempt(
+            rfctobe, "Unexpected error during publication"
+        )
+        raise
+
+
+def _do_publish_rfctobe(
+    rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.PurpleApi
+):
     # Re-validate that the RfcToBe is ready to publish, things may have changed
     # since the task was queued.
     try:
         validate_ready_to_publish(rfctobe)
     except serializers.ValidationError as err:
         first = next(iter(err.detail.values()), None)
-        msg = str(first) if first is not None else str(err.detail)
-        raise PublicationError(f"Cannot publish because {msg}") from err
+        msg = (
+            f"Cannot publish because "
+            f"{str(first) if first is not None else str(err.detail)}"
+        )
+        record_failed_publication_attempt(rfctobe, msg)
+        raise PublicationError(msg) from err
 
     repo = GithubRepository(rfctobe.repository)
     # Check that head commit matches expected_head. This check defines the instant
@@ -315,7 +333,11 @@ def publish_rfctobe(
         record_failed_publication_attempt(rfctobe, msg)
         raise PublicationError(msg)
     # Choose files + validate that we have what we need / no ambiguities
-    chosen_files = choose_files(publication["files"])
+    try:
+        chosen_files = choose_files(publication["files"])
+    except (MissingFilesError, AmbiguousFilesError) as err:
+        record_failed_publication_attempt(rfctobe, str(err))
+        raise
     downloaded_files = {}
     # Download the selected files to a temp directory
     with TemporaryDirectory(delete=not settings.DEBUG) as tmpdirname:
@@ -389,11 +411,13 @@ def publish_rfctobe(
             # The RFC was already published, but the files were not accepted.
             # This situation requires manual intervention until we make the
             # publication notification idempotent.
-            raise PublicationError(
+            detail = (
                 f"Successfully notified datatracker that RFC {rfctobe.rfc_number} "
                 f"was published, but uploading its files failed. Manual correction "
                 f"is required."
-            ) from err
+            )
+            record_failed_publication_attempt(rfctobe, detail)
+            raise PublicationError(detail) from err
         else:
             mark_rfcindex_as_dirty()
 

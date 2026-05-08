@@ -379,6 +379,7 @@
                 </a>
                 <span v-else>(none)</span>
               </div>
+              <p v-if="rfcToBe.repository" class="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">click link to test</p>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>

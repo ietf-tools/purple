@@ -1,14 +1,21 @@
 # Copyright The IETF Trust 2025-2026, All Rights Reserved
 import logging
+from unittest.mock import MagicMock, patch
 
 import jsonschema.exceptions
 from django.test import TestCase
+from rest_framework import serializers
 
 from rpc.factories import PublicationAttemptFactory, RfcToBeFactory
 from rpc.models import PublicationAttempt, RfcToBe
 
 from .publication import (
+    AmbiguousFilesError,
+    MissingFilesError,
+    PublicationError,
+    _do_publish_rfctobe,
     begin_publication_attempt,
+    choose_files,
     clear_publication_attempt,
     record_failed_publication_attempt,
 )
@@ -107,12 +114,14 @@ class PublicationTests(TestCase):
         )
         self.assertEqual(rfc_to_be.publicationattempt.detail, "bad mojo")
 
-        # it's now FAILED - updating again should not disturb that
+        # it's now FAILED - calling again overwrites the detail
+        # (task re-run after worker restart)
         record_failed_publication_attempt(rfc_to_be, "worse mojo")
+        rfc_to_be.publicationattempt.refresh_from_db()
         self.assertEqual(
             rfc_to_be.publicationattempt.status, PublicationAttempt.Status.FAILED
         )
-        self.assertEqual(rfc_to_be.publicationattempt.detail, "bad mojo")
+        self.assertEqual(rfc_to_be.publicationattempt.detail, "worse mojo")
 
         # and now try from PENDING
         PublicationAttempt.objects.filter(rfc_to_be=rfc_to_be).update(
@@ -120,6 +129,7 @@ class PublicationTests(TestCase):
             detail="",
         )
         record_failed_publication_attempt(rfc_to_be, "bad mojo")
+        rfc_to_be.publicationattempt.refresh_from_db()
         self.assertEqual(
             rfc_to_be.publicationattempt.status, PublicationAttempt.Status.FAILED
         )
@@ -132,3 +142,160 @@ class PublicationTests(TestCase):
         clear_publication_attempt(rfctobes[0])
         self.assertEqual(PublicationAttempt.objects.count(), 1)
         self.assertEqual(PublicationAttempt.objects.first().rfc_to_be, rfctobes[1])
+
+
+ALL_FILES = [
+    {"type": "xml", "path": "rfc10000.xml"},
+    {"type": "txt", "path": "rfc10000.txt"},
+    {"type": "html", "path": "rfc10000.html"},
+    {"type": "pdf", "path": "rfc10000.pdf"},
+    {"type": "notprepped", "path": "rfc10000.notprepped.xml"},
+]
+
+
+class ChooseFilesTests(TestCase):
+    def test_valid(self):
+        result = choose_files(ALL_FILES)
+        self.assertEqual(result["xml"], "rfc10000.xml")
+        self.assertEqual(result["txt"], "rfc10000.txt")
+        self.assertEqual(result["html"], "rfc10000.html")
+        self.assertEqual(result["pdf"], "rfc10000.pdf")
+        self.assertEqual(result["notprepped"], "rfc10000.notprepped.xml")
+
+    def test_missing_file_raises(self):
+        # Only xml present — all others missing
+        with self.assertRaises(MissingFilesError):
+            choose_files([{"type": "xml", "path": "rfc10000.xml"}])
+
+    def test_missing_single_file_raises(self):
+        # All but pdf
+        files = [f for f in ALL_FILES if f["type"] != "pdf"]
+        with self.assertRaises(MissingFilesError) as ctx:
+            choose_files(files)
+        self.assertIn("pdf", str(ctx.exception))
+
+    def test_ambiguous_file_raises(self):
+        files = ALL_FILES + [{"type": "xml", "path": "rfc10000-v2.xml"}]
+        with self.assertRaises(AmbiguousFilesError) as ctx:
+            choose_files(files)
+        self.assertIn("xml", str(ctx.exception))
+
+
+class PublishRfcToBeTests(TestCase):
+    RFC_NUMBER = 10000
+    EXPECTED_HEAD = "abc1234"
+
+    def _make_rfctobe(self):
+        return RfcToBeFactory(rfc_number=self.RFC_NUMBER, repository="org/repo")
+
+    def _make_mock_repo(self, files):
+        mock_repo = MagicMock()
+        mock_repo.ref = self.EXPECTED_HEAD
+        mock_repo.get_manifest.return_value = {
+            "publications": [{"rfcNumber": self.RFC_NUMBER, "files": files}]
+        }
+        return mock_repo
+
+    def test_validation_failure_marks_attempt_failed(self):
+        rfctobe = self._make_rfctobe()
+        PublicationAttempt.objects.create(
+            rfc_to_be=rfctobe, status=PublicationAttempt.Status.PENDING
+        )
+
+        with (
+            patch(
+                "rpc.lifecycle.publication.validate_ready_to_publish",
+                side_effect=serializers.ValidationError(
+                    {"non_field_errors": "no publisher assigned"},
+                    code="rfctobe-no-publisher",
+                ),
+            ),
+            patch("rpc.lifecycle.publication.GithubRepository"),
+            self.assertRaises(PublicationError),
+        ):
+            _do_publish_rfctobe(rfctobe, self.EXPECTED_HEAD, rpcapi=MagicMock())
+
+        rfctobe.publicationattempt.refresh_from_db()
+        self.assertEqual(
+            rfctobe.publicationattempt.status, PublicationAttempt.Status.FAILED
+        )
+        self.assertIn("no publisher assigned", rfctobe.publicationattempt.detail)
+
+    def test_missing_files_marks_attempt_failed(self):
+        rfctobe = self._make_rfctobe()
+        PublicationAttempt.objects.create(
+            rfc_to_be=rfctobe, status=PublicationAttempt.Status.PENDING
+        )
+        mock_repo = self._make_mock_repo(
+            [
+                {"type": "xml", "path": "rfc10000.xml"}
+            ]  # missing txt, html, pdf, notprepped
+        )
+
+        with (
+            patch("rpc.lifecycle.publication.validate_ready_to_publish"),
+            patch("rpc.lifecycle.publication.GithubRepository", return_value=mock_repo),
+            self.assertRaises(MissingFilesError),
+        ):
+            _do_publish_rfctobe(rfctobe, self.EXPECTED_HEAD, rpcapi=MagicMock())
+
+        rfctobe.publicationattempt.refresh_from_db()
+        self.assertEqual(
+            rfctobe.publicationattempt.status, PublicationAttempt.Status.FAILED
+        )
+        self.assertIn("Missing files", rfctobe.publicationattempt.detail)
+
+    def test_ambiguous_files_marks_attempt_failed(self):
+        rfctobe = self._make_rfctobe()
+        PublicationAttempt.objects.create(
+            rfc_to_be=rfctobe, status=PublicationAttempt.Status.PENDING
+        )
+        mock_repo = self._make_mock_repo(
+            ALL_FILES + [{"type": "xml", "path": "rfc10000-alt.xml"}]
+        )
+
+        with (
+            patch("rpc.lifecycle.publication.validate_ready_to_publish"),
+            patch("rpc.lifecycle.publication.GithubRepository", return_value=mock_repo),
+            self.assertRaises(AmbiguousFilesError),
+        ):
+            _do_publish_rfctobe(rfctobe, self.EXPECTED_HEAD, rpcapi=MagicMock())
+
+        rfctobe.publicationattempt.refresh_from_db()
+        self.assertEqual(
+            rfctobe.publicationattempt.status, PublicationAttempt.Status.FAILED
+        )
+        self.assertIn("More than one of", rfctobe.publicationattempt.detail)
+
+    def test_upload_failure_marks_attempt_failed(self):
+        """After publish_rfc_metadata succeeds (attempt cleared), upload failure
+        re-creates a FAILED record."""
+        rfctobe = self._make_rfctobe()
+        PublicationAttempt.objects.create(
+            rfc_to_be=rfctobe, status=PublicationAttempt.Status.PENDING
+        )
+
+        mock_repo = self._make_mock_repo(ALL_FILES)
+        mock_repo.get_file.return_value.__enter__ = MagicMock()
+        mock_repo.get_file.return_value.__exit__ = MagicMock(return_value=False)
+        mock_repo.get_file.return_value.chunks.return_value = [b"data"]
+
+        with (
+            patch("rpc.lifecycle.publication.validate_ready_to_publish"),
+            patch("rpc.lifecycle.publication.GithubRepository", return_value=mock_repo),
+            patch("rpc.lifecycle.publication.publish_rfc_metadata"),
+            patch(
+                "rpc.lifecycle.publication.upload_rfc_contents",
+                side_effect=RuntimeError("upload failed"),
+            ),
+            patch("rpc.lifecycle.publication.create_rfc_index_json"),
+            self.assertRaises(PublicationError),
+        ):
+            _do_publish_rfctobe(rfctobe, self.EXPECTED_HEAD, rpcapi=MagicMock())
+
+        # Attempt was cleared on publish success, then re-created as FAILED on upload
+        # error
+        attempt = PublicationAttempt.objects.filter(rfc_to_be=rfctobe).first()
+        self.assertIsNotNone(attempt)
+        self.assertEqual(attempt.status, PublicationAttempt.Status.FAILED)
+        self.assertIn("uploading its files failed", attempt.detail)
