@@ -15,7 +15,6 @@ from utils.task_utils import RetryTask
 from .lifecycle.metadata import Metadata
 from .lifecycle.notifications import process_rfctobe_changes_for_queue
 from .lifecycle.publication import (
-    PublicationError,
     TemporaryPublicationError,
     publish_rfctobe,
     record_failed_publication_attempt,

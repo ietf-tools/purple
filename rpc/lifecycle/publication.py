@@ -272,8 +272,7 @@ def publish_rfctobe(
     rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.PurpleApi
 ):
     _do_publish_rfctobe(rfctobe, expected_head=expected_head, rpcapi=rpcapi)
-    # Submit to crossref only if publication succeeded. Imported here to avoid
-    # circular import (tasks imports from this module).
+    # Submit to crossref only if publication succeeded
     if rfctobe.disposition_id == "published":
         from rpc.tasks import crossref_submission_task
 
@@ -327,7 +326,11 @@ def _do_publish_rfctobe(
         record_failed_publication_attempt(rfctobe, msg)
         return
 
-    chosen_files = choose_files(publication["files"])
+    try:
+        chosen_files = choose_files(publication["files"])
+    except (MissingFilesError, AmbiguousFilesError) as err:
+        record_failed_publication_attempt(rfctobe, str(err))
+        return
 
     downloaded_files = {}
     # Download the selected files to a temp directory
@@ -358,17 +361,23 @@ def _do_publish_rfctobe(
             try:
                 data = json.loads(api_error.body)
             except JSONDecodeError:
-                raise PublicationError("An unknown datatracker error occurred") from api_error
+                raise PublicationError(
+                    "An unknown datatracker error occurred"
+                ) from api_error
             # Sort out what's going on via error code
             error_codes = {err["code"] for err in data.get("errors", [])}
             if "invalid-draft" in error_codes:
-                raise InvalidDraftError("Draft name was not recognized by datatracker") from api_error
+                raise InvalidDraftError(
+                    "Draft name was not recognized by datatracker"
+                ) from api_error
             elif "already-published-draft" in error_codes:
                 raise AlreadyPublishedDraftError(
                     "Draft was already published according to datatracker"
                 ) from api_error
             else:
-                raise PublicationError(f"Publication failed: codes={error_codes}") from api_error
+                raise PublicationError(
+                    f"Publication failed: codes={error_codes}"
+                ) from api_error
         # Datatracker accepted it, so mark the RfcToBe as published. N.b., we set
         # the published_at timestamp and other publication fields earlier.
         rfctobe.disposition_id = "published"
