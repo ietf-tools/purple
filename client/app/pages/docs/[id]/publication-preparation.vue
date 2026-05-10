@@ -271,7 +271,7 @@ const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcT
   }
 )
 
-const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus } = await useAsyncData(
+const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus, refresh: metadataValidationResultsRefresh } = await useAsyncData(
   () => `draft-${draftName.value}-metadata-validation-results`,
   () => api.documentsMetadataValidationResultsList({
     draftName: draftName.value,
@@ -456,10 +456,17 @@ const fetchAndVerifyMetadata = async () => {
 
 const deleteMetadataValidationAndRetry = async (headSha: string) => {
   step.value = { type: 'loading' }
+  // Refresh to get the current head_sha — the stored one may be stale if the
+  // validation task ran and set a head_sha after the page was first loaded.
+  await metadataValidationResultsRefresh()
+  const currentResult = metadataValidationResults.value as unknown
+  const currentHeadSha = isMetadataValidationResults(currentResult)
+    ? currentResult.headSha!
+    : headSha
   try {
     await api.metadataValidationResultsDelete({
       draftName: draftName.value,
-      headSha,
+      headSha: currentHeadSha,
     })
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't delete validation results" })
