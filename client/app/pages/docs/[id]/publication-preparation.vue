@@ -46,7 +46,7 @@
         <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
           <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
             @click="deleteMetadataValidationAndRetry(step.showDeleteAndRetryButton.headSha)">
-            Retry metadata validation
+            Delete and re-fetch from repo
           </BaseButton>
           <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
             Try again
@@ -442,7 +442,9 @@ const fetchAndVerifyMetadata = async () => {
   if (resultsCreate.status !== 'success' && resultsCreate.status !== 'failed') {
     step.value = {
       type: 'error',
-      errorText: `Failed to validate metadata. Request status was still ${JSON.stringify(resultsCreate.status)}.`,
+      errorText: `Failed to validate metadata. Request status was still
+      ${JSON.stringify(resultsCreate.status)} after ${MAXIMUM_ATTEMPTS_DURATION_MS / 1000} seconds
+      and ${attemptCount} attempts.`,
       showResyncButton: true
     }
     return
