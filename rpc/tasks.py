@@ -132,9 +132,11 @@ def validate_metadata_task(self, rfc_to_be_id):
         repo = GithubRepository(repo_url)
         head_sha = repo.ref  # gets current head + guarantees all files from same ref
 
-        # if sha unchanged, skip processing
+        # if sha unchanged and status `success`, skip processing
         existing = MetadataValidationResults.objects.filter(
-            rfc_to_be=rfc_to_be, head_sha=head_sha
+            rfc_to_be=rfc_to_be,
+            head_sha=head_sha,
+            status=MetadataValidationResults.Status.SUCCESS,
         ).first()
         if existing:
             logger.info(
