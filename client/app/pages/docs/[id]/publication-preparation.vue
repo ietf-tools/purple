@@ -46,7 +46,7 @@
         <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
           <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
             @click="deleteMetadataValidationAndRetry(step.showDeleteAndRetryButton.headSha)">
-            Delete and re-fetch from repo
+            Re-fetch and validate again
           </BaseButton>
           <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
             Try again
@@ -340,6 +340,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
         setTimeout(publicationStatusRefresh, PUBLICATION_STATUS_POLL_INTERVAL_MS)
         return
       case 'failed':
+        snackbar.add({ type: 'error', title: 'Publication failed', text: publicationStatus.value.detail })
         step.value = {
           type: 'publicationFailed',
           errorText: publicationStatus.value.detail,
@@ -429,7 +430,7 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: resultsCreate ? { headSha: resultsCreate.headSha! } : undefined,
+      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined,
       showResyncButton: true
     }
     if (!resultsCreate) {
