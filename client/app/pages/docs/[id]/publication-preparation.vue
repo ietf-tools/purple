@@ -316,11 +316,11 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
   if (
     rfcToBeStatus.value === 'error'
   ) {
-    let precomputedResult = metadataValidationResults.value as unknown
+    const precomputedResult = metadataValidationResults.value?.[0]
     step.value = {
       type: 'error',
       errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
-      showDeleteAndRetryButton: isMetadataValidationResults(precomputedResult) ? { headSha: precomputedResult.headSha! } : undefined,
+      showDeleteAndRetryButton: precomputedResult?.headSha ? { headSha: precomputedResult.headSha } : undefined,
       showResyncButton: true
     }
     return
@@ -458,13 +458,9 @@ const fetchAndVerifyMetadata = async () => {
 
 const deleteMetadataValidationAndRetry = async (headSha: string) => {
   step.value = { type: 'loading' }
-  // Refresh to get the current head_sha — the stored one may be stale if the
-  // validation task ran and set a head_sha after the page was first loaded.
+  // Refresh first — the stored head_sha may be stale if the task ran after page load.
   await metadataValidationResultsRefresh()
-  const currentResult = metadataValidationResults.value as unknown
-  const currentHeadSha = isMetadataValidationResults(currentResult) && currentResult.headSha
-    ? currentResult.headSha
-    : headSha
+  const currentHeadSha = metadataValidationResults.value?.[0]?.headSha || headSha
   try {
     await api.metadataValidationResultsDelete({
       draftName: draftName.value,
