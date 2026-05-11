@@ -136,7 +136,9 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
     })
     .attr("marker-end", (d) => `url(#marker-${d.rel})`)
     .attr("stroke", (d) => getLinkColor(d.rel))
-    .attr("class", (d) => d.rel)
+    .attr("class", (d) =>
+      d.rel // TODO: the graph code was originally ported from Datatracker. This line appears to depend on specific CSS class names being available. Confirm whether this does anything
+    )
 
   const node = svg.append("g").selectAll("g").data(data.nodes).join("g")
 
@@ -146,6 +148,9 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
     .attr("href", (d) =>
       d.url ?? '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available. Accessibility-wise we should probably use a <button> rather than a '#' link.
     )
+    .attr("class", (d) => {
+      return d.url ? 'underline' : 'no-underline'
+    })
     .attr("rel", (d) => {
       if (isExternalLink(d.url)) {
         return 'noopener'
