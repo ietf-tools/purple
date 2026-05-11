@@ -462,8 +462,8 @@ const deleteMetadataValidationAndRetry = async (headSha: string) => {
   // validation task ran and set a head_sha after the page was first loaded.
   await metadataValidationResultsRefresh()
   const currentResult = metadataValidationResults.value as unknown
-  const currentHeadSha = isMetadataValidationResults(currentResult)
-    ? currentResult.headSha!
+  const currentHeadSha = isMetadataValidationResults(currentResult) && currentResult.headSha
+    ? currentResult.headSha
     : headSha
   try {
     await api.metadataValidationResultsDelete({
