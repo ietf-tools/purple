@@ -1,7 +1,7 @@
 {% autoescape off %}A new Request for Comments is now available in online RFC libraries.
 
-        {% for s in rfc_to_be.subseriesmember_set.all %}{{ s.type.slug|upper }} {{ s.number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        RFC {% firstof rfc_to_be.rfc_number "XXXX" %}
+        {% if rfc_to_be.subseriesmember_set.count > 0 %}{% for s in rfc_to_be.subseriesmember_set.all %}{{ s.type.slug|upper }} {{ s.number }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        {% endif %}RFC {% firstof rfc_to_be.rfc_number "XXXX" %}
 
         Title:      {{ rfc_to_be.title }}
 {% for author in rfc_to_be.authors.all %}{% if forloop.first %}        Author:     {{ author.titlepage_name }}{% if author.is_editor %}, Ed.{% endif %}{% if not forloop.last %},{% endif %}{% else %}
