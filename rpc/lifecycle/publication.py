@@ -250,7 +250,7 @@ def record_failed_publication_attempt(rfctobe: RfcToBe, detail: str):
             if pub_attempt.status != PublicationAttempt.Status.PENDING:
                 logger.warning(
                     f"PublicationAttempt status was {pub_attempt.status} when "
-                    f"recording failure for {rfctobe}"
+                    f"recording failure for {rfctobe}. Detail was: {pub_attempt.detail}"
                 )
             pub_attempt.status = PublicationAttempt.Status.FAILED
             pub_attempt.detail = detail
