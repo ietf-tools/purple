@@ -444,8 +444,8 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Failed to validate metadata. Request status was still
-      ${JSON.stringify(resultsCreate.status)} after ${MAXIMUM_ATTEMPTS_DURATION_MS / 1000} seconds
-      and ${attemptCount} attempts.`,
+      ${JSON.stringify(resultsCreate.status)} after ${MAXIMUM_ATTEMPTS_DURATION_MS / 1000}
+      seconds.`,
       showResyncButton: true
     }
     return
