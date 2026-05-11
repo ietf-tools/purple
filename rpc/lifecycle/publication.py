@@ -271,8 +271,11 @@ def clear_failed_publication_attempt(rfctobe: RfcToBe):
 def publish_rfctobe(
     rfctobe: RfcToBe, expected_head: str, *, rpcapi: rpcapi_client.PurpleApi
 ):
+    was_in_progress_before = rfctobe.disposition_id == "in_progress"
     _do_publish_rfctobe(rfctobe, expected_head=expected_head, rpcapi=rpcapi)
-    # Submit to crossref only if publication succeeded
+    # Submit to crossref only if disposition changed to published as part of this
+    # publication attempt. If the disposition was already published before, do
+    # not submit again.
     if rfctobe.disposition_id == "published":
         from rpc.tasks import crossref_submission_task
 
@@ -316,7 +319,8 @@ def _do_publish_rfctobe(
     except TemporaryRepositoryError as err:
         raise TemporaryPublicationError("Error retrieving manifest") from err
     except RepositoryError as err:
-        raise PublicationError("Invalid or missing manifest") from err
+        record_failed_publication_attempt(rfctobe, "Invalid or missing manifest")
+        return
     publications = manifest["publications"]
     for publication in publications:
         if rfctobe.rfc_number == publication["rfcNumber"]:
