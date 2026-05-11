@@ -585,25 +585,27 @@ class MetadataComparator:
 
     def compare_subseries(self):
         """Compare subseries field"""
-        xml_value = self.xml_metadata.get("subseries", [])
-        if not xml_value:
-            xml_value = ""
+        xml_subseries = self.xml_metadata.get("subseries", [])
+        if xml_subseries:
+            first = xml_subseries[0]
+            xml_value = f"{first['name']} {first['value']}"
         else:
-            xml_value = xml_value[0]
+            xml_value = ""
 
         subseries_member = self.rfc_to_be.subseriesmember_set.first()
-        if not subseries_member:
-            db_value = ""
-        else:
-            db_value = f"{subseries_member.type.slug.upper()} {subseries_member.number}"
+        db_value = (
+            f"{subseries_member.type.slug.upper()} {subseries_member.number}"
+            if subseries_member
+            else ""
+        )
 
         return {
             "field": "subseries",
             "xml_value": xml_value,
             "db_value": db_value,
-            "is_match": set(xml_value) == set(db_value),
+            "is_match": xml_value == db_value,
             "can_fix": True,
-            "is_error": not (set(xml_value) == set(db_value)),
+            "is_error": xml_value != db_value,
         }
 
     def compare_abstract(self):
