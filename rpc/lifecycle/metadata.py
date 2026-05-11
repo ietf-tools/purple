@@ -78,7 +78,7 @@ class Metadata:
             }
 
         subseries = []
-        for series_info in root.findall("seriesInfo", ns):
+        for series_info in front.findall("seriesInfo", ns):
             name = series_info.attrib.get("name")
             if name in ("BCP", "FYI", "STD"):
                 value = series_info.attrib.get("value")
