@@ -276,7 +276,7 @@ def publish_rfctobe(
     # Submit to crossref only if disposition changed to published as part of this
     # publication attempt. If the disposition was already published before, do
     # not submit again.
-    if rfctobe.disposition_id == "published":
+    if was_in_progress_before and rfctobe.disposition_id == "published":
         from rpc.tasks import crossref_submission_task
 
         crossref_submission_task.delay(rfctobe_id=rfctobe.id)
@@ -318,7 +318,7 @@ def _do_publish_rfctobe(
         manifest = repo.get_manifest()
     except TemporaryRepositoryError as err:
         raise TemporaryPublicationError("Error retrieving manifest") from err
-    except RepositoryError as err:
+    except RepositoryError:
         record_failed_publication_attempt(rfctobe, "Invalid or missing manifest")
         return
     publications = manifest["publications"]
