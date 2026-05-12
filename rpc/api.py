@@ -817,6 +817,13 @@ class PublicQueueList(QueueList):
     permission_classes = [HasApiKey]
     api_key_endpoint = PUB_QUEUE_API_KEY_ENDPOINT
     serializer_class = PublicQueueItemSerializer
+    queryset = QueueList.queryset.prefetch_related(
+        Prefetch(
+            "actionholder_set",
+            queryset=ActionHolder.objects.select_related("datatracker_person"),
+            to_attr="all_actionholders",
+        )
+    )
 
 
 PublicQueueList = extend_schema_view(

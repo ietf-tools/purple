@@ -2300,6 +2300,9 @@ class PublishRfcStatusSerializer(serializers.Serializer):
 class PublicQueueItemSerializer(QueueItemSerializer):
     """RfcToBe serializer for the public view of the RFC Editor queue"""
 
+    actionholder_set = ActionHolderSerializer(
+        source="all_actionholders", many=True, read_only=True
+    )
     authors = PublicQueueAuthorSerializer(many=True)
     enqueued_at = serializers.DateTimeField(
         help_text="Datetime document entered the queue"
