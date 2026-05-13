@@ -20,6 +20,53 @@ from rpc.models import (
 logger = logging.getLogger(__name__)
 
 
+def build_public_queue_payload() -> list:
+    """Build the same payload as the pubq/queue API endpoint."""
+    from rpc.api import PublicQueueList, _collect_queue_person_ids
+    from datatracker.models import DatatrackerPerson
+
+    queryset = list(PublicQueueList.queryset.all())
+    DatatrackerPerson.warm_cache(_collect_queue_person_ids(queryset))
+    return PublicQueueList.serializer_class(queryset, many=True).data
+
+
+def notify_datatracker_queue():
+    """Push the full public queue payload to the Datatracker queue endpoint.
+
+    TODO: Once DT ships the queue/process/ endpoint and the rpcapi client is
+    regenerated, replace this with:
+        from datatracker.rpcapi import with_rpcapi
+        import rpcapi_client
+
+        @with_rpcapi
+        def _push(*, rpcapi):
+            rpcapi.process_rpc_queue(rpcapi_client.RpcQueueDataRequest(data=payload))
+
+    The with_rpcapi decorator handles auth, base URL, and CF service tokens automatically.
+    """
+
+    base = getattr(settings, "DATATRACKER_RPC_API_BASE", "")
+    token = getattr(settings, "DATATRACKER_RPC_API_TOKEN", "")
+    if not base or not token:
+        logger.warning(
+            "DATATRACKER_RPC_API_BASE or DATATRACKER_RPC_API_TOKEN not configured, "
+            "skipping DT queue notification"
+        )
+        return
+
+    url = f"{base}/api/purple/queue/process/"
+    logger.info("Pushing queue payload to Datatracker")
+    payload = build_public_queue_payload()
+    response = requests.post(
+        url,
+        timeout=60,
+        json={"data": payload},
+        headers={"X-Api-Key": token},
+    )
+    response.raise_for_status()
+    logger.info("Successfully pushed queue payload to Datatracker (%d items)", len(payload))
+
+
 def notify_queue_precompute():
     """Notify external system about in-progress RFC changes."""
 
@@ -134,6 +181,7 @@ def process_rfctobe_changes_for_queue():
         if queue_rfcs.exists():
             logger.info("Sending queue precompute notification to update in-queue RFCs")
             notify_queue_precompute()
+            notify_datatracker_queue()
         else:
             logger.info("No in-queue RFCs changed")
 
