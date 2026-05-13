@@ -1,4 +1,4 @@
-import { startCase } from "lodash-es";
+import { startCase, uniqBy } from "lodash-es";
 import type { Cluster, RfcToBe } from "~/purple_client";
 
 /**
@@ -541,4 +541,95 @@ export const complexClusterExample: Cluster = {
     }
   ],
   "isActive": true
+}
+
+export const getClusterGraphData = (cluster: Cluster) => {
+  const newClusterGraphData: DataParam = {
+    links: [],
+    nodes: []
+  }
+
+  const isNodeParam = (data: unknown): data is NodeParam => {
+    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+    if (!isANode) {
+      console.log("!IS A NODE", isANode, data)
+    }
+    return isANode
+  }
+
+  const isLinkParam = (data: unknown): data is LinkParam => {
+    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
+  }
+
+  let referenceNodes: NodeParam[] = []
+
+  newClusterGraphData.nodes.push(
+    ...(cluster.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
+      const { name, rfcNumber, disposition, references, isReceived, isBlocked, isNormref } = clusterMember
+
+      const hasNormRef = references ? references.length > 0 : undefined
+      const hasNormRefInQueue = references ? references.every(reference => reference.relationship === 'refqueue') : undefined
+      const hasNormRefBlocked = references ? references.some(reference => reference.targetIsBlocked || !reference.targetIsReceived) : undefined
+
+      referenceNodes.push(...(references ?? []).flatMap((reference): NodeParam[] => {
+        const { targetDraftName, targetIsReceived, targetRfcNumber, targetDisposition } = reference
+        // source node is always a cluster member already in the graph; only create target nodes
+        if (!targetDraftName) return []
+        return [{
+          id: targetDraftName,
+          url: `/docs/${targetDraftName}`,
+          isNormRef: true,
+          isReceived: targetIsReceived ?? false,
+          rfcNumber: targetRfcNumber ?? undefined,
+          disposition: parseDisposition(targetDisposition),
+        }]
+      }))
+
+      return [{
+        id: name,
+        url: `/docs/${name}`,
+        rfcNumber: rfcNumber ?? undefined,
+        isReceived: isReceived ?? undefined,
+        disposition: parseDisposition(disposition),
+        isBlocked,
+        isNormRef: isNormref ?? false,
+        hasNormRef,
+        hasNormRefInQueue,
+        hasNormRefBlocked
+      }]
+    }).filter(isNodeParam)
+  )
+
+  referenceNodes = referenceNodes.filter(
+    // only include reference nodes if they weren't already mentioned
+    referenceNode => !newClusterGraphData.nodes.some(graphDataNode => graphDataNode.id === referenceNode.id)
+  )
+  newClusterGraphData.nodes.push(...referenceNodes)
+
+  newClusterGraphData.links.push(
+    ...(cluster.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
+      const { references } = clusterMember
+
+      return references ? references.map((reference): LinkParam | null => {
+        const { draftName, targetDraftName, relationship } = reference
+
+        if (draftName === undefined || targetDraftName === undefined) {
+          console.warn("Graph: cluster reference", reference, " has undefined name(s)")
+          return null
+        }
+
+        return {
+          source: draftName,
+          target: targetDraftName,
+          rel: parseRelationship(relationship),
+        }
+      }).filter(isLinkParam) : null
+    }).filter(isLinkParam)
+  )
+
+
+  newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
+  newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
+
+  return newClusterGraphData
 }
