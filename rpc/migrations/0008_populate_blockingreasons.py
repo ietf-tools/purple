@@ -20,6 +20,7 @@ def forward(apps, schema_editor):
         ("refqueue_publish_incomplete", "Reference: Publish Incomplete"),
         ("final_approval_pending", "Final Approval Pending"),
         ("tools_issue", "Tools Issue"),
+        ("manual_hold", "Manual Hold"),
     ]
 
     for slug, name in reasons:
@@ -43,6 +44,7 @@ def reverse(apps, schema_editor):
         "refqueue_publish_incomplete",
         "final_approval_pending",
         "tools_issue",
+        "manual_hold",
     ]
 
     BlockingReason.objects.filter(slug__in=slugs).delete()

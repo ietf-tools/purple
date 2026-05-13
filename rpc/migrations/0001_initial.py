@@ -68,6 +68,31 @@ class Migration(migrations.Migration):
             ],
         ),
         migrations.CreateModel(
+            name="DirtyBits",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "slug",
+                    models.CharField(
+                        choices=[("rfcindex", "RFC Index")], max_length=40, unique=True
+                    ),
+                ),
+                ("dirty_time", models.DateTimeField(blank=True, null=True)),
+                ("processed_time", models.DateTimeField(blank=True, null=True)),
+            ],
+            options={
+                "verbose_name_plural": "dirty bits",
+            },
+        ),
+        migrations.CreateModel(
             name="DispositionName",
             fields=[
                 (
@@ -160,6 +185,21 @@ class Migration(migrations.Migration):
                 ),
                 ("used", models.BooleanField(default=True)),
             ],
+        ),
+        migrations.CreateModel(
+            name="PublishedFormatName",
+            fields=[
+                (
+                    "slug",
+                    models.CharField(max_length=32, primary_key=True, serialize=False),
+                ),
+                ("name", models.CharField(max_length=255)),
+                ("desc", models.TextField(blank=True)),
+                ("used", models.BooleanField(default=True)),
+            ],
+            options={
+                "abstract": False,
+            },
         ),
         migrations.CreateModel(
             name="RpcRole",
@@ -272,7 +312,7 @@ class Migration(migrations.Migration):
                         verbose_name="ID",
                     ),
                 ),
-                ("order", models.IntegerField()),
+                ("order", models.IntegerField(blank=True, null=True)),
                 (
                     "cluster",
                     models.ForeignKey(
@@ -345,7 +385,7 @@ class Migration(migrations.Migration):
                         auto_created=True, blank=True, db_index=True, verbose_name="ID"
                     ),
                 ),
-                ("order", models.IntegerField()),
+                ("order", models.IntegerField(blank=True, null=True)),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),
                 ("history_date", models.DateTimeField(db_index=True)),
                 ("history_change_reason", models.CharField(max_length=100, null=True)),
@@ -554,6 +594,14 @@ class Migration(migrations.Migration):
                         max_length=1000,
                     ),
                 ),
+                (
+                    "consensus",
+                    models.BooleanField(
+                        default=None,
+                        help_text="Whether document has consensus (None=unknown)",
+                        null=True,
+                    ),
+                ),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),
                 ("history_date", models.DateTimeField(db_index=True)),
                 ("history_change_reason", models.CharField(max_length=100, null=True)),
@@ -613,6 +661,18 @@ class Migration(migrations.Migration):
                         blank=True,
                         db_constraint=False,
                         help_text="Document shepherd",
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "stream_manager",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        help_text="Responsible party for this document based on stream",
                         null=True,
                         on_delete=django.db.models.deletion.DO_NOTHING,
                         related_name="+",
@@ -766,8 +826,8 @@ class Migration(migrations.Migration):
                     models.CharField(
                         blank=True,
                         help_text=(
-                            "Acronym of datatracker group where this document "
-                            "originated, if any"
+                            "Acronym of datatracker group where this "
+                            "document originated, if any"
                         ),
                         max_length=40,
                     ),
@@ -822,6 +882,14 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "consensus",
+                    models.BooleanField(
+                        default=None,
+                        help_text="Whether document has consensus (None=unknown)",
+                        null=True,
+                    ),
+                ),
+                (
                     "disposition",
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.PROTECT,
@@ -849,6 +917,10 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 (
+                    "published_formats",
+                    models.ManyToManyField(blank=True, to="rpc.publishedformatname"),
+                ),
+                (
                     "shepherd",
                     models.ForeignKey(
                         blank=True,
@@ -856,6 +928,17 @@ class Migration(migrations.Migration):
                         null=True,
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="shepherded_rfctobe_set",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "stream_manager",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Responsible party for this document based on stream",
+                        null=True,
+                        on_delete=django.db.models.deletion.PROTECT,
+                        related_name="+",
                         to="datatracker.datatrackerperson",
                     ),
                 ),
@@ -911,6 +994,37 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.CreateModel(
+            name="PublicationAttempt",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("started_at", models.DateTimeField(auto_now_add=True)),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[("pending", "Pending"), ("failed", "Failed")],
+                        default="pending",
+                        help_text="Record of an RFC publication request",
+                        max_length=20,
+                    ),
+                ),
+                ("detail", models.CharField(blank=True, max_length=1000)),
+                (
+                    "rfc_to_be",
+                    models.OneToOneField(
+                        on_delete=django.db.models.deletion.PROTECT, to="rpc.rfctobe"
+                    ),
+                ),
+            ],
+        ),
+        migrations.CreateModel(
             name="MetadataValidationResults",
             fields=[
                 (
@@ -954,6 +1068,7 @@ class Migration(migrations.Migration):
                 ),
             ],
             options={
+                "verbose_name_plural": "Metadata validation results",
                 "ordering": ["-received_at"],
             },
         ),
@@ -1021,6 +1136,87 @@ class Migration(migrations.Migration):
                     ),
                 ),
             ],
+        ),
+        migrations.CreateModel(
+            name="HistoricalRpcRelatedDocument",
+            fields=[
+                (
+                    "id",
+                    models.BigIntegerField(
+                        auto_created=True, blank=True, db_index=True, verbose_name="ID"
+                    ),
+                ),
+                ("history_id", models.AutoField(primary_key=True, serialize=False)),
+                ("history_date", models.DateTimeField(db_index=True)),
+                ("history_change_reason", models.CharField(max_length=100, null=True)),
+                (
+                    "history_type",
+                    models.CharField(
+                        choices=[("+", "Created"), ("~", "Changed"), ("-", "Deleted")],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "history_user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "relationship",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.docrelationshipname",
+                    ),
+                ),
+                (
+                    "target_document",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="datatracker.document",
+                    ),
+                ),
+                (
+                    "source",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.rfctobe",
+                    ),
+                ),
+                (
+                    "target_rfctobe",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.rfctobe",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "historical rpc related document",
+                "verbose_name_plural": "historical rpc related documents",
+                "ordering": ("-history_date", "-history_id"),
+                "get_latest_by": ("history_date", "history_id"),
+            },
+            bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
         migrations.CreateModel(
             name="HistoricalRpcDocumentComment",
@@ -1151,6 +1347,7 @@ class Migration(migrations.Migration):
                 ),
                 ("since_when", models.DateTimeField(default=django.utils.timezone.now)),
                 ("resolved", models.DateTimeField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True)),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),
                 ("history_date", models.DateTimeField(db_index=True)),
                 ("history_change_reason", models.CharField(max_length=100, null=True)),
@@ -1202,6 +1399,77 @@ class Migration(migrations.Migration):
             bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
         migrations.CreateModel(
+            name="HistoricalRfcAuthor",
+            fields=[
+                (
+                    "id",
+                    models.BigIntegerField(
+                        auto_created=True, blank=True, db_index=True, verbose_name="ID"
+                    ),
+                ),
+                ("titlepage_name", models.CharField(max_length=128)),
+                ("is_editor", models.BooleanField(default=False)),
+                (
+                    "order",
+                    models.PositiveIntegerField(
+                        help_text="Order of the author on the document"
+                    ),
+                ),
+                (
+                    "affiliation",
+                    models.CharField(blank=True, max_length=255, null=True),
+                ),
+                ("history_id", models.AutoField(primary_key=True, serialize=False)),
+                ("history_date", models.DateTimeField(db_index=True)),
+                ("history_change_reason", models.CharField(max_length=100, null=True)),
+                (
+                    "history_type",
+                    models.CharField(
+                        choices=[("+", "Created"), ("~", "Changed"), ("-", "Deleted")],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "datatracker_person",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="datatracker.datatrackerperson",
+                    ),
+                ),
+                (
+                    "history_user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "rfc_to_be",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.rfctobe",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "historical rfc author",
+                "verbose_name_plural": "historical rfc authors",
+                "ordering": ("-history_date", "-history_id"),
+                "get_latest_by": ("history_date", "history_id"),
+            },
+            bases=(simple_history.models.HistoricalChanges, models.Model),
+        ),
+        migrations.CreateModel(
             name="HistoricalFinalApproval",
             fields=[
                 (
@@ -1212,6 +1480,7 @@ class Migration(migrations.Migration):
                 ),
                 ("requested", models.DateTimeField(default=django.utils.timezone.now)),
                 ("approved", models.DateTimeField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True)),
                 ("history_id", models.AutoField(primary_key=True, serialize=False)),
                 ("history_date", models.DateTimeField(db_index=True)),
                 ("history_change_reason", models.CharField(max_length=100, null=True)),
@@ -1335,6 +1604,55 @@ class Migration(migrations.Migration):
             bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
         migrations.CreateModel(
+            name="HistoricalAdditionalEmail",
+            fields=[
+                (
+                    "id",
+                    models.BigIntegerField(
+                        auto_created=True, blank=True, db_index=True, verbose_name="ID"
+                    ),
+                ),
+                ("email", models.EmailField(max_length=254)),
+                ("history_id", models.AutoField(primary_key=True, serialize=False)),
+                ("history_date", models.DateTimeField(db_index=True)),
+                ("history_change_reason", models.CharField(max_length=100, null=True)),
+                (
+                    "history_type",
+                    models.CharField(
+                        choices=[("+", "Created"), ("~", "Changed"), ("-", "Deleted")],
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "history_user",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="+",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "rfc_to_be",
+                    models.ForeignKey(
+                        blank=True,
+                        db_constraint=False,
+                        null=True,
+                        on_delete=django.db.models.deletion.DO_NOTHING,
+                        related_name="+",
+                        to="rpc.rfctobe",
+                    ),
+                ),
+            ],
+            options={
+                "verbose_name": "historical additional email",
+                "verbose_name_plural": "historical additional emails",
+                "ordering": ("-history_date", "-history_id"),
+                "get_latest_by": ("history_date", "history_id"),
+            },
+            bases=(simple_history.models.HistoricalChanges, models.Model),
+        ),
+        migrations.CreateModel(
             name="FinalApproval",
             fields=[
                 (
@@ -1348,6 +1666,7 @@ class Migration(migrations.Migration):
                 ),
                 ("requested", models.DateTimeField(default=django.utils.timezone.now)),
                 ("approved", models.DateTimeField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True)),
                 (
                     "approver",
                     models.ForeignKey(
@@ -1485,6 +1804,7 @@ class Migration(migrations.Migration):
                 ),
                 ("since_when", models.DateTimeField(default=django.utils.timezone.now)),
                 ("resolved", models.DateTimeField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True)),
                 (
                     "reason",
                     models.ForeignKey(
@@ -1969,6 +2289,33 @@ class Migration(migrations.Migration):
             },
             bases=(simple_history.models.HistoricalChanges, models.Model),
         ),
+        migrations.CreateModel(
+            name="TaskRun",
+            fields=[
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("task_name", models.CharField(max_length=255, unique=True)),
+                ("last_run_at", models.DateTimeField()),
+                ("is_running", models.BooleanField(default=False)),
+            ],
+            options={
+                "constraints": [
+                    models.UniqueConstraint(
+                        condition=models.Q(("is_running", True)),
+                        fields=("task_name",),
+                        name="unique_running_task",
+                        violation_error_message="This task is already running",
+                    )
+                ],
+            },
+        ),
         migrations.AddField(
             model_name="rfctobe",
             name="boilerplate",
@@ -2015,9 +2362,7 @@ class Migration(migrations.Migration):
                 deferrable=django.db.models.constraints.Deferrable["DEFERRED"],
                 fields=("rfc_to_be", "order"),
                 name="unique_author_order_per_document",
-                violation_error_message=(
-                    "each author order must be unique per document"
-                ),
+                violation_error_message="each author order must be unique per document",
             ),
         ),
         migrations.AddConstraint(
@@ -2141,6 +2486,17 @@ class Migration(migrations.Migration):
                 fields=("rfc_number",),
                 name="unique_non_null_rfc_number",
                 nulls_distinct=True,
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="rfctobe",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("disposition_id", "withdrawn"), _negated=True),
+                fields=("draft",),
+                name="unique_active_rfctobe_per_draft",
+                violation_error_message=(
+                    "A draft can only have one non-withdrawn RfcToBe"
+                ),
             ),
         ),
     ]

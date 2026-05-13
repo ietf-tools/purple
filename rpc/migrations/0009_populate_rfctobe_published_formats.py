@@ -29,7 +29,7 @@ def reverse(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("rpc", "0012_publishedformatname_rfctobe_published_formats"),
+        ("rpc", "0008_populate_blockingreasons"),
     ]
 
     operations = [migrations.RunPython(forward, reverse)]

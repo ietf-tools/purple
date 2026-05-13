@@ -63,6 +63,12 @@ class Migration(migrations.Migration):
                     models.CharField(help_text="Stream of draft", max_length=32),
                 ),
                 (
+                    "group",
+                    models.CharField(
+                        blank=True, help_text="Group of draft", max_length=40
+                    ),
+                ),
+                (
                     "pages",
                     models.PositiveSmallIntegerField(help_text="Number of pages"),
                 ),
