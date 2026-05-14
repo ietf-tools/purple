@@ -222,11 +222,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     }
   }
   if (
-    Boolean(node.isReceived) && (
-      (Boolean(node.isBlocked) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef)) ||
-      (Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && Boolean(node.hasNormRefBlocked)) ||
-      (Boolean(node.isBlocked) && Boolean(node.hasNormRef) && !Boolean(node.hasNormRefInQueue) && node.rfcNumber === undefined)
-    )
+    Boolean(node.isReceived) && Boolean(node.isBlocked)
   ) {
     return {
       fill: pink,
