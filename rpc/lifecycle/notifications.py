@@ -122,6 +122,7 @@ def process_rfctobe_changes_for_queue():
     try:
         recent_change_threshold = current_check_time - timezone.timedelta(minutes=1)
 
+        # Check for recent changes - if changes happened in last minute, abort
         if get_updated_rfcs_since(recent_change_threshold):
             logger.info(
                 "Changes detected in last minute, skipping notification to avoid "
@@ -129,13 +130,14 @@ def process_rfctobe_changes_for_queue():
             )
             return
 
+        # Get last successful notification time from DB
         last_check = task_run.last_run_at
         logger.info(f"Processing changes since last notification at {last_check}")
 
         queue_rfcs = get_updated_rfcs_since(last_check)
 
         if queue_rfcs:
-            logger.info("Sending queue precompute notification for updated RFCs")
+            logger.info("Sending queue precompute notification to update in-queue RFCs")
             notify_queue_precompute()
         else:
             logger.info("No in-queue RFCs changed")
