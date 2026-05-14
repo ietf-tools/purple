@@ -94,28 +94,15 @@ def get_updated_rfcs_since(current_check_time):
 
     # Single query to filter candidates to only in-queue documents
     return set(
-        RfcToBe.objects.in_queue().filter(pk__in=candidate_ids).values_list("id", flat=True)
-    )
-
-
-def get_recent_changes(check_time):
-    """Check if any relevant changes have occurred since the check time"""
-
-    return (
-        RfcToBe.history.filter(history_date__gt=check_time).exists()
-        or Assignment.history.filter(history_date__gt=check_time).exists()
-        or RfcAuthor.history.filter(history_date__gt=check_time).exists()
-        or RpcRelatedDocument.history.filter(history_date__gt=check_time).exists()
-        or AdditionalEmail.history.filter(history_date__gt=check_time).exists()
-        or ClusterMember.history.filter(history_date__gt=check_time).exists()
-        or SubseriesMember.history.filter(history_date__gt=check_time).exists()
-        or FinalApproval.history.filter(history_date__gt=check_time).exists()
+        RfcToBe.objects.in_queue()
+        .filter(pk__in=candidate_ids)
+        .values_list("id", flat=True)
     )
 
 
 def process_rfctobe_changes_for_queue():
     """Poll history tables and send batched notification to queue system about
-    in-progress RFC changes"""
+    in-queue RFC changes"""
 
     logger.info("Processing RfcToBe changes from history")
 
@@ -135,17 +122,13 @@ def process_rfctobe_changes_for_queue():
     try:
         recent_change_threshold = current_check_time - timezone.timedelta(minutes=1)
 
-        # Check for recent changes - if changes happened in last minute, abort
-        recent_changes_exist = get_recent_changes(recent_change_threshold)
-
-        if recent_changes_exist:
+        if get_updated_rfcs_since(recent_change_threshold):
             logger.info(
                 "Changes detected in last minute, skipping notification to avoid "
                 "notifying during active edits"
             )
             return
 
-        # Get last successful notification time from DB
         last_check = task_run.last_run_at
         logger.info(f"Processing changes since last notification at {last_check}")
 
@@ -155,7 +138,7 @@ def process_rfctobe_changes_for_queue():
             logger.info("Sending queue precompute notification for updated RFCs")
             notify_queue_precompute()
         else:
-            logger.info("No in-progress RFCs changed")
+            logger.info("No in-queue RFCs changed")
 
         task_run.last_run_at = current_check_time
         logger.info("Completed processing history changes")
