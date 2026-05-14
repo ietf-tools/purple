@@ -43,7 +43,7 @@ def notify_queue_precompute():
 
 
 def get_updated_rfcs_since(current_check_time):
-    """Get IDs of in-queue RFCs updated since last check."""
+    """Return a queryset of in-queue RFCs updated since last check."""
 
     candidate_ids = set()
 
@@ -92,12 +92,7 @@ def get_updated_rfcs_since(current_check_time):
         .values_list("rfc_to_be", flat=True)
     )
 
-    # Single query to filter candidates to only in-queue documents
-    return set(
-        RfcToBe.objects.in_queue()
-        .filter(pk__in=candidate_ids)
-        .values_list("id", flat=True)
-    )
+    return RfcToBe.objects.in_queue().filter(pk__in=candidate_ids)
 
 
 def process_rfctobe_changes_for_queue():
@@ -123,7 +118,7 @@ def process_rfctobe_changes_for_queue():
         recent_change_threshold = current_check_time - timezone.timedelta(minutes=1)
 
         # Check for recent changes - if changes happened in last minute, abort
-        if get_updated_rfcs_since(recent_change_threshold):
+        if get_updated_rfcs_since(recent_change_threshold).exists():
             logger.info(
                 "Changes detected in last minute, skipping notification to avoid "
                 "notifying during active edits"
@@ -136,7 +131,7 @@ def process_rfctobe_changes_for_queue():
 
         queue_rfcs = get_updated_rfcs_since(last_check)
 
-        if queue_rfcs:
+        if queue_rfcs.exists():
             logger.info("Sending queue precompute notification to update in-queue RFCs")
             notify_queue_precompute()
         else:
