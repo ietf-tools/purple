@@ -1,10 +1,13 @@
 import logging
 
 import requests
+import rpcapi_client
 from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 
+from datatracker.models import DatatrackerPerson
+from datatracker.rpcapi import with_rpcapi
 from rpc.models import (
     AdditionalEmail,
     Assignment,
@@ -22,7 +25,6 @@ logger = logging.getLogger(__name__)
 
 def build_public_queue_payload() -> list:
     """Build the same payload as the pubq/queue API endpoint."""
-    from datatracker.models import DatatrackerPerson
     from rpc.api import PublicQueueList, _collect_queue_person_ids
 
     queryset = list(PublicQueueList.queryset.all())
@@ -32,10 +34,6 @@ def build_public_queue_payload() -> list:
 
 def notify_datatracker_queue():
     """Push the full public queue payload to the Datatracker queue endpoint."""
-    import rpcapi_client
-
-    from datatracker.rpcapi import with_rpcapi
-
     payload = build_public_queue_payload()
     logger.info("Pushing queue payload to Datatracker")
 
