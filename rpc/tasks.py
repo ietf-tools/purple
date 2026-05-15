@@ -13,7 +13,10 @@ from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
 from .lifecycle.metadata import Metadata
-from .lifecycle.notifications import process_rfctobe_changes_for_queue
+from .lifecycle.notifications import (
+    notify_datatracker_queue,
+    process_rfctobe_changes_for_queue,
+)
 from .lifecycle.publication import (
     TemporaryPublicationError,
     publish_rfctobe,
@@ -211,6 +214,15 @@ def process_rfctobe_changes_for_queue_task():
         process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
+
+
+@shared_task
+def push_queue_to_datatracker_task():
+    """Push the full public queue payload to Datatracker unconditionally."""
+    try:
+        notify_datatracker_queue()
+    except Exception as e:
+        logger.error(f"Error in push_queue_to_datatracker_task: {e}")
 
 
 @shared_task
