@@ -364,8 +364,10 @@ class RfcAuthorSerializer(serializers.ModelSerializer):
         ]
 
     def update(self, instance, validated_data):
-        RfcAuthor.objects.filter(pk=instance.pk).update(**validated_data)
-        return RfcAuthor.objects.get(pk=instance.pk)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class CreateRfcAuthorSerializer(RfcAuthorSerializer):

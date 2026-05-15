@@ -1557,11 +1557,9 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
 
         with transaction.atomic():
             for idx, author_id in enumerate(order_list, start=1):
-                author = author_dict.get(author_id)
-                if author:
-                    author.order = idx
-
-            RfcAuthor.objects.bulk_update(authors, ["order"])
+                author = author_dict[author_id]
+                author.order = idx
+                author.save()
 
         return Response({"status": "OK"})
 
