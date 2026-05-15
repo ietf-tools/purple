@@ -201,7 +201,7 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
  * based on https://docs.google.com/spreadsheets/d/1WoPNZiFf9Hx4Qc6N5UE1-RKhYYNybBeCYZM72wL5TSM/edit?gid=0#gid=0
  */
 export const getCircleTheme = (node: NodeParam): CircleTheme => {
-  if (Boolean(node.isReceived) && Boolean(node.isNormRef) && !Boolean(node.hasNormRef) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+  if (Boolean(node.isReceived) && !Boolean(node.hasNormRef) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
     return {
       fill: blue,
       textColor: black,
