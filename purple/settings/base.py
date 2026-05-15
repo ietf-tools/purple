@@ -198,6 +198,9 @@ CELERY_BEAT_CRON_STARTING_DEADLINE = 1800  # seconds
 CELERY_BEAT_SCHEDULE = {}
 
 TRIGGER_QUEUE_PRECOMPUTE_URL = os.environ.get("PURPLE_TRIGGER_QUEUE_PRECOMPUTE_URL")
+NOTIFY_DT_QUEUE_ENABLED = (
+    os.environ.get("PURPLE_NOTIFY_DT_QUEUE_ENABLED", "true").lower() != "false"
+)
 
 # Errata
 ERRATA_URL = "https://www.rfc-editor.org/errata"

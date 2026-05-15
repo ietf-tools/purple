@@ -161,7 +161,8 @@ def process_rfctobe_changes_for_queue():
         if queue_rfcs.exists():
             logger.info("Sending queue precompute notification to update in-queue RFCs")
             notify_queue_precompute()
-            notify_datatracker_queue()
+            if getattr(settings, "NOTIFY_DT_QUEUE_ENABLED", True):
+                notify_datatracker_queue()
         else:
             logger.info("No in-queue RFCs changed")
 
