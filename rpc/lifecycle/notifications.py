@@ -120,7 +120,7 @@ def get_updated_rfcs_since(current_check_time):
         .values_list("rfc_to_be", flat=True)
     )
 
-    return RfcToBe.objects.in_queue().filter(pk__in=candidate_ids)
+    return RfcToBe.objects.filter(pk__in=candidate_ids)
 
 
 def process_rfctobe_changes_for_queue():
