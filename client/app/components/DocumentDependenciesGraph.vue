@@ -22,7 +22,6 @@
       <select @change="handleChange" class="text-xs rounded-md">
         <option value="default">Show Cluster</option>
         <option value="legend">Show Legend</option>
-        <option value="complex">Debug: Show complex cluster</option>
       </select>
       <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
         <span v-if="canDownload">
@@ -53,7 +52,7 @@
 import { uniqBy } from 'lodash-es';
 import { type Cluster } from '~/purple_client'
 import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations';
-import { legendData, complexClusterExample, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
+import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
 import { downloadTextFile } from '~/utils/download';
 
 type Props = {
@@ -93,11 +92,6 @@ const handleChange = (e: Event) => {
   switch (target.value) {
     case 'default':
       clusterToUse.value = props.cluster
-      showLegend.value = false
-
-      break
-    case 'complex':
-      clusterToUse.value = complexClusterExample
       showLegend.value = false
 
       break
