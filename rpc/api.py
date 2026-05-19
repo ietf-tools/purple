@@ -681,9 +681,10 @@ class QueueFilter(django_filters.FilterSet):
     pending_final_review = django_filters.BooleanFilter(
         method="filter_pending_final_review",
         help_text="Filter by pending final review status. True returns drafts with "
-        "at least one pending author approval (FinalApproval) or uncompleted action "
-        "holder. False returns drafts where all author approvals are done and all "
-        "action holders are completed.",
+        "at least one pending author approval (FinalApproval) or at least one "
+        "uncompleted action holder. False returns drafts where at least one author "
+        "approval exists, all author approvals are done, and no action holders are "
+        "uncompleted.",
     )
 
     def filter_pending_final_approval(self, queryset, name, value):
