@@ -1144,6 +1144,7 @@ def _rfc_numbers_for_relationship(rfctobe: RfcToBe, relationship_id: str) -> lis
     """Collect RFC numbers for all targets of a given relationship from rfctobe."""
     return list(
         rfctobe.rpcrelateddocument_set.filter(relationship_id=relationship_id)
+        .filter(target_rfctobe__disposition__slug="published")
         .exclude(target_rfctobe__rfc_number__isnull=True)
         .values_list("target_rfctobe__rfc_number", flat=True)
     )
