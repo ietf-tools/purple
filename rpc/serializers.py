@@ -1245,9 +1245,11 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
         if obj.target_rfctobe is not None:
             return obj.target_rfctobe.disposition_id != "withdrawn"
         if obj.target_document is not None:
-            return RfcToBe.objects.filter(
-                draft=obj.target_document
-            ).exclude(disposition__slug="withdrawn").exists()
+            return (
+                RfcToBe.objects.filter(draft=obj.target_document)
+                .exclude(disposition__slug="withdrawn")
+                .exists()
+            )
         return False
 
     @extend_schema_field(serializers.BooleanField())
