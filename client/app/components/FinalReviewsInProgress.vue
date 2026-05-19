@@ -80,7 +80,7 @@ const {
   error,
 } = await useAsyncData(
   'final-review-in-progress',
-  () => api.queueList({ pendingFinalApproval: true }),
+  () => api.queueList({ pendingFinalReview: true }),
   {
     server: false,
     lazy: true,

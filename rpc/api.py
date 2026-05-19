@@ -674,7 +674,13 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 class QueueFilter(django_filters.FilterSet):
     pending_final_approval = django_filters.BooleanFilter(
         method="filter_pending_final_approval",
-        help_text="Filter by pending final approval status. True returns drafts with "
+        help_text="Filter by pending final approval status, true returns drafts with "
+        "at least one pending final approval, false returns drafts where all final "
+        "approvals are approved.",
+    )
+    pending_final_review = django_filters.BooleanFilter(
+        method="filter_pending_final_review",
+        help_text="Filter by pending final review status. True returns drafts with "
         "at least one pending author approval (FinalApproval) or uncompleted action "
         "holder. False returns drafts where all author approvals are done and all "
         "action holders are completed.",
@@ -682,10 +688,28 @@ class QueueFilter(django_filters.FilterSet):
 
     def filter_pending_final_approval(self, queryset, name, value):
         if value is True:
+            # has at least one FinalApproval with approved=None
+            return queryset.filter(
+                finalapproval__isnull=False, finalapproval__approved__isnull=True
+            ).distinct()
+        elif value is False:
+            # ALL FinalApprovals are approved (no pending approvals)
+            return (
+                queryset.filter(finalapproval__isnull=False)
+                .exclude(finalapproval__approved__isnull=True)
+                .distinct()
+            )
+        return queryset
+
+    def filter_pending_final_review(self, queryset, name, value):
+        if value is True:
             # has at least one pending FinalApproval OR an uncompleted ActionHolder
             return queryset.filter(
                 Q(finalapproval__isnull=False, finalapproval__approved__isnull=True)
-                | Q(actionholder_set__completed__isnull=True)
+                | Q(
+                    actionholder_set__isnull=False,
+                    actionholder_set__completed__isnull=True,
+                )
             ).distinct()
         elif value is False:
             # ALL FinalApprovals are approved and no uncompleted ActionHolders
@@ -699,7 +723,7 @@ class QueueFilter(django_filters.FilterSet):
 
     class Meta:
         model = RfcToBe
-        fields = ["disposition", "pending_final_approval"]
+        fields = ["disposition", "pending_final_approval", "pending_final_review"]
 
 
 @extend_schema(operation_id="queue_counts", responses={200: QueueCountsSerializer})

@@ -28,7 +28,7 @@ const {
   error,
 } = await useAsyncData(
   'final-review-pending-false',
-  () => api.queueList({ pendingFinalApproval: false }),
+  () => api.queueList({ pendingFinalReview: false }),
   {
     server: false,
     lazy: true,

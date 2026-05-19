@@ -85,7 +85,7 @@ const {
   error,
 } = await useAsyncData(
   'queue2-pending-announcement',
-  () => api.queueList({ pendingFinalApproval: false }),
+  () => api.queueList({ pendingFinalReview: false }),
   {
     server: false,
     lazy: true,
