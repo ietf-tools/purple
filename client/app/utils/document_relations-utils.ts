@@ -211,7 +211,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !Boolean(node.hasNormRefBlocked) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
     return {
       fill: green,
       textColor: black,
@@ -233,7 +233,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (!Boolean(node.isReceived) && Boolean(node.isNormRef)) {
+  if ((!Boolean(node.isReceived) || node.disposition === 'withdrawn') && Boolean(node.isNormRef)) {
     return {
       fill: orange,
       textColor: black,
