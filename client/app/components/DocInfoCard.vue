@@ -1,7 +1,7 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader :title="`Document Info${props.isReadOnly ? ' (read only)' : ''}`" />
+      <CardHeader :title="`Document Info${props.isReadOnly ? ' (partly read only)' : ''}`" />
     </template>
     <div v-if="rfcToBe">
       <DescriptionList>
@@ -12,6 +12,14 @@
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
               <div class="flex items-center gap-2">
                 <BaseBadge :label="rfcToBe.disposition" :color="dispositionColor(rfcToBe.disposition)" />
+                <template v-if="rfcToBe.disposition === 'in_progress' && rfcToBe.blockingReasons?.some(r => r.resolved == null)">
+                  <BaseBadge label="blocked" color="red" />
+                  <ul class="list-disc list-inside text-xs text-gray-500 leading-tight">
+                    <li v-for="br in rfcToBe.blockingReasons.filter(r => r.resolved == null)" :key="br.reason?.slug">
+                      {{ br.reason?.name }}
+                    </li>
+                  </ul>
+                </template>
                 <span v-if="rfcToBe.disposition === 'published' && rfcToBe.publishedAt" class="text-sm text-gray-600">
                   {{ DateTime.fromJSDate(rfcToBe.publishedAt).toLocaleString(DateTime.DATE_FULL) }}
                 </span>
