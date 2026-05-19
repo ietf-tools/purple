@@ -1140,6 +1140,15 @@ def _collect_document_person_ids(items) -> list[int]:
     return list(ids)
 
 
+def _rfc_numbers_for_relationship(rfctobe: RfcToBe, relationship_id: str) -> list[int]:
+    """Collect RFC numbers for all targets of a given relationship from rfctobe."""
+    return list(
+        rfctobe.rpcrelateddocument_set.filter(relationship_id=relationship_id)
+        .exclude(target_rfctobe__rfc_number__isnull=True)
+        .values_list("target_rfctobe__rfc_number", flat=True)
+    )
+
+
 @extend_schema_view(
     list=extend_schema(
         parameters=[
@@ -1367,6 +1376,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 f"{m.type.slug}{m.number}" for m in rfctobe.subseriesmember_set.all()
             ],
             keywords=[kw.strip() for kw in rfctobe.keywords.split(",")],
+            obsoletes=_rfc_numbers_for_relationship(rfctobe, "obs"),
+            updates=_rfc_numbers_for_relationship(rfctobe, "updates"),
         )
         try:
             rpcapi.purple_rfc_partial_update(
