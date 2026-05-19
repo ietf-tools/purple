@@ -38,7 +38,10 @@ def assignment_changed(sender, instance: Assignment, **kwargs):
 
 @receiver([post_save, post_delete], sender=ActionHolder)
 def actionholder_changed(sender, instance: ActionHolder, **kwargs):
-    defer_apply(getattr(instance, "target_rfctobe", None))
+    rfc = instance.target_rfctobe
+    if rfc is None and instance.target_document is not None:
+        rfc = RfcToBe.objects.filter(draft=instance.target_document).first()
+    defer_apply(rfc)
 
 
 @receiver([post_save, post_delete], sender=RpcRelatedDocument)

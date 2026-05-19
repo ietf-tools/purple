@@ -48,9 +48,12 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         author_input_qs = rfc.labels.filter(slug="Author Input Required")
         if author_input_qs.exists():
             reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
-        # any related documents not received (incl. 2g/3g), return only first
+        # any related documents not received (incl. 2g/3g/withdrawn), add only first
+        blocking_slugs = DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS + [
+            DocRelationshipName.WITHDRAWNREF_RELATIONSHIP_SLUG
+        ]
         if rfc.rpcrelateddocument_set.filter(
-            relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
+            relationship__slug__in=blocking_slugs
         ).exists():
             if rfc.rpcrelateddocument_set.filter(
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
@@ -60,11 +63,14 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
             ).exists():
                 reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED_2G)
-                return reasons
             elif rfc.rpcrelateddocument_set.filter(
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_3G_RELATIONSHIP_SLUG
             ).exists():
                 reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED_3G)
+            elif rfc.rpcrelateddocument_set.filter(
+                relationship__slug=DocRelationshipName.WITHDRAWNREF_RELATIONSHIP_SLUG
+            ).exists():
+                reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED)
         return reasons
 
     # Gate 2: Blocks first edit
