@@ -68,10 +68,12 @@ paths:
         name: pending_final_review
         schema:
           type: boolean
-        description: Filter by pending final review status. True returns drafts with
-          at least one pending author approval (FinalApproval) or at least one uncompleted
-          action holder. False returns drafts where at least one author approval exists,
-          all author approvals are done, and no action holders are uncompleted.
+        description: 'Filter by pending final review status. First filter by existing
+          final_review_editor assignment. Additional filters: True returns drafts
+          with at least one pending author approval (FinalApproval) or at least one
+          uncompleted action holder. False returns drafts where at least one author
+          approval exists, all author approvals are done, and no action holders are
+          uncompleted.'
       tags:
       - purple
       security:
@@ -2633,10 +2635,12 @@ paths:
         name: pending_final_review
         schema:
           type: boolean
-        description: Filter by pending final review status. True returns drafts with
-          at least one pending author approval (FinalApproval) or at least one uncompleted
-          action holder. False returns drafts where at least one author approval exists,
-          all author approvals are done, and no action holders are uncompleted.
+        description: 'Filter by pending final review status. First filter by existing
+          final_review_editor assignment. Additional filters: True returns drafts
+          with at least one pending author approval (FinalApproval) or at least one
+          uncompleted action holder. False returns drafts where at least one author
+          approval exists, all author approvals are done, and no action holders are
+          uncompleted.'
       tags:
       - purple
       security:

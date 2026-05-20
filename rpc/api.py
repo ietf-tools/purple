@@ -680,11 +680,12 @@ class QueueFilter(django_filters.FilterSet):
     )
     pending_final_review = django_filters.BooleanFilter(
         method="filter_pending_final_review",
-        help_text="Filter by pending final review status. True returns drafts with "
-        "at least one pending author approval (FinalApproval) or at least one "
-        "uncompleted action holder. False returns drafts where at least one author "
-        "approval exists, all author approvals are done, and no action holders are "
-        "uncompleted.",
+        help_text="Filter by pending final review status. First filter by existing "
+        "final_review_editor assignment. Additional filters: "
+        "True returns drafts with at least one pending author approval (FinalApproval) "
+        "or at least one uncompleted action holder. False returns drafts where at "
+        "least one author approval exists, all author approvals are done, and no "
+        "action holders are uncompleted.",
     )
 
     def filter_pending_final_approval(self, queryset, name, value):
@@ -705,7 +706,8 @@ class QueueFilter(django_filters.FilterSet):
     def filter_pending_final_review(self, queryset, name, value):
         has_fre = queryset.filter(assignment__role__slug="final_review_editor")
         if value is True:
-            # has at least one pending FinalApproval OR an uncompleted ActionHolder
+            # has a final_review_editor assignment, and at least one pending
+            # FinalApproval OR an uncompleted ActionHolder
             return has_fre.filter(
                 Q(finalapproval__isnull=False, finalapproval__approved__isnull=True)
                 | Q(
@@ -714,7 +716,8 @@ class QueueFilter(django_filters.FilterSet):
                 )
             ).distinct()
         elif value is False:
-            # ALL FinalApprovals are approved and no uncompleted ActionHolders
+            # has a final_review_editor assignment, ALL FinalApprovals are approved,
+            # and no uncompleted ActionHolders
             return (
                 has_fre.filter(finalapproval__isnull=False)
                 .exclude(finalapproval__approved__isnull=True)
