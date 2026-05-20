@@ -703,9 +703,10 @@ class QueueFilter(django_filters.FilterSet):
         return queryset
 
     def filter_pending_final_review(self, queryset, name, value):
+        has_fre = queryset.filter(assignment__role__slug="final_review_editor")
         if value is True:
             # has at least one pending FinalApproval OR an uncompleted ActionHolder
-            return queryset.filter(
+            return has_fre.filter(
                 Q(finalapproval__isnull=False, finalapproval__approved__isnull=True)
                 | Q(
                     actionholder_set__isnull=False,
@@ -715,7 +716,7 @@ class QueueFilter(django_filters.FilterSet):
         elif value is False:
             # ALL FinalApprovals are approved and no uncompleted ActionHolders
             return (
-                queryset.filter(finalapproval__isnull=False)
+                has_fre.filter(finalapproval__isnull=False)
                 .exclude(finalapproval__approved__isnull=True)
                 .exclude(actionholder_set__completed__isnull=True)
                 .distinct()
