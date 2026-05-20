@@ -721,7 +721,10 @@ class QueueFilter(django_filters.FilterSet):
             return (
                 has_fre.filter(finalapproval__isnull=False)
                 .exclude(finalapproval__approved__isnull=True)
-                .exclude(actionholder_set__completed__isnull=True)
+                .exclude(
+                    actionholder_set__isnull=False,
+                    actionholder_set__completed__isnull=True,
+                )
                 .distinct()
             )
         return queryset
