@@ -1312,6 +1312,34 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response()
 
     @extend_schema(
+        operation_id="documents_enqueue",
+        request=None,
+        responses={200: RfcToBeSerializer},
+    )
+    @action(detail=True, methods=["post"], url_path="enqueue")
+    def enqueue(self, request, draft__name=None):
+        """Move a draft from 'created' to 'in_progress' and mark its enqueuer
+        assignment as DONE."""
+        rfctobe = self.get_object()
+        if rfctobe.disposition_id != "created":
+            raise serializers.ValidationError(
+                f"Cannot enqueue: disposition is '{rfctobe.disposition_id}', "
+                "expected 'created'."
+            )
+        rfctobe.disposition_id = DispositionName.IN_PROGRESS
+        rfctobe.save()
+        enqueuer_role = RpcRole.objects.get(slug="enqueuer")
+        rpc_person = request.user.rpcperson()
+        if rpc_person is not None:
+            Assignment.objects.create(
+                rfc_to_be=rfctobe,
+                role=enqueuer_role,
+                person=rpc_person,
+                state=Assignment.State.DONE,
+            )
+        return Response(RfcToBeSerializer(rfctobe, context={"request": request}).data)
+
+    @extend_schema(
         operation_id="documents_pub_status_retrieve",
         request=None,
         responses=PublishRfcStatusSerializer,

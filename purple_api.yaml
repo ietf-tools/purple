@@ -718,6 +718,30 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/rpc/documents/{draft__name}/enqueue/:
+    post:
+      operationId: documents_enqueue
+      description: |-
+        Move a draft from 'created' to 'in_progress' and mark its enqueuer
+        assignment as DONE.
+      parameters:
+      - in: path
+        name: draft__name
+        schema:
+          type: string
+          description: Name of draft
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RfcToBe'
+          description: ''
   /api/rpc/documents/{draft__name}/history/:
     get:
       operationId: documents_history_list
