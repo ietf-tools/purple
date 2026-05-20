@@ -2406,6 +2406,23 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedRfcToBeList'
           description: ''
+  /api/rpc/iana_statuses/:
+    get:
+      operationId: iana_statuses_list
+      description: List all possible IANA status choices.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IanaStatus'
+          description: ''
   /api/rpc/labels/:
     get:
       operationId: labels_list

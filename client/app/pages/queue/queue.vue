@@ -68,7 +68,7 @@
             <select v-model="selectedIanaStatusFilter" :class="SELECT_STYLE">
               <option :value="null">All Statuses</option>
               <option v-for="status in allIanaStatuses" :key="status.slug" :value="status.slug">
-                {{ status.name }}
+                {{ status.label }}
               </option>
             </select>
           </div>
@@ -176,6 +176,12 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
   server: false,
   lazy: true,
   default: () => [] as RpcPerson[]
+})
+
+const { data: ianaStatuses } = await useAsyncData('iana-statuses', () => api.ianaStatusesList(), {
+  server: false,
+  lazy: true,
+  default: () => [] as IanaStatus[],
 })
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
@@ -447,18 +453,9 @@ const allPendingRoles = computed(() => {
 const selectedPendingRoleFilter = ref(null)
 const selectedIanaStatusFilter = ref<string | null>(null)
 
-const allIanaStatuses = computed<IanaStatus[]>(() => {
-  if (data.value === undefined) {
-    return []
-  }
-  const seen = new Map<string, IanaStatus>()
-  for (const doc of data.value) {
-    if (doc.ianaStatus) {
-      seen.set(doc.ianaStatus.slug, doc.ianaStatus)
-    }
-  }
-  return [...seen.values()].sort((a, b) => a.name.localeCompare(b.name))
-})
+const allIanaStatuses = computed(() =>
+  ianaStatuses.value.map(s => ({ slug: s.slug, label: s.desc }))
+)
 
 const allLabelFilters = computed(() => {
   if (data.value === undefined) {
