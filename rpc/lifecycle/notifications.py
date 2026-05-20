@@ -124,8 +124,10 @@ def get_updated_rfcs_since(current_check_time):
 
 
 def process_rfctobe_changes_for_queue():
-    """Poll history tables and send batched notification to queue system about
-    in-queue RFC changes"""
+    """Check history tables for RFC changes since the last run and, if any exist
+    and no edits occurred in the past minute, notify the queue precompute and
+    datatracker endpoints (unless NOTIFY_DT_QUEUE_ENABLED is False).
+    Uses a DB-level lock to prevent concurrent execution."""
 
     logger.info("Processing RfcToBe changes from history")
 
