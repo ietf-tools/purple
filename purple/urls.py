@@ -113,7 +113,9 @@ rpc_router.register(
 )
 rpc_router.register(r"rpc_roles", rpc_api.RpcRoleViewSet)
 rpc_router.register(r"doc_relationship_names", rpc_api.DocRelationshipNameViewSet)
-rpc_router.register(r"iana_statuses", rpc_api.IanaStatusViewSet, basename="iana-statuses")
+rpc_router.register(
+    r"iana_statuses", rpc_api.IanaStatusViewSet, basename="iana-statuses"
+)
 rpc_router.register(r"source_format_names", rpc_api.SourceFormatNameViewSet)
 rpc_router.register(r"std_level_names", rpc_api.StdLevelNameViewSet)
 rpc_router.register(r"stream_names", rpc_api.StreamNameViewSet)
