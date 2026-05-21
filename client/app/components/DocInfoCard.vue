@@ -16,7 +16,7 @@
                   <BaseBadge label="blocked" color="red" />
                   <ul class="list-disc list-inside text-xs text-gray-500 leading-tight">
                     <li v-for="br in rfcToBe.blockingReasons.filter(r => r.resolved == null)" :key="br.reason?.slug">
-                      {{ br.reason?.name }}
+                      {{ br.reason?.name ?? '(no name)' }}
                     </li>
                   </ul>
                 </template>
