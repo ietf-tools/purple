@@ -146,7 +146,7 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Status (Standard Level)" :spacing="spacing">
+        <DescriptionListItem term="Status" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="stdLevel" :is-read-only="false"
               :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
