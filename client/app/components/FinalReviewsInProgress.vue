@@ -10,6 +10,7 @@
       <colgroup>
         <col class="w-8">
         <col>
+        <col class="w-40">
         <col class="w-28">
         <col class="w-28">
         <col class="w-96">
@@ -48,7 +49,7 @@
 </template>
 
 <script setup lang="ts">
-import { Anchor, Icon } from '#components'
+import { Anchor, Icon, RpcLabel } from '#components'
 import {
   FlexRender,
   getCoreRowModel,
@@ -58,7 +59,7 @@ import {
   getSortedRowModel,
   type SortingState,
 } from '@tanstack/vue-table'
-import type { QueueItem, RpcPerson } from '~/purple_client'
+import type { Label, QueueItem, RpcPerson } from '~/purple_client'
 import { ANCHOR_STYLE } from '~/utils/html'
 import type { HeadingLevel } from '~/utils/html'
 
@@ -104,6 +105,15 @@ const columns = [
       ])
     },
     sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor('labels', {
+    header: 'Labels',
+    cell: data => {
+      const labels = data.getValue()
+      if (!labels?.length) return undefined
+      return h('span', labels.map((label: Label) => h(RpcLabel, { label, class: 'mr-1' })))
+    },
+    enableSorting: false,
   }),
   columnHelper.accessor('rfcNumber', {
     header: 'RFC Number',
