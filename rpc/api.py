@@ -1331,11 +1331,11 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         enqueuer_role = RpcRole.objects.get(slug="enqueuer")
         rpc_person = request.user.rpcperson()
         if rpc_person is not None:
-            Assignment.objects.create(
+            Assignment.objects.update_or_create(
                 rfc_to_be=rfctobe,
                 role=enqueuer_role,
                 person=rpc_person,
-                state=Assignment.State.DONE,
+                defaults={"state": Assignment.State.DONE},
             )
         return Response(RfcToBeSerializer(rfctobe, context={"request": request}).data)
 
