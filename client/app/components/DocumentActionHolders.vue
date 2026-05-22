@@ -132,7 +132,7 @@ const columns = [
   }),
   columnHelper.display({
     id: 'status',
-    header: 'Approval Status',
+    header: 'Date Completed',
     cell: data => {
       const completed = data.row.original.completed
       if (completed) {

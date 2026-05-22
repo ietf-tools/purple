@@ -11,7 +11,7 @@ import rpcapi_client
 from django import forms
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Max, Prefetch, Q
+from django.db.models import Exists, Max, OuterRef, Prefetch, Q
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -704,7 +704,15 @@ class QueueFilter(django_filters.FilterSet):
         return queryset
 
     def filter_pending_final_review(self, queryset, name, value):
-        has_fre = queryset.filter(assignment__role__slug="final_review_editor")
+        # documents with at least one non-withdrawn final_review_editor assignment
+        has_fre = queryset.filter(
+            Exists(
+                Assignment.objects.filter(
+                    rfc_to_be=OuterRef("pk"),
+                    role__slug="final_review_editor",
+                ).exclude(state=Assignment.State.WITHDRAWN)
+            )
+        )
         if value is True:
             # has a final_review_editor assignment, and at least one pending
             # FinalApproval OR an uncompleted ActionHolder
