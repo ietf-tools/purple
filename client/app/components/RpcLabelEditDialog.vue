@@ -37,7 +37,7 @@
               <input
                 id="slug" v-model="label.slug" type="text" name="slug"
                 class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                placeholder="happy tree">
+                placeholder="e.g. `markdown`">
             </div>
           </div>
         </div>
@@ -67,13 +67,32 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label for="color" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
+          <label class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
-            <select
-              id="color" v-model="label.color" name="color"
-              class="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-xs sm:text-sm sm:leading-6">
-              <option v-for="color of ColorEnum" :key="color">{{ color }}</option>
-            </select>
+            <HeadlessListbox v-model="label.color" as="div" class="relative sm:max-w-xs">
+              <HeadlessListboxButton
+                class="relative w-full cursor-default rounded-md bg-white py-1.5 pl-3 pr-10 text-left text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-600 sm:text-sm sm:leading-6"
+              >
+                <span :class="['inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset', badgeColors[label.color as ColorEnum]]">
+                  {{ label.color }}
+                </span>
+                <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                  <Icon name="heroicons:chevron-up-down-solid" class="h-5 w-5 text-gray-400" aria-hidden="true" />
+                </span>
+              </HeadlessListboxButton>
+              <transition leave-active-class="transition ease-in duration-100" leave-from-class="opacity-100" leave-to-class="opacity-0">
+                <HeadlessListboxOptions class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                  <HeadlessListboxOption v-for="color in ColorEnum" :key="color" :value="color" v-slot="{ active, selected }">
+                    <div :class="['flex cursor-default select-none items-center px-3 py-2 gap-2', active ? 'bg-gray-100' : '']">
+                      <span :class="['inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset', badgeColors[color]]">
+                        {{ color }}
+                      </span>
+                      <Icon v-if="selected" name="heroicons:check-solid" class="h-4 w-4 text-indigo-600" />
+                    </div>
+                  </HeadlessListboxOption>
+                </HeadlessListboxOptions>
+              </transition>
+            </HeadlessListbox>
           </div>
         </div>
 
@@ -85,7 +104,7 @@
             <input
               id="is-used" v-model="label.used" name="is-used" type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-            <p class="text-gray-500">This label is still in use.</p>
+            <p class="text-gray-500">Uncheck for labels that shall not be assignable.</p>
           </div>
         </div>
       </div>
@@ -97,6 +116,7 @@
 <script setup lang="ts">
 import { ColorEnum } from '~/purple_client'
 import type { Label } from '~/purple_client'
+import { badgeColors } from '~/utils/badge'
 import { overlayModalMethodsKey } from '../providers/providerKeys'
 
 const api = useApi()
