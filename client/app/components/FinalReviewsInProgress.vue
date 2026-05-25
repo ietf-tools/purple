@@ -148,15 +148,9 @@ const columns = [
           rowForDebug: data.row.original
         })
       },
-      sortingFn: (rowA, rowB, columnId) => {
-        const nameA = (rowA.getValue(columnId) as typeof rowA.original.assignmentSet)
-          ?.map(a => props.people.find(p => p.id === a.person)?.name ?? '')
-          .sort((a, b) => a.localeCompare(b, 'en'))[0] ?? ''
-        const nameB = (rowB.getValue(columnId) as typeof rowB.original.assignmentSet)
-          ?.map(a => props.people.find(p => p.id === a.person)?.name ?? '')
-          .sort((a, b) => a.localeCompare(b, 'en'))[0] ?? ''
-        return nameA.localeCompare(nameB, 'en')
-      },
+      sortingFn: (rowA, rowB, columnId) =>
+        sortingFnAssignees(rowA.getValue(columnId), props.people)
+          .localeCompare(sortingFnAssignees(rowB.getValue(columnId), props.people), 'en'),
     }
   ),
 ]
