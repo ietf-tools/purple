@@ -98,13 +98,13 @@
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label for="is-used" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
-            May be Used
+            Is Assignable
           </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <input
               id="is-used" v-model="label.used" name="is-used" type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600">
-            <p class="text-gray-500">Uncheck for labels that shall not be assignable.</p>
+            <p class="text-gray-500">This label is assignable and actively in use.</p>
           </div>
         </div>
       </div>
