@@ -1576,7 +1576,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
         person_id = serializer.validated_data.pop("person_id")
         if person_id:
             with transaction.atomic():
-                dt_person, _ = DatatrackerPerson.objects.first_or_create(
+                dt_person, _ = DatatrackerPerson.objects.get_or_create(
                     datatracker_id=person_id,
                 )
                 serializer.save(
