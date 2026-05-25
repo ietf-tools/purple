@@ -338,11 +338,11 @@ const columns = [
                   ]),
                 ]
 
-                // Show blocking reasons slug for blocked assignments
+                // Show blocking reasons for blocked assignments
                 if (role === 'blocked' && data.row.original.blockingReasons && data.row.original.blockingReasons.length > 0) {
-                  const reasons = data.row.original.blockingReasons.map((br: any) => br.reason.name).join(', ')
+                  const reasons = formatBlockingReasons(data.row.original.blockingReasons, data.row.original.actionholderSet)
                   children.push(
-                    h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' }, `${reasons}`)
+                    h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' }, reasons)
                   )
                 }
 
