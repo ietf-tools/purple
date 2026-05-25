@@ -9,12 +9,19 @@
         class="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 shadow-sm dark:border-neutral-700 dark:bg-neutral-800"
       >
         <RpcLabel :label="label" />
-        <Icon
-          v-if="editable"
-          name="circum:edit"
-          class="ml-3 shrink-0 text-indigo-600 hover:text-indigo-900 cursor-pointer"
-          @click="$emit('edit', label)"
-        />
+        <div class="flex items-center gap-2 ml-3 shrink-0">
+          <Icon
+            name="circum:edit"
+            class="text-indigo-600 hover:text-indigo-900 cursor-pointer"
+            @click="$emit('edit', label)"
+          />
+          <Icon
+            v-if="deletable"
+            name="circum:trash"
+            class="text-red-500 hover:text-red-700 cursor-pointer"
+            @click="$emit('delete', label)"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -26,10 +33,11 @@ import type { Label } from '~/purple_client'
 defineProps<{
   title: string
   labels: Label[]
-  editable?: boolean
+  deletable?: boolean
 }>()
 
 defineEmits<{
   edit: [label: Label]
+  delete: [label: Label]
 }>()
 </script>

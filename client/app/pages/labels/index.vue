@@ -16,8 +16,8 @@
       API error while requesting labels: {{ labelsError }}
     </ErrorAlert>
     <template v-else>
-      <LabelsSection title="In Use" :labels="labelsInUse" :editable="true" @edit="editLabel" />
-      <LabelsSection title="Not in Use" :labels="labelsNotInUse" />
+      <LabelsSection title="In Use" :labels="labelsInUse" @edit="editLabel" />
+      <LabelsSection title="Not in Use" :labels="labelsNotInUse" :deletable="true" @edit="editLabel" @delete="deleteLabel" />
     </template>
   </div>
 </template>
@@ -65,6 +65,22 @@ async function addLabel() {
   if (refresh) {
     await refresh()
   }
+}
+
+async function deleteLabel(label: Label) {
+  if (!label.id) return
+  try {
+    await api.labelsDestroy({ id: label.id })
+  } catch {
+    snackbar.add({
+      type: 'error',
+      title: 'Delete failed',
+      text: 'Label could not be deleted — it may still be assigned to documents'
+    })
+    return
+  }
+  snackbar.add({ type: 'success', title: 'Success', text: 'Label deleted' })
+  if (refresh) await refresh()
 }
 
 async function editLabel(label: Label) {
