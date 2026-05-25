@@ -1,8 +1,8 @@
 <template>
   <div>
     <TitleBlock
-      title="Final Review (formerly AUTH48)"
-      summary="Where the magic mercifully stops happening."/>
+      title="Final Review"
+      summary="formerly AUTH48"/>
     <FinalReviews />
   </div>
 </template>

@@ -1,5 +1,4 @@
 import { Anchor, Icon, BaseBadge } from '#components'
-import { groupBy } from 'lodash-es'
 import type { Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
 
 export const columnFormatterCluster = (clusterNumber?: Cluster["number"]) => {
@@ -35,68 +34,30 @@ export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, que
     throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(rowForDebug)}`)
   }
 
-  const listItems: VNode[] = []
+  const sortedAssignments = [...assignments].sort((a, b) => {
+    const nameA = people.find(p => p.id === a.person)?.name ?? ''
+    const nameB = people.find(p => p.id === b.person)?.name ?? ''
+    return nameA.localeCompare(nameB, 'en')
+  })
 
-  const assignmentsByRoles = groupBy(
-    assignments,
-    (assignment) => assignment.role
-  )
+  const listItems = sortedAssignments.map(assignment => {
+    const rpcPerson = people.find(p => p.id === assignment.person)
+    const name = rpcPerson ? rpcPerson.name : queueItemsIsPending ? '...' : '(unknown person)'
 
-  const orderedRoles = Object.keys(assignmentsByRoles)
-    .sort((a, b) => a.localeCompare(b, 'en'))
-
-  for (const role of orderedRoles) {
-    const assignmentsOfRole = assignmentsByRoles[role] ?? []
-
-    const redundantAssignmentsOfSamePersonToSameRole = assignmentsOfRole.filter((assignment, _index, arr) => {
-      const { person } = assignment
-      if (person === undefined || person == null) {
-        return false
-      }
-      const firstAssignmentOfPersonToRole = arr.find(arrAssignment => assignment.person && arrAssignment.person && arrAssignment.person === assignment.person)
-      if (!firstAssignmentOfPersonToRole) {
-        console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
-        throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
-      }
-      // the first assignment of person in the list of assignments should always match the current assignment of person
-      // because there shouldn't be duplicate/redundant assignments
-      // but if the id is different then it is a redundant assignment,
-      // so we'll prompt the user to delete them
-      return assignment.id !== firstAssignmentOfPersonToRole.id
-    })
-
-    const badgeChildren: VNode[] = [h(BaseBadge, { label: role, class: 'mr-1' })]
-    if (role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
+    const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role, class: 'ml-2' })]
+    if (assignment.role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
       const reasons = blockingReasons.map(br => br.reason?.name).filter(Boolean).join(', ')
-      badgeChildren.push(h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400' }, reasons))
+      roleBadgeChildren.push(h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-1' }, reasons))
     }
 
-    listItems.push(h('li', { class: 'flex gap-3' }, [
-      h('span', { class: 'flex items-baseline gap-1' }, badgeChildren),
-      h('ul', { class: 'flex flex-col gap-2' }, [
-        ...assignmentsOfRole.map(assignment => {
-          const rpcPerson = people.find((p) => p.id === assignment.person)
-          return h(Anchor, {
-            href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-            class: [ANCHOR_STYLE, 'text-sm nowrap']
-          }, () => [
-            rpcPerson ? rpcPerson.name : queueItemsIsPending ? `...` : '(unknown person)',
-          ])
-        }).reduce((acc, item, index, arr) => {
-          // add commas between items
-          const listItemChildren = []
-          listItemChildren.push(item)
-          if (index < arr.length - 1) {
-            listItemChildren.push(', ')
-          } else {
-            listItemChildren.push(' ')
-          }
-          const listItem = h('li', listItemChildren)
-          acc.push(listItem)
-          return acc
-        }, [] as (VNode | string)[])]),
-    ]))
-  }
+    return h('li', { class: 'flex items-baseline gap-1' }, [
+      h(Anchor, {
+        href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+        class: [ANCHOR_STYLE, 'text-sm']
+      }, () => name),
+      ...roleBadgeChildren,
+    ])
+  })
 
-  return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
+  return h('ul', { class: 'flex flex-col gap-y-2' }, listItems)
 }
