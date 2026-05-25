@@ -2,7 +2,7 @@
 Original comment:
 
 This is the template file for email messages sent to notify authors
-that their document is in AUTH48 state and available for review
+that their document is in Final Review state and available for review
 (when using an XML source file).
 The template text becomes the body of the message. (Headers are
 handled differently.)
@@ -31,9 +31,9 @@ TEXT:
 RFC Author(s):
 --------------
 
-Instructions for Completing AUTH48
+Instructions for Completing Final Review
 
-Your document has now entered AUTH48.  Once it has been reviewed and
+Your document has now entered Final Review. Once it has been reviewed and
 approved by you and all coauthors, it will be published as an RFC.
 If an author is no longer available, there are several remedies
 available as listed in the FAQ (https://www.rfc-editor.org/faq/).
@@ -107,8 +107,8 @@ include:
       IETF Stream participants are your working group chairs, the
       responsible ADs, and the document shepherd).
 
-   *  auth48archive@rfc-editor.org, which is a new archival mailing list
-      to preserve AUTH48 conversations; it is not an active discussion
+   *  auth48archive@rfc-editor.org, which is an archival mailing list
+      to preserve Final Review conversations; it is not an active discussion
       list:
 
      *  More info:
@@ -175,7 +175,7 @@ Diff of the XML:
 Tracking progress
 -----------------
 
-The details of the AUTH48 status of your document are here:
+The details of the Final Review status of your document are here:
    https://www.rfc-editor.org/auth48/LCXXXX
 
 Please let us know if you have any questions.
