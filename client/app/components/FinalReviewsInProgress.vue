@@ -20,6 +20,7 @@
         <col class="w-40">
         <col class="w-28">
         <col class="w-28">
+        <col class="w-28">
         <col class="w-96">
       </colgroup>
       <RpcThead>
@@ -157,6 +158,16 @@ const columns = [
     header: 'RFC Number',
     cell: data => data.getValue(),
     sortingFn: 'alphanumeric',
+  }),
+  columnHelper.accessor('finalApproval', {
+    header: 'Approvals Received',
+    cell: data => {
+      const approvals = data.getValue()
+      if (!approvals?.length) return undefined
+      const approved = approvals.filter(a => a.approved != null).length
+      return `${approved}/${approvals.length}`
+    },
+    enableSorting: false,
   }),
   columnHelper.accessor(
     'cluster', {
