@@ -265,9 +265,7 @@ class CreateActionHolderSerializer(ActionHolderSerializer):
 
     def create(self, validated_data):
         person_id = validated_data.pop("person_id")
-        dt_person, _ = DatatrackerPerson.objects.first_or_create(
-            datatracker_id=person_id
-        )
+        dt_person, _ = DatatrackerPerson.objects.get_or_create(datatracker_id=person_id)
         return ActionHolder.objects.create(
             datatracker_person=dt_person, **validated_data
         )
@@ -2068,13 +2066,13 @@ class CreateFinalApprovalSerializer(FinalApprovalSerializer):
             "overriding_approver_person_id", None
         )
 
-        approver_dt_person = DatatrackerPerson.objects.get(
+        approver_dt_person, _ = DatatrackerPerson.objects.get_or_create(
             datatracker_id=approver_person_id
         )
 
         overriding_approver_dt_person = None
         if overriding_approver_person_id:
-            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+            overriding_approver_dt_person, _ = DatatrackerPerson.objects.get_or_create(
                 datatracker_id=overriding_approver_person_id
             )
 
