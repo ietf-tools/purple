@@ -159,17 +159,17 @@ Files
 -----
 
 The files are available here:
-   https://www.rfc-editor.org/authors/LCXXXX.xml
-   https://www.rfc-editor.org/authors/LCXXXX.html
-   https://www.rfc-editor.org/authors/LCXXXX.pdf
-   https://www.rfc-editor.org/authors/LCXXXX.txt
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}.xml
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}.html
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}.pdf
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}.txt
 
 Diff file of the text:
-   https://www.rfc-editor.org/authors/LCXXXX-diff.html
-   https://www.rfc-editor.org/authors/LCXXXX-rfcdiff.html (side by side)
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}-diff.html
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}-rfcdiff.html (side by side)
 
 Diff of the XML:
-   https://www.rfc-editor.org/authors/LCXXXX-xmldiff1.html
+   https://www.rfc-editor.org/authors/rfc{{ rfc_to_be.rfc_number }}-xmldiff1.html
 
 
 Tracking progress
