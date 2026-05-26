@@ -2474,8 +2474,8 @@ class RfcMailTemplatesList(views.APIView):
         template_overrides = {
             "blank": {
                 "subject": f"{draft_name} update",
-                "to": [],
-                "cc": [],
+                "to": author_emails,
+                "cc": interested_parties,
             },
             "enqueuing": {
                 "subject": f"{draft_name} has been added to the RFC Editor queue",
