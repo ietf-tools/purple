@@ -2068,13 +2068,13 @@ class CreateFinalApprovalSerializer(FinalApprovalSerializer):
             "overriding_approver_person_id", None
         )
 
-        approver_dt_person = DatatrackerPerson.objects.get(
+        approver_dt_person, _ = DatatrackerPerson.objects.get_or_create(
             datatracker_id=approver_person_id
         )
 
         overriding_approver_dt_person = None
         if overriding_approver_person_id:
-            overriding_approver_dt_person = DatatrackerPerson.objects.get(
+            overriding_approver_dt_person, _ = DatatrackerPerson.objects.get_or_create(
                 datatracker_id=overriding_approver_person_id
             )
 
