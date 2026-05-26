@@ -31,7 +31,7 @@ TEXT:
 RFC Author(s):
 --------------
 
-Instructions for Completing Final Review
+Final Review for RFC-to-be {{ rfc_to_be.rfc_number }} <{{ rfc_to_be.draft.name }}>
 
 Your document has now entered Final Review. Once it has been reviewed and
 approved by you and all coauthors, it will be published as an RFC.
@@ -95,7 +95,7 @@ Please review the following aspects of your document:
 Submitting changes
 ------------------
 
-To submit changes, please reply to this email using ‘REPLY ALL’ as all
+To submit changes, please reply to this email using 'REPLY ALL' as all
 the parties CCed on this message need to see your changes. The parties
 include:
 
@@ -108,8 +108,8 @@ include:
       responsible ADs, and the document shepherd).
 
    *  auth48archive@rfc-editor.org, which is an archival mailing list
-      to preserve Final Review conversations; it is not an active discussion
-      list:
+      to preserve discussion about the document while in the RPC editorial
+      queue; it is not an active discussion list:
 
      *  More info:
         https://mailarchive.ietf.org/arch/msg/ietf-announce/yb6lpIGh-4Q9l2USxIAe6P8O4Zc
@@ -151,7 +151,7 @@ Approving for publication
 --------------------------
 
 To approve your RFC for publication, please reply to this email stating
-that you approve this RFC for publication.  Please use ‘REPLY ALL’,
+that you approve this RFC for publication.  Please use 'REPLY ALL',
 as all the parties CCed on this message need to see your approval.
 
 
@@ -175,8 +175,8 @@ Diff of the XML:
 Tracking progress
 -----------------
 
-The details of the Final Review status of your document are here:
-   https://www.rfc-editor.org/auth48/LCXXXX
+Details on the status of your Final Review are here:
+   https://queue.rfc-editor.org/final-review/rfc{{ rfc_to_be.rfc_number }}/
 
 Please let us know if you have any questions.
 
