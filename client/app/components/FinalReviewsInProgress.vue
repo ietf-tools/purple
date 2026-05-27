@@ -164,7 +164,7 @@ const columns = [
     cell: data => {
       const approvals = data.getValue()
       if (!approvals?.length) return undefined
-      const approved = approvals.filter(a => a.approved !== null).length
+      const approved = approvals.filter(a => a.approved !== undefined).length
       return `${approved}/${approvals.length}`
     },
     enableSorting: false,
