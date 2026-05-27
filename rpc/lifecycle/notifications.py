@@ -11,6 +11,7 @@ from datatracker.models import DatatrackerPerson
 from datatracker.rpcapi import with_rpcapi
 from rpc.models import (
     AdditionalEmail,
+    ApprovalLogMessage,
     Assignment,
     ClusterMember,
     FinalApproval,
@@ -116,6 +117,11 @@ def get_updated_rfcs_since(current_check_time):
     )
     candidate_ids.update(
         FinalApproval.history.filter(history_date__gt=current_check_time)
+        .exclude(rfc_to_be=None)
+        .values_list("rfc_to_be", flat=True)
+    )
+    candidate_ids.update(
+        ApprovalLogMessage.history.filter(history_date__gt=current_check_time)
         .exclude(rfc_to_be=None)
         .values_list("rfc_to_be", flat=True)
     )
