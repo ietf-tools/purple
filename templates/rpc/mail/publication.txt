@@ -23,18 +23,39 @@
 
 {{ rfc_to_be.abstract }}
 
-
-INFORMATIONAL: This memo provides information for the Internet community.
+{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ group }} of the IRTF.
+{% elif stream.slug == "irtf" %}This document is a product of the IRTF.
+{% elif stream.slug == "iab" %}This document is a product of the Internet Architecture Board.
+{% elif stream.slug == "ietf" and group %}This document is a product of the {{ group }} Working Group of the IETF.
+{% endif %}
+{% with level=rfc_to_be.publication_std_level %}{% if level.slug == "bcp" %}BCP: This document specifies an Internet Best Current Practices for the
+Internet Community, and requests discussion and suggestions for
+improvements. Distribution of this memo is unlimited.
+{% elif level.slug == "exp" %}EXPERIMENTAL: This memo defines an Experimental Protocol for the
+Internet community. It does not specify an Internet standard of any
+kind. Discussion and suggestions for improvement are requested.
+Distribution of this memo is unlimited.
+{% elif level.slug == "historic" %}HISTORIC: This memo defines a Historic Document for the Internet
+community. It does not specify an Internet standard of any kind.
+Distribution of this memo is unlimited.
+{% elif level.slug == "ps" or level.slug == "ds" or level.slug == "std" %}STANDARDS TRACK: This document specifies an Internet Standards Track
+protocol for the Internet community, and requests discussion and
+suggestions for improvements. Distribution of this memo is unlimited.
+{% elif level.slug == "inf" %}INFORMATIONAL: This memo provides information for the Internet community.
 It does not specify an Internet standard of any kind. Distribution of
 this memo is unlimited.
-
-This announcement is sent to the IETF-Announce, rfc-dist and IRTF-Announce lists.To subscribe or unsubscribe, see
+{% endif %}{% endwith %}
+{% if stream.slug == "irtf" %}This announcement is sent to the IETF-Announce, rfc-dist and IRTF-Announce lists.
+To subscribe or unsubscribe, see
   https://www.ietf.org/mailman/listinfo/ietf-announce
   https://mailman.rfc-editor.org/mailman/listinfo/rfc-dist
-  https://www.irtf.org/mailman/listinfo/irtf-announce
-
-For searching the RFC series, see https://www.rfc-editor.org/search
-For downloading RFCs, see https://www.rfc-editor.org/retrieve/bulk
+  https://www.irtf.org/mailman/listinfo/irtf-announce{% else %}This announcement is sent to the IETF-Announce and rfc-dist lists.
+To subscribe or unsubscribe, see
+  https://www.ietf.org/mailman/listinfo/ietf-announce
+  https://mailman.rfc-editor.org/mailman/listinfo/rfc-dist{% endif %}
+{% endwith %}
+For searching the RFC series, see https://www.rfc-editor.org/search/
+For downloading RFCs, see https://www.rfc-editor.org/series/rfc-download/
 
 Requests for special distribution should be addressed to either the
 author of the RFC in question, or to rfc-editor@rfc-editor.org.  Unless
