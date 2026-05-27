@@ -6,6 +6,13 @@
     <ErrorAlert v-if="error">
       {{ error }}
     </ErrorAlert>
+    <div v-if="availableLabels.length" class="flex flex-wrap gap-1 mb-2">
+      <button v-for="label in availableLabels" :key="label.slug"
+        :class="['rounded', selectedLabels.has(label.slug) ? 'opacity-100' : 'opacity-40']"
+        type="button" @click="toggleLabel(label.slug)">
+        <RpcLabel :label="label" />
+      </button>
+    </div>
     <RpcTable>
       <colgroup>
         <col class="w-8">
@@ -89,6 +96,37 @@ const {
   }
 )
 
+const selectedLabels = ref<Set<string>>(new Set())
+
+const availableLabels = computed<Label[]>(() => {
+  const seen = new Set<string>()
+  const labels: Label[] = []
+  for (const item of queueItems.value) {
+    for (const label of item.labels ?? []) {
+      if (!seen.has(label.slug)) {
+        seen.add(label.slug)
+        labels.push(label)
+      }
+    }
+  }
+  return labels.sort((a, b) => a.slug.localeCompare(b.slug))
+})
+
+const toggleLabel = (slug: string) => {
+  const next = new Set(selectedLabels.value)
+  if (next.has(slug)) next.delete(slug)
+  else next.add(slug)
+  selectedLabels.value = next
+}
+
+const filteredItems = computed(() =>
+  selectedLabels.value.size === 0
+    ? queueItems.value
+    : queueItems.value.filter(item =>
+        item.labels?.some(l => selectedLabels.value.has(l.slug))
+      )
+)
+
 const columnHelper = createColumnHelper<QueueItem>()
 
 const columns = [
@@ -149,8 +187,8 @@ const columns = [
         })
       },
       sortingFn: (rowA, rowB, columnId) =>
-        sortingFnAssignees(rowA.getValue(columnId), props.people)
-          .localeCompare(sortingFnAssignees(rowB.getValue(columnId), props.people), 'en'),
+        sortAssignees(rowA.getValue(columnId), props.people)
+          .localeCompare(sortAssignees(rowB.getValue(columnId), props.people)),
     }
   ),
 ]
@@ -159,7 +197,7 @@ const sorting = ref<SortingState>([])
 
 const table = useVueTable({
   get data() {
-    return queueItems.value
+    return filteredItems.value
   },
   columns,
   initialState: {

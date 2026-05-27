@@ -1,14 +1,6 @@
 import { Anchor, Icon, BaseBadge } from '#components'
 import type { Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
 
-export const sortingFnAssignees = (
-  assignments: Assignment[] | undefined,
-  people: RpcPerson[]
-): string =>
-  assignments
-    ?.map(a => people.find(p => p.id === a.person)?.name ?? '')
-    .sort((a, b) => a.localeCompare(b, 'en'))[0] ?? ''
-
 export const columnFormatterCluster = (clusterNumber?: Cluster["number"]) => {
   if (!clusterNumber) {
     return '-'

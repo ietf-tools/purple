@@ -16,6 +16,14 @@ export const assignmentRoleOrder = [
   'publisher',
 ] as const
 
+export const sortAssignees = (
+  assignments: { person?: number | null }[] | undefined,
+  people: { id?: number; name?: string }[]
+): string =>
+  assignments
+    ?.map(a => people.find(p => p.id !== undefined && p.id === a.person)?.name ?? '')
+    .sort((a, b) => a.localeCompare(b))[0] ?? ''
+
 /** Sort assignments by role order, interleaving 'blocked' entries chronologically by id. */
 export function sortAssignmentsByRole<T extends { id?: number | null; role: string }>(assignments: T[]): T[] {
   const nonBlocked = assignments
