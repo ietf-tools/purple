@@ -33,10 +33,11 @@ RFC Author(s):
 
 Final Review for RFC-to-be {{ rfc_to_be.rfc_number }} <{{ rfc_to_be.draft.name }}>
 
-Your document is now available for Final Review (previously AUTH48). Once it has been reviewed and
-approved by you and all coauthors, it will be published as an RFC.
-If an author is no longer available, there are several remedies
-available as listed in the FAQ (https://www.rfc-editor.org/faq/).
+Your document is now available for Final Review (previously AUTH48). Once it has been
+reviewed and approved by you and all coauthors, it will be published as an RFC.
+If an author is no longer available, there are several remedies;
+see the Unavailable Authors section
+(https://authors.ietf.org/rfc-publication-process#unavailable-authors).
 
 You and you coauthors are responsible for engaging other parties
 (e.g., Contributors or Working Group) as necessary before providing
