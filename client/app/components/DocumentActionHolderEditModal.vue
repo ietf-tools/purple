@@ -8,28 +8,43 @@
     </div>
 
     <div class="flex flex-col gap-4 px-6 py-5">
-      <div class="flex flex-row items-center">
-        <label class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3">Name:</label>
-        <span class="text-sm dark:text-white">{{ props.actionHolder.person?.name ?? '(unknown)' }}</span>
+      <div class="flex flex-row items-start">
+        <span class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Holder type:</span>
+        <div class="flex flex-col gap-2 flex-1">
+          <div class="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-sm self-start">
+            <button type="button"
+              :class="['px-4 py-1 transition-colors', mode === 'person' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+              :disabled="isSuccess || isDeleted"
+              @click="mode = 'person'">Person</button>
+            <button type="button"
+              :class="['px-4 py-1 border-l border-gray-300 dark:border-gray-600 transition-colors', mode === 'body' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+              :disabled="isSuccess || isDeleted"
+              @click="mode = 'body'">Organization/Body</button>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-neutral-400">
+            <template v-if="mode === 'person'">Use when the action is attributed to a specific individual.</template>
+            <template v-else>Use when the action is attributed to a group or organization, not a single person.</template>
+          </p>
+          <div v-if="mode === 'person'" class="text-sm dark:text-white">
+            {{ props.actionHolder.person?.name ?? '(unknown)' }}
+          </div>
+          <input v-else v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess || isDeleted"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
+            placeholder="e.g. 'IANA'" />
+        </div>
       </div>
+
       <div class="flex flex-row items-center">
         <label class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3">Since:</label>
         <span class="text-sm dark:text-white">{{ sinceWhenDisplay }}</span>
       </div>
 
-      <DialogFieldDate v-model="deadlineDateString" id="deadline" label="Deadline" :disabled="isSuccess" />
-      <DialogFieldDate v-model="completedDateString" id="completed" label="Date Completed" :disabled="isSuccess" />
-
-      <div class="flex flex-row items-start">
-        <label for="body" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Organization/Body:</label>
-        <input v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess"
-          class="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
-          placeholder="Optional organization (if person is unknown), e.g. 'IANA'" />
-      </div>
+      <DialogFieldDate v-model="deadlineDateString" id="deadline" label="Deadline" :disabled="isSuccess || isDeleted" />
+      <DialogFieldDate v-model="completedDateString" id="completed" label="Date Completed" :disabled="isSuccess || isDeleted" />
 
       <div class="flex flex-row items-start">
         <label for="comment" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Comment:</label>
-        <textarea v-model="comment" id="comment" rows="3" :disabled="isSuccess"
+        <textarea v-model="comment" id="comment" rows="3" :disabled="isSuccess || isDeleted"
           class="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white resize-y disabled:opacity-50"
           placeholder="Optional comment" />
       </div>
@@ -69,6 +84,8 @@ const { closeOverlayModal } = overlayModalKeyInjection
 const isSuccess = ref(false)
 const isDeleted = ref(false)
 
+const mode = ref<'person' | 'body'>(props.actionHolder.body ? 'body' : 'person')
+
 const deadlineDateString = ref<string | undefined>(
   props.actionHolder.deadline ? jsDateToInputTypeDate(props.actionHolder.deadline) : undefined
 )
@@ -87,6 +104,11 @@ const save = async () => {
   const id = props.actionHolder.id
   if (id === undefined) {
     snackbar.add({ type: 'error', title: 'Missing action holder id', text: '' })
+    return
+  }
+
+  if (mode.value === 'body' && !body.value.trim()) {
+    snackbar.add({ type: 'error', title: 'An organization/body name is required', text: '' })
     return
   }
 
@@ -119,7 +141,12 @@ const save = async () => {
     await api.documentsActionHoldersPartialUpdate({
       draftName: props.draftName,
       id,
-      patchedActionHolderRequest: { deadline, completed, comment: comment.value, body: body.value },
+      patchedActionHolderRequest: {
+        deadline,
+        completed,
+        comment: comment.value,
+        body: mode.value === 'body' ? body.value : '',
+      },
     })
     isSuccess.value = true
     snackbar.add({ type: 'success', title: 'Action holder saved', text: '' })

@@ -230,12 +230,19 @@ class ActionHolderSerializer(serializers.ModelSerializer):
     person = BaseDatatrackerPersonSerializer(
         source="datatracker_person", read_only=True
     )
+    display_name = serializers.SerializerMethodField()
+
+    def get_display_name(self, obj) -> str:
+        if obj.body:
+            return obj.body
+        return obj.datatracker_person.plain_name or ""
 
     class Meta:
         model = ActionHolder
         fields = [
             "id",
             "person",
+            "display_name",
             "deadline",
             "since_when",
             "completed",
@@ -256,15 +263,27 @@ class CreateActionHolderSerializer(ActionHolderSerializer):
 
     person_id = serializers.IntegerField(
         write_only=True,
-        required=True,
-        help_text="Datatracker ID of the person to add as action holder",
+        required=False,
+        allow_null=True,
+        help_text="Datatracker ID of the person to add as action holder. If omitted, body must be provided and the system person is used.",
     )
 
     class Meta(ActionHolderSerializer.Meta):
         fields = ActionHolderSerializer.Meta.fields + ["person_id"]
 
+    def validate(self, attrs):
+        if not attrs.get("person_id") and not attrs.get("body"):
+            raise serializers.ValidationError(
+                "Either person_id or body must be provided."
+            )
+        return attrs
+
     def create(self, validated_data):
-        person_id = validated_data.pop("person_id")
+        from django.conf import settings
+
+        person_id = validated_data.pop("person_id", None)
+        if person_id is None:
+            person_id = settings.SYSTEM_DATATRACKER_PERSON_ID
         dt_person, _ = DatatrackerPerson.objects.first_or_create(
             datatracker_id=person_id
         )

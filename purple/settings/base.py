@@ -202,6 +202,11 @@ NOTIFY_DT_QUEUE_ENABLED = (
     os.environ.get("PURPLE_NOTIFY_DT_QUEUE_ENABLED", "true").lower() != "false"
 )
 
+# Datatracker person ID used as the action holder when only a body/org is specified
+SYSTEM_DATATRACKER_PERSON_ID = int(
+    os.environ.get("PURPLE_SYSTEM_DATATRACKER_PERSON_ID", "1")
+)
+
 # Errata
 ERRATA_URL = "https://www.rfc-editor.org/errata"
 

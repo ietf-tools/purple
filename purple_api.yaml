@@ -937,7 +937,6 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/CreateActionHolderRequest'
-        required: true
       security:
       - cookieAuth: []
       responses:
@@ -3438,6 +3437,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
+        display_name:
+          type: string
+          readOnly: true
         deadline:
           type: string
           format: date-time
@@ -3921,6 +3923,9 @@ components:
           allOf:
           - $ref: '#/components/schemas/BaseDatatrackerPerson'
           readOnly: true
+        display_name:
+          type: string
+          readOnly: true
         deadline:
           type: string
           format: date-time
@@ -3962,9 +3967,9 @@ components:
         person_id:
           type: integer
           writeOnly: true
-          description: Datatracker ID of the person to add as action holder
-      required:
-      - person_id
+          nullable: true
+          description: Datatracker ID of the person to add as action holder. If omitted,
+            body must be provided and the system person is used.
     CreateFinalApproval:
       type: object
       description: Serializer for creating FinalApproval instances

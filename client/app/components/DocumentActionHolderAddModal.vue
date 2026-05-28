@@ -8,16 +8,33 @@
     </div>
 
     <div class="flex flex-col gap-4 px-6 py-5">
-      <DialogFieldPickAuthor v-model="person" id="person" label="Person" :disabled="isSuccess"
-        person-term="action holder" />
-      <DialogFieldDate v-model="deadlineDateString" id="deadline" label="Deadline" :disabled="isSuccess" />
-
       <div class="flex flex-row items-start">
-        <label for="body" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Organization/Body:</label>
-        <input v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess"
-          class="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
-          placeholder="Optional organization (if person is unknown), e.g. 'IANA'" />
+        <span class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Holder type:</span>
+        <div class="flex flex-col gap-2 flex-1">
+          <div class="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-sm self-start">
+            <button type="button"
+              :class="['px-4 py-1 transition-colors', mode === 'person' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+              :disabled="isSuccess"
+              @click="mode = 'person'">Person</button>
+            <button type="button"
+              :class="['px-4 py-1 border-l border-gray-300 dark:border-gray-600 transition-colors', mode === 'body' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+              :disabled="isSuccess"
+              @click="mode = 'body'">Organization/Body</button>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-neutral-400">
+            <template v-if="mode === 'person'">Use when the action is attributed to a specific individual.</template>
+            <template v-else>Use when the action is attributed to a organization or body, not a single person.</template>
+          </p>
+          <input v-if="mode === 'body'" v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess"
+            class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
+            placeholder="e.g. 'IANA'" />
+        </div>
       </div>
+
+      <DialogFieldPickAuthor v-if="mode === 'person'" v-model="person" id="person" label="Person" :disabled="isSuccess"
+        person-term="action holder" />
+
+      <DialogFieldDate v-model="deadlineDateString" id="deadline" label="Deadline" :disabled="isSuccess" />
 
       <div class="flex flex-row items-start">
         <label for="comment" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Comment:</label>
@@ -53,15 +70,21 @@ if (!overlayModalKeyInjection) throw Error('Expected injection of overlayModalKe
 const { closeOverlayModal } = overlayModalKeyInjection
 
 const isSuccess = ref(false)
+const mode = ref<'person' | 'body'>('person')
 const person = ref<BaseDatatrackerPerson | undefined>()
 const deadlineDateString = ref<string | undefined>()
 const body = ref('')
 const comment = ref('')
 
 const add = async () => {
-  const personId = person.value?.personId
-  if (personId === undefined) {
+  const personId = mode.value === 'person' ? person.value?.personId : undefined
+
+  if (mode.value === 'person' && personId === undefined) {
     snackbar.add({ type: 'error', title: 'A person is required', text: '' })
+    return
+  }
+  if (mode.value === 'body' && !body.value.trim()) {
+    snackbar.add({ type: 'error', title: 'An organization/body name is required', text: '' })
     return
   }
 
@@ -79,10 +102,10 @@ const add = async () => {
     await api.documentsActionHoldersCreate({
       draftName: props.draftName,
       createActionHolderRequest: {
-        personId,
+        ...(personId !== undefined && { personId }),
         deadline,
         comment: comment.value,
-        body: body.value,
+        body: mode.value === 'body' ? body.value : '',
       },
     })
     isSuccess.value = true

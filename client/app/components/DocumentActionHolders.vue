@@ -101,9 +101,15 @@ const reloadEverything = async () => {
 const columnHelper = createColumnHelper<ActionHolder>()
 
 const columns = [
-  columnHelper.accessor('person', {
+  columnHelper.accessor('displayName', {
     header: 'Action Holder Name',
-    cell: data => formatAuthor(data.getValue()),
+    cell: data => {
+      const body = data.row.original.body
+      if (body) return h('span', { class: 'text-sm italic text-gray-700 dark:text-gray-300' }, body)
+      const person = data.row.original.person
+      if (person) return formatAuthor(person)
+      return h('i', '(unknown)')
+    },
     sortingFn: 'alphanumeric',
   }),
   columnHelper.accessor('comment', {
@@ -159,16 +165,6 @@ const columns = [
     },
     sortingFn: 'alphanumeric',
   }),
-  columnHelper.accessor('body', {
-    header: 'Body',
-    cell: data => {
-      const body = data.getValue()
-      if (!body) return h('span', { class: 'text-gray-400' }, '(none)')
-      return h('span', { class: 'text-sm', title: body }, body.length > 40 ? body.substring(0, 40) + '...' : body)
-    },
-    sortingFn: 'alphanumeric',
-  }),
-
   columnHelper.display({
     id: 'action',
     header: 'Action',
