@@ -47,7 +47,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, get_rpcapi_client, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
-from .dt_v1_api_utils import datatracker_group_list_email
+from .dt_v1_api_utils import datatracker_group_list_email, datatracker_group_name
 from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
@@ -2503,7 +2503,10 @@ class RfcMailTemplatesList(views.APIView):
                         **template_overrides[msgtype],
                         "body": render_to_string(
                             template_filename,
-                            context={"rfc_to_be": rfc_to_be},
+                            context={
+                                "rfc_to_be": rfc_to_be,
+                                "group_name": datatracker_group_name(rfc_to_be.group) if rfc_to_be.group else None,
+                            },
                         ),
                     },
                 }

@@ -23,12 +23,12 @@
 
 {{ rfc_to_be.abstract }}
 
-{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ group }} of the IRTF.
+{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream|default:rfc_to_be.stream %}{% with display_group=group_name|default:group %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ display_group }} of the IRTF.
 {% elif stream.slug == "irtf" %}This document is a product of the IRTF.
 {% elif stream.slug == "iab" %}This document is a product of the Internet Architecture Board.
-{% elif stream.slug == "ietf" and group %}This document is a product of the {{ group }} Working Group of the IETF.
-{% endif %}
-{% with level=rfc_to_be.publication_std_level %}{% if level.slug == "bcp" %}BCP: This document specifies an Internet Best Current Practices for the
+{% elif stream.slug == "ietf" and group %}This document is a product of the {{ display_group }} Working Group of the IETF.
+{% endif %}{% endwith %}
+{% with level=rfc_to_be.publication_std_level|default:rfc_to_be.std_level %}{% if level.slug == "bcp" %}BCP: This document specifies an Internet Best Current Practices for the
 Internet Community, and requests discussion and suggestions for
 improvements. Distribution of this memo is unlimited.
 {% elif level.slug == "exp" %}EXPERIMENTAL: This memo defines an Experimental Protocol for the
