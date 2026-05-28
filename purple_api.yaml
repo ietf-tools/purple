@@ -3969,7 +3969,7 @@ components:
           writeOnly: true
           nullable: true
           description: Datatracker ID of the person to add as action holder. If omitted,
-            body must be provided and the system person is used.
+            body must be provided and the system person is used as default.
     CreateFinalApproval:
       type: object
       description: Serializer for creating FinalApproval instances

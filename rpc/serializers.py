@@ -265,7 +265,8 @@ class CreateActionHolderSerializer(ActionHolderSerializer):
         write_only=True,
         required=False,
         allow_null=True,
-        help_text="Datatracker ID of the person to add as action holder. If omitted, body must be provided and the system person is used.",
+        help_text="Datatracker ID of the person to add as action holder. If omitted, "
+        "body must be provided and the system person is used as default.",
     )
 
     class Meta(ActionHolderSerializer.Meta):
