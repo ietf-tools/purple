@@ -2505,7 +2505,9 @@ class RfcMailTemplatesList(views.APIView):
                             template_filename,
                             context={
                                 "rfc_to_be": rfc_to_be,
-                                "group_name": datatracker_group_name(rfc_to_be.group) if rfc_to_be.group else None,
+                                "group_name": datatracker_group_name(rfc_to_be.group)
+                                if rfc_to_be.group
+                                else None,
                             },
                         ),
                     },
