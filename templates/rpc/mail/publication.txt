@@ -12,10 +12,11 @@
         Mailbox:    {% for author in rfc_to_be.authors.all %}{{ author.datatracker_person.email }}{% if not forloop.last %},
                     {% endif %}{% endfor %}
         Pages:      {{ rfc_to_be.pages }}
-        Updates:    {% for r in rfc_to_be.updates %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
-        Obsoletes:  {% for r in rfc_to_be.obsoletes %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% empty %}None{% endfor %}
+{% if rfc_to_be.updates %}        Updates:    {% for r in rfc_to_be.updates %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% endfor %}
+{% endif %}{% if rfc_to_be.obsoletes %}        Obsoletes:  {% for r in rfc_to_be.obsoletes %}RFC {{ r.rfc_number }}{% if not forloop.last %}, {% endif %}{% endfor %}
+{% endif %}
 
-        I-D Tag:    {{ rfc_to_be.draft.name }}-{{ rfc_to_be.draft.rev }}.txt
+        I-D Tag:    {{ rfc_to_be.draft.name }}-{{ rfc_to_be.draft.rev }}
 
         URL:        https://www.rfc-editor.org/info/rfc{{ rfc_to_be.rfc_number }}
 
@@ -23,7 +24,7 @@
 
 {{ rfc_to_be.abstract }}
 
-{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream|default:rfc_to_be.stream %}{% with display_group=group_name|default:group %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ display_group }} of the IRTF.
+{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream|default:rfc_to_be.stream %}{% with display_group=group_name|default:group %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ display_group }} Research Group of the IRTF.
 {% elif stream.slug == "irtf" %}This document is a product of the IRTF.
 {% elif stream.slug == "iab" %}This document is a product of the Internet Architecture Board.
 {% elif stream.slug == "ietf" and group %}This document is a product of the {{ display_group }} Working Group of the IETF.
@@ -45,7 +46,7 @@ suggestions for improvements. Distribution of this memo is unlimited.
 It does not specify an Internet standard of any kind. Distribution of
 this memo is unlimited.
 {% endif %}{% endwith %}
-{% if stream.slug == "irtf" %}This announcement is sent to the IETF-Announce, rfc-dist and IRTF-Announce lists.
+{% if stream.slug == "irtf" %}This announcement is sent to the IETF-Announce, rfc-dist, and IRTF-Announce lists.
 To subscribe or unsubscribe, see
   https://www.ietf.org/mailman/listinfo/ietf-announce
   https://mailman.rfc-editor.org/mailman/listinfo/rfc-dist
