@@ -24,14 +24,11 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(self.style.WARNING("Dry run — no changes will be saved"))
 
-        qs = (
-            RfcToBe.objects.filter(
-                stream__slug__in=STREAMS,
-                group="",
-                draft__isnull=False,
-            )
-            .select_related("draft", "stream")
-        )
+        qs = RfcToBe.objects.filter(
+            stream__slug__in=STREAMS,
+            group="",
+            draft__isnull=False,
+        ).select_related("draft", "stream")
 
         total = qs.count()
         self.stdout.write(
