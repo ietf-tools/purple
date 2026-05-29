@@ -537,6 +537,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     enqueued_at = serializers.SerializerMethodField()
+    final_review_started_at = serializers.DateTimeField(read_only=True, allow_null=True)
     final_approval = FinalApprovalSerializer(
         source="finalapproval_set", many=True, read_only=True
     )
@@ -561,6 +562,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "rfc_number",
             "pages",
             "enqueued_at",
+            "final_review_started_at",
             "final_approval",
             "iana_status",
             "blocking_reasons",

@@ -817,6 +817,7 @@ class QueueList(ListAPIView):
     queryset = (
         RfcToBe.objects.in_queue()
         .with_enqueued_at()
+        .with_final_review_started_at()
         .select_related("draft")
         .prefetch_related("labels")
         .with_active_assignments()

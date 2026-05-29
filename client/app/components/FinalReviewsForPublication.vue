@@ -56,6 +56,7 @@
 
 <script setup lang="ts">
 import type { AsyncDataRequestStatus, NuxtError } from '#app'
+import { DateTime } from 'luxon'
 import { Anchor, Icon, RpcLabel } from '#components'
 import {
   FlexRender,
@@ -185,6 +186,15 @@ const columns = [
           .localeCompare(sortAssignees(rowB.getValue(columnId), props.people)),
     }
   ),
+  columnHelper.accessor('finalReviewStartedAt', {
+    header: 'Final Review Start',
+    cell: data => {
+      const date = data.getValue()
+      if (!date) return h('span', { class: 'text-gray-400' }, '-')
+      return DateTime.fromJSDate(date, { zone: 'utc' }).toLocaleString(DateTime.DATE_MED)
+    },
+    sortingFn: 'alphanumeric',
+  }),
 ]
 
 const sorting = ref<SortingState>([])

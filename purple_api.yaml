@@ -5449,6 +5449,11 @@ components:
           type: string
           format: date
           readOnly: true
+        final_review_started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
         final_approval:
           type: array
           items:
