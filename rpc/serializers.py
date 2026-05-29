@@ -618,10 +618,10 @@ class ApprovalLogMessageSerializer(serializers.Serializer):
         return ApprovalLogMessage.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
-            **validated_data,
-        )
-        return ApprovalLogMessage.objects.get(pk=instance.pk)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class PublicQueueAuthorSerializer(RfcAuthorSerializer):

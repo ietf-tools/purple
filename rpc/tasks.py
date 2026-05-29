@@ -211,7 +211,7 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
 def process_rfctobe_changes_for_queue_task():
     """Check for changes to in-progress RFCs and send notifications"""
     try:
-        process_rfctobe_changes_for_queue()
+        return process_rfctobe_changes_for_queue()
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
 
