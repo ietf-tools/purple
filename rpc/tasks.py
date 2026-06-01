@@ -213,7 +213,7 @@ def process_rfctobe_changes_for_queue_task():
     try:
         change_count = process_rfctobe_changes_for_queue()
         logger.info(f"Detected {change_count} RFC changes for queue")
-        return f"Queue changes pushed ({change_count} RFCs changed)"
+        return f"Queue changes processed ({change_count} RFCs changed)"
     except Exception as e:
         logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
 
