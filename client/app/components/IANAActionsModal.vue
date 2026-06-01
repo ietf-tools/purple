@@ -1,7 +1,12 @@
 <template>
-  <form class="py-2 px-4 bg-white text-black dark:bg-black dark:text-white h-full">
-    <Heading :heading-level="2" class="pb-3 pt-5">IANA Actions</Heading>
-    <IANAActions :heading-level="3" v-model="selectedIANAStatus" />
+  <form class="py-2 px-4 bg-white text-black dark:bg-black dark:text-white">
+    <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3 pt-5">
+      <Heading :heading-level="2">IANA Actions</Heading>
+      <BaseButton btnType="outline" @click="closeOverlayModal">
+        <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
+      </BaseButton>
+    </div>
+    <IANAActions :heading-level="3" v-model="selectedIANAStatus" class="mt-4" />
     <div class="border-t-2 border-gray-400 mt-5 pt-2 flex justify-end">
       <BaseButton btn-type="default" @click="handleSave">
         Save

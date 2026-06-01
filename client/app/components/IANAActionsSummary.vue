@@ -36,7 +36,6 @@ const openModal = () => {
       rfcToBe: props.rfcToBe,
       onSuccess: props.onSuccess
     },
-    mode: 'side',
   }).catch(e => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
