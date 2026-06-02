@@ -5,12 +5,17 @@ from django.core.management.base import BaseCommand
 from datatracker.rpcapi import get_rpcapi_client
 from rpc.models import RfcToBe
 
-STREAMS = ("irtf", "iab", "editorial")
+STREAMS = ("irtf", "editorial")
+
+FALLBACK_GROUPS = {
+    "draft-kamei-p2p-experiments-japan": "p2prg",
+    "draft-dtnrg-ltp-cbhe-registries": "dtnrg",
+}
 
 
 class Command(BaseCommand):
-    help = "Backfill missing group for RfcToBe records with stream in "
-    "(irtf, iab, editorial)"
+    help = f"Backfill missing group for RfcToBe records with stream in "
+    f"{', '.join(STREAMS)}"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -28,6 +33,7 @@ class Command(BaseCommand):
             stream__slug__in=STREAMS,
             group="",
             draft__isnull=False,
+            disposition='published',
         ).select_related("draft", "stream")
 
         total = qs.count()
@@ -66,13 +72,24 @@ class Command(BaseCommand):
                 )
                 updated += 1
             else:
-                self.stdout.write(
-                    self.style.WARNING(
-                        f"  {rfctobe.name} [{rfctobe.stream_id}] — no group returned "
-                        "from API"
+                fallback = FALLBACK_GROUPS.get(rfctobe.name)
+                if fallback:
+                    if not dry_run:
+                        rfctobe.group = fallback
+                        rfctobe.save(update_fields=["group"])
+                    self.stdout.write(
+                        f"  {'[DRY RUN] ' if dry_run else ''}"
+                        f"{rfctobe.name} [{rfctobe.stream_id}] → group={fallback!r} (fallback)"
                     )
-                )
-                skipped += 1
+                    updated += 1
+                else:
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"  {rfctobe.name} [{rfctobe.stream_id}] — no group returned "
+                            "from API and no fallback defined"
+                        )
+                    )
+                    skipped += 1
 
         action = "would be updated" if dry_run else "updated"
         self.stdout.write(
