@@ -14,7 +14,7 @@ FALLBACK_GROUPS = {
 
 
 class Command(BaseCommand):
-    help = f"Backfill missing group for RfcToBe records with stream in "
+    help = "Backfill missing group for RfcToBe records with stream in "
     f"{', '.join(STREAMS)}"
 
     def add_arguments(self, parser):
@@ -79,14 +79,15 @@ class Command(BaseCommand):
                         rfctobe.save(update_fields=["group"])
                     self.stdout.write(
                         f"  {'[DRY RUN] ' if dry_run else ''}"
-                        f"{rfctobe.name} [{rfctobe.stream_id}] → group={fallback!r} (fallback)"
+                        f"{rfctobe.name} [{rfctobe.stream_id}] → group={fallback!r} "
+                        "(fallback)"
                     )
                     updated += 1
                 else:
                     self.stdout.write(
                         self.style.WARNING(
-                            f"  {rfctobe.name} [{rfctobe.stream_id}] — no group returned "
-                            "from API and no fallback defined"
+                            f"  {rfctobe.name} [{rfctobe.stream_id}] — no group "
+                            "returned from API and no fallback defined"
                         )
                     )
                     skipped += 1
