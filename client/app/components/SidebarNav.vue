@@ -26,7 +26,11 @@
                   <li>
                     <ul role="list" class="-mx-2 space-y-1">
                       <li v-for="item in navigation" :key="item.name">
-                        <Anchor :href="item.href" :class="[item.current ? 'bg-gray-50 text-violet-600' : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                        <span v-if="item.disabled" :class="['opacity-40 cursor-not-allowed', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700']" :title="`${item.name} is not available`">
+                          <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400" aria-hidden="true" />
+                          {{ item.name }}
+                        </span>
+                        <Anchor v-else :href="item.href" :class="[item.current ? 'bg-gray-50 text-violet-600' : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
                           <component :is="item.icon" :class="[item.current ? 'text-violet-600' : 'text-gray-400 group-hover:text-violet-600', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                           {{ item.name }}
                         </Anchor>
@@ -66,7 +70,11 @@
           <li>
             <ul role="list" class="-mx-2 space-y-1">
               <li v-for="item in navigation" :key="item.name">
-                <Anchor :href="item.href" :class="[item.href === currentBaseLink ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-100 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                <span v-if="item.disabled" :class="['opacity-40 cursor-not-allowed', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 dark:text-violet-300']" :title="`${item.name} is not available`">
+                  <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400 dark:text-violet-400" aria-hidden="true" />
+                  {{ item.name }}
+                </span>
+                <Anchor v-else :href="item.href" :class="[item.href === currentBaseLink ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-100 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
                   <component :is="item.icon" :class="[item.href === currentBaseLink ? 'text-violet-600 dark:text-white' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                   {{ item.name }}
                 </Anchor>
@@ -121,14 +129,15 @@ type Navigation = {
   href: string
   icon: ReturnType<typeof h>
   current?: boolean
+  disabled?: boolean
 }
 
-const navigation: Navigation[] = [
+const navigation = computed<Navigation[]>(() => [
   { name: 'Queue', href: '/queue/queue', icon: h(Icon, { name: 'solar:layers-minimalistic-bold-duotone' }) },
-  { name: 'My Documents', href: '/docs', icon: h(Icon, { name: 'solar:documents-minimalistic-line-duotone' }) },
+  { name: 'My Documents', href: `/team/${userStore.rpcPersonId}`, icon: h(Icon, { name: 'solar:documents-minimalistic-line-duotone' }), disabled: !userStore.rpcPersonId },
   { name: 'Team', href: '/team', icon: h(Icon, { name: 'solar:users-group-rounded-bold-duotone' }) },
   { name: 'Final Review', href: '/final-review', icon: h(Icon, { name: 'solar:diploma-verified-broken' }) }
-]
+])
 
 type Team = {
   name: string
