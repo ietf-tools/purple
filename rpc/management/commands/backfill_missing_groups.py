@@ -33,7 +33,7 @@ class Command(BaseCommand):
             stream__slug__in=STREAMS,
             group="",
             draft__isnull=False,
-            disposition='published',
+            disposition="published",
         ).select_related("draft", "stream")
 
         total = qs.count()
