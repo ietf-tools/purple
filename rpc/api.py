@@ -743,7 +743,11 @@ class QueueFilter(django_filters.FilterSet):
         fields = ["disposition", "pending_final_approval", "pending_final_review"]
 
 
-@extend_schema(operation_id="queue_counts", responses={200: QueueCountsSerializer})
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="queue_counts", responses={200: QueueCountsSerializer}
+    )
+)
 class QueueCounts(views.APIView):
     """Item counts for each queue tab"""
 
