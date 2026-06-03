@@ -38,6 +38,29 @@ RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
 
 
 @shared_task
+def backfill_missing_groups_task(dry_run: bool = False):
+    """Backfill empty group field for RfcToBe records with stream in irtf/editorial.
+
+    Safe to re-run — only processes records where group is still empty.
+    Pass dry_run=True to log what would be done without writing anything.
+    """
+    from rpc.lifecycle.group_backfill import backfill_missing_groups
+
+    if dry_run:
+        logger.info("backfill_missing_groups_task: dry run — no changes will be saved")
+
+    total, updated, skipped = backfill_missing_groups(dry_run=dry_run)
+    action = "would update" if dry_run else "updated"
+    logger.info(
+        "backfill_missing_groups_task complete: %d %s, %d skipped out of %d total",
+        updated,
+        action,
+        skipped,
+        total,
+    )
+
+
+@shared_task
 def set_stream_manager_task(rfc_to_be_id: int):
     """Resolve and persist the stream_manager FK for a RfcToBe."""
     try:
