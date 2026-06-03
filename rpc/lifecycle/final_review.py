@@ -95,7 +95,9 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
                     logger.info(
                         "backfill_final_review_history: %s assignment #%s already has "
                         "correct date %s, skipping",
-                        rfctobe.name, assignment.id, date_str,
+                        rfctobe.name,
+                        assignment.id,
+                        date_str,
                     )
                     skipped += 1
                     continue
@@ -106,7 +108,10 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
                 logger.info(
                     "backfill_final_review_history: %supdated history_date for %s "
                     "assignment #%s → %s",
-                    prefix, rfctobe.name, assignment.id, date_str,
+                    prefix,
+                    rfctobe.name,
+                    assignment.id,
+                    date_str,
                 )
             else:
                 if not dry_run:
@@ -127,7 +132,10 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
                 logger.info(
                     "backfill_final_review_history: %screated history for %s "
                     "assignment #%s → %s",
-                    prefix, rfctobe.name, assignment.id, date_str,
+                    prefix,
+                    rfctobe.name,
+                    assignment.id,
+                    date_str,
                 )
             added += 1
 
