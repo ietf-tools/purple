@@ -217,37 +217,6 @@ class MetadataValidationResultsAdmin(admin.ModelAdmin):
 class TaskRunAdmin(admin.ModelAdmin):
     list_display = ["task_name", "last_run_at", "is_running"]
     search_fields = ["task_name"]
-    # actions = ["run_task_dry_run", "run_task"]
-
-    # _RUNNABLE_TASKS = {
-    #     "backfill_missing_groups": "rpc.tasks.backfill_missing_groups_task",
-    # }
-
-    # def _dispatch(self, request, queryset, dry_run: bool):
-    #     from importlib import import_module
-    #     dispatched = []
-    #     skipped = []
-    #     for task_run in queryset:
-    #         dotted = self._RUNNABLE_TASKS.get(task_run.task_name)
-    #         if not dotted:
-    #             skipped.append(task_run.task_name)
-    #             continue
-    #         module, func = dotted.rsplit(".", 1)
-    #         task = getattr(import_module(module), func)
-    #         task(dry_run=dry_run)
-    #         dispatched.append(task_run.task_name)
-    #     if dispatched:
-    #         self.message_user(request, f"Dispatched: {', '.join(dispatched)}" + (" (dry run)" if dry_run else ""))
-    #     if skipped:
-    #         self.message_user(request, f"No runnable task registered for: {', '.join(skipped)}", level="warning")
-
-    # @admin.action(description="Run selected tasks (dry run)")
-    # def run_task_dry_run(self, request, queryset):
-    #     self._dispatch(request, queryset, dry_run=True)
-
-    # @admin.action(description="Run selected tasks")
-    # def run_task(self, request, queryset):
-    #     self._dispatch(request, queryset, dry_run=False)
 
 
 @admin.register(PublicationAttempt)
