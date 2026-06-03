@@ -26,7 +26,7 @@
                   <li>
                     <ul role="list" class="-mx-2 space-y-1">
                       <li v-for="item in navigation" :key="item.name">
-                        <span v-if="item.disabled" :class="['opacity-40 cursor-not-allowed', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700']" :title="`${item.name} is not available`">
+                        <span v-if="item.disabled" class="opacity-40 cursor-not-allowed group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700" :title="`${item.name} is not available`">
                           <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400" aria-hidden="true" />
                           {{ item.name }}
                         </span>
@@ -70,7 +70,7 @@
           <li>
             <ul role="list" class="-mx-2 space-y-1">
               <li v-for="item in navigation" :key="item.name">
-                <span v-if="item.disabled" :class="['opacity-40 cursor-not-allowed', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 dark:text-violet-300']" :title="`${item.name} is not available`">
+                <span v-if="item.disabled" class="opacity-40 cursor-not-allowed group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold text-gray-700 dark:text-violet-300" :title="`${item.name} is not available`">
                   <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400 dark:text-violet-400" aria-hidden="true" />
                   {{ item.name }}
                 </span>
