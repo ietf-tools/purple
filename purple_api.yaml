@@ -5064,6 +5064,11 @@ components:
             ID. The DatatrackerPerson record will be created if it does not exist.
         is_april_first_rfc:
           type: boolean
+        rev:
+          type: string
+          description: Revision of draft being worked on. Overrides draft.rev when
+            set.
+          maxLength: 16
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -5673,6 +5678,17 @@ components:
           readOnly: true
         is_april_first_rfc:
           type: boolean
+        rev:
+          type: string
+          description: Revision of draft being worked on. Overrides draft.rev when
+            set.
+          maxLength: 16
+        effective_rev:
+          type: string
+          nullable: true
+          description: The revision currently being worked on. Uses the RfcToBe's
+            rev if set, otherwise falls back to the datatracker draft rev.
+          readOnly: true
       required:
       - authors
       - boilerplate
@@ -5826,6 +5842,11 @@ components:
             ID. The DatatrackerPerson record will be created if it does not exist.
         is_april_first_rfc:
           type: boolean
+        rev:
+          type: string
+          description: Revision of draft being worked on. Overrides draft.rev when
+            set.
+          maxLength: 16
       required:
       - authors
       - boilerplate
