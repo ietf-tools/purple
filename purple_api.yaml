@@ -5688,12 +5688,6 @@ components:
           description: Revision of draft being worked on. Overrides draft.rev when
             set.
           maxLength: 16
-        effective_rev:
-          type: string
-          nullable: true
-          description: The revision currently being worked on. Uses the RfcToBe's
-            rev if set, otherwise falls back to the datatracker draft rev.
-          readOnly: true
       required:
       - authors
       - boilerplate

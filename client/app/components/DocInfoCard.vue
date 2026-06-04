@@ -65,9 +65,9 @@
         <DescriptionListItem term="Revision" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="rev" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'e.g. 14', rows: 1, initialValue: rfcToBe.effectiveRev || undefined }"
+              :ui-mode="{ type: 'textbox', placeholder: 'e.g. 14', rows: 1, initialValue: rfcToBe.rev || undefined }"
               :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <span class="font-mono">{{ rfcToBe.effectiveRev || '(none)' }}</span>
+              <span class="font-mono">{{ rfcToBe.rev || '(none)' }}</span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
