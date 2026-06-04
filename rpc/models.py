@@ -224,6 +224,11 @@ class RfcToBe(models.Model):
         validators=[validate_not_unusable_rfc_number],
     )
 
+    rev = models.CharField(
+        max_length=16,
+        blank=True,
+        help_text="Revision of draft being worked on. Overrides draft.rev when set.",
+    )
     title = models.CharField(max_length=255, help_text="Document title")
     abstract = models.TextField(
         max_length=32000,

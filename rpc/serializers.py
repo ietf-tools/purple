@@ -767,6 +767,15 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
     pub_owner = serializers.SerializerMethodField()
+    effective_rev = serializers.SerializerMethodField()
+
+    @extend_schema_field(serializers.CharField(
+        allow_null=True,
+        help_text="The revision currently being worked on. Uses the RfcToBe's rev if "
+        "set, otherwise falls back to the datatracker draft rev.",
+    ))
+    def get_effective_rev(self, obj: RfcToBe) -> str | None:
+        return obj.rev or (obj.draft.rev if obj.draft else None)
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_pub_owner(self, obj: RfcToBe) -> str | None:
@@ -825,8 +834,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "stream_manager",
             "stream_manager_id",
             "is_april_first_rfc",
+            "rev",
+            "effective_rev",
         ]
-        read_only_fields = ["id", "draft", "published_at"]
+        read_only_fields = ["id", "draft", "published_at", "effective_rev"]
 
     def update(self, instance, validated_data):
         _UNSET = object()
