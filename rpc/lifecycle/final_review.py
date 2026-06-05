@@ -3,8 +3,6 @@
 import datetime
 import logging
 
-from django.utils import timezone
-
 logger = logging.getLogger(__name__)
 
 # (draft_name, start_date) — start_date is when the final_review_editor assignment was
@@ -55,8 +53,8 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
     skipped = 0
 
     for draft_name, date_str in FINAL_REVIEW_START_DATES:
-        start_date = timezone.make_aware(
-            datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(hour=12)
+        start_date = datetime.datetime.strptime(date_str, "%Y-%m-%d").replace(
+            hour=12, tzinfo=datetime.UTC
         )
 
         rfctobe = (
@@ -71,12 +69,16 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
             skipped += 1
             continue
 
-        assignments = Assignment.objects.filter(
-            rfc_to_be=rfctobe,
-            role__slug="final_review_editor",
-        ).select_related("role", "person")
+        assignment = (
+            Assignment.objects.filter(
+                rfc_to_be=rfctobe,
+                role__slug="final_review_editor",
+            )
+            .order_by("id")
+            .first()
+        )
 
-        if not assignments.exists():
+        if assignment is None:
             logger.warning(
                 "backfill_final_review_history: no final_review_editor assignment "
                 "for %s",
@@ -85,58 +87,44 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
             skipped += 1
             continue
 
-        for assignment in assignments:
-            existing = HistoricalAssignment.objects.filter(
-                id=assignment.id, history_type="+"
-            ).first()
+        existing_qs = HistoricalAssignment.objects.filter(
+            id=assignment.id, history_type="+"
+        )
+        count = existing_qs.count()
+        if count != 1:
+            logger.warning(
+                "backfill_final_review_history: expected 1 history entry for %s "
+                "assignment #%s, found %d, skipping",
+                rfctobe.name,
+                assignment.id,
+                count,
+            )
+            skipped += 1
+            continue
+        existing = existing_qs.get()
 
-            if existing:
-                if existing.history_date == start_date:
-                    logger.info(
-                        "backfill_final_review_history: %s assignment #%s already has "
-                        "correct date %s, skipping",
-                        rfctobe.name,
-                        assignment.id,
-                        date_str,
-                    )
-                    skipped += 1
-                    continue
-                if not dry_run:
-                    existing.history_date = start_date
-                    existing.save(update_fields=["history_date"])
-                prefix = "[DRY RUN] " if dry_run else ""
-                logger.info(
-                    "backfill_final_review_history: %supdated history_date for %s "
-                    "assignment #%s → %s",
-                    prefix,
-                    rfctobe.name,
-                    assignment.id,
-                    date_str,
-                )
-            else:
-                if not dry_run:
-                    HistoricalAssignment.objects.create(
-                        id=assignment.id,
-                        rfc_to_be=rfctobe,
-                        person=assignment.person,
-                        role=assignment.role,
-                        state=assignment.state,
-                        comment=assignment.comment,
-                        time_spent=assignment.time_spent,
-                        history_date=start_date,
-                        history_type="+",
-                        history_user=None,
-                        history_change_reason="Backfilled final review start date",
-                    )
-                prefix = "[DRY RUN] " if dry_run else ""
-                logger.info(
-                    "backfill_final_review_history: %screated history for %s "
-                    "assignment #%s → %s",
-                    prefix,
-                    rfctobe.name,
-                    assignment.id,
-                    date_str,
-                )
-            added += 1
+        if existing.history_date == start_date:
+            logger.info(
+                "backfill_final_review_history: %s assignment #%s already has "
+                "correct date %s, skipping",
+                rfctobe.name,
+                assignment.id,
+                date_str,
+            )
+            skipped += 1
+            continue
+        if not dry_run:
+            existing.history_date = start_date
+            existing.save(update_fields=["history_date"])
+        prefix = "[DRY RUN] " if dry_run else ""
+        logger.info(
+            "backfill_final_review_history: %supdated history_date for %s "
+            "assignment #%s → %s",
+            prefix,
+            rfctobe.name,
+            assignment.id,
+            date_str,
+        )
+        added += 1
 
     return added, skipped
