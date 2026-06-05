@@ -430,9 +430,11 @@ def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
     # Get submissions list from Datatracker
     with datatracker_api():
         submitted = rpcapi.submitted_to_rpc()
-    # Filter out I-Ds that already have an RfcToBe
+    # Filter out I-Ds that already have an active (non-withdrawn) RfcToBe
     already_in_queue = RfcToBe.objects.filter(
         draft__datatracker_id__in=[s.id for s in submitted]
+    ).exclude(
+        disposition__slug="withdrawn"
     ).values_list("draft__datatracker_id", flat=True)
     submitted = [s for s in submitted if s.id not in already_in_queue]
     return Response(SubmissionListItemSerializer(submitted, many=True).data)
