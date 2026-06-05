@@ -87,7 +87,9 @@ def backfill_final_review_history(dry_run: bool = False) -> tuple[int, int]:
             continue
         if not dry_run:
             existing.history_date = start_date
-            existing.history_change_reason = "Backfilled final review start date"
+            existing.history_change_reason = (
+                "Added (Backfilled final review start date)"
+            )
             existing.save(update_fields=["history_date", "history_change_reason"])
         prefix = "[DRY RUN] " if dry_run else ""
         logger.info(
