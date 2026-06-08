@@ -38,50 +38,6 @@ RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
 
 
 @shared_task
-def backfill_final_review_history_task(dry_run: bool = False):
-    """One-time backfill of missing history creation entries for
-    final_review_editor assignments.
-
-    Guards against re-runs via TaskRun — subsequent calls are no-ops.
-    Pass dry_run=True to log what would be done without writing anything.
-    """
-    from django.db import transaction
-    from django.utils import timezone
-
-    from rpc.lifecycle.final_review import backfill_final_review_history
-    from rpc.models import TaskRun
-
-    TASK_NAME = "backfill_final_review_history"
-
-    if dry_run:
-        logger.info("%s: dry run — no changes will be saved", TASK_NAME)
-        added, skipped = backfill_final_review_history(dry_run=True)
-        logger.info("%s complete: %d would add, %d skipped", TASK_NAME, added, skipped)
-        return
-
-    with transaction.atomic():
-        task_run, created = TaskRun.objects.get_or_create(
-            task_name=TASK_NAME,
-            defaults={"last_run_at": timezone.now(), "is_running": False},
-        )
-        if not created:
-            logger.info(
-                "%s already ran on %s, skipping", TASK_NAME, task_run.last_run_at
-            )
-            return
-        task_run.is_running = True
-        task_run.save()
-
-    try:
-        added, skipped = backfill_final_review_history()
-        logger.info("%s complete: %d added, %d skipped", TASK_NAME, added, skipped)
-        task_run.last_run_at = timezone.now()
-    finally:
-        task_run.is_running = False
-        task_run.save()
-
-
-@shared_task
 def set_stream_manager_task(rfc_to_be_id: int):
     """Resolve and persist the stream_manager FK for a RfcToBe."""
     try:
