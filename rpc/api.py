@@ -871,9 +871,15 @@ class PublicQueueList(QueueList):
     queryset = QueueList.queryset.prefetch_related(
         Prefetch(
             "actionholder_set",
-            queryset=ActionHolder.objects.select_related("datatracker_person"),
+            queryset=ActionHolder.objects.select_related("datatracker_person").order_by(
+                "since_when"
+            ),
             to_attr="all_actionholders",
-        )
+        ),
+        Prefetch(
+            "approvallogmessage_set",
+            queryset=ApprovalLogMessage.objects.order_by("-time"),
+        ),
     )
 
 
@@ -2173,11 +2179,12 @@ class SearchDatatrackerPersons(ListAPIView):
 class SubseriesMemberViewSet(viewsets.ModelViewSet):
     """ViewSet to track which RfcToBes have been assigned to which subseries"""
 
-    queryset = SubseriesMember.objects.select_related("type")
+    queryset = SubseriesMember.objects.select_related("type").order_by(
+        "type", "number", "id"
+    )
     serializer_class = SubseriesMemberSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["number", "type", "rfc_to_be"]
-    ordering = ["type", "number", "id"]
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
@@ -2262,13 +2269,13 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
     serializer_class = FinalApprovalSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id"]
-    ordering = ["-requested"]
 
     def get_queryset(self):
         return (
             super()
             .get_queryset()
             .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
+            .order_by("-requested")
         )
 
     def perform_create(self, serializer):
@@ -2294,7 +2301,6 @@ class ActionHolderViewSet(
     queryset = ActionHolder.objects.all()
     serializer_class = ActionHolderSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    ordering = ["since_when"]
 
     def get_queryset(self):
         draft_name = self.kwargs["draft_name"]
@@ -2302,7 +2308,7 @@ class ActionHolderViewSet(
         q = Q(target_rfctobe=rfctobe)
         if rfctobe.draft is not None:
             q |= Q(target_document__name=rfctobe.draft.name)
-        return super().get_queryset().filter(q)
+        return super().get_queryset().filter(q).order_by("since_when")
 
     def perform_create(self, serializer):
         serializer.save(target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"]))
@@ -2318,13 +2324,13 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
     queryset = ApprovalLogMessage.objects.all()
     serializer_class = ApprovalLogMessageSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    ordering = ["-time"]
 
     def get_queryset(self):
         return (
             super()
             .get_queryset()
             .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
+            .order_by("-time")
         )
 
     def perform_create(self, serializer):
