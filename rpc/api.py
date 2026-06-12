@@ -871,9 +871,15 @@ class PublicQueueList(QueueList):
     queryset = QueueList.queryset.prefetch_related(
         Prefetch(
             "actionholder_set",
-            queryset=ActionHolder.objects.select_related("datatracker_person"),
+            queryset=ActionHolder.objects.select_related("datatracker_person").order_by(
+                "since_when"
+            ),
             to_attr="all_actionholders",
-        )
+        ),
+        Prefetch(
+            "approvallogmessage_set",
+            queryset=ApprovalLogMessage.objects.order_by("-time"),
+        ),
     )
 
 
