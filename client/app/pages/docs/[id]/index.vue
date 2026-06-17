@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @withdrawn="() => { rfcToBeRefresh(); commentsReload() }" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
