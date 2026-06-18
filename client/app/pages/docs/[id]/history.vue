@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="() => { rfcToBeRefresh(); historyRefresh() }" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -85,6 +85,7 @@ const {
   data: history,
   error: historyError,
   status: historyStatus,
+  refresh: historyRefresh,
 } = await useHistoryForDraft(draftName.value)
 
 const filteredHistory = computed(() => {

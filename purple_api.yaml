@@ -5064,11 +5064,6 @@ components:
             ID. The DatatrackerPerson record will be created if it does not exist.
         is_april_first_rfc:
           type: boolean
-        comment:
-          type: string
-          writeOnly: true
-          description: Optional reason stored as history change reason.
-          maxLength: 100
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -5831,11 +5826,6 @@ components:
             ID. The DatatrackerPerson record will be created if it does not exist.
         is_april_first_rfc:
           type: boolean
-        comment:
-          type: string
-          writeOnly: true
-          description: Optional reason stored as history change reason.
-          maxLength: 100
       required:
       - authors
       - boilerplate

@@ -85,7 +85,7 @@ const handleWithdraw = async () => {
   try {
     await api.documentsPartialUpdate({
       draftName: props.draftName,
-      patchedRfcToBeRequest: { disposition: 'withdrawn', comment: comment.value.trim() || undefined }
+      patchedRfcToBeRequest: { disposition: 'withdrawn' }
     })
     if (comment.value.trim()) {
       await api.documentsCommentsCreate({

@@ -159,8 +159,6 @@ class HistoryListSerializer(serializers.ListSerializer):
                 delta = newer.diff_against(older)
                 if len(delta.changes) > 0:
                     parts = list(self.describe_model_delta(delta))
-                    if newer.history_change_reason:
-                        parts.append(newer.history_change_reason)
                 elif newer.history_change_reason:
                     parts = [newer.history_change_reason]
                 else:
@@ -769,13 +767,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
     pub_owner = serializers.SerializerMethodField()
-    comment = serializers.CharField(
-        write_only=True,
-        required=False,
-        allow_blank=True,
-        max_length=100,
-        help_text="Optional reason stored as history change reason.",
-    )
 
     @extend_schema_field(serializers.CharField(allow_null=True))
     def get_pub_owner(self, obj: RfcToBe) -> str | None:
@@ -834,16 +825,11 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "stream_manager",
             "stream_manager_id",
             "is_april_first_rfc",
-            "comment",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
     def update(self, instance, validated_data):
         _UNSET = object()
-
-        comment = validated_data.pop("comment", None)
-        if comment:
-            instance._change_reason = comment
 
         def _resolve_person_field(field_name, fk_name):
             person_id = validated_data.pop(field_name, _UNSET)
@@ -899,8 +885,6 @@ def _process_history_qs(qs, describe_delta=None, *, model=None) -> list[HistoryR
                     f"{c.field.capitalize()} ({c.old} → {c.new}): Changed"
                     for c in delta.changes
                 ]
-            if newer.history_change_reason:
-                parts.append(newer.history_change_reason)
             field = (
                 delta.changes[0].field.removesuffix("_id")
                 if len(delta.changes) == 1
