@@ -476,7 +476,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "group": draft_info.group,
             "stream": draft_info.stream,
             "pages": draft_info.pages,
-            "intended_std_level": draft_info.intended_std_level,
+            "intended_std_level": draft_info.intended_std_level or "",
         },
     )
 
@@ -601,7 +601,8 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "group": draft_info_ref.group,
                                 "stream": draft_info_ref.stream,
                                 "pages": draft_info_ref.pages,
-                                "intended_std_level": draft_info_ref.intended_std_level,
+                                "intended_std_level": draft_info_ref.intended_std_level
+                                or "",
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)

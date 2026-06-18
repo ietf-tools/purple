@@ -294,13 +294,16 @@ class ImportSubmissionClusteringTests(TestCase):
         self.std_level = StdLevelNameFactory(slug="ps")
         self.stream = StreamNameFactory(slug="ietf")
 
-    def _make_rpcapi(self, drafts_by_id, refs_by_id=None):
+    def _make_rpcapi(self, drafts_by_id, refs_by_id=None, std_levels_by_id=None):
         """Return a mock rpcapi configured for the given drafts and references.
 
-        drafts_by_id: {doc_id: draft_name}
-        refs_by_id:   {doc_id: {ref_id: ref_name}} — defaults to no refs
+        drafts_by_id:     {doc_id: draft_name}
+        refs_by_id:       {doc_id: {ref_id: ref_name}} — defaults to no refs
+        std_levels_by_id: {doc_id: intended_std_level} — e.g. "ps", "" or None;
+                          doc_ids not listed default to ""
         """
         refs_by_id = refs_by_id or {}
+        std_levels_by_id = std_levels_by_id or {}
         mock = MagicMock()
 
         def _draft(doc_id, name):
@@ -313,7 +316,7 @@ class ImportSubmissionClusteringTests(TestCase):
                 group="",
                 stream="ietf",
                 pages=10,
-                intended_std_level="",
+                intended_std_level=std_levels_by_id.get(doc_id, ""),
                 consensus=None,
                 authors=[],
             )
@@ -388,6 +391,25 @@ class ImportSubmissionClusteringTests(TestCase):
         cluster_a = doc_a.clustermember_set.get().cluster
         cluster_b = doc_b.clustermember_set.get().cluster
         self.assertEqual(cluster_a, cluster_b, "A and B must be in the same cluster")
+
+    def test_import_with_ref_having_no_std_level(self, mock_sst, mock_cdr):
+        """A normative ref whose intended_std_level is None must not break import.
+
+        Datatracker returns None for documents with no intended std level. The
+        Document.intended_std_level column is NOT NULL, so it must be coerced to an
+        empty string on import. This test verifies that the coercion happens
+        """
+        A_ID, B_ID = 3001, 3002
+        rpcapi = self._make_rpcapi(
+            drafts_by_id={A_ID: "draft-nostd-a", B_ID: "draft-nostd-b"},
+            refs_by_id={A_ID: {B_ID: "draft-nostd-b"}},
+            std_levels_by_id={B_ID: None},
+        )
+        response = self._do_import(A_ID, rpcapi)
+        self.assertEqual(response.status_code, 200, response.content)
+
+        doc_b = Document.objects.get(datatracker_id=B_ID)
+        self.assertEqual(doc_b.intended_std_level, "")
 
 
 class DocumentSearchTests(TestCase):
