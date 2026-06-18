@@ -87,19 +87,27 @@ const handleWithdraw = async () => {
       draftName: props.draftName,
       patchedRfcToBeRequest: { disposition: 'withdrawn' }
     })
+  } catch (error: unknown) {
+    snackbarForErrors({ snackbar, defaultTitle: 'Withdrawing draft failed', error })
+    isSubmitting.value = false
+    return
+  }
+
+  // Withdraw committed — the comment is a best-effort annotation.
+  try {
     if (comment.value.trim()) {
       await api.documentsCommentsCreate({
         draftName: props.draftName,
         documentCommentRequest: { comment: comment.value.trim() }
       })
     }
-    comment.value = ''
-    emit('update:isShown', false)
-    emit('success')
   } catch (error: unknown) {
-    snackbarForErrors({ snackbar, defaultTitle: 'Withdrawing draft failed', error })
-  } finally {
-    isSubmitting.value = false
+    snackbarForErrors({ snackbar, defaultTitle: 'Draft withdrawn, but saving the comment failed', error })
   }
+
+  comment.value = ''
+  emit('update:isShown', false)
+  emit('success')
+  isSubmitting.value = false
 }
 </script>
