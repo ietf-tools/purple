@@ -42,6 +42,7 @@
 <script setup lang="ts">
 import RefreshButton from '~/components/RefreshButton.vue'
 import type { Cluster } from '~/purple_client'
+import { ref } from 'vue'
 
 useHead({
   title: 'Manage Clusters'
