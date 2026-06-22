@@ -35,16 +35,16 @@
                 </div>
               </div>
               <div class="bg-gray-50 dark:bg-neutral-800 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6 gap-2">
-                <button
-                  type="button"
-                  class="inline-flex w-full justify-center rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 disabled:opacity-50 sm:w-auto"
+                <BaseButton
+                  btn-type="delete"
+                  class="inline-flex w-full justify-center disabled:opacity-50 sm:w-auto"
                   :disabled="isSubmitting"
                   @click="handleWithdraw"
                 >
                   <Icon v-if="isSubmitting" name="ei:spinner-3" size="1.1em" class="animate-spin mr-1" />
                   Withdraw
-                </button>
-                <button type="button" class="btn-secondary" :disabled="isSubmitting" @click="cancel">Cancel</button>
+                </BaseButton>
+                <BaseButton btn-type="cancel" class="inline-flex w-full justify-center sm:w-auto" :disabled="isSubmitting" @click="cancel">Cancel</BaseButton>
               </div>
             </HeadlessDialogPanel>
           </HeadlessTransitionChild>
@@ -95,10 +95,11 @@ const handleWithdraw = async () => {
 
   // Withdraw committed — the comment is a best-effort annotation.
   try {
-    if (comment.value.trim()) {
+    const trimmedComment = comment.value.trim()
+    if (trimmedComment) {
       await api.documentsCommentsCreate({
         draftName: props.draftName,
-        documentCommentRequest: { comment: comment.value.trim() }
+        documentCommentRequest: { comment: trimmedComment }
       })
     }
   } catch (error: unknown) {

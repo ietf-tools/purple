@@ -36,8 +36,9 @@
           </BaseButton>
           <BaseButton
             v-if="props.rfcToBe?.disposition === 'in_progress'"
+            btn-type="delete"
             @click="isWithdrawDialogShown = true"
-            class="flex items-center !bg-rose-600 hover:!bg-rose-500"
+            class="flex items-center"
           >
             <span>Withdraw</span>
           </BaseButton>
