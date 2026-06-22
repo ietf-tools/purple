@@ -6,6 +6,17 @@
   <BaseCard>
     <template #header>
       <CardHeader title="Final Reviews">
+        <template v-if="queueUrl" #titleSuffix>
+          <a
+            :href="queueUrl"
+            class="inline-flex items-center gap-1 text-sm font-normal text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+            :title="`Copy queue link: ${queueUrl}`"
+            @click.prevent="copyQueueUrl"
+          >
+            <Icon name="heroicons:clipboard-document" size="1em" />
+            Queue Page
+          </a>
+        </template>
         <template #actions>
           <BaseButton @click="openAddModal()" title="Add Final Review approver">Add</BaseButton>
         </template>
@@ -47,9 +58,11 @@ import type { BaseDatatrackerPerson, FinalApproval } from '~/purple_client'
 import DocumentFinalReviewModal from './DocumentFinalReviewModal.vue'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
+import { copyToClipboard } from '~/utils/clipboard'
 
 type Props = {
   name: string
+  rfcNumber?: number | null
   headingLevel?: HeadingLevel
   onSuccess?: () => Promise<void>
 }
@@ -58,6 +71,24 @@ const props = withDefaults(defineProps<Props>(), { headingLevel: 2 })
 
 const api = useApi()
 const datatrackerLinks = useDatatrackerLinks()
+const snackbar = useSnackbar()
+
+// Link to the public final-review queue page, only when an RFC number is assigned.
+const queueUrl = computed(() =>
+  props.rfcNumber != null
+    ? `https://queue.rfc-editor.org/final-review/rfc${props.rfcNumber}/`
+    : null
+)
+
+const copyQueueUrl = async () => {
+  if (!queueUrl.value) return
+  const copied = await copyToClipboard(queueUrl.value)
+  snackbar.add({
+    type: copied ? 'success' : 'error',
+    title: copied ? 'Queue link copied' : 'Could not copy link',
+    text: copied ? queueUrl.value : '',
+  })
+}
 
 const {
   data: finalApprovalsList,

@@ -7,7 +7,7 @@
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
       <div class="lg:col-span-full mt-6">
-        <DocumentFinalReviews :name="draftName" />
+        <DocumentFinalReviews :name="draftName" :rfc-number="rfcToBe?.rfcNumber" />
       </div>
 
       <div class="lg:col-span-full mt-6">
