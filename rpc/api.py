@@ -2497,7 +2497,8 @@ class RfcMailTemplatesList(views.APIView):
                 "cc": list(interested_parties),
             },
             "finalreview": {
-                "subject": f"Final Review: RFC-to-be {rfc_number} {draft_name} in XML",
+                "subject": f"Final Review: RFC-to-be {rfc_number} ({draft_name}) "
+                "in XML",
                 "to": author_emails,
                 "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
             },
