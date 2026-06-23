@@ -106,16 +106,6 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     # Gate 4: Blocks final review
     slugs = ["final_review_editor"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        # any document this draft normatively references has not completed 2nd edit
-        refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
-        if refqueue_qs.exists():
-            for ref in refqueue_qs:
-                if (
-                    ref.target_rfctobe.incomplete_activities()
-                    .filter(slug="second_editor")
-                    .exists()
-                ):
-                    reasons.add(BlockingReason.REFQUEUE_SECOND_EDIT_INCOMPLETE)
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
         return reasons
