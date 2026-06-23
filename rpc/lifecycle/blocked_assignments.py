@@ -95,9 +95,11 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
-                if ref.target_rfctobe.incomplete_activities().filter(
-                    slug="first_editor"
-                ).exists():
+                if (
+                    ref.target_rfctobe.incomplete_activities()
+                    .filter(slug="first_editor")
+                    .exists()
+                ):
                     reasons.add(BlockingReason.REFQUEUE_FIRST_EDIT_INCOMPLETE)
         return reasons
 
@@ -108,9 +110,11 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
-                if ref.target_rfctobe.incomplete_activities().filter(
-                    slug="second_editor"
-                ).exists():
+                if (
+                    ref.target_rfctobe.incomplete_activities()
+                    .filter(slug="second_editor")
+                    .exists()
+                ):
                     reasons.add(BlockingReason.REFQUEUE_SECOND_EDIT_INCOMPLETE)
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
