@@ -6,7 +6,6 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
-from typing import Any
 
 from django.db import transaction
 
@@ -96,8 +95,8 @@ class Metadata:
             "subseries": subseries,
         }
 
-    @staticmethod
-    def update_metadata(rfctobe, metadata):
+    @classmethod
+    def update_metadata(cls, rfctobe, metadata):
         """Update metadata fields from metadata dictionary
 
         First compares all fields to see what needs to be updated,
@@ -200,11 +199,7 @@ class Metadata:
                                 )
 
                             # Verify names match
-                            xml_name = (
-                                xml_author.get("initials", "")
-                                + " "
-                                + xml_author.get("surname", "")
-                            ).strip()
+                            xml_name = cls.extract_name_from_author_dict(xml_author)
                             db_name = db_author.titlepage_name
                             if xml_name != db_name:
                                 raise ValueError(
