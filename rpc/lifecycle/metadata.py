@@ -293,7 +293,9 @@ class Metadata:
         Extracts the name as it should appear in the titlepage block of the RFC.
         """
         xml_name = (
-            author_dict.get("initials", "") + " " + author_dict.get("surname", "")
+            author_dict.get("initials", "").rstrip()
+            + " "
+            + author_dict.get("surname", "").lstrip()
         ).strip()
         if not xml_name:
             xml_fullname = (
