@@ -6,6 +6,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
+from typing import Any
 
 from django.db import transaction
 
@@ -290,6 +291,29 @@ class Metadata:
 
         return updated_fields
 
+    @staticmethod
+    def extract_name_from_author_dict(author_dict) -> str:
+        """Extract name from an author_dict
+
+        Extracts the name as it should appear in the titlepage block of the RFC.
+        """
+        xml_name = (
+            author_dict.get("initials", "") + " " + author_dict.get("surname", "")
+        ).strip()
+        if not xml_name:
+            xml_fullname = (
+                author_dict.get("asciiFullname", "") or author_dict.get("fullname", "")
+            ).strip()
+            # Convert full name to initials format
+            name_parts = xml_fullname.split()
+            if len(name_parts) > 1:
+                # Convert all parts except last to initials, keep surname as-is
+                initials = [p[0] + "." for p in name_parts[:-1]]
+                xml_name = " ".join(initials + [name_parts[-1]])
+            else:
+                xml_name = xml_fullname
+        return xml_name
+
 
 class MetadataComparator:
     """Compare XML metadata with RfcToBe database values"""
@@ -442,22 +466,7 @@ class MetadataComparator:
                 continue
 
             # Extract author names
-            xml_name = (
-                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
-            ).strip()
-            if not xml_name:
-                xml_fullname = (
-                    xml_author.get("asciiFullname", "")
-                    or xml_author.get("fullname", "")
-                ).strip()
-                # Convert full name to initials format
-                name_parts = xml_fullname.split()
-                if len(name_parts) > 1:
-                    # Convert all parts except last to initials, keep surname as-is
-                    initials = [p[0] + "." for p in name_parts[:-1]]
-                    xml_name = " ".join(initials + [name_parts[-1]])
-                else:
-                    xml_name = xml_fullname
+            xml_name = Metadata.extract_name_from_author_dict(xml_author)
             db_name = db_author.titlepage_name
 
             # Check if names match
