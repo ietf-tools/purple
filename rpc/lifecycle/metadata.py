@@ -6,6 +6,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
+from typing import Any
 
 from django.db import transaction
 
@@ -95,8 +96,8 @@ class Metadata:
             "subseries": subseries,
         }
 
-    @staticmethod
-    def update_metadata(rfctobe, metadata):
+    @classmethod
+    def update_metadata(cls, rfctobe, metadata):
         """Update metadata fields from metadata dictionary
 
         First compares all fields to see what needs to be updated,
@@ -199,11 +200,7 @@ class Metadata:
                                 )
 
                             # Verify names match
-                            xml_name = (
-                                xml_author.get("initials", "")
-                                + " "
-                                + xml_author.get("surname", "")
-                            ).strip()
+                            xml_name = cls.extract_name_from_author_dict(xml_author)
                             db_name = db_author.titlepage_name
                             if xml_name != db_name:
                                 raise ValueError(
@@ -289,6 +286,34 @@ class Metadata:
                         updated_fields["subseries"] = subseries
 
         return updated_fields
+
+    @staticmethod
+    def extract_name_from_author_dict(author_dict) -> str:
+        """Extract name from an author_dict
+
+        Extracts the name, formatted as for titlepage_name in datatracker. This should
+        match the Latinized form of the name in initials + surname format for now.
+        It's likely this will eventually change to capture non-Latin names, but we're
+        not doing that yet.
+        """
+        xml_name = (
+            author_dict.get("initials", "").rstrip()
+            + " "
+            + author_dict.get("surname", "").lstrip()
+        ).strip()
+        if not xml_name:
+            xml_fullname = (
+                author_dict.get("asciiFullname", "") or author_dict.get("fullname", "")
+            ).strip()
+            # Convert full name to initials format
+            name_parts = xml_fullname.split()
+            if len(name_parts) > 1:
+                # Convert all parts except last to initials, keep surname as-is
+                initials = [p[0] + "." for p in name_parts[:-1]]
+                xml_name = " ".join(initials + [name_parts[-1]])
+            else:
+                xml_name = xml_fullname
+        return xml_name
 
 
 class MetadataComparator:
@@ -430,7 +455,7 @@ class MetadataComparator:
         for position, (xml_author, db_author) in enumerate(
             zip_longest(xml_value, db_authors, fillvalue=None)
         ):
-            item = {"position": position}
+            item: dict[str, Any] = {"position": position}
 
             if xml_author is None or db_author is None:
                 # Mismatched lengths - cannot fix
@@ -442,22 +467,7 @@ class MetadataComparator:
                 continue
 
             # Extract author names
-            xml_name = (
-                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
-            ).strip()
-            if not xml_name:
-                xml_fullname = (
-                    xml_author.get("asciiFullname", "")
-                    or xml_author.get("fullname", "")
-                ).strip()
-                # Convert full name to initials format
-                name_parts = xml_fullname.split()
-                if len(name_parts) > 1:
-                    # Convert all parts except last to initials, keep surname as-is
-                    initials = [p[0] + "." for p in name_parts[:-1]]
-                    xml_name = " ".join(initials + [name_parts[-1]])
-                else:
-                    xml_name = xml_fullname
+            xml_name = Metadata.extract_name_from_author_dict(xml_author)
             db_name = db_author.titlepage_name
 
             # Check if names match
