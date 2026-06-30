@@ -291,7 +291,10 @@ class Metadata:
     def extract_name_from_author_dict(author_dict) -> str:
         """Extract name from an author_dict
 
-        Extracts the name as it should appear in the titlepage block of the RFC.
+        Extracts the name, formatted as for titlepage_name in datatracker. This should
+        match the Latinized form of the name in initials + surname format for now.
+        It's likely this will eventually change to capture non-Latin names, but we're
+        not doing that yet.
         """
         xml_name = (
             author_dict.get("initials", "").rstrip()
