@@ -6,6 +6,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
+from typing import Any
 
 from django.db import transaction
 
@@ -451,7 +452,7 @@ class MetadataComparator:
         for position, (xml_author, db_author) in enumerate(
             zip_longest(xml_value, db_authors, fillvalue=None)
         ):
-            item = {"position": position}
+            item: dict[str, Any] = {"position": position}
 
             if xml_author is None or db_author is None:
                 # Mismatched lengths - cannot fix
