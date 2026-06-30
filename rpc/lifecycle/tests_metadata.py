@@ -10,20 +10,20 @@ class MetadataTests(TestCase):
             Metadata.extract_name_from_author_dict({}), "", "empty input dict"
         )
         self.assertEqual(
-            Metadata.extract_name_from_author_dict({"initials": " A. B. "}),
-            "A. B.",
+            Metadata.extract_name_from_author_dict({"initials": " Ä. B. "}),
+            "Ä. B.",
             "initials only plus stripping",
         )
         self.assertEqual(
-            Metadata.extract_name_from_author_dict({"surname": " Clyde "}),
-            "Clyde",
+            Metadata.extract_name_from_author_dict({"surname": " Cly∂e "}),
+            "Cly∂e",
             "surname only plus stripping",
         )
         self.assertEqual(
             Metadata.extract_name_from_author_dict(
-                {"initials": " A. B. ", "surname": " Clyde"}
+                {"initials": " À. B. ", "surname": " Clydé"}
             ),
-            "A. B. Clyde",
+            "À. B. Clydé",
             "initials+surname + stripping",
         )
         self.assertEqual(
@@ -53,8 +53,8 @@ class MetadataTests(TestCase):
             "asciiFullname has priority + single name",
         )
         self.assertEqual(
-            Metadata.extract_name_from_author_dict({"fullname": "Diane Egawa"}),
-            "D. Egawa",
+            Metadata.extract_name_from_author_dict({"fullname": "∂iane Egawa"}),
+            "∂. Egawa",
             "fullname with two names",
         )
         self.assertEqual(
