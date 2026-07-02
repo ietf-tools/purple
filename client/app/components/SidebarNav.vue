@@ -30,8 +30,8 @@
                           <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400" aria-hidden="true" />
                           {{ item.name }}
                         </span>
-                        <Anchor v-else :href="item.href" :class="[item.current ? 'bg-gray-50 text-violet-600' : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
-                          <component :is="item.icon" :class="[item.current ? 'text-violet-600' : 'text-gray-400 group-hover:text-violet-600', 'h-6 w-6 shrink-0']" aria-hidden="true" />
+                        <Anchor v-else :href="item.href" :class="[isCurrentLink(item.href) ? 'bg-gray-50 text-violet-600' : 'text-gray-700 hover:text-violet-600 hover:bg-gray-50', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                          <component :is="item.icon" :class="[isCurrentLink(item.href) ? 'text-violet-600' : 'text-gray-400 group-hover:text-violet-600', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                           {{ item.name }}
                         </Anchor>
                       </li>
@@ -74,8 +74,8 @@
                   <component :is="item.icon" class="h-6 w-6 shrink-0 text-gray-400 dark:text-violet-400" aria-hidden="true" />
                   {{ item.name }}
                 </span>
-                <Anchor v-else :href="item.href" :class="[item.href === currentBaseLink ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-100 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
-                  <component :is="item.icon" :class="[item.href === currentBaseLink ? 'text-violet-600 dark:text-white' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
+                <Anchor v-else :href="item.href" :class="[isCurrentLink(item.href) ? 'bg-violet-50 dark:bg-violet-600 text-violet-600 dark:text-white' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-violet-50 dark:hover:text-violet-100 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                  <component :is="item.icon" :class="[isCurrentLink(item.href) ? 'text-violet-600 dark:text-white' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                   {{ item.name }}
                 </Anchor>
               </li>
@@ -85,8 +85,8 @@
             <div class="text-xs font-semibold leading-6 text-gray-400 dark:text-violet-400">Misc</div>
             <ul role="list" class="-mx-2 mt-2 space-y-1">
               <li v-for="link in links" :key="link.name">
-                <Anchor :href="link.href" :class="[link.href === currentBaseLink ? 'bg-gray-50 text-violet-600 dark:text-violet-600' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-gray-50 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
-                  <component :is="link.icon" :class="[link.href === currentBaseLink ? 'text-violet-600 dark:text-violet-600' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
+                <Anchor :href="link.href" :class="[isCurrentLink(link.href) ? 'bg-gray-50 text-violet-600 dark:text-violet-600' : 'text-gray-700 dark:text-violet-300 hover:text-violet-600 hover:bg-gray-50 dark:hover:bg-violet-800', 'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold']">
+                  <component :is="link.icon" :class="[isCurrentLink(link.href) ? 'text-violet-600 dark:text-violet-600' : 'text-gray-400 dark:text-violet-400 group-hover:text-violet-600 dark:group-hover:text-violet-100', 'h-6 w-6 shrink-0']" aria-hidden="true" />
                   <span class="truncate">{{ link.name }}</span>
                 </Anchor>
               </li>
@@ -120,7 +120,6 @@ const userStore = useUserStore()
 // ROUTER
 
 const route = useRoute()
-const currentBaseLink = computed(() => route.path.indexOf('/', 1) > 0 ? `/${route.path.split('/')[1]}` : route.path)
 
 // DATA
 
@@ -155,6 +154,22 @@ const links: Navigation[] = [
   { name: 'Manage Labels', href: '/labels', icon: h(Icon, { name: 'pajamas:labels' }) },
   { name: 'Manage Subseries', href: '/subseries', icon: h(Icon, { name: 'tabler:books' }) }
 ]
+
+// A nav item is "current" when its href is the most specific (longest) match
+// for the active route. This lets sibling entries that share a base path
+// (e.g. /team and /team/:id) highlight independently rather than both matching
+// the shorter base.
+const isCurrentLink = (href: string): boolean => {
+  const path = route.path
+  const matches = [...navigation.value, ...links]
+    .map(item => item.href)
+    .filter(itemHref => path === itemHref || path.startsWith(`${itemHref}/`))
+  if (matches.length === 0) {
+    return false
+  }
+  const best = matches.reduce((a, b) => (b.length > a.length ? b : a))
+  return best === href
+}
 
 
 // METHODS
