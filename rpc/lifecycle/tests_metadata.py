@@ -67,3 +67,8 @@ class MetadataTests(TestCase):
             "江川",
             "fullname with one name",
         )
+        self.assertEqual(
+            Metadata.extract_name_from_author_dict({"fullname": "J Doe"}),
+            "J Doe",
+            "single letter name",
+        )

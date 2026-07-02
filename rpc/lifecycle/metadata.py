@@ -309,7 +309,7 @@ class Metadata:
             name_parts = xml_fullname.split()
             if len(name_parts) > 1:
                 # Convert all parts except last to initials, keep surname as-is
-                initials = [p[0] + "." for p in name_parts[:-1]]
+                initials = [p[0] + "." if len(p) > 1 else p[0] for p in name_parts[:-1]]
                 xml_name = " ".join(initials + [name_parts[-1]])
             else:
                 xml_name = xml_fullname
