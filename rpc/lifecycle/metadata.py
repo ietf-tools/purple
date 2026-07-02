@@ -40,9 +40,8 @@ class Metadata:
         abstract_text = ""
         if abstract_elem is not None:
             paragraphs = [
-                re.sub(r"\s+", " ", t.text).strip()
+                re.sub(r"\s+", " ", "".join(t.itertext())).strip()
                 for t in abstract_elem.findall("t", ns)
-                if t.text and t.text.strip()
             ]
             abstract_text = "\n\n".join(p for p in paragraphs if p)
 
