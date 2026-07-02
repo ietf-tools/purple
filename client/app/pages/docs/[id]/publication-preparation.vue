@@ -554,7 +554,7 @@ const metadataValidationResultsSyncHandler = async () => {
     }
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, defaultTitle: 'Metadata sync failed', error })
-    step.value = { type: 'diff', headSha }
+    step.value = { type: 'cancelled', headSha }
   }
 }
 
