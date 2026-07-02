@@ -416,6 +416,15 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Abstract" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="_abstract" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', placeholder: 'Abstract', rows: 8, initialValue: rfcToBe._abstract ?? '' }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <span class="whitespace-pre-wrap text-sm">{{ rfcToBe._abstract }}</span>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
       </DescriptionList>
     </div>
   </BaseCard>
