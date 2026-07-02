@@ -2395,4 +2395,5 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "references",
             "rev",
             "rfc_number",
+            "final_review_started_at",
         ]
