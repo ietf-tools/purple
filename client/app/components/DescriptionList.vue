@@ -5,7 +5,7 @@ Based on https://tailwindui.com/components/application-ui/data-display/descripti
 -->
 <template>
   <div class="mt-3">
-    <dl class="divide-y divide-gray-100 dark:divide-gray-800">
+    <dl class="grid grid-cols-2 gap-x-6">
       <slot/>
     </dl>
   </div>

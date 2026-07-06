@@ -416,7 +416,7 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Abstract" :spacing="spacing">
+        <DescriptionListItem term="Abstract" :spacing="spacing" class="col-span-2">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="_abstract" :is-read-only="props.isReadOnly"
               :ui-mode="{ type: 'textbox', placeholder: 'Abstract', rows: 8, initialValue: rfcToBe._abstract ?? '' }"
