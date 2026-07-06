@@ -92,9 +92,9 @@ class IsSimpleExpressionTests(TestCase):
     def test_sign_prefix_stripped(self):
         self.assertTrue(_is_simple_expression("+x"))
         self.assertTrue(_is_simple_expression("-n"))
-        self.assertTrue(_is_simple_expression("−x"))   # U+2212 minus sign
-        self.assertTrue(_is_simple_expression("±n"))   # U+00B1 plus-minus
-        self.assertTrue(_is_simple_expression("﹣x"))   # U+FE63 small hyphen-minus
+        self.assertTrue(_is_simple_expression("−x"))  # U+2212 minus sign
+        self.assertTrue(_is_simple_expression("±n"))  # U+00B1 plus-minus
+        self.assertTrue(_is_simple_expression("﹣x"))  # U+FE63 small hyphen-minus
 
     def test_already_parenthesized(self):
         self.assertTrue(_is_simple_expression("(x+y)"))
@@ -117,10 +117,14 @@ class InlineTextTests(TestCase):
         self.assertEqual(_inline_text(self._elem("<t>Hello world</t>")), "Hello world")
 
     def test_em(self):
-        self.assertEqual(_inline_text(self._elem("<t><em>important</em></t>")), "_important_")
+        self.assertEqual(
+            _inline_text(self._elem("<t><em>important</em></t>")), "_important_"
+        )
 
     def test_strong(self):
-        self.assertEqual(_inline_text(self._elem("<t><strong>bold</strong></t>")), "*bold*")
+        self.assertEqual(
+            _inline_text(self._elem("<t><strong>bold</strong></t>")), "*bold*"
+        )
 
     def test_tt_no_decoration(self):
         self.assertEqual(_inline_text(self._elem("<t><tt>code</tt></t>")), "code")
