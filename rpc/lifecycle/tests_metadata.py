@@ -3,7 +3,12 @@ import xml.etree.ElementTree as ET
 
 from django.test import TestCase
 
-from .metadata import Metadata, _inline_text, _is_simple_expression
+from .metadata import (
+    Metadata,
+    _already_parenthesized,
+    _inline_text,
+    _is_simple_expression,
+)
 
 
 class MetadataTests(TestCase):
@@ -71,6 +76,29 @@ class MetadataTests(TestCase):
         )
 
 
+class AlreadyParenthesizedTests(TestCase):
+    def test_too_short(self):
+        self.assertFalse(_already_parenthesized(""))
+        self.assertFalse(_already_parenthesized("("))
+
+    def test_no_outer_parens(self):
+        self.assertFalse(_already_parenthesized("x+y"))
+
+    def test_simple(self):
+        self.assertTrue(_already_parenthesized("(x+y)"))
+        self.assertTrue(_already_parenthesized("(x)"))
+
+    def test_nested_balanced(self):
+        self.assertTrue(_already_parenthesized("((x+y))"))
+
+    def test_two_groups(self):
+        # outer ( and ) present but inner closes before the end
+        self.assertFalse(_already_parenthesized("(a)(b)"))
+
+    def test_inner_unbalanced(self):
+        self.assertFalse(_already_parenthesized("(a))"))
+
+
 class IsSimpleExpressionTests(TestCase):
     def test_empty(self):
         self.assertFalse(_is_simple_expression(""))
@@ -99,6 +127,15 @@ class IsSimpleExpressionTests(TestCase):
     def test_already_parenthesized(self):
         self.assertTrue(_is_simple_expression("(x+y)"))
         self.assertTrue(_is_simple_expression("+(x+y)"))
+        self.assertTrue(
+            _is_simple_expression("((x + y))")
+        )  # double-wrapped: no third layer
+        self.assertFalse(
+            _is_simple_expression("(a)(b)")
+        )  # two groups: not a single balanced wrap
+
+    def test_sign_with_word(self):
+        self.assertTrue(_is_simple_expression("+n"))
 
     def test_underscore_is_complex(self):
         self.assertFalse(_is_simple_expression("x_y"))

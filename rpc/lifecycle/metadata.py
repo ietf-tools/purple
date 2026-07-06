@@ -21,15 +21,34 @@ from rpc.models import (
 logger = logging.getLogger(__name__)
 
 
+def _already_parenthesized(s: str) -> bool:
+    if len(s) < 2 or s[0] != "(" or s[-1] != ")":
+        return False
+    count = 0
+    for c in s[1:-1]:
+        count += 1 if c == "(" else -1 if c == ")" else 0
+        if count < 0:
+            return False
+    return count == 0
+
+
 def _is_simple_expression(expr: str) -> bool:
-    """Match xml2rfc's is_simple_expression: no parens needed for sub/sup."""
+    """Return True if this expression is simple enough to render without added
+    parentheses.
+
+    Accepts a single alphanumeric string with no whitespace, optionally preceded
+    by a sign character. A non-integer decimal number is accepted as long as it
+    precedes any alphabetic characters. If the expression, excluding an allowed
+    leading sign character, is surrounded by balanced parentheses, True is
+    returned regardless of the contents. Logic matches xml2rfc's is_simple_expression.
+    """
     if not expr:
         return False
     if expr[0] in "+-\u2212\u00b1\u2213\ufe63\uff0b\uff0d":  # xml2rfc sign chars
         expr = expr[1:]
     if not expr:
         return False
-    if expr[0] == "(" and expr[-1] == ")":
+    if _already_parenthesized(expr):
         return True
     if "_" in expr:
         return False
