@@ -21,6 +21,50 @@ from rpc.models import (
 logger = logging.getLogger(__name__)
 
 
+def _is_simple_expression(expr: str) -> bool:
+    """Match xml2rfc's is_simple_expression: no parens needed for sub/sup."""
+    if not expr:
+        return False
+    if expr[0] in "+-\u2212\u00b1\u2213\ufe63\uff0b\uff0d":  # xml2rfc sign chars
+        expr = expr[1:]
+    if not expr:
+        return False
+    if expr[0] == "(" and expr[-1] == ")":
+        return True
+    if "_" in expr:
+        return False
+    return re.match(r"^(?:\d+(?:\.\d+)?)?\w*$", expr) is not None
+
+
+def _inline_text(elem) -> str:
+    """Render an XML element to plain text using xml2rfc text conventions."""
+    parts = []
+    if elem.text:
+        parts.append(elem.text)
+    for child in elem:
+        tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+        inner = _inline_text(child)
+        if tag == "tt":
+            parts.append(inner)
+        elif tag == "em":
+            parts.append(f"_{inner}_")
+        elif tag == "strong":
+            parts.append(f"*{inner}*")
+        elif tag == "sub":
+            parts.append(
+                f"_({inner})" if not _is_simple_expression(inner) else f"_{inner}"
+            )
+        elif tag == "sup":
+            parts.append(
+                f"^({inner})" if not _is_simple_expression(inner) else f"^{inner}"
+            )
+        else:
+            parts.append(inner)
+        if child.tail:
+            parts.append(child.tail)
+    return "".join(parts)
+
+
 class Metadata:
     """Base class for metadata extraction"""
 
@@ -40,7 +84,7 @@ class Metadata:
         abstract_text = ""
         if abstract_elem is not None:
             paragraphs = [
-                re.sub(r"\s+", " ", "".join(t.itertext())).strip()
+                re.sub(r"\s+", " ", _inline_text(t)).strip()
                 for t in abstract_elem.findall("t", ns)
             ]
             abstract_text = "\n\n".join(p for p in paragraphs if p)
