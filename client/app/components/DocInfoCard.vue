@@ -27,6 +27,17 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="RFC Number" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="rfcNumber" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="font-mono">
+                {{ rfcToBe.rfcNumber || '(none)' }}
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="title" :is-read-only="props.isReadOnly"
@@ -80,6 +91,17 @@
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
+        <DescriptionListItem term="Group" :spacing="spacing">
+          <DescriptionListDetails>
+            <PatchRfcToBeField fieldName="group" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'Group Acronym', initialValue: rfcToBe.group }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <div class="font-mono">
+                {{ rfcToBe.group || '(none)' }}
+              </div>
+            </PatchRfcToBeField>
+          </DescriptionListDetails>
+        </DescriptionListItem>
         <DescriptionListItem term="Document Shepherd" :spacing="spacing">
           <DescriptionListDetails>
             <PersonSearchField
@@ -96,17 +118,6 @@
               :is-read-only="props.isReadOnly"
               :on-save="(id) => patchPerson('iesgContactId', id)"
             />
-          </DescriptionListDetails>
-        </DescriptionListItem>
-        <DescriptionListItem term="Group" :spacing="spacing">
-          <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="group" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'Group Acronym', initialValue: rfcToBe.group }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <div class="font-mono">
-                {{ rfcToBe.group || '(none)' }}
-              </div>
-            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
@@ -179,17 +190,6 @@
                 (none)
               </EditSubseries>
             </template>
-          </DescriptionListDetails>
-        </DescriptionListItem>
-        <DescriptionListItem term="RFC Number" :spacing="spacing">
-          <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="rfcNumber" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <div class="font-mono">
-                {{ rfcToBe.rfcNumber || '(none)' }}
-              </div>
-            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Additional Emails" :spacing="spacing">
@@ -377,6 +377,11 @@
               </span>
             </div>
             <div v-else class="text-sm text-gray-500">(none)</div>
+          </DescriptionListDetails>
+        </DescriptionListItem>
+        <DescriptionListItem term="Revision" :spacing="spacing">
+          <DescriptionListDetails>
+            <span class="font-mono">{{ rfcToBe.draft?.rev ?? '(none)' }}</span>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Repository" :spacing="spacing">
