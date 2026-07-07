@@ -166,12 +166,15 @@ PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
 
 
 def resolve_rfctobe(identifier: str) -> RfcToBe:
-    """Return the preferred RfcToBe for a given draft name.
+    """Return the RfcToBe for a given identifier.
 
-    If identifier looks like 'rfc1234', look up by rfc_number instead.
-    When multiple RfcToBes share a draft name (e.g., one withdrawn and one
-    in-progress), the non-withdrawn one is preferred.
+    Identifiers are resolved in order:
+    - Numeric string → direct lookup by RfcToBe.pk (allows linking withdrawn records)
+    - 'rfc1234' → lookup by rfc_number; non-withdrawn preferred
+    - Draft name → lookup by draft name; non-withdrawn preferred
     """
+    if identifier.isdigit():
+        return get_object_or_404(RfcToBe, pk=int(identifier))
     if identifier.lower().startswith("rfc") and identifier[3:].strip().isdigit():
         rfc_number = int(identifier[3:].strip())
         qs = RfcToBe.objects.filter(rfc_number=rfc_number)

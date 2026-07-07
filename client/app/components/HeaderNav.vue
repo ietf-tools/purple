@@ -28,7 +28,7 @@
               <button
                 type="button"
                 class="flex w-full items-baseline gap-2 px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-neutral-700"
-                @mousedown.prevent="navigateTo(`/docs/${doc.name}`); navSearch = ''; showResults = false"
+                @mousedown.prevent="navigateTo(`/docs/${doc.disposition === 'withdrawn' ? doc.id : doc.name}`); navSearch = ''; showResults = false"
               >
                 <span class="font-semibold text-gray-900 dark:text-neutral-100">{{ doc.name }}</span>
                 <span v-if="doc.rfcNumber" class="text-xs text-gray-500 dark:text-neutral-400">RFC {{ doc.rfcNumber }}</span>
