@@ -5,7 +5,8 @@ from django.db import migrations, models
 
 def backfill_rev(apps, schema_editor):
     RfcToBe = apps.get_model("rpc", "RfcToBe")
-    for rfctobe in RfcToBe.objects.filter(rev="", draft__isnull=False).select_related("draft"):
+    qs = RfcToBe.objects.filter(rev="", draft__isnull=False).select_related("draft")
+    for rfctobe in qs:
         if rfctobe.draft.rev:
             rfctobe.rev = rfctobe.draft.rev
             rfctobe.save(update_fields=["rev"])
