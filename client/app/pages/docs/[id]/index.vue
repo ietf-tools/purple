@@ -11,20 +11,21 @@
       <div v-else
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
 
-        <!-- Document Info -->
-        <DocInfoCard :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="rfcToBeRefresh" :is-read-only="Boolean(rawRfcToBe?.publishedAt)" />
+        <!-- Document Info — spans 2 of 3 columns -->
+        <DocInfoCard class="lg:col-span-2" :rfc-to-be="rawRfcToBe" :draft-name="draftName" :refresh="rfcToBeRefresh" :is-read-only="Boolean(rawRfcToBe?.publishedAt)" />
 
-        <div class="flex">
+        <!-- Complexities + Other labels stacked in the 3rd column -->
+        <div class="flex flex-col gap-y-8">
           <div class="flex flex-col">
             <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 text-black bg-white dark:text-white dark:bg-black rounded-t-xl">Complexities</h2>
-            <div class="flex flex-row">
+            <div class="grid grid-cols-2">
               <DocLabelsCard title="Other complexities" v-model="selectedLabelIds" :labels="labels1" />
               <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
             </div>
           </div>
-        </div>
 
-        <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
+          <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
+        </div>
 
         <div v-if="rawRfcToBe?.id && rawRfcToBe.disposition !== 'published'" class="lg:col-span-full grid place-items-stretch">
           <DocumentDependencies v-model="relatedDocuments" :id="rawRfcToBe.id" :draft-name="draftName" :people="people"
