@@ -73,15 +73,6 @@
             </div>
           </DescriptionListDetails>
         </DescriptionListItem>
-        <DescriptionListItem term="Revision" :spacing="spacing">
-          <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="rev" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'e.g. 14', rows: 1, initialValue: rfcToBe.rev || undefined }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <span class="font-mono">{{ rfcToBe.rev || '(none)' }}</span>
-            </PatchRfcToBeField>
-          </DescriptionListDetails>
-        </DescriptionListItem>
         <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField fieldName="pages" :is-read-only="false"
@@ -381,7 +372,11 @@
         </DescriptionListItem>
         <DescriptionListItem term="Revision" :spacing="spacing">
           <DescriptionListDetails>
-            <span class="font-mono">{{ rfcToBe.draft?.rev ?? '(none)' }}</span>
+            <PatchRfcToBeField fieldName="rev" :is-read-only="props.isReadOnly"
+              :ui-mode="{ type: 'textbox', placeholder: 'e.g. 14', rows: 1, initialValue: rfcToBe.rev || undefined }"
+              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              <span class="font-mono">{{ rfcToBe.rev || '(none)' }}</span>
+            </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Repository" :spacing="spacing">
