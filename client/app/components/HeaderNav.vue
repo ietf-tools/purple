@@ -98,7 +98,10 @@
           <transition enter-active-class="transition ease-out duration-100" enter-from-class="transform opacity-0 scale-95" enter-to-class="transform opacity-100 scale-100" leave-active-class="transition ease-in duration-75" leave-from-class="transform opacity-100 scale-100" leave-to-class="transform opacity-0 scale-95">
             <HeadlessMenuItems class="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
               <HeadlessMenuItem v-for="item in userNavigation" :key="item.name" v-slot="{ active }">
-                <Anchor :href="item.href" :class="[active ? 'bg-gray-50' : '', 'block px-3 py-1 text-sm leading-6 text-gray-900']">{{ item.name }}</Anchor>
+                <Anchor :href="item.href" v-bind="item.external ? { target: '_blank', rel: 'noopener noreferrer' } : {}" :class="[active ? 'bg-gray-50' : '', 'flex items-center gap-1 px-3 py-1 text-sm leading-6 text-gray-900']">
+                  {{ item.name }}
+                  <Icon v-if="item.external" name="heroicons:arrow-top-right-on-square-16-solid" class="h-3.5 w-3.5 text-gray-400" aria-hidden="true" />
+                </Anchor>
               </HeadlessMenuItem>
               <HeadlessMenuItem v-slot="{ active }">
                 <a
@@ -119,6 +122,7 @@
 import { refDebounced } from '@vueuse/core'
 import { useSiteStore } from '@/stores/site'
 import { useUserStore } from '@/stores/user'
+import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
 import { STICKY_DOM_ID } from '~/utils/scroll'
 
 const buttonId = useId() // avoid a hydration error - see https://github.com/nuxt/ui/issues/1171
@@ -127,11 +131,12 @@ const buttonId = useId() // avoid a hydration error - see https://github.com/nux
 
 const siteStore = useSiteStore()
 const userStore = useUserStore()
+const datatrackerLinks = useDatatrackerLinks()
 
 // DATA
 
 const userNavigation = [
-  { name: 'Your profile', href: '/' }
+  { name: 'Your profile', href: datatrackerLinks.profile, external: true }
 ]
 
 // SEARCH

@@ -194,3 +194,8 @@ class InlineTextTests(TestCase):
         # Original bug: abstract was truncated at first inline tag
         elem = self._elem("<t>This uses <tt>DTLS</tt> and <tt>TLS</tt> protocols.</t>")
         self.assertEqual(_inline_text(elem), "This uses DTLS and TLS protocols.")
+        self.assertEqual(
+            Metadata.extract_name_from_author_dict({"fullname": "J Doe"}),
+            "J Doe",
+            "single letter name",
+        )
