@@ -161,6 +161,7 @@ watch(debouncedSearch, async (q) => {
     searchResults.value = undefined
     return
   }
+  showResults.value = true
   previousAbortController = new AbortController()
   searchLoading.value = true
   try {
