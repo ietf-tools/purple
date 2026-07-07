@@ -239,6 +239,21 @@ def refresh_rfc_index_task():
 
 
 @shared_task
+def backfill_rev_task():
+    """One-time task: copy draft.rev into rfctobe.rev for records where it is blank."""
+    qs = RfcToBe.objects.filter(rev="", draft__isnull=False).select_related("draft")
+    count = 0
+    for rfctobe in qs:
+        rev = rfctobe.draft.rev
+        if rev:
+            rfctobe.rev = rev
+            rfctobe.save(update_fields=["rev"])
+            count += 1
+    logger.info("backfill_rev_task: updated %d record(s)", count)
+    return count
+
+
+@shared_task
 def update_blocked_assignments_for_in_progress_rfcs_task():
     """Process all in_progress RfcToBe instances to apply blocked assignments"""
     for rfc in RfcToBe.objects.filter(disposition_id="in_progress"):

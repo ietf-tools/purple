@@ -1182,6 +1182,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "shepherd",
             "iesg_contact",
             "pages",
+            "rev",
             "keywords",
             "iana_status_slug",
             "consensus",

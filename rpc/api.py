@@ -505,6 +505,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "shepherd": shepherd.pk if shepherd is not None else None,
             "iesg_contact": iesg_contact.pk if iesg_contact is not None else None,
             "pages": draft.pages,
+            "rev": draft.rev,
             "consensus": draft_info.consensus,
         }
     )
