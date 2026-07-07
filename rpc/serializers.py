@@ -825,6 +825,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "stream_manager",
             "stream_manager_id",
             "is_april_first_rfc",
+            "rev",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
@@ -1175,6 +1176,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "shepherd",
             "iesg_contact",
             "pages",
+            "rev",
             "keywords",
             "iana_status_slug",
             "consensus",
