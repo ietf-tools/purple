@@ -4126,6 +4126,10 @@ components:
           minimum: 0
           nullable: true
           description: Page count
+        rev:
+          type: string
+          description: Revision of draft being worked on.
+          maxLength: 16
         keywords:
           type: string
           description: Comma-separated list of keywords
@@ -5066,8 +5070,7 @@ components:
           type: boolean
         rev:
           type: string
-          description: Revision of draft being worked on. Overrides draft.rev when
-            set.
+          description: Revision of draft being worked on.
           maxLength: 16
     PatchedRpcRelatedDocumentRequest:
       type: object
@@ -5685,8 +5688,7 @@ components:
           type: boolean
         rev:
           type: string
-          description: Revision of draft being worked on. Overrides draft.rev when
-            set.
+          description: Revision of draft being worked on.
           maxLength: 16
       required:
       - authors
@@ -5843,8 +5845,7 @@ components:
           type: boolean
         rev:
           type: string
-          description: Revision of draft being worked on. Overrides draft.rev when
-            set.
+          description: Revision of draft being worked on.
           maxLength: 16
       required:
       - authors

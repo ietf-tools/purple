@@ -848,12 +848,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         _resolve_person_field("iesg_contact_id", "iesg_contact")
         return super().update(instance, validated_data)
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        if not data.get("rev") and instance.draft:
-            data["rev"] = instance.draft.rev
-        return data
-
 
 def _person_label(pk) -> str:
     """Resolve a DatatrackerPerson pk to 'Name (#datatracker_id)'."""

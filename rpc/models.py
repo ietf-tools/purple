@@ -227,7 +227,7 @@ class RfcToBe(models.Model):
     rev = models.CharField(
         max_length=16,
         blank=True,
-        help_text="Revision of draft being worked on. Overrides draft.rev when set.",
+        help_text="Revision of draft being worked on.",
     )
     title = models.CharField(max_length=255, help_text="Document title")
     abstract = models.TextField(

@@ -7,7 +7,7 @@ def backfill_rev(apps, schema_editor):
     RfcToBe = apps.get_model("rpc", "RfcToBe")
     qs = RfcToBe.objects.filter(rev="", draft__isnull=False).select_related("draft")
     for rfctobe in qs:
-        if rfctobe.draft.rev:
+        if rfctobe.draft.rev:  # nothing to copy if draft also has no rev
             rfctobe.rev = rfctobe.draft.rev
             rfctobe.save(update_fields=["rev"])
 
@@ -23,8 +23,7 @@ class Migration(migrations.Migration):
             name="rev",
             field=models.CharField(
                 blank=True,
-                help_text="Revision of draft being worked on. Overrides draft.rev "
-                "when set.",
+                help_text="Revision of draft being worked on.",
                 max_length=16,
             ),
         ),
@@ -33,8 +32,7 @@ class Migration(migrations.Migration):
             name="rev",
             field=models.CharField(
                 blank=True,
-                help_text="Revision of draft being worked on. Overrides draft.rev "
-                "when set.",
+                help_text="Revision of draft being worked on.",
                 max_length=16,
             ),
         ),
