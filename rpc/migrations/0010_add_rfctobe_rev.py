@@ -3,6 +3,14 @@
 from django.db import migrations, models
 
 
+def backfill_rev(apps, schema_editor):
+    RfcToBe = apps.get_model("rpc", "RfcToBe")
+    for rfctobe in RfcToBe.objects.filter(rev="", draft__isnull=False).select_related("draft"):
+        if rfctobe.draft.rev:
+            rfctobe.rev = rfctobe.draft.rev
+            rfctobe.save(update_fields=["rev"])
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("rpc", "0009_populate_rfctobe_published_formats"),
@@ -29,4 +37,5 @@ class Migration(migrations.Migration):
                 max_length=16,
             ),
         ),
+        migrations.RunPython(backfill_rev, migrations.RunPython.noop),
     ]
