@@ -37,6 +37,7 @@ from rest_framework.exceptions import (
     NotAuthenticated,
     NotFound,
     PermissionDenied,
+    ValidationError,
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
@@ -59,6 +60,7 @@ from .lifecycle.publication import (
     clear_failed_publication_attempt,
     validate_ready_to_publish,
 )
+from .lifecycle.timeline import build_document_timeline, queue_rollup
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
@@ -96,6 +98,7 @@ from .serializers import (
     AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
+    AssignmentTimelineSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
@@ -126,6 +129,7 @@ from .serializers import (
     PublishRfcStatusSerializer,
     QueueCountsSerializer,
     QueueItemSerializer,
+    QueueStatsSerializer,
     RfcAuthorSerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
@@ -1936,6 +1940,76 @@ class StatsLabels(views.APIView):
                         }
                     )
         return Response({"label_stats": results})
+
+
+class DocumentAssignmentTimeline(views.APIView):
+    """Assignment/blocked timeline for a single document over time.
+
+    Combines post-transition Assignment/Blocked history with pre-transition
+    label-derived states (see rpc.lifecycle.timeline).
+    """
+
+    @extend_schema(
+        operation_id="document_assignment_timeline",
+        responses=AssignmentTimelineSerializer,
+        parameters=[
+            OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH),
+        ],
+    )
+    def get(self, request, draft_name):
+        rfc_to_be = resolve_rfctobe(draft_name)
+        payload = build_document_timeline(rfc_to_be)
+        return Response(AssignmentTimelineSerializer(payload).data)
+
+
+class StatsQueue(views.APIView):
+    """Queue-wide time-in-assignment summary, split blocked vs not-blocked,
+    grouped into selectable past periods."""
+
+    PERIODS = ("week", "month", "quarter", "year")
+    MAX_COUNT = 52
+    CACHE_TTL = 300  # seconds; the rollup is read-only and tolerant of staleness
+
+    @extend_schema(
+        operation_id="stats_queue",
+        responses=QueueStatsSerializer,
+        parameters=[
+            OpenApiParameter(
+                "period",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                enum=PERIODS,
+                description="Length of each past segment.",
+            ),
+            OpenApiParameter(
+                "count",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="How many past segments to report (1-52).",
+            ),
+        ],
+    )
+    def get(self, request):
+        period = request.query_params.get("period", "month")
+        if period not in self.PERIODS:
+            raise ValidationError(
+                {"period": f"Must be one of {', '.join(self.PERIODS)}"}
+            )
+        try:
+            count = int(request.query_params.get("count", 6))
+        except (TypeError, ValueError):
+            raise ValidationError({"count": "Must be an integer"}) from None
+        count = max(1, min(count, self.MAX_COUNT))
+
+        # The rollup scans document history and can be expensive, so cache the
+        # computed periods briefly. The current day is part of the key so the
+        # "up to now" windows roll over daily.
+        cache_key = f"stats_queue:{period}:{count}:{timezone.now().date().isoformat()}"
+        periods = cache.get(cache_key)
+        if periods is None:
+            periods = queue_rollup(period, count)
+            cache.set(cache_key, periods, self.CACHE_TTL)
+        return Response(QueueStatsSerializer({"periods": periods}).data)
 
 
 class UnusableRfcNumberViewSet(viewsets.ModelViewSet):

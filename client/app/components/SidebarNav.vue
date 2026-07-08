@@ -263,6 +263,11 @@ const navigation = computed<Navigation[]>(() => [
     name: 'Final Review',
     href: '/final-review',
     icon: h(Icon, { name: 'solar:diploma-verified-broken' })
+  },
+  {
+    name: 'Statistics',
+    href: '/stats',
+    icon: h(Icon, { name: 'solar:chart-2-bold-duotone' })
   }
 ])
 

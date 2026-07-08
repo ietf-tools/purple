@@ -338,6 +338,75 @@ class DocumentAssignmentSerializer(serializers.ModelSerializer):
         fields = ["id", "person_name", "role", "state", "comment", "history"]
 
 
+class TimelineSegmentSerializer(serializers.Serializer):
+    """One span of time in a single state (see rpc.lifecycle.timeline)."""
+
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField(allow_null=True)
+    kind = serializers.CharField()
+    role = serializers.CharField(allow_null=True, required=False)
+    label = serializers.CharField(allow_null=True, required=False)
+    person_id = serializers.IntegerField(allow_null=True, required=False)
+    person_name = serializers.CharField(allow_null=True, required=False)
+    state = serializers.CharField(allow_null=True, required=False)
+
+
+class TimelineTrackSerializer(serializers.Serializer):
+    """All active spans of a single assignment (one Gantt row)."""
+
+    assignment_id = serializers.IntegerField()
+    role = serializers.CharField()
+    person_id = serializers.IntegerField(allow_null=True)
+    person_name = serializers.CharField(allow_null=True)
+    is_blocked = serializers.BooleanField()
+    segments = TimelineSegmentSerializer(many=True)
+
+
+class TimelineBandSerializer(serializers.Serializer):
+    """An aggregate lane: blocked/working summary or one legacy label."""
+
+    kind = serializers.CharField()
+    label = serializers.CharField(allow_null=True, required=False)
+    segments = TimelineSegmentSerializer(many=True)
+
+
+class AssignmentTimelineSerializer(serializers.Serializer):
+    """Per-document assignment timeline payload."""
+
+    transition_date = serializers.DateTimeField()
+    tracks = TimelineTrackSerializer(many=True)
+    summary = TimelineBandSerializer(many=True)
+    legacy = TimelineBandSerializer(many=True)
+
+
+class QueueRoleTimeSerializer(serializers.Serializer):
+    """Time spent in one assignment role (or legacy state) within a period."""
+
+    role = serializers.CharField()
+    is_blocked = serializers.BooleanField()
+    seconds = serializers.FloatField()
+
+
+class QueuePeriodStatSerializer(serializers.Serializer):
+    """Per-role assignment-time breakdown and blocked/not-blocked totals for
+    one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    doc_count = serializers.IntegerField()
+    total_blocked_seconds = serializers.FloatField()
+    total_working_seconds = serializers.FloatField()
+    by_role = QueueRoleTimeSerializer(many=True)
+    legacy_included = serializers.BooleanField()
+
+
+class QueueStatsSerializer(serializers.Serializer):
+    """Queue time-in-assignment summary across selectable past periods."""
+
+    periods = QueuePeriodStatSerializer(many=True)
+
+
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
