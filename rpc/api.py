@@ -2737,7 +2737,10 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        Metadata.update_metadata(rfc_to_be, metadata_result.metadata)
+        try:
+            Metadata.update_metadata(rfc_to_be, metadata_result.metadata)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         metadata_result.refresh_from_db()
         serializer = self.get_serializer(metadata_result)
