@@ -31,7 +31,7 @@ export const docTabsFactory = (draftName: string) => {
       id: 'timeline',
       name: 'Timeline',
       to: `/docs/${sanitisedDraftName}/timeline`,
-      icon: 'fluent:timeline-16-regular'
+      icon: 'fluent:data-bar-horizontal-20-regular'
     },
     {
       id: 'history',

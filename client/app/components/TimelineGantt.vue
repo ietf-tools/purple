@@ -41,6 +41,7 @@ const width = ref(720)
 
 const ROW_H = 26
 const ROW_GAP = 6
+const GROUP_GAP = 20 // extra space setting the summary lanes apart from the detail lanes
 const MARGIN = { top: 28, right: 16, bottom: 8, left: 180 }
 
 const now = new Date()
@@ -88,8 +89,16 @@ const lanes = computed<Lane[]>(() => {
   return result
 })
 
+// The leading summary lanes ("Not blocked" / "Blocked") aggregate the detail
+// lanes below them, so they get boxed together and set apart with a gap.
+const summaryCount = computed(() => lanes.value.filter(l => l.group === 'summary').length)
+const hasGroupSplit = computed(() =>
+  summaryCount.value > 0 && summaryCount.value < lanes.value.length
+)
+
 const height = computed(() =>
   MARGIN.top + MARGIN.bottom + lanes.value.length * (ROW_H + ROW_GAP)
+  + (hasGroupSplit.value ? GROUP_GAP : 0)
 )
 
 function draw () {
@@ -118,6 +127,29 @@ function draw () {
     .range([MARGIN.left, MARGIN.left + innerWidth])
     .nice()
 
+  const summaryN = summaryCount.value
+  const rowY = (i: number) =>
+    MARGIN.top + i * (ROW_H + ROW_GAP) + (i >= summaryN ? GROUP_GAP : 0)
+
+  // Box the summary lanes so it reads that they summarise the detail lanes,
+  // which are set apart below by GROUP_GAP. Drawn first, behind everything.
+  if (summaryN > 0) {
+    const boxTop = rowY(0) - 3
+    const boxBottom = rowY(summaryN - 1) + ROW_H + 3
+    svg.append('rect')
+      .attr('x', 4).attr('y', boxTop)
+      .attr('width', Math.max(width.value - 8, 10))
+      .attr('height', boxBottom - boxTop)
+      .attr('fill', 'currentColor').attr('opacity', 0.06).attr('rx', 6)
+    if (hasGroupSplit.value) {
+      const yDiv = (rowY(summaryN - 1) + ROW_H + rowY(summaryN)) / 2
+      svg.append('line')
+        .attr('x1', 4).attr('x2', Math.max(width.value - 4, 10))
+        .attr('y1', yDiv).attr('y2', yDiv)
+        .attr('stroke', 'currentColor').attr('opacity', 0.15)
+    }
+  }
+
   // Top time axis.
   const axis = d3.axisTop(x).ticks(Math.max(2, Math.floor(innerWidth / 110)))
   const axisG = svg.append('g')
@@ -125,8 +157,6 @@ function draw () {
     .call(axis)
   axisG.selectAll('text').attr('fill', 'currentColor').attr('font-size', 10)
   axisG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
-
-  const rowY = (i: number) => MARGIN.top + i * (ROW_H + ROW_GAP)
 
   // Transition marker.
   const tx = x(props.timeline.transitionDate)
