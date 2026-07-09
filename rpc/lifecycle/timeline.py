@@ -452,19 +452,6 @@ def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
     return docs.filter(contributes).distinct()
 
 
-def _accrue_seconds(
-    intervals: list[tuple[datetime.datetime, datetime.datetime]],
-    cap: datetime.datetime,
-) -> float:
-    """Total seconds of (already-closed) intervals truncated at ``cap``."""
-    total = 0.0
-    for start, end in intervals:
-        clipped_end = min(end, cap)
-        if clipped_end > start:
-            total += (clipped_end - start).total_seconds()
-    return total
-
-
 def document_category_intervals(
     rfc: RfcToBe, now: datetime.datetime, include_legacy: bool = True
 ) -> dict[str, tuple[bool, list[tuple[datetime.datetime, datetime.datetime]]]]:
@@ -472,8 +459,8 @@ def document_category_intervals(
 
     Returns ``{category: (is_blocked, merged_intervals)}`` where ``category`` is
     an assignment role slug (post-transition) or a legacy state label slug
-    (pre-transition). Open-ended spans are closed at ``now``; callers cap them
-    to a period end via :func:`_accrue_seconds`.
+    (pre-transition). Open-ended spans are closed at ``now``; callers clip them
+    to a period window via :func:`_overlap_seconds`.
     """
     raw: dict[str, tuple[bool, list]] = {}
     for assignment, is_blocked, runs in _assignment_segments(rfc):
@@ -495,11 +482,14 @@ def queue_rollup(
 ) -> list[dict]:
     """Per-period assignment-time breakdown for the queue.
 
-    Each period (bin) reports on the documents that were in the queue as of the
-    end of the period plus those published during it (the current period ends
-    "now" — year-to-date, etc.). For those documents it sums the time spent in
-    each assignment role — and pre-transition legacy states — accrued up to the
-    end of the period, with aggregate blocked / not-blocked totals.
+    Each period (bin) reports on the documents that were in the queue during the
+    period: those in the queue by the end of the period (the current period ends
+    "now" — year-to-date, etc.) that had not left before it started. For those
+    documents it sums the time spent in each assignment role — and pre-transition
+    legacy states — *within* the period, with aggregate blocked / not-blocked
+    totals. Time is a per-period flow, not a running cumulative total, so a
+    document that sits in one state for months contributes only that period's
+    share to each bin (rather than an ever-growing total).
 
     Withdrawn docs and docs published before the requested range are excluded.
     """
@@ -544,7 +534,10 @@ def queue_rollup(
                 continue
             member_count += 1
             for role, (is_blocked, intervals) in categories.items():
-                seconds = _accrue_seconds(intervals, eff_end)
+                # Per-period flow: only the portion of each interval that falls
+                # within this window, so long-running states (e.g. MISSREF, EDIT)
+                # do not accumulate into an ever-growing cumulative total.
+                seconds = _overlap_seconds(intervals, start, eff_end)
                 if seconds <= 0:
                     continue
                 slot = role_totals.setdefault(role, [is_blocked, 0.0])

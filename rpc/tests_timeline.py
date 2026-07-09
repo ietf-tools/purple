@@ -316,7 +316,7 @@ class QueueRollupTests(TestCase):
         june = queue_rollup("month", 2, self.now)[0]
         assert june["label"] == "2026-06"
         assert june["doc_count"] == 1
-        # Time accrued as of the period end, broken out per role.
+        # Time spent within the period, broken out per role.
         assert june["total_working_seconds"] == 10 * 24 * 3600
         assert june["total_blocked_seconds"] == 3 * 24 * 3600
         by_role = {r["role"]: r for r in june["by_role"]}
@@ -325,6 +325,25 @@ class QueueRollupTests(TestCase):
         assert by_role["blocked"]["is_blocked"] is True
         assert by_role["blocked"]["seconds"] == 3 * 24 * 3600
         assert june["legacy_included"] is False
+
+    def test_time_is_per_period_not_cumulative(self):
+        # A single long-running interval spanning two months must be split
+        # across the bins (per-period flow), not counted in full in each. Uses
+        # fully post-transition dates so the TRANSITION_DATE clip doesn't apply.
+        now = _dt(2026, 9, 1)
+        rfc = RfcToBeFactory(disposition=DispositionNameFactory(slug="in_progress"))
+        _backdate_creation(rfc, _dt(2026, 1, 1))
+        _make_assignment(
+            rfc,
+            "first_editor",
+            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 8, 1), "done")],
+        )
+        periods = {p["label"]: p for p in queue_rollup("month", 4, now)}
+        # June [06-01, 07-01] = 30 days; July [07-01, 08-01] = 31 days; the
+        # interval ends 08-01 so August contributes nothing.
+        assert periods["2026-06"]["total_working_seconds"] == 30 * 24 * 3600
+        assert periods["2026-07"]["total_working_seconds"] == 31 * 24 * 3600
+        assert periods["2026-08"]["total_working_seconds"] == 0
 
     def test_withdrawn_docs_excluded(self):
         self._doc_with_work(disposition_slug="withdrawn")
