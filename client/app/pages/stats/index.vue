@@ -32,8 +32,9 @@
         </div>
 
         <p class="mt-1 text-xs opacity-60">
-          Each bin covers the documents in the queue at the end of that period plus
-          those published during it; time is accrued as of the period's end.
+          Each bin covers the documents in the queue during that period; bars show
+          the time spent in each assignment role <em>within</em> the period (a
+          per-period flow, not a running cumulative total).
         </p>
 
         <div class="mt-3">

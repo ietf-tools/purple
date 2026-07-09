@@ -20,7 +20,7 @@
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
-import { KIND_LABELS, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/timeline'
+import { KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/timeline'
 
 type Props = {
   timeline: AssignmentTimeline
@@ -134,10 +134,10 @@ function draw () {
     svg.append('line')
       .attr('x1', tx).attr('x2', tx)
       .attr('y1', MARGIN.top).attr('y2', height.value - MARGIN.bottom)
-      .attr('stroke', '#8b5cf6').attr('stroke-dasharray', '4 3').attr('opacity', 0.8)
+      .attr('stroke', KIND_LEGACY_COLOR).attr('stroke-dasharray', '4 3').attr('opacity', 0.8)
     svg.append('text')
       .attr('x', tx + 3).attr('y', MARGIN.top - 16)
-      .attr('fill', '#8b5cf6').attr('font-size', 9)
+      .attr('fill', KIND_LEGACY_COLOR).attr('font-size', 9)
       .text('transition')
   }
 

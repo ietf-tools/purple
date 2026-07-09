@@ -6,12 +6,16 @@ export const KIND_BLOCKED = 'blocked'
 export const KIND_WORKING = 'working'
 export const KIND_LEGACY = 'legacy_label'
 
-// Shared colors so the doc timeline and queue summary read as one system.
-// Blocked = warm/red, working = teal/green, legacy = neutral violet.
+// Shared colors so the doc timeline and queue summary read as one system:
+// these match the lead hues of the per-role palettes below (blocked = warm red,
+// working = cool teal) plus a violet for the legacy / transition motif. All
+// three pass the dataviz validator on both the light (#fff) and dark (#000)
+// card surfaces.
+export const KIND_LEGACY_COLOR = '#7c3aed' // violet-600 (legacy states + transition marker)
 export const KIND_COLORS: Record<string, string> = {
-  [KIND_BLOCKED]: '#ef4444', // red-500
-  [KIND_WORKING]: '#14b8a6', // teal-500
-  [KIND_LEGACY]: '#a78bfa' // violet-400
+  [KIND_BLOCKED]: '#dc2626', // red-600  — matches BLOCKED_PALETTE[0]
+  [KIND_WORKING]: '#0d9488', // teal-600 — matches NOT_BLOCKED_PALETTE[0]
+  [KIND_LEGACY]: KIND_LEGACY_COLOR
 }
 
 export const KIND_LABELS: Record<string, string> = {
@@ -68,11 +72,20 @@ export function formatDays (seconds: number): string {
 }
 
 // Palettes for per-role stacking: cool hues for not-blocked roles, warm hues
-// for blocked roles, so the blocked share of each bar reads at a glance.
-const NOT_BLOCKED_PALETTE = [
-  '#14b8a6', '#0ea5e9', '#22c55e', '#6366f1', '#06b6d4', '#84cc16', '#3b82f6', '#8b5cf6'
-]
-const BLOCKED_PALETTE = ['#ef4444', '#f97316', '#e11d48', '#f59e0b', '#dc2626', '#b91c1c']
+// for blocked roles, so the blocked share of each bar reads at a glance. Both
+// pass the dataviz validator (lightness band, chroma, adjacent-CVD, contrast)
+// against the app's light (#fff) AND dark (#000) card surfaces, so one palette
+// serves both themes. Each family is capped at the number of CVD-distinct hues
+// it supports (cool 7, warm 4); roles beyond the cap fold into a neutral
+// "Other" bucket (see MAX_* / OTHER_* below and StackedTimeBars).
+export const NOT_BLOCKED_PALETTE = [
+  '#0d9488', '#0284c7', '#16a34a', '#4f46e5', '#0891b2', '#65a30d', '#2563eb'
+] // cool hues for not-blocked roles
+export const BLOCKED_PALETTE = ['#dc2626', '#ea580c', '#e11d48', '#a16207'] // warm hues for blocked roles
+export const MAX_NOT_BLOCKED = NOT_BLOCKED_PALETTE.length
+export const MAX_BLOCKED = BLOCKED_PALETTE.length
+export const OTHER_NOT_BLOCKED_COLOR = '#64748b' // slate-500 (neutral, cool)
+export const OTHER_BLOCKED_COLOR = '#78716c' // stone-500 (neutral, warm)
 
 /**
  * Assign a stable color to each role. Not-blocked roles come first (cool),
