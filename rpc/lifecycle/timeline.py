@@ -24,7 +24,13 @@ from django.apps import apps
 from django.db import models
 from django.utils import timezone
 
-from ..models import ASSIGNMENT_INACTIVE_STATES, Assignment, Label, RfcToBe
+from ..models import (
+    ASSIGNMENT_INACTIVE_STATES,
+    Assignment,
+    Label,
+    RfcToBe,
+    RfcToBeBlockingReason,
+)
 
 # The day the Assignment/Blocked model replaced the old label-based states.
 TRANSITION_DATE = datetime.datetime(2026, 5, 20, tzinfo=datetime.UTC)
@@ -247,6 +253,39 @@ def assignment_tracks(rfc: RfcToBe) -> list[Track]:
     return tracks
 
 
+def blocked_reason_bands(rfc: RfcToBe, now: datetime.datetime) -> list[Band]:
+    """One lane per blocking reason, itemising *why* the doc was blocked.
+
+    Intervals come straight from :class:`~rpc.models.RfcToBeBlockingReason`
+    (``since_when`` / ``resolved``) — the same records that drive the queue's
+    blocked filter. A reason applied more than once yields one lane with several
+    segments; an unresolved reason stays open-ended (``end=None``). Lanes are
+    ordered longest-blocking first.
+    """
+    by_reason: dict[str, tuple[str, list[Segment]]] = {}
+    rows = (
+        RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc)
+        .select_related("reason")
+        .order_by("since_when")
+    )
+    for row in rows:
+        _label, segments = by_reason.setdefault(row.reason_id, (row.reason.name, []))
+        segments.append(
+            Segment(start=row.since_when, end=row.resolved, kind=KIND_BLOCKED)
+        )
+    bands = [
+        Band(kind=KIND_BLOCKED, label=label, segments=segments)
+        for label, segments in by_reason.values()
+    ]
+    bands.sort(
+        key=lambda b: sum(
+            ((seg.end or now) - seg.start).total_seconds() for seg in b.segments
+        ),
+        reverse=True,
+    )
+    return bands
+
+
 def legacy_bands(rfc: RfcToBe) -> list[Band]:
     """Named legacy-state lanes reconstructed from labels (pre-transition).
 
@@ -321,7 +360,10 @@ def document_intervals(
 def build_document_timeline(rfc: RfcToBe, now: datetime.datetime | None = None) -> dict:
     """Full per-document timeline payload (tracks + summary + legacy)."""
     now = now or timezone.now()
-    tracks = assignment_tracks(rfc)
+    # The aggregate "blocked" assignment is itemised per reason below, so drop
+    # it from the per-assignment tracks to avoid a redundant lane.
+    tracks = [t for t in assignment_tracks(rfc) if t.role != "blocked"]
+    blocked_reasons = blocked_reason_bands(rfc, now)
     legacy = legacy_bands(rfc)
 
     blocked, working = document_intervals(rfc, now)
@@ -341,6 +383,7 @@ def build_document_timeline(rfc: RfcToBe, now: datetime.datetime | None = None) 
         "transition_date": TRANSITION_DATE,
         "tracks": tracks,
         "summary": summary,
+        "blocked_reasons": blocked_reasons,
         "legacy": legacy,
     }
 

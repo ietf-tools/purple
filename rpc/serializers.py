@@ -376,6 +376,7 @@ class AssignmentTimelineSerializer(serializers.Serializer):
     transition_date = serializers.DateTimeField()
     tracks = TimelineTrackSerializer(many=True)
     summary = TimelineBandSerializer(many=True)
+    blocked_reasons = TimelineBandSerializer(many=True)
     legacy = TimelineBandSerializer(many=True)
 
 

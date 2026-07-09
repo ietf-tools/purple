@@ -25,11 +25,13 @@ from .lifecycle.timeline import (
     _clip,
     _merge_intervals,
     _overlap_seconds,
+    blocked_reason_bands,
     build_document_timeline,
     document_intervals,
     period_windows,
     queue_rollup,
 )
+from .models import BlockingReason, RfcToBeBlockingReason
 
 UTC = datetime.UTC
 DAY = datetime.timedelta(days=1)
@@ -280,13 +282,53 @@ class AssignmentTimelineTests(TestCase):
         rfc = RfcToBeFactory()
         _make_assignment(
             rfc,
+            "first_editor",
+            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+        )
+        # A blocked assignment is itemised per reason, not shown as a track.
+        _make_assignment(
+            rfc,
             "blocked",
             [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
         )
         payload = build_document_timeline(rfc, self.now)
         assert payload["transition_date"] == TRANSITION_DATE
         assert {b.kind for b in payload["summary"]} == {KIND_BLOCKED, KIND_WORKING}
-        assert len(payload["tracks"]) == 1
+        assert "blocked_reasons" in payload
+        # Only the non-blocked assignment remains a track.
+        assert [t.role for t in payload["tracks"]] == ["first_editor"]
+
+    def test_blocked_reason_bands(self):
+        rfc = RfcToBeFactory()
+        author, _ = BlockingReason.objects.get_or_create(
+            slug="label_author_input_required",
+            defaults={"name": "Author Input Required"},
+        )
+        actionholder, _ = BlockingReason.objects.get_or_create(
+            slug="actionholder_active",
+            defaults={"name": "Waiting for Action Holder"},
+        )
+        # Author-input applied twice (two stints); action-holder still open.
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=author,
+            since_when=_dt(2026, 6, 1), resolved=_dt(2026, 6, 5),
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=author,
+            since_when=_dt(2026, 6, 20), resolved=_dt(2026, 6, 22),
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=actionholder,
+            since_when=_dt(2026, 6, 25), resolved=None,
+        )
+        bands = blocked_reason_bands(rfc, self.now)
+        assert {b.label for b in bands} == {author.name, actionholder.name}
+        assert all(b.kind == KIND_BLOCKED for b in bands)
+        by_label = {b.label: b for b in bands}
+        # Two stints -> two segments; unresolved reason stays open-ended.
+        assert len(by_label[author.name].segments) == 2
+        actionholder_seg = by_label[actionholder.name].segments[0]
+        assert actionholder_seg.end is None
 
 
 class QueueRollupTests(TestCase):
@@ -434,6 +476,11 @@ class TimelineEndpointTests(TestCase):
         rfc = RfcToBeFactory()
         _make_assignment(
             rfc,
+            "first_editor",
+            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+        )
+        _make_assignment(
+            rfc,
             "blocked",
             [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
         )
@@ -443,7 +490,8 @@ class TimelineEndpointTests(TestCase):
         assert resp.status_code == 200, resp.content
         data = resp.json()
         assert "transition_date" in data
-        assert len(data["tracks"]) == 1
+        assert "blocked_reasons" in data
+        assert len(data["tracks"]) == 1  # blocked assignment is itemised elsewhere
         assert {b["kind"] for b in data["summary"]} == {KIND_BLOCKED, KIND_WORKING}
 
     def test_queue_stats_ok(self):

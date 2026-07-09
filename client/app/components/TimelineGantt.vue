@@ -32,7 +32,7 @@ type Lane = {
   label: string
   sublabel?: string
   segments: TimelineSegment[]
-  group: 'summary' | 'legacy' | 'track'
+  group: 'summary' | 'blocked-reason' | 'legacy' | 'track'
 }
 
 const container = ref<HTMLElement | null>(null)
@@ -55,21 +55,42 @@ const tooltip = reactive({
   duration: ''
 })
 
-// Build the lanes: summary bands first, then legacy states, then per-assignment.
+// Earliest segment start of a lane (Infinity if it has none), for ordering.
+function firstStart (segments: TimelineSegment[]): number {
+  let min = Infinity
+  for (const seg of segments) min = Math.min(min, seg.start.getTime())
+  return min
+}
+
+// Summary lanes stay pinned at the top (the boxed section); every detail lane
+// below — blocking reasons, legacy states, per-assignment tracks — is ordered
+// by its first appearance in time.
 const lanes = computed<Lane[]>(() => {
   const tl = props.timeline
-  const result: Lane[] = []
+  const summary: Lane[] = []
   for (const band of tl.summary) {
     if (band.segments.length === 0) continue
-    result.push({
+    summary.push({
       key: `summary-${band.kind}`,
       label: KIND_LABELS[band.kind] ?? band.kind,
       segments: band.segments,
       group: 'summary'
     })
   }
+
+  const detail: Lane[] = []
+  for (const band of tl.blockedReasons) {
+    if (band.segments.length === 0) continue
+    detail.push({
+      key: `blocked-reason-${band.label}`,
+      label: band.label ?? '(reason)',
+      sublabel: 'blocked reason',
+      segments: band.segments,
+      group: 'blocked-reason'
+    })
+  }
   for (const band of tl.legacy) {
-    result.push({
+    detail.push({
       key: `legacy-${band.label}`,
       label: band.label ?? '(label)',
       sublabel: 'legacy',
@@ -78,7 +99,7 @@ const lanes = computed<Lane[]>(() => {
     })
   }
   for (const track of tl.tracks) {
-    result.push({
+    detail.push({
       key: `track-${track.assignmentId}`,
       label: track.role,
       sublabel: track.personName ?? undefined,
@@ -86,7 +107,9 @@ const lanes = computed<Lane[]>(() => {
       group: 'track'
     })
   }
-  return result
+  detail.sort((a, b) => firstStart(a.segments) - firstStart(b.segments))
+
+  return [...summary, ...detail]
 })
 
 // The leading summary lanes ("Not blocked" / "Blocked") aggregate the detail
