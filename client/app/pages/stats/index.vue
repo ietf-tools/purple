@@ -45,40 +45,45 @@
       <!-- Per-role summary table (whole-day granularity) -->
       <BaseCard class="mt-8 w-full grid place-items-stretch">
         <h3 class="text-base font-semibold leading-7 mb-2">Summary by period</h3>
-        <div class="w-full overflow-x-auto">
+        <div v-if="periods.length === 0" class="px-3 py-3 text-center text-sm opacity-60">No data.</div>
+        <!-- Transposed: periods are columns, metrics are rows. -->
+        <div v-else class="w-full overflow-x-auto">
           <table class="w-full text-sm divide-y divide-gray-300 dark:divide-neutral-700 whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
                 <th class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
-                <th class="px-3 py-2 text-right font-semibold">Docs</th>
-                <th
-                  v-for="role in roleColumns" :key="role"
-                  class="px-3 py-2 text-right font-semibold"
-                  :class="blockedRoleSet.has(role) ? 'text-red-600 dark:text-red-400' : ''"
-                >{{ role }}</th>
-                <th class="px-3 py-2 text-right font-semibold border-l border-gray-300 dark:border-neutral-700">Not blocked</th>
-                <th class="px-3 py-2 text-right font-semibold">Blocked</th>
+                <th v-for="p in periods" :key="p.label" class="px-3 py-2 text-right font-semibold">
+                  <div>{{ p.label }}</div>
+                  <div v-if="p.legacyIncluded" class="text-xs font-normal text-violet-500" title="Includes pre-transition labeled states">legacy</div>
+                </th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-neutral-800">
-              <tr v-for="p in periods" :key="p.label">
-                <td class="py-2 pl-4 pr-3">
-                  {{ p.label }}
-                  <span v-if="p.legacyIncluded" class="ml-1 text-xs text-violet-500" title="Includes pre-transition labeled states">legacy</span>
-                </td>
-                <td class="px-3 py-2 text-right">{{ p.docCount }}</td>
-                <td v-for="role in roleColumns" :key="role" class="px-3 py-2 text-right tabular-nums">
+              <tr class="border-b-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Docs</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">{{ p.docCount }}</td>
+              </tr>
+              <tr v-for="role in roleColumns" :key="role">
+                <th
+                  scope="row"
+                  class="py-2 pl-4 pr-3 text-left font-medium"
+                  :class="blockedRoleSet.has(role) ? 'text-red-600 dark:text-red-400' : ''"
+                >{{ role }}</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
                   {{ formatDays(secondsFor(p, role)) }}
                 </td>
-                <td class="px-3 py-2 text-right tabular-nums font-medium border-l border-gray-300 dark:border-neutral-700">
+              </tr>
+              <tr class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Not blocked</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ formatDays(p.totalWorkingSeconds) }}
                 </td>
-                <td class="px-3 py-2 text-right tabular-nums font-medium">
+              </tr>
+              <tr class="bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Blocked</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ formatDays(p.totalBlockedSeconds) }}
                 </td>
-              </tr>
-              <tr v-if="periods.length === 0">
-                <td :colspan="roleColumns.length + 4" class="px-3 py-3 text-center opacity-60">No data.</td>
               </tr>
             </tbody>
           </table>
