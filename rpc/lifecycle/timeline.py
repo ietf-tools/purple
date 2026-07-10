@@ -72,6 +72,11 @@ LEGACY_BLOCKED_LABEL_SLUGS = frozenset(
 KIND_BLOCKED = "blocked"
 KIND_WORKING = "working"
 KIND_LEGACY = "legacy_label"
+KIND_AWAITING = "awaiting_ref"
+
+# Manually-applied labels flagging a final-review doc that is waiting on a
+# referenced RFC-to-be. Only ever set while in the final_review_editor state.
+AWAITING_REF_LABEL_PREFIX = "awaiting ref:"
 
 # One active span: (start, end-or-None, state-at-start).
 Run = tuple[datetime.datetime, datetime.datetime | None, str | None]
@@ -219,37 +224,125 @@ def _assignment_segments(
     return result
 
 
-def assignment_tracks(rfc: RfcToBe) -> list[Track]:
+def _awaiting_ref_intervals(
+    rfc: RfcToBe, now: datetime.datetime
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """Merged intervals during which any ``awaiting ref:`` label was applied.
+
+    These labels are manually applied only while a doc is in final review; the
+    union of their applied intervals marks the "awaiting a reference" time.
+    """
+    label_pks = _labels_ever_applied(rfc)
+    if not label_pks:
+        return []
+    labels = Label.objects.filter(pk__in=label_pks).filter(
+        slug__istartswith=AWAITING_REF_LABEL_PREFIX
+    )
+    raw: list[tuple[datetime.datetime, datetime.datetime | None]] = []
+    for label in labels:
+        for interval in rfc.time_intervals_with_label(label):
+            raw.append((interval.start, interval.end))
+    return _merge_intervals(raw, now) if raw else []
+
+
+def _split_runs_by_intervals(
+    runs: list[Run],
+    intervals: list[tuple[datetime.datetime, datetime.datetime]],
+    now: datetime.datetime,
+) -> tuple[list[tuple], list[tuple]]:
+    """Partition ``runs`` into (inside-intervals, outside-intervals) spans.
+
+    ``intervals`` must be sorted and non-overlapping (as from _merge_intervals).
+    Open-ended runs are treated as ending ``now``.
+    """
+    inside: list[tuple] = []
+    outside: list[tuple] = []
+    for start, end, _state in runs:
+        run_end = end or now
+        cursor = start
+        for a_start, a_end in intervals:
+            lo, hi = max(start, a_start), min(run_end, a_end)
+            if hi <= lo:
+                continue
+            if lo > cursor:
+                outside.append((cursor, lo))
+            inside.append((lo, hi))
+            cursor = hi
+        if run_end > cursor:
+            outside.append((cursor, run_end))
+    return inside, outside
+
+
+def _make_track(assignment, person_name: str | None, is_blocked: bool, segments):
+    return Track(
+        assignment_id=assignment.pk,
+        role=assignment.role_id,
+        person_id=assignment.person_id,
+        person_name=person_name,
+        is_blocked=is_blocked,
+        segments=segments,
+    )
+
+
+def _spans_to_segments(spans, kind, assignment, person_name, now):
+    """Build display segments from bare (start, end) spans; end==now -> ongoing."""
+    return [
+        Segment(
+            start=s,
+            end=None if e == now else e,
+            kind=kind,
+            role=assignment.role_id,
+            person_id=assignment.person_id,
+            person_name=person_name,
+        )
+        for s, e in spans
+    ]
+
+
+def assignment_tracks(
+    rfc: RfcToBe, now: datetime.datetime | None = None
+) -> list[Track]:
     """Per-assignment Gantt rows for the post-transition era.
 
     Resolves ``person_name`` (may hit the datatracker) for display, so this is
-    for the single-document view rather than bulk use.
+    for the single-document view rather than bulk use. A ``final_review_editor``
+    assignment is split into a "not awaiting ref" (working) row and an
+    "awaiting ref" row wherever an ``awaiting ref:`` label was applied.
     """
+    now = now or timezone.now()
+    awaiting = _awaiting_ref_intervals(rfc, now)
     tracks: list[Track] = []
     for assignment, is_blocked, runs in _assignment_segments(rfc):
         person_name = _person_name(assignment)
-        segments = [
-            Segment(
-                start=start,
-                end=end,
-                kind=KIND_BLOCKED if is_blocked else KIND_WORKING,
-                role=assignment.role_id,
-                person_id=assignment.person_id,
-                person_name=person_name,
-                state=state,
-            )
-            for start, end, state in runs
-        ]
-        tracks.append(
-            Track(
-                assignment_id=assignment.pk,
-                role=assignment.role_id,
-                person_id=assignment.person_id,
-                person_name=person_name,
-                is_blocked=is_blocked,
-                segments=segments,
-            )
-        )
+        if assignment.role_id == "final_review_editor" and awaiting:
+            inside, outside = _split_runs_by_intervals(runs, awaiting, now)
+            if outside:
+                segs = _spans_to_segments(
+                    outside, KIND_WORKING, assignment, person_name, now
+                )
+                tracks.append(_make_track(assignment, person_name, False, segs))
+            if inside:
+                # Awaiting-ref time counts as blocked (is_blocked=True); the
+                # KIND_AWAITING segments keep their distinct amber colour.
+                segs = _spans_to_segments(
+                    inside, KIND_AWAITING, assignment, person_name, now
+                )
+                tracks.append(_make_track(assignment, person_name, True, segs))
+        else:
+            kind = KIND_BLOCKED if is_blocked else KIND_WORKING
+            segments = [
+                Segment(
+                    start=start,
+                    end=end,
+                    kind=kind,
+                    role=assignment.role_id,
+                    person_id=assignment.person_id,
+                    person_name=person_name,
+                    state=state,
+                )
+                for start, end, state in runs
+            ]
+            tracks.append(_make_track(assignment, person_name, is_blocked, segments))
     return tracks
 
 
@@ -325,6 +418,27 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
     return bands
 
 
+def _subtract_intervals(
+    base: list[tuple[datetime.datetime, datetime.datetime]],
+    cuts: list[tuple[datetime.datetime, datetime.datetime]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """``base`` minus ``cuts``; both merged, sorted, closed intervals."""
+    result: list[tuple[datetime.datetime, datetime.datetime]] = []
+    for b_start, b_end in base:
+        cursor = b_start
+        for c_start, c_end in cuts:
+            if c_end <= cursor or c_start >= b_end:
+                continue
+            if c_start > cursor:
+                result.append((cursor, c_start))
+            cursor = max(cursor, c_end)
+            if cursor >= b_end:
+                break
+        if cursor < b_end:
+            result.append((cursor, b_end))
+    return result
+
+
 def document_intervals(
     rfc: RfcToBe, now: datetime.datetime, include_legacy: bool = True
 ) -> tuple[
@@ -336,7 +450,9 @@ def document_intervals(
     Post-transition intervals come from assignments (clipped to on/after the
     transition); pre-transition intervals come from labels (clipped to before
     it). Blocked-equivalent legacy states fold into blocked; other legacy states
-    fold into working.
+    fold into working. Time with an ``awaiting ref:`` label (applied only during
+    final review) counts as blocked, so it is folded into blocked and carved out
+    of working.
 
     ``include_legacy=False`` skips the pre-transition label reconstruction (an
     expensive per-doc history walk); pass it for docs known to have no legacy
@@ -354,7 +470,13 @@ def document_intervals(
             target = blocked_raw if band.kind == KIND_BLOCKED else working_raw
             target.extend((seg.start, seg.end) for seg in band.segments)
 
-    return _merge_intervals(blocked_raw, now), _merge_intervals(working_raw, now)
+    blocked = _merge_intervals(blocked_raw, now)
+    working = _merge_intervals(working_raw, now)
+    awaiting = _awaiting_ref_intervals(rfc, now)
+    if awaiting:
+        blocked = _merge_intervals([*blocked, *awaiting], now)
+        working = _subtract_intervals(working, awaiting)
+    return blocked, working
 
 
 def build_document_timeline(rfc: RfcToBe, now: datetime.datetime | None = None) -> dict:
@@ -362,7 +484,7 @@ def build_document_timeline(rfc: RfcToBe, now: datetime.datetime | None = None) 
     now = now or timezone.now()
     # The aggregate "blocked" assignment is itemised per reason below, so drop
     # it from the per-assignment tracks to avoid a redundant lane.
-    tracks = [t for t in assignment_tracks(rfc) if t.role != "blocked"]
+    tracks = [t for t in assignment_tracks(rfc, now) if t.role != "blocked"]
     blocked_reasons = blocked_reason_bands(rfc, now)
     legacy = legacy_bands(rfc)
 
@@ -475,6 +597,23 @@ def _legacy_state_doc_ids(candidate_ids: list[int]) -> set[int]:
     )
 
 
+def _awaiting_ref_doc_ids(candidate_ids: list[int]) -> set[int]:
+    """Subset of ``candidate_ids`` that ever carried an ``awaiting ref:`` label.
+
+    Read from the historical m2m table so the queue rollup only pays the
+    per-doc history walk for docs that actually have such a label.
+    """
+    historical_labels = apps.get_model("rpc", "HistoricalRfcToBeLabel")
+    return set(
+        historical_labels.objects.filter(
+            label__slug__istartswith=AWAITING_REF_LABEL_PREFIX,
+            rfctobe_id__in=candidate_ids,
+        )
+        .values_list("rfctobe_id", flat=True)
+        .distinct()
+    )
+
+
 def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
     """Docs that could contribute time to windows starting at ``earliest``.
 
@@ -496,7 +635,10 @@ def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
 
 
 def document_category_intervals(
-    rfc: RfcToBe, now: datetime.datetime, include_legacy: bool = True
+    rfc: RfcToBe,
+    now: datetime.datetime,
+    include_legacy: bool = True,
+    include_awaiting: bool = False,
 ) -> dict[str, tuple[bool, list[tuple[datetime.datetime, datetime.datetime]]]]:
     """Map each assignment role / legacy state to its merged active intervals.
 
@@ -504,6 +646,11 @@ def document_category_intervals(
     an assignment role slug (post-transition) or a legacy state label slug
     (pre-transition). Open-ended spans are closed at ``now``; callers clip them
     to a period window via :func:`_overlap_seconds`.
+
+    ``include_awaiting`` carves ``awaiting ref:`` time out of the
+    ``final_review_editor`` category into a blocked ``awaiting_ref`` category, so
+    that time counts as blocked (pass it only for docs known to have such a
+    label — see :func:`_awaiting_ref_doc_ids`).
     """
     raw: dict[str, tuple[bool, list]] = {}
     for assignment, is_blocked, runs in _assignment_segments(rfc):
@@ -514,10 +661,20 @@ def document_category_intervals(
             is_blocked = band.kind == KIND_BLOCKED
             _blocked, intervals = raw.setdefault(band.label, (is_blocked, []))
             intervals.extend((seg.start, seg.end) for seg in band.segments)
-    return {
+    result = {
         category: (is_blocked, _merge_intervals(intervals, now))
         for category, (is_blocked, intervals) in raw.items()
     }
+    if include_awaiting:
+        awaiting = _awaiting_ref_intervals(rfc, now)
+        if awaiting:
+            fre = result.get("final_review_editor")
+            if fre is not None:
+                result["final_review_editor"] = (
+                    fre[0], _subtract_intervals(fre[1], awaiting)
+                )
+            result["awaiting_ref"] = (True, awaiting)
+    return result
 
 
 def queue_rollup(
@@ -545,14 +702,19 @@ def queue_rollup(
     include_legacy = earliest < TRANSITION_DATE
 
     docs = list(_candidate_docs(earliest, include_legacy).with_enqueued_at())
-    legacy_ids = (
-        _legacy_state_doc_ids([d.pk for d in docs]) if include_legacy else set()
-    )
+    doc_ids = [d.pk for d in docs]
+    legacy_ids = _legacy_state_doc_ids(doc_ids) if include_legacy else set()
+    awaiting_ids = _awaiting_ref_doc_ids(doc_ids)
     doc_data = [
         (
             rfc.enqueued_at,
             rfc.published_at,
-            document_category_intervals(rfc, now, include_legacy=rfc.pk in legacy_ids),
+            document_category_intervals(
+                rfc,
+                now,
+                include_legacy=rfc.pk in legacy_ids,
+                include_awaiting=rfc.pk in awaiting_ids,
+            ),
         )
         for rfc in docs
     ]

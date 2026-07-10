@@ -16,6 +16,7 @@ from .factories import (
 )
 from .lifecycle import timeline
 from .lifecycle.timeline import (
+    KIND_AWAITING,
     KIND_BLOCKED,
     KIND_LEGACY,
     KIND_WORKING,
@@ -25,6 +26,7 @@ from .lifecycle.timeline import (
     _clip,
     _merge_intervals,
     _overlap_seconds,
+    assignment_tracks,
     blocked_reason_bands,
     build_document_timeline,
     document_intervals,
@@ -330,6 +332,43 @@ class AssignmentTimelineTests(TestCase):
         actionholder_seg = by_label[actionholder.name].segments[0]
         assert actionholder_seg.end is None
 
+    def test_final_review_editor_split_by_awaiting_ref(self):
+        now = _dt(2026, 9, 1)
+        rfc = RfcToBeFactory()
+        _make_assignment(
+            rfc,
+            "final_review_editor",
+            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 8, 1), "done")],
+        )
+        # "awaiting ref:" label applied for part of the final-review window.
+        _apply_label_over(
+            rfc,
+            LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
+            _dt(2026, 6, 10),
+            _dt(2026, 6, 20),
+        )
+        tracks = assignment_tracks(rfc, now)
+        fre = [t for t in tracks if t.role == "final_review_editor"]
+        kinds = {t.segments[0].kind for t in fre}
+        assert kinds == {KIND_WORKING, KIND_AWAITING}
+        awaiting = next(t for t in fre if t.segments[0].kind == KIND_AWAITING)
+        working = next(t for t in fre if t.segments[0].kind == KIND_WORKING)
+        # Awaiting = the labelled sub-interval (10 days), counted as blocked.
+        assert len(awaiting.segments) == 1
+        assert awaiting.segments[0].start == _dt(2026, 6, 10)
+        assert awaiting.segments[0].end == _dt(2026, 6, 20)
+        assert awaiting.is_blocked is True
+        # Working = the surrounding time, in two pieces, not blocked.
+        assert len(working.segments) == 2
+        assert working.is_blocked is False
+
+        # The awaiting-ref window counts as blocked in the doc summary, and is
+        # carved out of working time.
+        blocked, work = document_intervals(rfc, now)
+        assert (_dt(2026, 6, 10), _dt(2026, 6, 20)) in blocked
+        assert (_dt(2026, 6, 1), _dt(2026, 6, 10)) in work
+        assert (_dt(2026, 6, 20), _dt(2026, 8, 1)) in work
+
 
 class QueueRollupTests(TestCase):
     def setUp(self):
@@ -386,6 +425,32 @@ class QueueRollupTests(TestCase):
         assert periods["2026-06"]["total_working_seconds"] == 30 * 24 * 3600
         assert periods["2026-07"]["total_working_seconds"] == 31 * 24 * 3600
         assert periods["2026-08"]["total_working_seconds"] == 0
+
+    def test_awaiting_ref_counts_as_blocked_in_stats(self):
+        rfc = RfcToBeFactory()
+        _backdate_creation(rfc, _dt(2026, 1, 1))
+        _make_assignment(
+            rfc,
+            "final_review_editor",
+            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 30), "done")],
+        )
+        _apply_label_over(
+            rfc,
+            LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
+            _dt(2026, 6, 10),
+            _dt(2026, 6, 20),
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        assert june["label"] == "2026-06"
+        by_role = {r["role"]: r for r in june["by_role"]}
+        # 10 days of awaiting-ref time counts as blocked under its own category.
+        assert by_role["awaiting_ref"]["is_blocked"] is True
+        assert by_role["awaiting_ref"]["seconds"] == 10 * 24 * 3600
+        # ...and is carved out of the final_review_editor (working) time.
+        assert by_role["final_review_editor"]["is_blocked"] is False
+        assert by_role["final_review_editor"]["seconds"] == 19 * 24 * 3600
+        assert june["total_blocked_seconds"] == 10 * 24 * 3600
+        assert june["total_working_seconds"] == 19 * 24 * 3600
 
     def test_withdrawn_docs_excluded(self):
         self._doc_with_work(disposition_slug="withdrawn")

@@ -25,6 +25,10 @@
               Blocked
             </span>
             <span class="flex items-center gap-1">
+              <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_AWAITING] }" />
+              Awaiting ref
+            </span>
+            <span class="flex items-center gap-1">
               <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_LEGACY] }" />
               Legacy state
             </span>
@@ -102,6 +106,7 @@
 import { DateTime } from 'luxon'
 import { type DocTabId } from '~/utils/doc'
 import {
+  KIND_AWAITING,
   KIND_BLOCKED,
   KIND_COLORS,
   KIND_LEGACY,

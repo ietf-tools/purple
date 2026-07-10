@@ -20,7 +20,7 @@
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
-import { KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/timeline'
+import { KIND_AWAITING, KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/timeline'
 
 type Props = {
   timeline: AssignmentTimeline
@@ -99,10 +99,13 @@ const lanes = computed<Lane[]>(() => {
     })
   }
   for (const track of tl.tracks) {
+    // A final_review_editor assignment is split by the backend into a working
+    // row and an "awaiting ref" row (segments carry the kind); label each.
+    const awaiting = track.segments.some(s => s.kind === KIND_AWAITING)
     detail.push({
-      key: `track-${track.assignmentId}`,
+      key: `track-${track.assignmentId}-${awaiting ? 'awaiting' : 'main'}`,
       label: track.role,
-      sublabel: track.personName ?? undefined,
+      sublabel: awaiting ? 'awaiting ref' : (track.personName ?? undefined),
       segments: track.segments,
       group: 'track'
     })

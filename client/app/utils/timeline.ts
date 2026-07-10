@@ -5,6 +5,7 @@ import type { TimelineSegment } from '~/purple_client'
 export const KIND_BLOCKED = 'blocked'
 export const KIND_WORKING = 'working'
 export const KIND_LEGACY = 'legacy_label'
+export const KIND_AWAITING = 'awaiting_ref'
 
 // Shared colors so the doc timeline and queue summary read as one system:
 // these match the lead hues of the per-role palettes below (blocked = warm red,
@@ -13,14 +14,16 @@ export const KIND_LEGACY = 'legacy_label'
 // card surfaces.
 export const KIND_LEGACY_COLOR = '#7c3aed' // violet-600 (legacy states + transition marker)
 export const KIND_COLORS: Record<string, string> = {
-  [KIND_BLOCKED]: '#dc2626', // red-600  — matches BLOCKED_PALETTE[0]
-  [KIND_WORKING]: '#0d9488', // teal-600 — matches NOT_BLOCKED_PALETTE[0]
+  [KIND_BLOCKED]: '#dc2626', // red-600   — matches BLOCKED_PALETTE[0]
+  [KIND_WORKING]: '#0d9488', // teal-600  — matches NOT_BLOCKED_PALETTE[0]
+  [KIND_AWAITING]: '#b45309', // amber-700 — waiting on a reference (final review)
   [KIND_LEGACY]: KIND_LEGACY_COLOR
 }
 
 export const KIND_LABELS: Record<string, string> = {
   [KIND_BLOCKED]: 'Blocked',
   [KIND_WORKING]: 'Not blocked',
+  [KIND_AWAITING]: 'Awaiting ref',
   [KIND_LEGACY]: 'Legacy state'
 }
 
