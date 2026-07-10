@@ -86,30 +86,51 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-neutral-800">
-              <tr class="border-b-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+              <tr class="bg-gray-50 dark:bg-neutral-800">
                 <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Docs</th>
                 <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">{{ p.docCount }}</td>
               </tr>
-              <tr v-for="role in roleColumns" :key="role">
-                <th
-                  scope="row"
-                  class="py-2 pl-4 pr-3 text-left font-medium"
-                  :class="blockedRoleSet.has(role) ? 'text-red-600 dark:text-red-400' : ''"
-                >{{ role }}</th>
-                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
-                  {{ cellValue(p, secondsFor(p, role)) }}
-                </td>
-              </tr>
+
+              <!-- Not blocked section: the total heads the section, roles below. -->
               <tr class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
                 <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Not blocked</th>
                 <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ cellValue(p, p.totalWorkingSeconds) }}
                 </td>
               </tr>
-              <tr class="bg-gray-50 dark:bg-neutral-800">
-                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Blocked</th>
+              <tr v-for="role in notBlockedRoles" :key="role">
+                <th scope="row" class="py-2 pl-8 pr-3 text-left font-normal">{{ role }}</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
+                  {{ cellValue(p, secondsFor(p, role)) }}
+                </td>
+              </tr>
+
+              <!-- Blocked section. -->
+              <tr class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold text-red-600 dark:text-red-400">Blocked</th>
                 <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ cellValue(p, p.totalBlockedSeconds) }}
+                </td>
+              </tr>
+              <tr v-for="role in blockedRoles" :key="role">
+                <th scope="row" class="py-2 pl-8 pr-3 text-left font-normal text-red-600 dark:text-red-400">{{ role }}</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
+                  {{ cellValue(p, secondsFor(p, role)) }}
+                </td>
+              </tr>
+
+              <!-- Grand total + blocked share (whole-day view only; both are
+                   redundant in the share view). -->
+              <tr v-if="mode === 'total'" class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Total time</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
+                  {{ cellValue(p, p.totalWorkingSeconds + p.totalBlockedSeconds) }}
+                </td>
+              </tr>
+              <tr v-if="mode === 'total'" class="bg-gray-50 dark:bg-neutral-800">
+                <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">% Blocked</th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
+                  {{ blockedPct(p) }}
                 </td>
               </tr>
             </tbody>
@@ -193,20 +214,31 @@ const blockedRoleSet = computed(() => {
   return s
 })
 
+// Roles split into the two table sections, preserving the ordered union.
+const notBlockedRoles = computed(() => roleColumns.value.filter(r => !blockedRoleSet.value.has(r)))
+const blockedRoles = computed(() => roleColumns.value.filter(r => blockedRoleSet.value.has(r)))
+
 function secondsFor (p: QueuePeriodStat, role: string): number {
   return p.byRole.find(r => r.role === role)?.seconds ?? 0
+}
+
+// A value's share of the period total, as a percent ("—"/"<1%" like cells).
+function sharePct (p: QueuePeriodStat, seconds: number): string {
+  const total = p.totalWorkingSeconds + p.totalBlockedSeconds
+  if (total <= 0 || seconds <= 0) return '—'
+  const pct = Math.round((seconds / total) * 100)
+  return pct === 0 ? '<1%' : `${pct}%`
 }
 
 // A table cell: whole days, or the value's share of the period total (%).
 // "—" = no time; "<1%" = some time that rounds below one percent.
 function cellValue (p: QueuePeriodStat, seconds: number): string {
-  if (mode.value === 'share') {
-    const total = p.totalWorkingSeconds + p.totalBlockedSeconds
-    if (total <= 0 || seconds <= 0) return '—'
-    const pct = Math.round((seconds / total) * 100)
-    return pct === 0 ? '<1%' : `${pct}%`
-  }
-  return formatDays(seconds)
+  return mode.value === 'share' ? sharePct(p, seconds) : formatDays(seconds)
+}
+
+// Blocked share of the period's total time (shown in the whole-day view).
+function blockedPct (p: QueuePeriodStat): string {
+  return sharePct(p, p.totalBlockedSeconds)
 }
 
 useHeadSafe({ title: 'Queue statistics' })
