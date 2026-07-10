@@ -490,6 +490,40 @@ class QueueRollupTests(TestCase):
         assert june["total_blocked_seconds"] == 10 * 24 * 3600
         assert june["total_working_seconds"] == 19 * 24 * 3600
 
+    def test_blocked_time_itemised_by_reason_in_stats(self):
+        rfc = RfcToBeFactory()
+        _backdate_creation(rfc, _dt(2026, 1, 1))
+        # A blocked assignment whose time is itemised by reason below.
+        _make_assignment(
+            rfc,
+            "blocked",
+            [(_dt(2026, 6, 1), "in_progress"), (_dt(2026, 6, 30), "done")],
+        )
+        author, _ = BlockingReason.objects.get_or_create(
+            slug="label_author_input_required",
+            defaults={"name": "Author Input Required"},
+        )
+        holder, _ = BlockingReason.objects.get_or_create(
+            slug="actionholder_active",
+            defaults={"name": "Waiting for Action Holder"},
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=author,
+            since_when=_dt(2026, 6, 5), resolved=_dt(2026, 6, 15),
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=holder,
+            since_when=_dt(2026, 6, 20), resolved=_dt(2026, 6, 25),
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        by_role = {r["role"]: r for r in june["by_role"]}
+        # The single "blocked" category is replaced by per-reason categories.
+        assert "blocked" not in by_role
+        assert by_role[author.name]["is_blocked"] is True
+        assert by_role[author.name]["seconds"] == 10 * 24 * 3600
+        assert by_role[holder.name]["seconds"] == 5 * 24 * 3600
+        assert june["total_blocked_seconds"] == 15 * 24 * 3600
+
     def test_withdrawn_docs_excluded(self):
         self._doc_with_work(disposition_slug="withdrawn")
         periods = queue_rollup("month", 2, self.now)

@@ -630,6 +630,34 @@ def _awaiting_ref_doc_ids(candidate_ids: list[int]) -> set[int]:
     )
 
 
+def _blocked_reason_doc_ids(candidate_ids: list[int]) -> set[int]:
+    """Subset of ``candidate_ids`` that have any recorded blocking reason."""
+    return set(
+        RfcToBeBlockingReason.objects.filter(rfc_to_be_id__in=candidate_ids)
+        .values_list("rfc_to_be_id", flat=True)
+        .distinct()
+    )
+
+
+def _blocked_reason_intervals(
+    rfc: RfcToBe, now: datetime.datetime
+) -> dict[str, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Merged blocked intervals keyed by blocking-reason name.
+
+    Same source as the doc timeline's reason lanes (RfcToBeBlockingReason), used
+    to itemise the queue's blocked time by reason.
+    """
+    by_reason: dict[str, list] = {}
+    rows = (
+        RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc)
+        .select_related("reason")
+        .order_by("since_when")
+    )
+    for row in rows:
+        by_reason.setdefault(row.reason.name, []).append((row.since_when, row.resolved))
+    return {name: _merge_intervals(ivs, now) for name, ivs in by_reason.items()}
+
+
 def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
     """Docs that could contribute time to windows starting at ``earliest``.
 
@@ -655,6 +683,7 @@ def document_category_intervals(
     now: datetime.datetime,
     include_legacy: bool = True,
     include_awaiting: bool = False,
+    include_reasons: bool = False,
 ) -> dict[str, tuple[bool, list[tuple[datetime.datetime, datetime.datetime]]]]:
     """Map each assignment role / legacy state to its merged active intervals.
 
@@ -667,6 +696,11 @@ def document_category_intervals(
     ``final_review_editor`` category into a blocked ``awaiting_ref`` category, so
     that time counts as blocked (pass it only for docs known to have such a
     label — see :func:`_awaiting_ref_doc_ids`).
+
+    ``include_reasons`` replaces the single ``blocked`` category with one blocked
+    category per blocking reason (by name), mirroring the doc timeline
+    (pass it only for docs known to have reasons — see
+    :func:`_blocked_reason_doc_ids`).
     """
     raw: dict[str, tuple[bool, list]] = {}
     for assignment, is_blocked, runs in _assignment_segments(rfc):
@@ -690,6 +724,12 @@ def document_category_intervals(
                     fre[0], _subtract_intervals(fre[1], awaiting)
                 )
             result["awaiting_ref"] = (True, awaiting)
+    if include_reasons:
+        reasons = _blocked_reason_intervals(rfc, now)
+        if reasons:
+            result.pop("blocked", None)  # itemised per reason below
+            for name, intervals in reasons.items():
+                result[name] = (True, intervals)
     return result
 
 
@@ -721,6 +761,7 @@ def queue_rollup(
     doc_ids = [d.pk for d in docs]
     legacy_ids = _legacy_state_doc_ids(doc_ids) if include_legacy else set()
     awaiting_ids = _awaiting_ref_doc_ids(doc_ids)
+    reason_ids = _blocked_reason_doc_ids(doc_ids)
     doc_data = [
         (
             rfc.enqueued_at,
@@ -730,6 +771,7 @@ def queue_rollup(
                 now,
                 include_legacy=rfc.pk in legacy_ids,
                 include_awaiting=rfc.pk in awaiting_ids,
+                include_reasons=rfc.pk in reason_ids,
             ),
         )
         for rfc in docs
