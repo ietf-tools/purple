@@ -198,10 +198,13 @@ function secondsFor (p: QueuePeriodStat, role: string): number {
 }
 
 // A table cell: whole days, or the value's share of the period total (%).
+// "—" = no time; "<1%" = some time that rounds below one percent.
 function cellValue (p: QueuePeriodStat, seconds: number): string {
   if (mode.value === 'share') {
     const total = p.totalWorkingSeconds + p.totalBlockedSeconds
-    return total > 0 && seconds > 0 ? `${Math.round((seconds / total) * 100)}%` : '—'
+    if (total <= 0 || seconds <= 0) return '—'
+    const pct = Math.round((seconds / total) * 100)
+    return pct === 0 ? '<1%' : `${pct}%`
   }
   return formatDays(seconds)
 }
