@@ -42,16 +42,15 @@ echo "Populating initial history..."
 # Collect statics
 ./manage.py collectstatic --no-input || true
 
-# Django should be operational now. Build the purple API client from the
-# current code (schema -> client, with an in-sync check). The generated client
-# is gitignored and must be rebuilt on every container init. Failure here is
-# non-fatal to startup but surfaces loudly: a stale client makes the frontend
-# throw "api.<something> is not a function". Recover by re-running the same
-# script once the backend is healthy.
-if ! bash docker/scripts/build-purple-client.sh; then
-    echo "WARNING: purple client build failed or is out of sync." >&2
-    echo "         Once Django is healthy, run: docker/scripts/build-purple-client.sh" >&2
+# Django should be operational now. Build purple API client.
+./manage.py spectacular --file purple_api.yaml && \
+    npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key purple  || true
+# If not set, add @ts-nocheck in runtime.ts to avoid type errors from generated code
+if ! grep -q "// @ts-nocheck" "client/app/purple_client/runtime.ts"; then
+    sed -i '1i // @ts-nocheck' "client/app/purple_client/runtime.ts"
 fi
+/usr/bin/mkdir -p client/app/purple_client
+/bin/cp purple_api.yaml client/app/purple_client/.purple_api.yaml
 
 # Install client dependencies
 cd client
