@@ -24,6 +24,7 @@ from django.apps import apps
 from django.db import models
 from django.utils import timezone
 
+from ..dt_v1_api_utils import datatracker_ietf_meetings
 from ..models import (
     ASSIGNMENT_INACTIVE_STATES,
     Assignment,
@@ -521,9 +522,10 @@ def _aware(d: datetime.date) -> datetime.datetime:
 
 
 def period_windows(period: str, count: int, now: datetime.datetime) -> list[dict]:
-    """Calendar-aligned windows, oldest first, ending with the current period.
+    """Windows, oldest first, ending with the current period.
 
-    ``period`` is one of ``week`` / ``month`` / ``quarter`` / ``year``.
+    ``period`` is one of ``week`` / ``month`` / ``quarter`` / ``year`` (all
+    calendar-aligned) or ``ietf`` (spans between consecutive IETF meetings).
     """
     if count < 1:
         return []
@@ -557,6 +559,20 @@ def period_windows(period: str, count: int, now: datetime.datetime) -> list[dict
             end = start + datetime.timedelta(days=7)
             iso = start.isocalendar()
             windows.append((f"{iso.year}-W{iso.week:02d}", start, end))
+    elif period == "ietf":
+        # Each period runs between consecutive IETF meetings and is labelled by
+        # the meeting it ends at. The current (rightmost) period ends at the
+        # nearest meeting in the future, or — if none are scheduled — at the most
+        # recent past meeting.
+        meetings = datatracker_ietf_meetings()  # (number, date), date ascending
+        if len(meetings) < 2:
+            return []
+        numbers = [number for number, _date in meetings]
+        dates = [date for _number, date in meetings]
+        cur = next((i for i, d in enumerate(dates) if d >= today), len(dates) - 1)
+        first = max(1, cur - count + 1)
+        for j in range(first, cur + 1):
+            windows.append((f"IETF {numbers[j]}", dates[j - 1], dates[j]))
     else:
         raise ValueError(f"Unknown period: {period!r}")
 

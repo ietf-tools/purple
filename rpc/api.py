@@ -1966,7 +1966,7 @@ class StatsQueue(views.APIView):
     """Queue-wide time-in-assignment summary, split blocked vs not-blocked,
     grouped into selectable past periods."""
 
-    PERIODS = ("week", "month", "quarter", "year")
+    PERIODS = ("week", "month", "quarter", "year", "ietf")
     MAX_COUNT = 52
     CACHE_TTL = 300  # seconds; the rollup is read-only and tolerant of staleness
 

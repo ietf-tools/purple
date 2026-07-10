@@ -1,5 +1,7 @@
 # Copyright The IETF Trust 2024, All Rights Reserved
 
+import datetime
+import time
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -146,6 +148,43 @@ def datatracker_docevents(type: str, limit: int = 1000):
         yield api_response.get("objects", [])
         next_url = api_response.get("meta", {}).get("next")
         url = f"{settings.DATATRACKER_API_V1_BASE[:-7]}{next_url}" if next_url else None
+
+
+_IETF_MEETINGS_TTL = 600  # seconds; hold the meeting list at least 10 minutes
+_ietf_meetings_cache: dict = {"at": None, "data": None}
+
+
+def datatracker_ietf_meetings() -> list[tuple[str, datetime.date]]:
+    """Recent and upcoming IETF meetings as ``(number, date)``, date ascending.
+
+    Cached in-process for at least 10 minutes so repeated stats queries don't
+    hammer the datatracker (independent of the CACHES backend, which is a no-op
+    in development).
+    """
+    monotonic = time.monotonic()
+    cache_ = _ietf_meetings_cache
+    if (
+        cache_["data"] is not None
+        and cache_["at"] is not None
+        and monotonic - cache_["at"] < _IETF_MEETINGS_TTL
+    ):
+        return cache_["data"]
+    api_response = datatracker_api_get(
+        f"{settings.DATATRACKER_API_V1_BASE}/meeting/meeting/",
+        params={"format": "json", "type": "ietf", "order_by": "-date", "limit": 20},
+    )
+    meetings: list[tuple[str, datetime.date]] = []
+    for obj in api_response.get("objects", []):
+        number, date_str = obj.get("number"), obj.get("date")
+        if not number or not date_str:
+            continue
+        try:
+            meetings.append((str(number), datetime.date.fromisoformat(date_str)))
+        except ValueError:
+            continue
+    meetings.sort(key=lambda m: m[1])
+    cache_["at"], cache_["data"] = monotonic, meetings
+    return meetings
 
 
 def datatracker_api_get(

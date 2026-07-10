@@ -130,7 +130,8 @@ const PERIOD_OPTIONS = [
   { value: StatsQueuePeriodEnum.Week, label: 'Weeks' },
   { value: StatsQueuePeriodEnum.Month, label: 'Months' },
   { value: StatsQueuePeriodEnum.Quarter, label: 'Quarters' },
-  { value: StatsQueuePeriodEnum.Year, label: 'Years' }
+  { value: StatsQueuePeriodEnum.Year, label: 'Years' },
+  { value: StatsQueuePeriodEnum.Ietf, label: 'IETF meetings' }
 ]
 
 // Total days vs per-period share (%); client-side view mode, immediate.

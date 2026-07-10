@@ -2,6 +2,7 @@
 """Tests for rpc.lifecycle.timeline and the timeline/queue-stats endpoints."""
 
 import datetime
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
@@ -189,6 +190,43 @@ class PeriodWindowTests(SimpleTestCase):
         windows = period_windows("week", 2, _dt(2026, 7, 15))
         assert windows[-1]["start"] == _dt(2026, 7, 13)
         assert windows[-1]["end"] == _dt(2026, 7, 20)
+
+    # IETF meetings, date ascending; two of these are in the future relative to
+    # the 2026-07-10 "now" used below (IETF 126 on 07-18 and IETF 127 in Nov).
+    IETF_MEETINGS = [
+        ("122", datetime.date(2025, 3, 15)),
+        ("123", datetime.date(2025, 7, 19)),
+        ("124", datetime.date(2025, 11, 1)),
+        ("125", datetime.date(2026, 3, 14)),
+        ("126", datetime.date(2026, 7, 18)),
+        ("127", datetime.date(2026, 11, 14)),
+    ]
+
+    def test_ietf_windows_end_at_nearest_future_meeting(self):
+        with mock.patch.object(
+            timeline, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
+        ):
+            windows = period_windows("ietf", 3, _dt(2026, 7, 10))
+        # Current period ends at IETF 126 (nearest future), IETF 127 excluded.
+        assert [w["label"] for w in windows] == ["IETF 124", "IETF 125", "IETF 126"]
+        assert windows[-1]["start"] == _dt(2026, 3, 14)
+        assert windows[-1]["end"] == _dt(2026, 7, 18)
+
+    def test_ietf_windows_no_future_meeting(self):
+        with mock.patch.object(
+            timeline, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
+        ):
+            windows = period_windows("ietf", 2, _dt(2027, 1, 1))
+        # No future meeting: current period ends at the most recent past one.
+        assert [w["label"] for w in windows] == ["IETF 126", "IETF 127"]
+        assert windows[-1]["end"] == _dt(2026, 11, 14)
+
+    def test_ietf_windows_too_few_meetings(self):
+        one_meeting = [("127", datetime.date(2026, 11, 14))]
+        with mock.patch.object(
+            timeline, "datatracker_ietf_meetings", return_value=one_meeting
+        ):
+            assert period_windows("ietf", 3, _dt(2026, 7, 10)) == []
 
     def test_zero_count_is_empty(self):
         assert period_windows("month", 0, _dt(2026, 7, 15)) == []
