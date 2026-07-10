@@ -1,24 +1,5 @@
 <template>
   <div class="w-full">
-    <!-- View-mode toggle: absolute days vs per-period share. -->
-    <div class="mb-2 flex items-center justify-end gap-2 text-xs">
-      <span class="opacity-60">View</span>
-      <div class="inline-flex overflow-hidden rounded-md border border-gray-300 dark:border-neutral-600">
-        <button
-          type="button"
-          class="px-2 py-1"
-          :class="mode === 'total' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-neutral-800'"
-          @click="mode = 'total'"
-        >Total days</button>
-        <button
-          type="button"
-          class="px-2 py-1 border-l border-gray-300 dark:border-neutral-600"
-          :class="mode === 'share' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-neutral-800'"
-          @click="mode = 'share'"
-        >Share %</button>
-      </div>
-    </div>
-
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg ref="svgEl" :width="width" :height="height" class="block" />
       <div
@@ -69,6 +50,7 @@ import {
 
 type Props = {
   periods: QueuePeriodStat[]
+  mode: 'total' | 'share'
 }
 const props = defineProps<Props>()
 
@@ -90,7 +72,6 @@ const MARGIN = { top: 16, right: 16, bottom: 52, left: 64 }
 const SEG_GAP = 2 // px of surface between stacked segments (dataviz mark spec)
 const CORNER = 4 // px rounded top of each bar
 
-const mode = ref<'total' | 'share'>('total')
 const hidden = reactive(new Set<string>())
 function toggle (key: string) {
   if (hidden.has(key)) hidden.delete(key)
@@ -177,7 +158,7 @@ function draw () {
   const cats = visibleCats.value
   const innerW = Math.max(width.value - MARGIN.left - MARGIN.right, 10)
   const innerH = height - MARGIN.top - MARGIN.bottom
-  const isShare = mode.value === 'share'
+  const isShare = props.mode === 'share'
 
   const x = d3.scaleBand()
     .domain(data.map(d => d.label))
@@ -274,5 +255,5 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-watch([periods, width, mode, () => hidden.size], () => draw())
+watch([periods, width, () => props.mode, () => hidden.size], () => draw())
 </script>
