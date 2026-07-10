@@ -51,6 +51,7 @@ import {
 type Props = {
   periods: QueuePeriodStat[]
   mode: 'total' | 'share'
+  dayScale?: number // multiplies day figures (e.g. calendar -> working days)
 }
 const props = defineProps<Props>()
 
@@ -159,6 +160,7 @@ function draw () {
   const innerW = Math.max(width.value - MARGIN.left - MARGIN.right, 10)
   const innerH = height - MARGIN.top - MARGIN.bottom
   const isShare = props.mode === 'share'
+  const dayScale = props.dayScale ?? 1
 
   const x = d3.scaleBand()
     .domain(data.map(d => d.label))
@@ -172,7 +174,7 @@ function draw () {
     .nice()
 
   const yAxis = d3.axisLeft(y).ticks(5).tickFormat(d =>
-    isShare ? `${Math.round(Number(d) * 100)}%` : `${Math.round(Number(d) / 86400)}d`)
+    isShare ? `${Math.round(Number(d) * 100)}%` : `${Math.round((Number(d) / 86400) * dayScale)}d`)
   const yG = svg.append('g').attr('transform', `translate(${MARGIN.left}, 0)`).call(yAxis)
   yG.selectAll('text').attr('fill', 'currentColor').attr('font-size', 10)
   yG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
@@ -232,8 +234,9 @@ function showTooltip (event: MouseEvent, d: QueuePeriodStat, cat: Category, seco
   tooltip.x = event.clientX - (rect?.left ?? 0) + 12
   tooltip.y = event.clientY - (rect?.top ?? 0) + 12
   const tag = cat.isBlocked ? 'blocked' : 'not blocked'
+  const scaled = seconds * (props.dayScale ?? 1)
   tooltip.title = `${d.label} — ${cat.label} (${tag})`
-  tooltip.detail = `${formatDays(seconds)} · ${Math.round(share * 100)}% · ${d.docCount} docs · ${humanSeconds(seconds)}`
+  tooltip.detail = `${formatDays(scaled)} · ${Math.round(share * 100)}% · ${d.docCount} docs · ${humanSeconds(scaled)}`
   tooltip.members = cat.isOther ? cat.members.join(', ') : ''
 }
 
@@ -255,5 +258,5 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-watch([periods, width, () => props.mode, () => hidden.size], () => draw())
+watch([periods, width, () => props.mode, () => props.dayScale, () => hidden.size], () => draw())
 </script>

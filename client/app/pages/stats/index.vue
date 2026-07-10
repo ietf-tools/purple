@@ -52,9 +52,15 @@
             <button
               type="button"
               class="px-2 py-1"
-              :class="mode === 'total' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-neutral-800'"
-              @click="mode = 'total'"
-            >Total days</button>
+              :class="mode === 'calendar' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-neutral-800'"
+              @click="mode = 'calendar'"
+            >Calendar days</button>
+            <button
+              type="button"
+              class="px-2 py-1 border-l border-gray-300 dark:border-neutral-600"
+              :class="mode === 'working' ? 'bg-violet-600 text-white' : 'bg-white dark:bg-neutral-800'"
+              @click="mode = 'working'"
+            >Working days</button>
             <button
               type="button"
               class="px-2 py-1 border-l border-gray-300 dark:border-neutral-600"
@@ -65,7 +71,11 @@
         </div>
 
         <div class="mt-2">
-          <StackedTimeBars :periods="periods" :mode="mode" />
+          <StackedTimeBars
+            :periods="periods"
+            :mode="mode === 'share' ? 'share' : 'total'"
+            :day-scale="mode === 'working' ? workingScale : 1"
+          />
         </div>
       </BaseCard>
 
@@ -119,15 +129,15 @@
                 </td>
               </tr>
 
-              <!-- Grand total + blocked share (whole-day view only; both are
+              <!-- Grand total + blocked share (day views only; both are
                    redundant in the share view). -->
-              <tr v-if="mode === 'total'" class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+              <tr v-if="mode !== 'share'" class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
                 <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">Total time</th>
                 <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ cellValue(p, p.totalWorkingSeconds + p.totalBlockedSeconds) }}
                 </td>
               </tr>
-              <tr v-if="mode === 'total'" class="bg-gray-50 dark:bg-neutral-800">
+              <tr v-if="mode !== 'share'" class="bg-gray-50 dark:bg-neutral-800">
                 <th scope="row" class="py-2 pl-4 pr-3 text-left font-semibold">% Blocked</th>
                 <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums font-semibold">
                   {{ blockedPct(p) }}
@@ -136,6 +146,9 @@
             </tbody>
           </table>
         </div>
+        <p v-if="mode === 'working'" class="mt-2 px-1 text-xs opacity-60">
+          Working days are calculated assuming an average of {{ workingHoursPerYear }} working hours per year.
+        </p>
       </BaseCard>
     </div>
   </div>
@@ -155,8 +168,13 @@ const PERIOD_OPTIONS = [
   { value: StatsQueuePeriodEnum.Ietf, label: 'IETF meetings' }
 ]
 
-// Total days vs per-period share (%); client-side view mode, immediate.
-const mode = ref<'total' | 'share'>('total')
+// View mode (client-side, immediate): calendar days, working days (calendar
+// scaled by working-hours/year over total hours/year), or per-period share (%).
+const mode = ref<'calendar' | 'working' | 'share'>('calendar')
+
+const HOURS_PER_YEAR = 8670
+const workingHoursPerYear = Number(useRuntimeConfig().public.workingHoursPerYear) || 2000
+const workingScale = computed(() => workingHoursPerYear / HOURS_PER_YEAR)
 
 // Query controls are deferred: `pending*` bind to the inputs, `applied*` drive
 // the (potentially long) query and only change when Apply is pressed.
@@ -230,10 +248,12 @@ function sharePct (p: QueuePeriodStat, seconds: number): string {
   return pct === 0 ? '<1%' : `${pct}%`
 }
 
-// A table cell: whole days, or the value's share of the period total (%).
-// "—" = no time; "<1%" = some time that rounds below one percent.
+// A table cell: whole (calendar or working) days, or the value's share of the
+// period total (%). "—" = no time; "<1%" = some time that rounds below 1%.
 function cellValue (p: QueuePeriodStat, seconds: number): string {
-  return mode.value === 'share' ? sharePct(p, seconds) : formatDays(seconds)
+  if (mode.value === 'share') return sharePct(p, seconds)
+  const scale = mode.value === 'working' ? workingScale.value : 1
+  return formatDays(seconds * scale)
 }
 
 // Blocked share of the period's total time (shown in the whole-day view).
