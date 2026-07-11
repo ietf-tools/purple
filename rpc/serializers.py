@@ -436,6 +436,35 @@ class QueueCountStatsSerializer(serializers.Serializer):
     periods = QueueCountStatPeriodSerializer(many=True)
 
 
+class PublishedStreamStatusCountSerializer(serializers.Serializer):
+    """Count of RFCs published for one (stream, status) cell of a period."""
+
+    stream = serializers.CharField()
+    status = serializers.CharField()
+    count = serializers.IntegerField()
+
+
+class QueuePublishedStatPeriodSerializer(serializers.Serializer):
+    """Published-RFC counts by stream and status for one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    counts = PublishedStreamStatusCountSerializer(many=True)
+
+
+class QueuePublishedStatsSerializer(serializers.Serializer):
+    """RFCs published by stream and status across selectable past periods.
+
+    ``streams`` and ``statuses`` are the non-empty ones in display order (the
+    axes to render); each period's ``counts`` holds only its non-zero cells.
+    """
+
+    streams = serializers.ListField(child=serializers.CharField())
+    statuses = serializers.ListField(child=serializers.CharField())
+    periods = QueuePublishedStatPeriodSerializer(many=True)
+
+
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label

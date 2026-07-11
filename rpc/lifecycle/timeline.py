@@ -1345,3 +1345,100 @@ def queue_counts_rollup(
             }
         )
     return periods
+
+
+# Stream keys shown on the "Stream" stats tab, in display order (legacy is
+# dropped). The IETF stream is always split into WG vs AD-sponsored (a doc with
+# no originating group is AD-sponsored); the frontend can merge them back into a
+# single "IETF" via its toggle.
+PUBLISHED_STREAM_LABELS = {
+    "ietf-wg": "IETF WG",
+    "ietf-ad": "IETF AD-sponsored",
+    "ise": "ISE",
+    "irtf": "IRTF",
+    "iab": "IAB",
+    "editorial": "Editorial",
+}
+# Publication std-level slug -> status bucket, and the bucket display order.
+_STD_LEVEL_BUCKET = {
+    "ps": "Standards Track",
+    "std": "Standards Track",
+    "ds": "Standards Track",
+    "bcp": "Best Current Practice",
+    "exp": "Experimental",
+    "inf": "Informational",
+    "hist": "Historic",
+    "unkn": "Unknown",
+}
+PUBLISHED_STATUS_ORDER = [
+    "Standards Track",
+    "Best Current Practice",
+    "Experimental",
+    "Informational",
+    "Historic",
+    "Unknown",
+]
+
+
+def queue_published_rollup(
+    period: str, count: int, now: datetime.datetime | None = None
+) -> dict:
+    """Per-period counts of RFCs published, grouped by stream and status.
+
+    "Stream" and "status" are the values *at publication* (``publication_stream``
+    / ``publication_std_level``, falling back to the current fields when blank).
+    Std levels fold into named buckets (Standards Track = ps/std/ds, etc.); any
+    other slug is "Unknown". Only the IETF/ISE/IRTF/IAB/Editorial streams are
+    counted, and the IETF stream is split into ``ietf-wg`` / ``ietf-ad`` (no
+    originating group = AD-sponsored). The returned ``streams`` and ``statuses``
+    are the ones with a non-zero count in at least one period (so all-zero
+    rows/segments drop out), in display order; ``periods[i].counts`` lists only
+    the non-zero cells.
+    """
+    now = now or timezone.now()
+    windows = period_windows(period, count, now)
+    if not windows:
+        return {"streams": [], "statuses": [], "periods": []}
+    earliest = windows[0]["start"]
+
+    docs = RfcToBe.objects.filter(published_at__gte=earliest).values_list(
+        "published_at",
+        "publication_stream_id",
+        "stream_id",
+        "publication_std_level_id",
+        "std_level_id",
+        "group",
+    )
+    # per-period {(stream, status): count}
+    per_counts: list[dict[tuple[str, str], int]] = [{} for _ in windows]
+    bounds = [(w["start"], min(w["end"], now)) for w in windows]
+    for pub, pub_stream, stream, pub_level, level, group in docs:
+        stream = pub_stream or stream
+        if stream == "ietf":
+            stream = "ietf-wg" if (group or "").strip() else "ietf-ad"
+        if stream not in PUBLISHED_STREAM_LABELS:
+            continue
+        status = _STD_LEVEL_BUCKET.get(pub_level or level, "Unknown")
+        for i, (start, end) in enumerate(bounds):
+            if start <= pub < end:
+                key = (stream, status)
+                per_counts[i][key] = per_counts[i].get(key, 0) + 1
+                break
+
+    seen: set = set().union(*per_counts) if per_counts else set()
+    streams = [s for s in PUBLISHED_STREAM_LABELS if any(s == k[0] for k in seen)]
+    statuses = [s for s in PUBLISHED_STATUS_ORDER if any(s == k[1] for k in seen)]
+
+    periods = [
+        {
+            "label": w["label"],
+            "start": w["start"],
+            "end": w["end"],
+            "counts": [
+                {"stream": st, "status": status, "count": n}
+                for (st, status), n in counts.items()
+            ],
+        }
+        for w, counts in zip(windows, per_counts, strict=True)
+    ]
+    return {"streams": streams, "statuses": statuses, "periods": periods}

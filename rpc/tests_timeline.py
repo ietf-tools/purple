@@ -15,6 +15,8 @@ from .factories import (
     LabelFactory,
     RfcToBeFactory,
     RpcRoleFactory,
+    StdLevelNameFactory,
+    StreamNameFactory,
 )
 from .lifecycle import timeline
 from .lifecycle.timeline import (
@@ -37,6 +39,7 @@ from .lifecycle.timeline import (
     document_intervals,
     period_windows,
     queue_counts_rollup,
+    queue_published_rollup,
     queue_rollup,
 )
 from .models import (
@@ -812,6 +815,48 @@ class QueueCountsRollupTests(TestCase):
         assert june["pages_entered"] == 12
 
 
+class QueuePublishedRollupTests(TestCase):
+    def setUp(self):
+        self.now = _dt(2026, 7, 1)
+
+    def _pub(self, when, stream="ietf", level="ps", group=""):
+        return RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="published"),
+            published_at=when,
+            stream=StreamNameFactory(slug=stream),
+            std_level=StdLevelNameFactory(slug=level),
+            group=group,
+        )
+
+    def test_published_rollup_groups_buckets_and_suppresses(self):
+        self._pub(_dt(2026, 6, 5), "ietf", "ps", group="mpls")  # WG
+        self._pub(_dt(2026, 6, 6), "ietf", "std", group="idr")  # WG, Std Track
+        self._pub(_dt(2026, 6, 7), "ietf", "inf", group="")  # no group -> AD-sponsored
+        self._pub(_dt(2026, 6, 8), "irtf", "exp")
+        self._pub(_dt(2026, 6, 9), "legacy", "inf")  # legacy stream is dropped
+        r = queue_published_rollup("month", 2, self.now)
+        june = r["periods"][0]
+        assert june["label"] == "2026-06"
+        # IETF splits into WG/AD-sponsored; ise/iab/editorial (zero) and legacy
+        # (excluded) don't appear; BCP/Historic/Unknown statuses are suppressed.
+        assert r["streams"] == ["ietf-wg", "ietf-ad", "irtf"]
+        assert r["statuses"] == ["Standards Track", "Experimental", "Informational"]
+        cells = {(c["stream"], c["status"]): c["count"] for c in june["counts"]}
+        assert cells[("ietf-wg", "Standards Track")] == 2  # ps + std, both WG
+        assert cells[("ietf-ad", "Informational")] == 1  # no group
+        assert cells[("irtf", "Experimental")] == 1
+        assert ("legacy", "Informational") not in cells
+
+    def test_published_rollup_uses_publication_values_and_range(self):
+        # Published before the range is excluded.
+        self._pub(_dt(2026, 3, 1), "ietf", "ps")
+        self._pub(_dt(2026, 6, 15), "ietf", "bcp")
+        r = queue_published_rollup("month", 2, self.now)  # May-July window start
+        total = sum(c["count"] for p in r["periods"] for c in p["counts"])
+        assert total == 1  # only the June publication is in range
+        assert r["statuses"] == ["Best Current Practice"]
+
+
 class TimelineEndpointTests(TestCase):
     def setUp(self):
         self.user = get_user_model().objects.create_user(
@@ -855,6 +900,20 @@ class TimelineEndpointTests(TestCase):
     def test_queue_counts_requires_auth(self):
         resp = self.client.get(reverse("stats-queue-counts"), {"period": "month"})
         assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_published_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue-published"), {"period": "year"})
+        assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_published_ok(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(
+            reverse("stats-queue-published"), {"period": "year", "count": 2}
+        )
+        assert resp.status_code == 200, resp.content
+        body = resp.json()
+        assert set(body) == {"streams", "statuses", "periods"}
+        assert len(body["periods"]) == 2
 
     def test_queue_stats_ok(self):
         self.client.force_login(self.user)

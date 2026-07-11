@@ -165,6 +165,11 @@ urlpatterns = [
         name="stats-queue-counts",
     ),
     path(
+        "api/rpc/stats/queue-published/",
+        rpc_api.StatsQueuePublished.as_view(),
+        name="stats-queue-published",
+    ),
+    path(
         "api/rpc/documents/<str:draft_name>/assignment-timeline/",
         rpc_api.DocumentAssignmentTimeline.as_view(),
         name="document-assignment-timeline",

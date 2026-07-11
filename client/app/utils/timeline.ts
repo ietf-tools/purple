@@ -90,6 +90,21 @@ export const MAX_BLOCKED = BLOCKED_PALETTE.length
 export const OTHER_NOT_BLOCKED_COLOR = '#64748b' // slate-500 (neutral, cool)
 export const OTHER_BLOCKED_COLOR = '#78716c' // stone-500 (neutral, warm)
 
+// Colors for the RFC-status buckets on the Stream tab (one categorical
+// dimension). Drawn from the same validator-clean palette; Historic is warm
+// amber and Unknown a neutral slate so they read as "other". Fallback slate.
+export const PUBLISHED_STATUS_COLORS: Record<string, string> = {
+  'Standards Track': '#0284c7',
+  'Best Current Practice': '#0d9488',
+  Experimental: '#4f46e5',
+  Informational: '#16a34a',
+  Historic: '#a16207',
+  Unknown: '#64748b'
+}
+export function statusColor (status: string): string {
+  return PUBLISHED_STATUS_COLORS[status] ?? '#64748b'
+}
+
 /**
  * Ordered union of roles for the summary table: not-blocked first, then
  * blocked, each alphabetical. (The chart colors/orders its own bars by total;
