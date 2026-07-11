@@ -932,36 +932,55 @@ def _missing_ref_intervals_by_doc(
 ) -> dict[int, list[tuple[datetime.datetime, datetime.datetime | None]]]:
     """Per-doc intervals during which a not-received reference existed.
 
-    Reconstructed from :class:`~rpc.models.RpcRelatedDocument` history: each
-    not-received (1g/2g/3g) relationship contributes ``[created, deleted)``.
+    Reconstructed from :class:`~rpc.models.RpcRelatedDocument` history. A
+    relationship row is a "missing reference" while it exists *and* carries a
+    not-received (1g/2g/3g) slug. The reference can stop being missing two ways:
+    the row is deleted (a ``-`` history row — 2g/3g refs), **or** the row's slug
+    is upgraded in place (e.g. 1g ``not-received`` → ``refqueue`` when the draft
+    arrives; a ``~`` row with a non-not-received slug and no delete). So we walk
+    every history row of each relationship that was *ever* not-received and close
+    the interval on whichever comes first, rather than only on a delete.
     """
     historical = RpcRelatedDocument.history.model
-    # source -> relationship-row-id -> {"start", "end"}
-    by_doc: dict[int, dict[int, dict]] = {}
-    rows = (
+    not_received = set(DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS)
+    ever_ids = set(
         historical.objects.filter(
-            source_id__in=doc_ids,
-            relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS,
-        )
-        .order_by("history_date")
-        .values("id", "source_id", "history_type", "history_date")
+            source_id__in=doc_ids, relationship__slug__in=not_received
+        ).values_list("id", flat=True)
+    )
+    if not ever_ids:
+        return {}
+
+    # source -> relationship-row-id -> {"source", "open": start|None, "list": []}
+    state: dict[int, dict] = {}
+    rows = (
+        historical.objects.filter(id__in=ever_ids)
+        .order_by("history_date", "history_id")
+        .values("id", "source_id", "history_type", "history_date", "relationship__slug")
     )
     for row in rows:
-        rel = by_doc.setdefault(row["source_id"], {}).setdefault(
-            row["id"], {"start": None, "end": None}
+        st = state.setdefault(
+            row["id"], {"source": row["source_id"], "open": None, "list": []}
         )
-        if row["history_type"] == "+" and rel["start"] is None:
-            rel["start"] = row["history_date"]
-        elif row["history_type"] == "-":
-            rel["end"] = row["history_date"]
-    return {
-        source_id: [
-            (rel["start"], rel["end"])
-            for rel in rels.values()
-            if rel["start"] is not None
-        ]
-        for source_id, rels in by_doc.items()
-    }
+        # Missing while the row exists (not a delete) with a not-received slug.
+        missing = (
+            row["history_type"] != "-"
+            and row["relationship__slug"] in not_received
+        )
+        if missing and st["open"] is None:
+            st["open"] = row["history_date"]
+        elif not missing and st["open"] is not None:
+            st["list"].append((st["open"], row["history_date"]))
+            st["open"] = None
+
+    by_doc: dict[int, list] = {}
+    for st in state.values():
+        intervals = list(st["list"])
+        if st["open"] is not None:
+            intervals.append((st["open"], None))  # still missing → open
+        if intervals:
+            by_doc.setdefault(st["source"], []).extend(intervals)
+    return by_doc
 
 
 def _label_intervals_by_doc(

@@ -27,6 +27,7 @@ from .lifecycle.timeline import (
     _clip,
     _first_clear_after,
     _merge_intervals,
+    _missing_ref_intervals_by_doc,
     _overlap_seconds,
     assignment_tracks,
     blocked_reason_bands,
@@ -98,6 +99,29 @@ def _missing_ref_over(rfc, start, end):
     rm = hist.filter(id=rid, history_type="-").order_by("-history_id").first()
     rm.history_date = end
     rm.save()
+
+
+def _missing_ref_upgraded(rfc, start, upgraded):
+    """not-received reference added at ``start``, upgraded to refqueue at
+    ``upgraded`` in place (the 1g-resolution path — no delete row)."""
+    nr, _ = DocRelationshipName.objects.get_or_create(
+        slug="not-received", defaults={"name": "Not Received", "desc": ""}
+    )
+    refqueue, _ = DocRelationshipName.objects.get_or_create(
+        slug="refqueue", defaults={"name": "Ref Queue", "desc": ""}
+    )
+    rrd = RpcRelatedDocument.objects.create(
+        relationship=nr, source=rfc, target_rfctobe=RfcToBeFactory()
+    )
+    hist = RpcRelatedDocument.history
+    add = hist.filter(id=rrd.pk, history_type="+").first()
+    add.history_date = start
+    add.save()
+    rrd.relationship = refqueue  # resolve in place, as rpc.api does for 1g refs
+    rrd.save()
+    upd = hist.filter(id=rrd.pk, history_type="~").order_by("-history_id").first()
+    upd.history_date = upgraded
+    upd.save()
 
 
 def _apply_label_over(rfc, label, start, end):
@@ -714,6 +738,17 @@ class QueueCountsRollupTests(TestCase):
         march = next(p for p in rollup if p["label"] == "2026-03")
         assert march["docs_entered"] == 2
         assert march["docs_entered_missing_ref"] == 1  # H only (3 days, not 10)
+
+    def test_missing_ref_closes_on_slug_upgrade_not_only_delete(self):
+        # 1g not-received refs are resolved by changing the row to refqueue in
+        # place (no delete row); the interval must still close at the upgrade.
+        rfc = self._doc(_dt(2026, 6, 3))
+        _missing_ref_upgraded(rfc, _dt(2026, 6, 3), _dt(2026, 6, 10))
+        intervals = _missing_ref_intervals_by_doc([rfc.pk])[rfc.pk]
+        assert intervals == [(_dt(2026, 6, 3), _dt(2026, 6, 10))]  # closed, not open
+        # It is therefore NOT blocked the whole of June, and it went to edit.
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_blocked_entire"] == 0
 
     def test_missing_ref_whole_period_is_blocked_entire(self):
         # A doc missing a reference the entire period counts as blocked-entire,
