@@ -28,6 +28,7 @@
                 type="number" min="1" max="52"
                 class="w-16 rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1"
                 @keyup.enter="apply"
+                @blur="pendingCount = clamp(pendingCount)"
               >
             </label>
             <button
@@ -88,8 +89,8 @@
           <table class="w-full text-sm divide-y divide-gray-300 dark:divide-neutral-700 whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
-                <th class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
-                <th v-for="p in periods" :key="p.label" class="px-3 py-2 text-right font-semibold">
+                <th scope="col" class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
+                <th v-for="p in periods" :key="p.label" scope="col" class="px-3 py-2 text-right font-semibold">
                   <div>{{ p.label }}</div>
                   <div v-if="showWeekRange" class="text-xs font-normal opacity-60">{{ weekRange(p) }}</div>
                   <div v-if="p.legacyIncluded" class="text-xs font-normal text-violet-500" title="Includes pre-transition labeled states">legacy</div>
@@ -157,7 +158,7 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePeriodStat, type QueueStats } from '~/purple_client'
-import { formatDays, roleColorScale } from '~/utils/timeline'
+import { formatDays, orderedRoles } from '~/utils/timeline'
 
 const api = useApi()
 
@@ -233,7 +234,7 @@ const roleColumns = computed(() => {
   for (const p of periods.value) {
     for (const r of p.byRole) seen.set(r.role, r.isBlocked)
   }
-  return roleColorScale([...seen].map(([role, isBlocked]) => ({ role, isBlocked }))).ordered
+  return orderedRoles([...seen].map(([role, isBlocked]) => ({ role, isBlocked })))
 })
 
 const blockedRoleSet = computed(() => {

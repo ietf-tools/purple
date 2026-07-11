@@ -91,23 +91,14 @@ export const OTHER_NOT_BLOCKED_COLOR = '#64748b' // slate-500 (neutral, cool)
 export const OTHER_BLOCKED_COLOR = '#78716c' // stone-500 (neutral, warm)
 
 /**
- * Assign a stable color to each role. Not-blocked roles come first (cool),
- * blocked roles last (warm); returns the ordered role list and a color lookup.
+ * Ordered union of roles for the summary table: not-blocked first, then
+ * blocked, each alphabetical. (The chart colors/orders its own bars by total;
+ * this ordering is just for the table's columns.)
  */
-export function roleColorScale (
+export function orderedRoles (
   roles: { role: string, isBlocked: boolean }[]
-): { ordered: string[], colorOf: (role: string) => string } {
+): string[] {
   const notBlocked = roles.filter(r => !r.isBlocked).map(r => r.role).sort()
   const blocked = roles.filter(r => r.isBlocked).map(r => r.role).sort()
-  const colors: Record<string, string> = {}
-  notBlocked.forEach((role, i) => {
-    colors[role] = NOT_BLOCKED_PALETTE[i % NOT_BLOCKED_PALETTE.length]!
-  })
-  blocked.forEach((role, i) => {
-    colors[role] = BLOCKED_PALETTE[i % BLOCKED_PALETTE.length]!
-  })
-  return {
-    ordered: [...notBlocked, ...blocked],
-    colorOf: (role: string) => colors[role] ?? KIND_COLORS[KIND_LEGACY]!
-  }
+  return [...notBlocked, ...blocked]
 }

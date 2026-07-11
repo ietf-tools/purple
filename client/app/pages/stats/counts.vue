@@ -28,6 +28,7 @@
                 type="number" min="1" max="52"
                 class="w-16 rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1"
                 @keyup.enter="apply"
+                @blur="pendingCount = clamp(pendingCount)"
               >
             </label>
             <button
@@ -50,8 +51,8 @@
           <table class="w-full text-sm divide-y divide-gray-300 dark:divide-neutral-700 whitespace-nowrap">
             <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
-                <th class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
-                <th v-for="p in periods" :key="p.label" class="px-3 py-2 text-right font-semibold">
+                <th scope="col" class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
+                <th v-for="p in periods" :key="p.label" scope="col" class="px-3 py-2 text-right font-semibold">
                   <div>{{ p.label }}</div>
                   <div v-if="showWeekRange" class="text-xs font-normal opacity-60">{{ weekRange(p) }}</div>
                   <div v-if="p.legacyIncluded" class="text-xs font-normal text-violet-500" title="Includes pre-transition labeled states">legacy</div>
@@ -60,7 +61,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200 dark:divide-neutral-800">
               <tr class="bg-gray-50 dark:bg-neutral-800">
-                <th :colspan="periods.length + 1" scope="colgroup" class="py-2 pl-4 pr-3 text-left font-semibold">Doc counts</th>
+                <th :colspan="periods.length + 1" class="py-2 pl-4 pr-3 text-left font-semibold">Doc counts</th>
               </tr>
               <tr v-for="(row, i) in docCountRows" :key="`doc-${i}`">
                 <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal" :class="row.divider ? dividerClass : ''">
@@ -72,7 +73,7 @@
                 </td>
               </tr>
               <tr class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
-                <th :colspan="periods.length + 1" scope="colgroup" class="py-2 pl-4 pr-3 text-left font-semibold">Page counts</th>
+                <th :colspan="periods.length + 1" class="py-2 pl-4 pr-3 text-left font-semibold">Page counts</th>
               </tr>
               <tr v-for="(row, i) in pageCountRows" :key="`page-${i}`">
                 <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal" :class="row.divider ? dividerClass : ''">

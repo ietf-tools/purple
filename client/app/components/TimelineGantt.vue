@@ -1,6 +1,9 @@
 <template>
   <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
-    <svg ref="svgEl" :width="width" :height="height" class="block" />
+    <svg
+      ref="svgEl" :width="width" :height="height" class="block"
+      role="img" aria-label="Timeline showing when this document was in each assignment state, blocked, or a legacy state."
+    />
     <div
       v-if="tooltip.visible"
       class="pointer-events-none absolute z-10 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
@@ -90,6 +93,7 @@ const lanes = computed<Lane[]>(() => {
     })
   }
   for (const band of tl.legacy) {
+    if (band.segments.length === 0) continue
     detail.push({
       key: `legacy-${band.label}`,
       label: band.label ?? '(label)',
@@ -224,8 +228,9 @@ function draw () {
       .attr('width', innerWidth).attr('height', ROW_H)
       .attr('fill', 'currentColor').attr('opacity', 0.04).attr('rx', 3)
 
-    // Segments.
-    svg.selectAll(`.seg-${i}`)
+    // Segments. selectAll(null) forces an all-enter join (the SVG is rebuilt
+    // each draw), avoiding a phantom class selector that matched nothing.
+    svg.selectAll(null)
       .data(lane.segments)
       .enter()
       .append('rect')

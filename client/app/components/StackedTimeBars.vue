@@ -1,7 +1,10 @@
 <template>
   <div class="w-full">
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
-      <svg ref="svgEl" :width="width" :height="height" class="block" />
+      <svg
+        ref="svgEl" :width="width" :height="height" class="block"
+        role="img" aria-label="Stacked bar chart of time spent per assignment role each period. The same data is in the table below."
+      />
       <div
         v-if="tooltip.visible"
         class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
@@ -280,5 +283,5 @@ onMounted(() => {
 })
 onBeforeUnmount(() => observer?.disconnect())
 
-watch([periods, width, () => props.mode, () => props.dayScale, () => hidden.size], () => draw())
+watch([periods, width, () => props.mode, () => props.dayScale, visibleCats], () => draw())
 </script>
