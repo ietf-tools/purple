@@ -28,9 +28,11 @@ from ..dt_v1_api_utils import datatracker_ietf_meetings
 from ..models import (
     ASSIGNMENT_INACTIVE_STATES,
     Assignment,
+    DocRelationshipName,
     Label,
     RfcToBe,
     RfcToBeBlockingReason,
+    RpcRelatedDocument,
 )
 
 # The day the Assignment/Blocked model replaced the old label-based states.
@@ -596,6 +598,38 @@ def _overlap_seconds(
     return total
 
 
+def _covered_at(
+    intervals: list[tuple[datetime.datetime, datetime.datetime]],
+    when: datetime.datetime,
+) -> bool:
+    """True if ``when`` falls within any of the (non-overlapping) intervals."""
+    return any(start <= when <= end for start, end in intervals)
+
+
+# Enqueue and the not-received relationship that comes in with a doc are written
+# in the same (non-atomic) intake, so the relationship's history stamp lands a
+# few ms after ``enqueued_at``. Treat a missing-ref interval that starts within
+# this window of entry as "present at entry"; a reference discovered later (days)
+# is well outside it.
+_MISSING_REF_ENTRY_GRACE = datetime.timedelta(minutes=5)
+
+# The legacy (pre-transition) MISSREF label was often applied in a batch some
+# days after a doc was enqueued, yet reflects its state at entry. Count a MISSREF
+# label appearing within a week of enqueue as "entered the queue missing a ref".
+_MISSREF_LABEL_ENTRY_GRACE = datetime.timedelta(weeks=1)
+
+
+def _missing_ref_at_entry(
+    intervals: list[tuple[datetime.datetime, datetime.datetime]],
+    enq: datetime.datetime,
+    grace: datetime.timedelta,
+) -> bool:
+    """True if a missing-ref interval covers ``enq`` or starts within ``grace``."""
+    return _covered_at(intervals, enq) or any(
+        enq <= start <= enq + grace for start, _ in intervals
+    )
+
+
 def _legacy_state_doc_ids(candidate_ids: list[int]) -> set[int]:
     """Subset of ``candidate_ids`` that ever carried a legacy state label.
 
@@ -825,6 +859,310 @@ def queue_rollup(
                 "total_blocked_seconds": blocked_total,
                 "total_working_seconds": working_total,
                 "by_role": by_role,
+                "legacy_included": start < TRANSITION_DATE,
+            }
+        )
+    return periods
+
+
+def _blocked_doc_ids(candidate_ids: list[int]) -> set[int]:
+    """Docs ever blocked (blocked assignment, blocking reason, or a legacy
+    blocked-state label) — the only ones needing a blocked-interval walk."""
+    ids = set(
+        Assignment.objects.filter(
+            rfc_to_be_id__in=candidate_ids, role__slug="blocked"
+        ).values_list("rfc_to_be_id", flat=True)
+    )
+    ids |= set(
+        RfcToBeBlockingReason.objects.filter(
+            rfc_to_be_id__in=candidate_ids
+        ).values_list("rfc_to_be_id", flat=True)
+    )
+    historical_labels = apps.get_model("rpc", "HistoricalRfcToBeLabel")
+    ids |= set(
+        historical_labels.objects.filter(
+            label__slug__in=LEGACY_BLOCKED_LABEL_SLUGS, rfctobe_id__in=candidate_ids
+        ).values_list("rfctobe_id", flat=True)
+    )
+    return ids
+
+
+def _pages_at(rfc_pk: int, when: datetime.datetime | None) -> int:
+    """The doc's ``pages`` from the history record in effect at ``when``."""
+    if when is None:
+        return 0
+    historical = RfcToBe.history.model
+    pages = (
+        historical.objects.filter(id=rfc_pk, history_date__lte=when)
+        .order_by("-history_date")
+        .values_list("pages", flat=True)
+        .first()
+    )
+    return pages or 0
+
+
+def _merge_open_intervals(
+    intervals: list[tuple[datetime.datetime, datetime.datetime | None]],
+) -> list[tuple[datetime.datetime, datetime.datetime | None]]:
+    """Merge overlapping intervals; an ``end`` of ``None`` means still open."""
+    merged: list[tuple[datetime.datetime, datetime.datetime | None]] = []
+    for start, end in sorted(intervals, key=lambda p: p[0]):
+        if merged:
+            prev_start, prev_end = merged[-1]
+            if prev_end is None or start <= prev_end:
+                merged[-1] = (
+                    prev_start,
+                    None if (prev_end is None or end is None) else max(prev_end, end),
+                )
+                continue
+        merged.append((start, end))
+    return merged
+
+
+def _first_clear_after(
+    intervals: list[tuple[datetime.datetime, datetime.datetime | None]],
+    since: datetime.datetime,
+) -> datetime.datetime | None:
+    """First instant >= ``since`` not covered by any interval (None if never)."""
+    for start, end in _merge_open_intervals(intervals):
+        if start <= since and (end is None or since < end):
+            return end  # inside a covering interval; clears at its end (None=never)
+        if start > since:
+            break  # the next interval is later, so ``since`` is already clear
+    return since
+
+
+def _missing_ref_intervals_by_doc(
+    doc_ids: list[int],
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime | None]]]:
+    """Per-doc intervals during which a not-received reference existed.
+
+    Reconstructed from :class:`~rpc.models.RpcRelatedDocument` history: each
+    not-received (1g/2g/3g) relationship contributes ``[created, deleted)``.
+    """
+    historical = RpcRelatedDocument.history.model
+    # source -> relationship-row-id -> {"start", "end"}
+    by_doc: dict[int, dict[int, dict]] = {}
+    rows = (
+        historical.objects.filter(
+            source_id__in=doc_ids,
+            relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS,
+        )
+        .order_by("history_date")
+        .values("id", "source_id", "history_type", "history_date")
+    )
+    for row in rows:
+        rel = by_doc.setdefault(row["source_id"], {}).setdefault(
+            row["id"], {"start": None, "end": None}
+        )
+        if row["history_type"] == "+" and rel["start"] is None:
+            rel["start"] = row["history_date"]
+        elif row["history_type"] == "-":
+            rel["end"] = row["history_date"]
+    return {
+        source_id: [
+            (rel["start"], rel["end"])
+            for rel in rels.values()
+            if rel["start"] is not None
+        ]
+        for source_id, rels in by_doc.items()
+    }
+
+
+def queue_counts_rollup(
+    period: str, count: int, now: datetime.datetime | None = None
+) -> list[dict]:
+    """Per-period document/page counts for the queue.
+
+    Each period reports: docs in queue at the start; docs and pages entering
+    during the period; RFCs published; pages "gone to edit" (a doc reaches no
+    missing references for the first time since entering the queue); docs blocked
+    the entire period; and the average blocked share of the rest (docs that could
+    be worked on). "Missing references" = an active not-received (1g/2g/3g)
+    reference relationship, or — before the transition — the legacy MISSREF
+    state. Page counts are read from the ``pages`` in the doc's history record in
+    effect when it entered / went to edit. Blocked time is the same union used by
+    the time view; "% time blocked" is over the time a doc was in the queue
+    during the period.
+    """
+    now = now or timezone.now()
+    windows = period_windows(period, count, now)
+    if not windows:
+        return []
+    earliest = windows[0]["start"]
+
+    docs = list(
+        RfcToBe.objects.exclude(disposition_id="withdrawn")
+        .filter(
+            models.Q(published_at__isnull=True) | models.Q(published_at__gte=earliest)
+        )
+        .with_enqueued_at()
+        .values("pk", "published_at", "enqueued_at")
+    )
+    doc_ids = [d["pk"] for d in docs]
+
+    # "Gone to edit" = first time with no missing references since enqueue.
+    # Missing references = not-received relationships (any era) + legacy MISSREF.
+    notrecv = _missing_ref_intervals_by_doc(doc_ids)
+    missref_label = Label.objects.filter(slug="MISSREF").first()
+    missref_ids = (
+        set(
+            apps.get_model("rpc", "HistoricalRfcToBeLabel")
+            .objects.filter(label__slug="MISSREF", rfctobe_id__in=doc_ids)
+            .values_list("rfctobe_id", flat=True)
+        )
+        if missref_label
+        else set()
+    )
+    missref_intervals: dict[int, list] = {}
+    for rfc in RfcToBe.objects.filter(pk__in=missref_ids):
+        missref_intervals[rfc.pk] = [
+            (iv.start, iv.end) for iv in rfc.time_intervals_with_label(missref_label)
+        ]
+
+    # Kept separate for the "entered with missing references" check, which grants
+    # the not-received relation only an intake grace but the legacy MISSREF label
+    # a week (see the *_ENTRY_GRACE constants).
+    relation_merged: dict[int, list] = {}
+    label_merged: dict[int, list] = {}
+    for d in docs:
+        enq = d["enqueued_at"]
+        rel = notrecv.get(d["pk"], [])
+        lab = missref_intervals.get(d["pk"], [])
+        d["gone_to_edit"] = _first_clear_after(rel + lab, enq) if enq else None
+        if rel:
+            relation_merged[d["pk"]] = _merge_intervals(rel, now)
+        if lab:
+            label_merged[d["pk"]] = _merge_intervals(lab, now)
+
+    # Historical page counts, only for docs entering / publishing / going to
+    # edit in range.
+    enq_pages: dict[int, int] = {}
+    pub_pages: dict[int, int] = {}
+    gone_pages: dict[int, int] = {}
+    for d in docs:
+        enq, pub, gte = d["enqueued_at"], d["published_at"], d["gone_to_edit"]
+        if enq is not None and enq >= earliest:
+            enq_pages[d["pk"]] = _pages_at(d["pk"], enq)
+        if pub is not None and pub >= earliest:
+            pub_pages[d["pk"]] = _pages_at(d["pk"], pub)
+        if gte is not None and gte >= earliest:
+            gone_pages[d["pk"]] = _pages_at(d["pk"], gte)
+
+    # Full pages history per doc, to read the page count in effect at each
+    # period boundary (for docs in the queue at the start of a period).
+    pages_history: dict[int, list[tuple[datetime.datetime, int]]] = {}
+    for hid, hdate, hpages in (
+        RfcToBe.history.model.objects.filter(id__in=doc_ids)
+        .order_by("id", "history_date")
+        .values_list("id", "history_date", "pages")
+    ):
+        pages_history.setdefault(hid, []).append((hdate, hpages or 0))
+
+    def pages_at_boundary(pk: int, when: datetime.datetime) -> int:
+        val = 0
+        for hdate, hpages in pages_history.get(pk, ()):
+            if hdate <= when:
+                val = hpages
+            else:
+                break
+        return val
+
+    # Blocked = the time view's blocked union, PLUS missing-reference coverage
+    # (raw MISSREF + not-received relationships). Missing a reference is a blocked
+    # condition, and unioning it bridges the legacy→relationship handoff at the
+    # transition (where the blocked assignment is created a little after the
+    # legacy state ends, leaving a spurious sub-day gap). Only docs that were ever
+    # blocked or ever missing a reference need the walk; the rest are 0.
+    legacy_ids = _legacy_state_doc_ids(doc_ids)
+    relevant_ids = _blocked_doc_ids(doc_ids) | set(notrecv) | missref_ids
+    blocked_intervals: dict[int, list] = {}
+    for rfc in RfcToBe.objects.filter(pk__in=relevant_ids):
+        base = document_intervals(rfc, now, include_legacy=rfc.pk in legacy_ids)[0]
+        missing = notrecv.get(rfc.pk, []) + missref_intervals.get(rfc.pk, [])
+        blocked_intervals[rfc.pk] = _merge_intervals(base + missing, now)
+
+    periods: list[dict] = []
+    for window in windows:
+        start = window["start"]
+        eff_end = min(window["end"], now)
+
+        docs_at_start = docs_entered = docs_entered_missing_ref = pages_entered = 0
+        pages_at_start = rfcs_published = pages_published = pages_to_edit = 0
+        pages_blocked_end = pages_in_progress_end = 0
+        docs_blocked_entire = rest = 0
+        pct_sum = 0.0
+
+        for d in docs:
+            enq, pub = d["enqueued_at"], d["published_at"]
+            if enq is None:
+                continue
+            if enq <= start and (pub is None or pub > start):
+                docs_at_start += 1
+                pages_at_start += pages_at_boundary(d["pk"], start)
+            if start <= enq < eff_end:
+                docs_entered += 1
+                pages_entered += enq_pages.get(d["pk"], 0)
+                if _missing_ref_at_entry(
+                    relation_merged.get(d["pk"], []), enq, _MISSING_REF_ENTRY_GRACE
+                ) or _missing_ref_at_entry(
+                    label_merged.get(d["pk"], []), enq, _MISSREF_LABEL_ENTRY_GRACE
+                ):
+                    docs_entered_missing_ref += 1
+            if pub is not None and start <= pub < eff_end:
+                rfcs_published += 1
+                pages_published += pub_pages.get(d["pk"], 0)
+            gte = d["gone_to_edit"]
+            if gte is not None and start <= gte < eff_end:
+                pages_to_edit += gone_pages.get(d["pk"], 0)
+            # State at the end of the period (as of "now" for the current one):
+            # pages of docs still in the queue, split blocked vs in progress.
+            if enq <= eff_end and (pub is None or pub > eff_end):
+                end_pages = pages_at_boundary(d["pk"], eff_end)
+                if _covered_at(blocked_intervals.get(d["pk"], []), eff_end):
+                    pages_blocked_end += end_pages
+                else:
+                    pages_in_progress_end += end_pages
+            # Member of the period: in the queue at some point within it.
+            if enq <= eff_end and (pub is None or pub >= start):
+                in_queue = (
+                    min(pub or eff_end, eff_end) - max(enq, start)
+                ).total_seconds()
+                if in_queue <= 0:
+                    continue
+                blocked = _overlap_seconds(
+                    blocked_intervals.get(d["pk"], []), start, eff_end
+                )
+                if blocked >= in_queue:  # blocked the whole time it was in queue
+                    docs_blocked_entire += 1
+                else:
+                    rest += 1
+                    pct_sum += min(blocked, in_queue) / in_queue
+
+        periods.append(
+            {
+                "label": window["label"],
+                "start": window["start"],
+                "end": window["end"],
+                "docs_at_start": docs_at_start,
+                "docs_entered": docs_entered,
+                "pages_at_start": pages_at_start,
+                "pages_entered": pages_entered,
+                "rfcs_published": rfcs_published,
+                "pages_published": pages_published,
+                "pages_to_edit": pages_to_edit,
+                "pages_blocked_end": pages_blocked_end,
+                "pages_in_progress_end": pages_in_progress_end,
+                "docs_blocked_entire": docs_blocked_entire,
+                "docs_entered_missing_ref": docs_entered_missing_ref,
+                # Avg blocked share over the rest (not blocked the whole period)
+                # and over all members (each blocked-entire doc counts as 100%).
+                "avg_pct_blocked": round(pct_sum / rest * 100, 1) if rest else 0.0,
+                "avg_pct_blocked_all": (
+                    round((pct_sum + docs_blocked_entire) / members * 100, 1)
+                    if (members := rest + docs_blocked_entire)
+                    else 0.0
+                ),
                 "legacy_included": start < TRANSITION_DATE,
             }
         )

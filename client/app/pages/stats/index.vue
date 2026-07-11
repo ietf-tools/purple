@@ -1,6 +1,6 @@
 <template>
   <div>
-    <StatsTabs current-tab="queue" />
+    <StatsTabs current-tab="time" />
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <ErrorAlert v-if="statsError" title="Error loading queue stats">
@@ -91,6 +91,7 @@
                 <th class="py-2 pl-4 pr-3 text-left font-semibold">Period</th>
                 <th v-for="p in periods" :key="p.label" class="px-3 py-2 text-right font-semibold">
                   <div>{{ p.label }}</div>
+                  <div v-if="showWeekRange" class="text-xs font-normal opacity-60">{{ weekRange(p) }}</div>
                   <div v-if="p.legacyIncluded" class="text-xs font-normal text-violet-500" title="Includes pre-transition labeled states">legacy</div>
                 </th>
               </tr>
@@ -214,6 +215,15 @@ const {
 )
 
 const periods = computed(() => stats.value?.periods ?? [])
+
+// Week labels (2026-W28) are terse; show the covered date range beneath them.
+const showWeekRange = computed(() => appliedPeriod.value === StatsQueuePeriodEnum.Week)
+function weekRange (p: QueuePeriodStat): string {
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
+  const last = new Date(p.end.getTime() - 86400000) // end is exclusive (next Monday)
+  return `${fmt(p.start)} – ${fmt(last)}`
+}
 
 // Ordered union of roles across all periods (not-blocked first, then blocked).
 const roleColumns = computed(() => {

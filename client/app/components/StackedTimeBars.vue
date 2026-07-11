@@ -70,6 +70,13 @@ const width = ref(720)
 const height = 340
 
 const MARGIN = { top: 16, right: 16, bottom: 52, left: 64 }
+
+function weekRange (p: QueuePeriodStat): string {
+  const fmt = (d: Date) =>
+    d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
+  const last = new Date(p.end.getTime() - 86400000) // end is exclusive (next Monday)
+  return `${fmt(p.start)} – ${fmt(last)}`
+}
 const SEG_GAP = 2 // px of surface between stacked segments (dataviz mark spec)
 const CORNER = 4 // px rounded top of each bar
 
@@ -157,8 +164,11 @@ function draw () {
 
   const data = periods.value
   const cats = visibleCats.value
+  // Week ticks carry a second line (the date range), so they need more room.
+  const isWeek = /^\d{4}-W\d{2}$/.test(data[0]?.label ?? '')
+  const marginBottom = isWeek ? MARGIN.bottom + 16 : MARGIN.bottom
   const innerW = Math.max(width.value - MARGIN.left - MARGIN.right, 10)
-  const innerH = height - MARGIN.top - MARGIN.bottom
+  const innerH = height - MARGIN.top - marginBottom
   const isShare = props.mode === 'share'
   const dayScale = props.dayScale ?? 1
 
@@ -185,6 +195,17 @@ function draw () {
     .attr('fill', 'currentColor').attr('font-size', 10)
     .attr('transform', 'rotate(-25)').attr('text-anchor', 'end')
   xG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
+
+  // Week labels (2026-W28) are terse; add the covered date range as a 2nd line.
+  if (isWeek) {
+    xG.selectAll<SVGTextElement, string>('.tick text').each(function (labelValue) {
+      const p = data.find(d => d.label === labelValue)
+      if (!p) return
+      d3.select(this).append('tspan')
+        .attr('x', 0).attr('dy', '1.1em').attr('font-size', 8).attr('opacity', 0.7)
+        .text(weekRange(p))
+    })
+  }
 
   const bandW = x.bandwidth()
 

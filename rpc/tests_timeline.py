@@ -25,6 +25,7 @@ from .lifecycle.timeline import (
     _active_runs,
     _candidate_docs,
     _clip,
+    _first_clear_after,
     _merge_intervals,
     _overlap_seconds,
     assignment_tracks,
@@ -32,9 +33,15 @@ from .lifecycle.timeline import (
     build_document_timeline,
     document_intervals,
     period_windows,
+    queue_counts_rollup,
     queue_rollup,
 )
-from .models import BlockingReason, RfcToBeBlockingReason
+from .models import (
+    BlockingReason,
+    DocRelationshipName,
+    RfcToBeBlockingReason,
+    RpcRelatedDocument,
+)
 
 UTC = datetime.UTC
 DAY = datetime.timedelta(days=1)
@@ -72,6 +79,25 @@ def _backdate_creation(rfc, when):
     create_rec = rfc.history.filter(history_type="+").order_by("history_date").first()
     create_rec.history_date = when
     create_rec.save()
+
+
+def _missing_ref_over(rfc, start, end):
+    """Give ``rfc`` a not-received reference active over ``[start, end)``."""
+    rel, _ = DocRelationshipName.objects.get_or_create(
+        slug="not-received", defaults={"name": "Not Received", "desc": ""}
+    )
+    rrd = RpcRelatedDocument.objects.create(
+        relationship=rel, source=rfc, target_rfctobe=RfcToBeFactory()
+    )
+    hist = RpcRelatedDocument.history
+    add = hist.filter(id=rrd.pk, history_type="+").first()
+    add.history_date = start
+    add.save()
+    rid = rrd.pk
+    rrd.delete()
+    rm = hist.filter(id=rid, history_type="-").order_by("-history_id").first()
+    rm.history_date = end
+    rm.save()
 
 
 def _apply_label_over(rfc, label, start, end):
@@ -136,6 +162,15 @@ class PureHelperTests(SimpleTestCase):
             _dt(2026, 7, 1),
         )
         assert seconds == 6 * 24 * 3600
+
+    def test_first_clear_after(self):
+        d1, d2, d3 = _dt(2026, 1, 1), _dt(2026, 2, 1), _dt(2026, 3, 1)
+        d4 = _dt(2026, 4, 1)
+        assert _first_clear_after([], d2) == d2  # never missing -> clear at enqueue
+        assert _first_clear_after([(d1, d3)], d2) == d3  # inside -> clears at end
+        assert _first_clear_after([(d1, None)], d2) is None  # ongoing -> never clears
+        assert _first_clear_after([(d3, d4)], d2) == d2  # missing starts later
+        assert _first_clear_after([(d1, d2), (d3, d4)], d2) == d2  # clear in the gap
 
     def test_active_runs_split_by_inactive(self):
         class Rec:
@@ -593,6 +628,110 @@ class QueueRollupTests(TestCase):
         assert with_assignment.pk in ids
         assert legacy_only.pk in ids
         assert old_published.pk not in ids
+
+
+class QueueCountsRollupTests(TestCase):
+    def setUp(self):
+        self.now = _dt(2026, 7, 1)  # June window = [06-01, 07-01)
+
+    def _doc(self, enq, *, pages=0, published_at=None, slug="in_progress"):
+        rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug=slug),
+            published_at=published_at,
+            pages=pages,
+        )
+        _backdate_creation(rfc, enq)
+        return rfc
+
+    def test_counts_rollup(self):
+        # A: in queue since May, missing a reference until June 10 -> goes to
+        # edit June 10 (10 pages). not-received is not "blocked" time.
+        a = self._doc(_dt(2026, 5, 1), pages=10)
+        _missing_ref_over(a, _dt(2026, 5, 1), _dt(2026, 6, 10))
+        # B: enters in June with no missing refs -> goes to edit at entry.
+        self._doc(_dt(2026, 6, 5), pages=20)
+        # C: in queue since January, published in June (no missing refs).
+        self._doc(
+            _dt(2026, 1, 1), pages=5, published_at=_dt(2026, 6, 20), slug="published"
+        )
+        # D: in queue since May, blocked the entire month (went to edit at entry).
+        d = self._doc(_dt(2026, 5, 1), pages=8)
+        _make_assignment(
+            d, "blocked",
+            [(_dt(2026, 5, 25), "in_progress"), (_dt(2026, 7, 5), "done")],
+        )
+
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["label"] == "2026-06"
+        assert june["docs_at_start"] == 3  # A, C, D (B enters mid-month)
+        assert june["docs_entered"] == 1  # B
+        assert june["docs_entered_missing_ref"] == 0  # B enters with no missing refs
+        assert june["pages_at_start"] == 23  # A(10) + C(5) + D(8)
+        assert june["pages_entered"] == 20
+        assert june["rfcs_published"] == 1  # C
+        assert june["pages_published"] == 5  # C
+        # A clears its missing ref in June (10); B enters clear in June (20).
+        assert june["pages_to_edit"] == 30
+        # At end of June (self.now): A(10) went to edit, so workable/in progress;
+        # B(20) in progress; C(5) published (gone); D(8) still blocked.
+        assert june["pages_blocked_end"] == 8  # D
+        assert june["pages_in_progress_end"] == 30  # A(10) + B(20)
+        assert june["docs_blocked_entire"] == 1  # D
+        # Rest = A, B, C. A is blocked (missing ref) 9 of 30 June days = 30%.
+        assert june["avg_pct_blocked"] == 10.0  # (30 + 0 + 0) / 3
+        # All 4 members: D 100%, A 30%, B/C 0% -> mean 32.5%.
+        assert june["avg_pct_blocked_all"] == 32.5
+
+    def test_docs_entering_with_missing_references(self):
+        # E enters in June already missing a reference; F enters clean.
+        e = self._doc(_dt(2026, 6, 3), pages=7)
+        _missing_ref_over(e, _dt(2026, 6, 3), _dt(2026, 6, 25))
+        self._doc(_dt(2026, 6, 4), pages=9)
+        # G's not-received relationship is stamped seconds after enqueue (the
+        # non-atomic intake) — still "entering with missing references".
+        g_enq = _dt(2026, 6, 6)
+        g = self._doc(g_enq, pages=5)
+        _missing_ref_over(g, g_enq + datetime.timedelta(seconds=30), _dt(2026, 6, 20))
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_entered"] == 3
+        assert june["docs_entered_missing_ref"] == 2  # E and G
+
+    def test_missref_label_within_a_week_counts_as_entered_missing_ref(self):
+        # Pre-transition, the MISSREF label is often applied a few days after
+        # enqueue but reflects entry state: within a week counts, beyond doesn't.
+        missref = LabelFactory(slug="MISSREF")
+        h_enq = _dt(2026, 3, 5)
+        h = self._doc(h_enq)
+        _apply_label_over(
+            h, missref, h_enq + datetime.timedelta(days=3), _dt(2026, 3, 20)
+        )
+        i_enq = _dt(2026, 3, 5)
+        i = self._doc(i_enq)
+        _apply_label_over(
+            i, missref, i_enq + datetime.timedelta(days=10), _dt(2026, 3, 25)
+        )
+        rollup = queue_counts_rollup("month", 5, self.now)
+        march = next(p for p in rollup if p["label"] == "2026-03")
+        assert march["docs_entered"] == 2
+        assert march["docs_entered_missing_ref"] == 1  # H only (3 days, not 10)
+
+    def test_missing_ref_whole_period_is_blocked_entire(self):
+        # A doc missing a reference the entire period counts as blocked-entire,
+        # even without a blocked assignment.
+        rfc = self._doc(_dt(2026, 5, 1))
+        _missing_ref_over(rfc, _dt(2026, 5, 1), _dt(2026, 7, 20))
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_blocked_entire"] == 1
+
+    def test_pages_use_historical_page_count(self):
+        # Pages are read from the history record in effect when the doc entered,
+        # not the current value.
+        rfc = self._doc(_dt(2026, 6, 5), pages=12)
+        rfc.pages = 99  # later change must NOT affect the June "pages entered"
+        rfc.save()
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_entered"] == 1
+        assert june["pages_entered"] == 12
 
 
 class TimelineEndpointTests(TestCase):

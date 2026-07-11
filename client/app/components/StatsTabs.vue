@@ -7,7 +7,7 @@
 <script setup lang="ts">
 import type { Tab } from '~/utils/tab'
 
-export type StatsTabId = 'queue' | 'labels'
+export type StatsTabId = 'time' | 'counts'
 
 type Props = {
   currentTab: StatsTabId
@@ -16,16 +16,16 @@ const props = defineProps<Props>()
 
 const statsTabs = [
   {
-    id: 'queue',
-    name: 'Queue Summary',
+    id: 'time',
+    name: 'Time',
     to: '/stats',
-    icon: 'solar:chart-2-bold-duotone'
+    icon: 'solar:clock-circle-bold-duotone'
   },
   {
-    id: 'labels',
-    name: 'Labels',
-    to: '/stats/labels',
-    icon: 'pajamas:labels'
+    id: 'counts',
+    name: 'Counts',
+    to: '/stats/counts',
+    icon: 'solar:documents-bold-duotone'
   }
 ] as const satisfies Tab[]
 </script>

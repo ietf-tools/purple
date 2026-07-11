@@ -60,7 +60,11 @@ from .lifecycle.publication import (
     clear_failed_publication_attempt,
     validate_ready_to_publish,
 )
-from .lifecycle.timeline import build_document_timeline, queue_rollup
+from .lifecycle.timeline import (
+    build_document_timeline,
+    queue_counts_rollup,
+    queue_rollup,
+)
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
@@ -128,6 +132,7 @@ from .serializers import (
     PublishRfcSerializer,
     PublishRfcStatusSerializer,
     QueueCountsSerializer,
+    QueueCountStatsSerializer,
     QueueItemSerializer,
     QueueStatsSerializer,
     RfcAuthorSerializer,
@@ -2010,6 +2015,54 @@ class StatsQueue(views.APIView):
             periods = queue_rollup(period, count)
             cache.set(cache_key, periods, self.CACHE_TTL)
         return Response(QueueStatsSerializer({"periods": periods}).data)
+
+
+class StatsQueueCounts(views.APIView):
+    """Queue-wide document/page counts, grouped into selectable past periods."""
+
+    PERIODS = StatsQueue.PERIODS
+    MAX_COUNT = StatsQueue.MAX_COUNT
+    CACHE_TTL = 300  # seconds; read-only and tolerant of staleness
+
+    @extend_schema(
+        operation_id="stats_queue_counts",
+        responses=QueueCountStatsSerializer,
+        parameters=[
+            OpenApiParameter(
+                "period",
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                enum=PERIODS,
+                description="Length of each past segment.",
+            ),
+            OpenApiParameter(
+                "count",
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
+                description="How many past segments to report (1-52).",
+            ),
+        ],
+    )
+    def get(self, request):
+        period = request.query_params.get("period", "month")
+        if period not in self.PERIODS:
+            raise ValidationError(
+                {"period": f"Must be one of {', '.join(self.PERIODS)}"}
+            )
+        try:
+            count = int(request.query_params.get("count", 6))
+        except (TypeError, ValueError):
+            raise ValidationError({"count": "Must be an integer"}) from None
+        count = max(1, min(count, self.MAX_COUNT))
+
+        cache_key = (
+            f"stats_queue_counts:{period}:{count}:{timezone.now().date().isoformat()}"
+        )
+        periods = cache.get(cache_key)
+        if periods is None:
+            periods = queue_counts_rollup(period, count)
+            cache.set(cache_key, periods, self.CACHE_TTL)
+        return Response(QueueCountStatsSerializer({"periods": periods}).data)
 
 
 class UnusableRfcNumberViewSet(viewsets.ModelViewSet):

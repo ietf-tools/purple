@@ -408,6 +408,34 @@ class QueueStatsSerializer(serializers.Serializer):
     periods = QueuePeriodStatSerializer(many=True)
 
 
+class QueueCountStatPeriodSerializer(serializers.Serializer):
+    """Document/page counts for one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    docs_at_start = serializers.IntegerField()
+    docs_entered = serializers.IntegerField()
+    pages_at_start = serializers.IntegerField()
+    pages_entered = serializers.IntegerField()
+    rfcs_published = serializers.IntegerField()
+    pages_published = serializers.IntegerField()
+    pages_to_edit = serializers.IntegerField()
+    pages_blocked_end = serializers.IntegerField()
+    pages_in_progress_end = serializers.IntegerField()
+    docs_blocked_entire = serializers.IntegerField()
+    docs_entered_missing_ref = serializers.IntegerField()
+    avg_pct_blocked = serializers.FloatField()
+    avg_pct_blocked_all = serializers.FloatField()
+    legacy_included = serializers.BooleanField()
+
+
+class QueueCountStatsSerializer(serializers.Serializer):
+    """Queue document/page counts across selectable past periods."""
+
+    periods = QueueCountStatPeriodSerializer(many=True)
+
+
 class LabelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Label
