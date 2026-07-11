@@ -49,7 +49,7 @@ import type { QueuePeriodStat } from '~/purple_client'
 import {
   BLOCKED_PALETTE, KIND_LEGACY_COLOR, MAX_BLOCKED, MAX_NOT_BLOCKED, NOT_BLOCKED_PALETTE,
   OTHER_BLOCKED_COLOR, OTHER_NOT_BLOCKED_COLOR, formatDays, humanSeconds
-} from '~/utils/timeline'
+} from '~/utils/statsViz'
 
 type Props = {
   periods: QueuePeriodStat[]

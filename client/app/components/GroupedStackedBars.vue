@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import * as d3 from 'd3'
 import type { QueuePublishedStatPeriod } from '~/purple_client'
-import { statusColor } from '~/utils/timeline'
+import { statusColor } from '~/utils/statsViz'
 
 type Props = {
   periods: QueuePublishedStatPeriod[]

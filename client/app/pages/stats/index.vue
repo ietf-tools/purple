@@ -158,7 +158,7 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePeriodStat, type QueueStats } from '~/purple_client'
-import { formatDays, orderedRoles } from '~/utils/timeline'
+import { formatDays, orderedRoles } from '~/utils/statsViz'
 
 const api = useApi()
 

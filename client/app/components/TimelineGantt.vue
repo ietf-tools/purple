@@ -23,7 +23,7 @@
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
-import { KIND_AWAITING, KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/timeline'
+import { KIND_AWAITING, KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/statsViz'
 
 type Props = {
   timeline: AssignmentTimeline

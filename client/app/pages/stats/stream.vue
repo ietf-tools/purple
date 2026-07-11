@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePublishedStatPeriod, type QueuePublishedStats } from '~/purple_client'
-import { statusColor } from '~/utils/timeline'
+import { statusColor } from '~/utils/statsViz'
 
 const api = useApi()
 

@@ -114,7 +114,7 @@ import {
   KIND_WORKING,
   humanMillis,
   totalMillis
-} from '~/utils/timeline'
+} from '~/utils/statsViz'
 
 const route = useRoute()
 const api = useApi()
