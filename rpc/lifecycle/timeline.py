@@ -17,6 +17,7 @@ double-count.
 """
 
 import datetime
+from collections import namedtuple
 from dataclasses import dataclass, field
 from itertools import pairwise
 
@@ -83,6 +84,10 @@ AWAITING_REF_LABEL_PREFIX = "awaiting ref:"
 
 # One active span: (start, end-or-None, state-at-start).
 Run = tuple[datetime.datetime, datetime.datetime | None, str | None]
+
+# Lightweight stand-in for an assignment history record when read in bulk via
+# ``.values_list`` — only the fields ``_active_runs`` touches.
+_HistRec = namedtuple("_HistRec", ["state", "history_date"])
 
 
 @dataclass
@@ -712,61 +717,6 @@ def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
     return docs.filter(contributes).distinct()
 
 
-def document_category_intervals(
-    rfc: RfcToBe,
-    now: datetime.datetime,
-    include_legacy: bool = True,
-    include_awaiting: bool = False,
-    include_reasons: bool = False,
-) -> dict[str, tuple[bool, list[tuple[datetime.datetime, datetime.datetime]]]]:
-    """Map each assignment role / legacy state to its merged active intervals.
-
-    Returns ``{category: (is_blocked, merged_intervals)}`` where ``category`` is
-    an assignment role slug (post-transition) or a legacy state label slug
-    (pre-transition). Open-ended spans are closed at ``now``; callers clip them
-    to a period window via :func:`_overlap_seconds`.
-
-    ``include_awaiting`` carves ``awaiting ref:`` time out of the
-    ``final_review_editor`` category into a blocked ``awaiting_ref`` category, so
-    that time counts as blocked (pass it only for docs known to have such a
-    label — see :func:`_awaiting_ref_doc_ids`).
-
-    ``include_reasons`` replaces the single ``blocked`` category with one blocked
-    category per blocking reason (by name), mirroring the doc timeline
-    (pass it only for docs known to have reasons — see
-    :func:`_blocked_reason_doc_ids`).
-    """
-    raw: dict[str, tuple[bool, list]] = {}
-    for assignment, is_blocked, runs in _assignment_segments(rfc):
-        _blocked, intervals = raw.setdefault(assignment.role_id, (is_blocked, []))
-        intervals.extend((start, end) for start, end, _state in runs)
-    if include_legacy:
-        for band in legacy_bands(rfc):
-            is_blocked = band.kind == KIND_BLOCKED
-            _blocked, intervals = raw.setdefault(band.label, (is_blocked, []))
-            intervals.extend((seg.start, seg.end) for seg in band.segments)
-    result = {
-        category: (is_blocked, _merge_intervals(intervals, now))
-        for category, (is_blocked, intervals) in raw.items()
-    }
-    if include_awaiting:
-        awaiting = _awaiting_ref_intervals(rfc, now)
-        if awaiting:
-            fre = result.get("final_review_editor")
-            if fre is not None:
-                result["final_review_editor"] = (
-                    fre[0], _subtract_intervals(fre[1], awaiting)
-                )
-            result["awaiting_ref"] = (True, awaiting)
-    if include_reasons:
-        reasons = _blocked_reason_intervals(rfc, now)
-        if reasons:
-            result.pop("blocked", None)  # itemised per reason below
-            for name, intervals in reasons.items():
-                result[name] = (True, intervals)
-    return result
-
-
 def queue_rollup(
     period: str, count: int, now: datetime.datetime | None = None
 ) -> list[dict]:
@@ -796,19 +746,78 @@ def queue_rollup(
     legacy_ids = _legacy_state_doc_ids(doc_ids) if include_legacy else set()
     awaiting_ids = _awaiting_ref_doc_ids(doc_ids)
     reason_ids = _blocked_reason_doc_ids(doc_ids)
-    doc_data = [
-        (
-            rfc.enqueued_at,
-            rfc.published_at,
-            document_category_intervals(
-                rfc,
-                now,
-                include_legacy=rfc.pk in legacy_ids,
-                include_awaiting=rfc.pk in awaiting_ids,
-                include_reasons=rfc.pk in reason_ids,
-            ),
+
+    # Bulk-load every per-doc history walk the category build needs, so the
+    # rollup runs a handful of queries instead of several per document.
+    seg_by_doc = _assignment_segments_by_doc(doc_ids)
+    legacy_slug_by_pk = (
+        dict(
+            Label.objects.filter(slug__in=LEGACY_STATE_LABEL_SLUGS).values_list(
+                "pk", "slug"
+            )
         )
-        for rfc in docs
+        if include_legacy
+        else {}
+    )
+    awaiting_pks = set(
+        Label.objects.filter(slug__istartswith=AWAITING_REF_LABEL_PREFIX).values_list(
+            "pk", flat=True
+        )
+    )
+    label_iv = _label_intervals_by_doc(doc_ids, set(legacy_slug_by_pk) | awaiting_pks)
+    reason_by_doc = _blocked_reason_intervals_by_doc(doc_ids, now)
+
+    def _categories(doc_id: int) -> dict[str, tuple[bool, list]]:
+        """Per-doc ``{category: (is_blocked, merged_intervals)}`` from bulk data.
+
+        ``category`` is an assignment role slug (post-transition) or a legacy
+        state label slug (pre-transition). ``awaiting ref:`` time is carved out of
+        ``final_review_editor`` into a blocked ``awaiting_ref`` category, and — for
+        docs with blocking reasons — the single ``blocked`` category is itemised
+        into one blocked category per reason (mirroring the doc timeline). All
+        sourced from the bulk lookups above rather than per-doc queries.
+        """
+        raw: dict[str, tuple[bool, list]] = {}
+        for role_id, is_blocked, runs in seg_by_doc.get(doc_id, []):
+            _b, intervals = raw.setdefault(role_id, (is_blocked, []))
+            intervals.extend((start, end) for start, end, _state in runs)
+        if doc_id in legacy_ids:
+            for lpk, slug in legacy_slug_by_pk.items():
+                is_blocked = slug in LEGACY_BLOCKED_LABEL_SLUGS
+                for start, end in label_iv.get(doc_id, {}).get(lpk, []):
+                    clipped = _clip(start, end, hi=TRANSITION_DATE)
+                    if clipped is None:
+                        continue
+                    _b, intervals = raw.setdefault(slug, (is_blocked, []))
+                    intervals.append(clipped)
+        result = {
+            category: (is_blocked, _merge_intervals(intervals, now))
+            for category, (is_blocked, intervals) in raw.items()
+        }
+        if doc_id in awaiting_ids:
+            awaiting_raw = [
+                iv
+                for lpk in awaiting_pks
+                for iv in label_iv.get(doc_id, {}).get(lpk, [])
+            ]
+            awaiting = _merge_intervals(awaiting_raw, now) if awaiting_raw else []
+            if awaiting:
+                fre = result.get("final_review_editor")
+                if fre is not None:
+                    result["final_review_editor"] = (
+                        fre[0], _subtract_intervals(fre[1], awaiting)
+                    )
+                result["awaiting_ref"] = (True, awaiting)
+        if doc_id in reason_ids:
+            reasons = reason_by_doc.get(doc_id, {})
+            if reasons:
+                result.pop("blocked", None)  # itemised per reason
+                for name, intervals in reasons.items():
+                    result[name] = (True, intervals)
+        return result
+
+    doc_data = [
+        (rfc.enqueued_at, rfc.published_at, _categories(rfc.pk)) for rfc in docs
     ]
 
     periods: list[dict] = []
@@ -887,20 +896,6 @@ def _blocked_doc_ids(candidate_ids: list[int]) -> set[int]:
     return ids
 
 
-def _pages_at(rfc_pk: int, when: datetime.datetime | None) -> int:
-    """The doc's ``pages`` from the history record in effect at ``when``."""
-    if when is None:
-        return 0
-    historical = RfcToBe.history.model
-    pages = (
-        historical.objects.filter(id=rfc_pk, history_date__lte=when)
-        .order_by("-history_date")
-        .values_list("pages", flat=True)
-        .first()
-    )
-    return pages or 0
-
-
 def _merge_open_intervals(
     intervals: list[tuple[datetime.datetime, datetime.datetime | None]],
 ) -> list[tuple[datetime.datetime, datetime.datetime | None]]:
@@ -969,6 +964,165 @@ def _missing_ref_intervals_by_doc(
     }
 
 
+def _label_intervals_by_doc(
+    doc_ids: list[int], label_pks: set[int]
+) -> dict[int, dict[int, list[tuple[datetime.datetime, datetime.datetime | None]]]]:
+    """Bulk equivalent of :meth:`RfcToBe.time_intervals_with_label` for many docs.
+
+    Returns ``{doc_id: {label_pk: [(start, end|None), ...]}}`` restricted to
+    ``label_pks``, reconstructed in two queries from the ``HistoricalRfcToBe``
+    snapshots and their m2m label rows.
+
+    Matches the per-doc method's semantics exactly: it walks the *label-set
+    change-points* (snapshots whose full label set differs from the preceding
+    one) and, at each one, opens a target label that is present-and-not-open and
+    closes one that is open-and-now-absent. Change-points therefore depend on the
+    whole label set (a change in any label can open a target label that was
+    already present), which is why the full set is loaded, not just ``label_pks``.
+    The earliest snapshot has no predecessor, so labels present only there are not
+    counted — as in the per-doc method. Open spans are left ``None``.
+    """
+    if not doc_ids or not label_pks:
+        return {}
+    historical = RfcToBe.history.model
+    snaps: dict[int, list[tuple[int, datetime.datetime]]] = {}
+    for hid, hdate, oid in (
+        historical.objects.filter(id__in=doc_ids)
+        .order_by("id", "history_date", "history_id")
+        .values_list("history_id", "history_date", "id")
+    ):
+        snaps.setdefault(oid, []).append((hid, hdate))
+
+    through = apps.get_model("rpc", "HistoricalRfcToBeLabel")
+    labels_at: dict[int, set[int]] = {}
+    for m2m_history_id, label_id in through.objects.filter(
+        rfctobe_id__in=doc_ids
+    ).values_list("history_id", "label_id"):
+        labels_at.setdefault(m2m_history_id, set()).add(label_id)
+
+    out: dict[int, dict[int, list]] = {}
+    for doc_id, seq in snaps.items():
+        prev: set[int] | None = None
+        open_start: dict[int, datetime.datetime] = {}
+        per: dict[int, list] = {}
+        for hid, hdate in seq:
+            cur = labels_at.get(hid, set())
+            if prev is None:
+                prev = cur
+                continue
+            if cur != prev:  # a label-set change-point
+                for lpk in label_pks:
+                    if lpk in cur:
+                        open_start.setdefault(lpk, hdate)
+                    elif lpk in open_start:
+                        per.setdefault(lpk, []).append((open_start.pop(lpk), hdate))
+                prev = cur
+        for lpk, start in open_start.items():
+            per.setdefault(lpk, []).append((start, None))
+        if per:
+            out[doc_id] = per
+    return out
+
+
+def _assignment_segments_by_doc(
+    doc_ids: list[int],
+) -> dict[int, list[tuple[str, bool, list[Run]]]]:
+    """Bulk :func:`_assignment_segments` — ``{doc_id: [(role, blocked, runs)]}``.
+
+    Two queries (assignments + their history) instead of one-per-assignment.
+    Runs are clipped to on/after the transition, exactly as the per-doc version.
+    """
+    if not doc_ids:
+        return {}
+    assignments = list(
+        Assignment.objects.filter(rfc_to_be_id__in=doc_ids)
+        .order_by("id")
+        .values("id", "rfc_to_be_id", "role_id")
+    )
+    hist_by_assignment: dict[int, list] = {}
+    for aid, state, hdate in (
+        Assignment.history.model.objects.filter(rfc_to_be_id__in=doc_ids)
+        .order_by("id", "history_date")
+        .values_list("id", "state", "history_date")
+    ):
+        hist_by_assignment.setdefault(aid, []).append(_HistRec(state, hdate))
+
+    out: dict[int, list] = {}
+    for a in assignments:
+        history = hist_by_assignment.get(a["id"])
+        if not history:
+            continue
+        runs = []
+        for start, end, state in _active_runs(history):
+            clipped = _clip(start, end, lo=TRANSITION_DATE)
+            if clipped is not None:
+                runs.append((clipped[0], clipped[1], state))
+        if runs:
+            out.setdefault(a["rfc_to_be_id"], []).append(
+                (a["role_id"], a["role_id"] == "blocked", runs)
+            )
+    return out
+
+
+def _blocked_intervals_by_doc(
+    doc_ids: list[int], now: datetime.datetime, legacy_ids: set[int]
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """Bulk equivalent of ``document_intervals(...)[0]`` — the blocked union.
+
+    Blocked assignments (post-transition) + blocked-equivalent legacy labels
+    (pre-transition, only for ``legacy_ids``) + any ``awaiting ref:`` time.
+    """
+    if not doc_ids:
+        return {}
+    seg = _assignment_segments_by_doc(doc_ids)
+    legacy_blocked_pks = set(
+        Label.objects.filter(slug__in=LEGACY_BLOCKED_LABEL_SLUGS).values_list(
+            "pk", flat=True
+        )
+    )
+    awaiting_pks = set(
+        Label.objects.filter(slug__istartswith=AWAITING_REF_LABEL_PREFIX).values_list(
+            "pk", flat=True
+        )
+    )
+    label_iv = _label_intervals_by_doc(doc_ids, legacy_blocked_pks | awaiting_pks)
+    out: dict[int, list] = {}
+    for doc_id in doc_ids:
+        raw: list = []
+        for _role, is_blocked, runs in seg.get(doc_id, []):
+            if is_blocked:
+                raw.extend((start, end) for start, end, _state in runs)
+        if doc_id in legacy_ids:
+            for lpk in legacy_blocked_pks:
+                for start, end in label_iv.get(doc_id, {}).get(lpk, []):
+                    clipped = _clip(start, end, hi=TRANSITION_DATE)
+                    if clipped is not None:
+                        raw.append(clipped)
+        for lpk in awaiting_pks:  # awaiting time counts as blocked, all eras
+            raw.extend(label_iv.get(doc_id, {}).get(lpk, []))
+        out[doc_id] = _merge_intervals(raw, now)
+    return out
+
+
+def _blocked_reason_intervals_by_doc(
+    doc_ids: list[int], now: datetime.datetime
+) -> dict[int, dict[str, list[tuple[datetime.datetime, datetime.datetime]]]]:
+    """Bulk :func:`_blocked_reason_intervals` — ``{doc_id: {reason: intervals}}``."""
+    if not doc_ids:
+        return {}
+    raw: dict[int, dict[str, list]] = {}
+    for doc_id, name, since, resolved in (
+        RfcToBeBlockingReason.objects.filter(rfc_to_be_id__in=doc_ids)
+        .order_by("since_when")
+        .values_list("rfc_to_be_id", "reason__name", "since_when", "resolved")
+    ):
+        raw.setdefault(doc_id, {}).setdefault(name, []).append((since, resolved))
+    return {
+        doc_id: {name: _merge_intervals(ivs, now) for name, ivs in by_reason.items()}
+        for doc_id, by_reason in raw.items()
+    }
+
+
 def queue_counts_rollup(
     period: str, count: int, now: datetime.datetime | None = None
 ) -> list[dict]:
@@ -1005,20 +1159,13 @@ def queue_counts_rollup(
     # Missing references = not-received relationships (any era) + legacy MISSREF.
     notrecv = _missing_ref_intervals_by_doc(doc_ids)
     missref_label = Label.objects.filter(slug="MISSREF").first()
-    missref_ids = (
-        set(
-            apps.get_model("rpc", "HistoricalRfcToBeLabel")
-            .objects.filter(label__slug="MISSREF", rfctobe_id__in=doc_ids)
-            .values_list("rfctobe_id", flat=True)
-        )
-        if missref_label
-        else set()
+    missref_by_doc = (
+        _label_intervals_by_doc(doc_ids, {missref_label.pk}) if missref_label else {}
     )
-    missref_intervals: dict[int, list] = {}
-    for rfc in RfcToBe.objects.filter(pk__in=missref_ids):
-        missref_intervals[rfc.pk] = [
-            (iv.start, iv.end) for iv in rfc.time_intervals_with_label(missref_label)
-        ]
+    missref_ids = set(missref_by_doc)
+    missref_intervals: dict[int, list] = {
+        pk: labels[missref_label.pk] for pk, labels in missref_by_doc.items()
+    }
 
     # Kept separate for the "entered with missing references" check, which grants
     # the not-received relation only an intake grace but the legacy MISSREF label
@@ -1035,22 +1182,8 @@ def queue_counts_rollup(
         if lab:
             label_merged[d["pk"]] = _merge_intervals(lab, now)
 
-    # Historical page counts, only for docs entering / publishing / going to
-    # edit in range.
-    enq_pages: dict[int, int] = {}
-    pub_pages: dict[int, int] = {}
-    gone_pages: dict[int, int] = {}
-    for d in docs:
-        enq, pub, gte = d["enqueued_at"], d["published_at"], d["gone_to_edit"]
-        if enq is not None and enq >= earliest:
-            enq_pages[d["pk"]] = _pages_at(d["pk"], enq)
-        if pub is not None and pub >= earliest:
-            pub_pages[d["pk"]] = _pages_at(d["pk"], pub)
-        if gte is not None and gte >= earliest:
-            gone_pages[d["pk"]] = _pages_at(d["pk"], gte)
-
-    # Full pages history per doc, to read the page count in effect at each
-    # period boundary (for docs in the queue at the start of a period).
+    # Full pages history per doc (one query), to read the page count in effect
+    # at any instant — period boundaries, enqueue, publish, gone-to-edit.
     pages_history: dict[int, list[tuple[datetime.datetime, int]]] = {}
     for hid, hdate, hpages in (
         RfcToBe.history.model.objects.filter(id__in=doc_ids)
@@ -1068,6 +1201,20 @@ def queue_counts_rollup(
                 break
         return val
 
+    # Page counts for docs entering / publishing / going to edit in range,
+    # read from that in-memory history (no per-doc query).
+    enq_pages: dict[int, int] = {}
+    pub_pages: dict[int, int] = {}
+    gone_pages: dict[int, int] = {}
+    for d in docs:
+        enq, pub, gte = d["enqueued_at"], d["published_at"], d["gone_to_edit"]
+        if enq is not None and enq >= earliest:
+            enq_pages[d["pk"]] = pages_at_boundary(d["pk"], enq)
+        if pub is not None and pub >= earliest:
+            pub_pages[d["pk"]] = pages_at_boundary(d["pk"], pub)
+        if gte is not None and gte >= earliest:
+            gone_pages[d["pk"]] = pages_at_boundary(d["pk"], gte)
+
     # Blocked = the time view's blocked union, PLUS missing-reference coverage
     # (raw MISSREF + not-received relationships). Missing a reference is a blocked
     # condition, and unioning it bridges the legacy→relationship handoff at the
@@ -1076,11 +1223,13 @@ def queue_counts_rollup(
     # blocked or ever missing a reference need the walk; the rest are 0.
     legacy_ids = _legacy_state_doc_ids(doc_ids)
     relevant_ids = _blocked_doc_ids(doc_ids) | set(notrecv) | missref_ids
+    base_blocked = _blocked_intervals_by_doc(list(relevant_ids), now, legacy_ids)
     blocked_intervals: dict[int, list] = {}
-    for rfc in RfcToBe.objects.filter(pk__in=relevant_ids):
-        base = document_intervals(rfc, now, include_legacy=rfc.pk in legacy_ids)[0]
-        missing = notrecv.get(rfc.pk, []) + missref_intervals.get(rfc.pk, [])
-        blocked_intervals[rfc.pk] = _merge_intervals(base + missing, now)
+    for pk in relevant_ids:
+        missing = notrecv.get(pk, []) + missref_intervals.get(pk, [])
+        blocked_intervals[pk] = _merge_intervals(
+            base_blocked.get(pk, []) + missing, now
+        )
 
     periods: list[dict] = []
     for window in windows:
