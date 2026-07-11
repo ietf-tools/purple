@@ -27,6 +27,7 @@ from .lifecycle.timeline import (
     _candidate_docs,
     _clip,
     _first_clear_after,
+    _label_intervals_by_doc,
     _merge_intervals,
     _missing_ref_intervals_by_doc,
     _overlap_seconds,
@@ -577,12 +578,39 @@ class QueueRollupTests(TestCase):
         )
         june = queue_rollup("month", 2, self.now)[0]
         by_role = {r["role"]: r for r in june["by_role"]}
-        # The single "blocked" category is replaced by per-reason categories.
+        # The single "blocked" category is replaced by per-reason categories,
+        # and the blocked time no reason explains becomes "blocked (other)".
         assert "blocked" not in by_role
         assert by_role[author.name]["is_blocked"] is True
         assert by_role[author.name]["seconds"] == 10 * 24 * 3600
         assert by_role[holder.name]["seconds"] == 5 * 24 * 3600
-        assert june["total_blocked_seconds"] == 15 * 24 * 3600
+        # Blocked assignment spans June 1-30 (29d); reasons explain 15d, so the
+        # remaining 14d is "blocked (other)" and the total is the full 29d.
+        assert by_role["blocked (other)"]["is_blocked"] is True
+        assert by_role["blocked (other)"]["seconds"] == 14 * 24 * 3600
+        assert june["total_blocked_seconds"] == 29 * 24 * 3600
+
+    def test_blocking_reason_clipped_to_blocked_assignment(self):
+        # A reason record that overruns the blocked assignment is clipped to it,
+        # so it can't credit blocked time the doc wasn't actually blocked for.
+        rfc = RfcToBeFactory()
+        _backdate_creation(rfc, _dt(2026, 1, 1))
+        _make_assignment(
+            rfc, "blocked",
+            [(_dt(2026, 6, 1), "in_progress"), (_dt(2026, 6, 15), "done")],  # 14 days
+        )
+        reason, _ = BlockingReason.objects.get_or_create(
+            slug="label_author_input_required",
+            defaults={"name": "Author Input Required"},
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc, reason=reason,
+            since_when=_dt(2026, 6, 1), resolved=_dt(2026, 6, 30),  # overruns to 30
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        by_role = {r["role"]: r for r in june["by_role"]}
+        assert by_role[reason.name]["seconds"] == 14 * 24 * 3600  # clipped, not 29
+        assert june["total_blocked_seconds"] == 14 * 24 * 3600
 
     def test_withdrawn_docs_excluded(self):
         self._doc_with_work(disposition_slug="withdrawn")
@@ -759,6 +787,20 @@ class QueueCountsRollupTests(TestCase):
         june = queue_counts_rollup("month", 2, self.now)[0]
         assert june["docs_blocked_entire"] == 1
 
+    def test_label_intervals_by_doc_matches_per_doc_method(self):
+        # The bulk reconstruction must exactly match RfcToBe.time_intervals_with_
+        # label (its subtlest invariant: interval boundaries are label-set
+        # change-points, so an overlapping second label matters).
+        rfc = self._doc(_dt(2026, 1, 1))
+        a = LabelFactory(slug="MISSREF")
+        b = LabelFactory(slug="AUTH48")
+        _apply_label_over(rfc, a, _dt(2026, 2, 1), _dt(2026, 4, 1))
+        _apply_label_over(rfc, b, _dt(2026, 3, 1), _dt(2026, 5, 1))  # overlaps a
+        bulk = _label_intervals_by_doc([rfc.pk], {a.pk, b.pk}).get(rfc.pk, {})
+        for label in (a, b):
+            want = [(iv.start, iv.end) for iv in rfc.time_intervals_with_label(label)]
+            assert bulk.get(label.pk, []) == want, label.slug
+
     def test_pages_use_historical_page_count(self):
         # Pages are read from the history record in effect when the doc entered,
         # not the current value.
@@ -805,6 +847,14 @@ class TimelineEndpointTests(TestCase):
         assert "blocked_reasons" in data
         assert len(data["tracks"]) == 1  # blocked assignment is itemised elsewhere
         assert {b["kind"] for b in data["summary"]} == {KIND_BLOCKED, KIND_WORKING}
+
+    def test_queue_stats_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue"), {"period": "month"})
+        assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_counts_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue-counts"), {"period": "month"})
+        assert resp.status_code in (401, 403), resp.content
 
     def test_queue_stats_ok(self):
         self.client.force_login(self.user)

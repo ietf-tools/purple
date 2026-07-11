@@ -447,6 +447,14 @@ def _subtract_intervals(
     return result
 
 
+def _intersect_intervals(
+    a: list[tuple[datetime.datetime, datetime.datetime]],
+    b: list[tuple[datetime.datetime, datetime.datetime]],
+) -> list[tuple[datetime.datetime, datetime.datetime]]:
+    """``a`` ∩ ``b`` (both merged, sorted, closed): ``a`` minus (``a`` minus ``b``)."""
+    return _subtract_intervals(a, _subtract_intervals(a, b))
+
+
 def document_intervals(
     rfc: RfcToBe, now: datetime.datetime, include_legacy: bool = True
 ) -> tuple[
@@ -678,25 +686,6 @@ def _blocked_reason_doc_ids(candidate_ids: list[int]) -> set[int]:
     )
 
 
-def _blocked_reason_intervals(
-    rfc: RfcToBe, now: datetime.datetime
-) -> dict[str, list[tuple[datetime.datetime, datetime.datetime]]]:
-    """Merged blocked intervals keyed by blocking-reason name.
-
-    Same source as the doc timeline's reason lanes (RfcToBeBlockingReason), used
-    to itemise the queue's blocked time by reason.
-    """
-    by_reason: dict[str, list] = {}
-    rows = (
-        RfcToBeBlockingReason.objects.filter(rfc_to_be=rfc)
-        .select_related("reason")
-        .order_by("since_when")
-    )
-    for row in rows:
-        by_reason.setdefault(row.reason.name, []).append((row.since_when, row.resolved))
-    return {name: _merge_intervals(ivs, now) for name, ivs in by_reason.items()}
-
-
 def _candidate_docs(earliest: datetime.datetime, include_legacy: bool):
     """Docs that could contribute time to windows starting at ``earliest``.
 
@@ -811,9 +800,24 @@ def queue_rollup(
         if doc_id in reason_ids:
             reasons = reason_by_doc.get(doc_id, {})
             if reasons:
-                result.pop("blocked", None)  # itemised per reason
+                # Itemise the blocked category per reason. Constrain each reason
+                # to the actual blocked-assignment time so a reason that overruns
+                # it can't credit un-blocked time, and surface any blocked time no
+                # reason explains as "blocked (other)", so the per-reason lanes
+                # still sum to the blocked assignment.
+                blocked_cat = result.pop("blocked", None)
+                blocked_ivs = blocked_cat[1] if blocked_cat else []
+                covered: list = []
                 for name, intervals in reasons.items():
-                    result[name] = (True, intervals)
+                    within = _intersect_intervals(intervals, blocked_ivs)
+                    if within:
+                        result[name] = (True, within)
+                        covered.extend(within)
+                remainder = _subtract_intervals(
+                    blocked_ivs, _merge_intervals(covered, now)
+                )
+                if remainder:
+                    result["blocked (other)"] = (True, remainder)
         return result
 
     doc_data = [
@@ -832,9 +836,10 @@ def queue_rollup(
         member_count = 0
 
         for enqueued, published, categories in doc_data:
-            # Bin membership: existed by the period end, and had not left the
-            # queue before the period started.
-            if enqueued is not None and enqueued > eff_end:
+            # Bin membership: entered by the period end, and had not left the
+            # queue before the period started. A doc with no enqueue time can't
+            # be placed, so it is not a member (matching queue_counts_rollup).
+            if enqueued is None or enqueued > eff_end:
                 continue
             if published is not None and published < start:
                 continue
@@ -1126,7 +1131,12 @@ def _blocked_intervals_by_doc(
 def _blocked_reason_intervals_by_doc(
     doc_ids: list[int], now: datetime.datetime
 ) -> dict[int, dict[str, list[tuple[datetime.datetime, datetime.datetime]]]]:
-    """Bulk :func:`_blocked_reason_intervals` — ``{doc_id: {reason: intervals}}``."""
+    """Per-doc merged blocked intervals keyed by blocking-reason name.
+
+    Source for itemising the queue's blocked time by reason (same
+    RfcToBeBlockingReason records as the doc timeline's reason lanes).
+    Returns ``{doc_id: {reason_name: intervals}}``.
+    """
     if not doc_ids:
         return {}
     raw: dict[int, dict[str, list]] = {}
