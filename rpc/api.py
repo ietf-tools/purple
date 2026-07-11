@@ -48,7 +48,11 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, get_rpcapi_client, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
-from .dt_v1_api_utils import datatracker_group_list_email, datatracker_group_name
+from .dt_v1_api_utils import (
+    DatatrackerFetchFailure,
+    datatracker_group_list_email,
+    datatracker_group_name,
+)
 from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
@@ -2012,7 +2016,15 @@ class StatsQueue(views.APIView):
         cache_key = f"stats_queue:{period}:{count}:{timezone.now().date().isoformat()}"
         periods = cache.get(cache_key)
         if periods is None:
-            periods = queue_rollup(period, count)
+            try:
+                periods = queue_rollup(period, count)
+            except DatatrackerFetchFailure:
+                # Only "ietf" periods need the datatracker; surface an outage as
+                # 503 (retryable) instead of a 500.
+                return Response(
+                    {"detail": "Could not reach the datatracker for IETF meetings."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
             cache.set(cache_key, periods, self.CACHE_TTL)
         return Response(QueueStatsSerializer({"periods": periods}).data)
 
@@ -2060,7 +2072,13 @@ class StatsQueueCounts(views.APIView):
         )
         periods = cache.get(cache_key)
         if periods is None:
-            periods = queue_counts_rollup(period, count)
+            try:
+                periods = queue_counts_rollup(period, count)
+            except DatatrackerFetchFailure:
+                return Response(
+                    {"detail": "Could not reach the datatracker for IETF meetings."},
+                    status=status.HTTP_503_SERVICE_UNAVAILABLE,
+                )
             cache.set(cache_key, periods, self.CACHE_TTL)
         return Response(QueueCountStatsSerializer({"periods": periods}).data)
 

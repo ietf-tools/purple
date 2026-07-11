@@ -2,6 +2,7 @@
 """Tests for rpc.lifecycle.timeline and the timeline/queue-stats endpoints."""
 
 import datetime
+import time
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -821,3 +822,46 @@ class TimelineEndpointTests(TestCase):
         resp = self.client.get(reverse("stats-queue"), {"period": "week", "count": 999})
         assert resp.status_code == 200, resp.content
         assert len(resp.json()["periods"]) == 52
+
+    def test_queue_stats_ietf_outage_returns_503(self):
+        # period=ietf needs the datatracker; a cold outage should be 503, not 500.
+        from rpc import dt_v1_api_utils as dt
+
+        dt._ietf_meetings_cache.update(at=None, data=None)  # no last-known-good
+        self.client.force_login(self.user)
+        with mock.patch.object(
+            dt, "datatracker_api_get", side_effect=dt.DatatrackerFetchFailure
+        ):
+            resp = self.client.get(reverse("stats-queue"), {"period": "ietf"})
+        assert resp.status_code == 503, resp.content
+
+
+class IetfMeetingsCacheTests(SimpleTestCase):
+    def setUp(self):
+        from rpc import dt_v1_api_utils as dt
+
+        self.dt = dt
+        dt._ietf_meetings_cache.update(at=None, data=None)
+
+    def tearDown(self):
+        self.dt._ietf_meetings_cache.update(at=None, data=None)
+
+    def test_serves_last_known_good_past_ttl_on_failure(self):
+        good = {"objects": [{"number": "125", "date": "2027-11-01"}]}
+        with mock.patch.object(self.dt, "datatracker_api_get", return_value=good):
+            first = self.dt.datatracker_ietf_meetings()
+        assert first == [("125", datetime.date(2027, 11, 1))]
+        # Expire the TTL, then make the fetch fail: the stale list is served.
+        self.dt._ietf_meetings_cache["at"] = time.monotonic() - 10_000
+        with mock.patch.object(
+            self.dt, "datatracker_api_get", side_effect=self.dt.DatatrackerFetchFailure
+        ):
+            again = self.dt.datatracker_ietf_meetings()
+        assert again == first
+
+    def test_raises_when_never_fetched(self):
+        with mock.patch.object(
+            self.dt, "datatracker_api_get", side_effect=self.dt.DatatrackerFetchFailure
+        ):
+            with self.assertRaises(self.dt.DatatrackerFetchFailure):
+                self.dt.datatracker_ietf_meetings()

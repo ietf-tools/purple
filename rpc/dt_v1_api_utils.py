@@ -169,10 +169,22 @@ def datatracker_ietf_meetings() -> list[tuple[str, datetime.date]]:
         and monotonic - cache_["at"] < _IETF_MEETINGS_TTL
     ):
         return cache_["data"]
-    api_response = datatracker_api_get(
-        f"{settings.DATATRACKER_API_V1_BASE}/meeting/meeting/",
-        params={"format": "json", "type": "ietf", "order_by": "-date", "limit": 20},
-    )
+    try:
+        api_response = datatracker_api_get(
+            f"{settings.DATATRACKER_API_V1_BASE}/meeting/meeting/",
+            params={
+                "format": "json",
+                "type": "ietf",
+                "order_by": "-date",
+                "limit": 20,
+            },
+        )
+    except DatatrackerFetchFailure:
+        # Serve the last-known-good list past its TTL rather than fail; only
+        # propagate if we have never fetched successfully.
+        if cache_["data"] is not None:
+            return cache_["data"]
+        raise
     meetings: list[tuple[str, datetime.date]] = []
     for obj in api_response.get("objects", []):
         number, date_str = obj.get("number"), obj.get("date")

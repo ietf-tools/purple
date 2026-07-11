@@ -173,7 +173,7 @@ const PERIOD_OPTIONS = [
 // scaled by working-hours/year over total hours/year), or per-period share (%).
 const mode = ref<'calendar' | 'working' | 'share'>('calendar')
 
-const HOURS_PER_YEAR = 8670
+const HOURS_PER_YEAR = 365 * 24 // 8760
 const workingHoursPerYear = Number(useRuntimeConfig().public.workingHoursPerYear) || 2000
 const workingScale = computed(() => workingHoursPerYear / HOURS_PER_YEAR)
 
@@ -217,7 +217,9 @@ const {
 const periods = computed(() => stats.value?.periods ?? [])
 
 // Week labels (2026-W28) are terse; show the covered date range beneath them.
-const showWeekRange = computed(() => appliedPeriod.value === StatsQueuePeriodEnum.Week)
+// Keyed off the displayed data, not appliedPeriod, so stale rows during a
+// refetch keep their correct sublabels.
+const showWeekRange = computed(() => /^\d{4}-W\d{2}$/.test(periods.value[0]?.label ?? ''))
 function weekRange (p: QueuePeriodStat): string {
   const fmt = (d: Date) =>
     d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })

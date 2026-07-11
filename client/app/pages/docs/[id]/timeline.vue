@@ -56,6 +56,7 @@
             <tr v-for="row in trackRows" :key="row.key">
               <td class="py-2 pl-4 pr-3">
                 <BaseBadge :label="row.role" />
+                <span v-if="row.awaiting" class="ml-2 text-xs opacity-60">awaiting ref</span>
               </td>
               <td class="px-3 py-2">{{ row.person ?? '—' }}</td>
               <td class="px-3 py-2 text-right">{{ row.isBlocked ? '—' : humanMillis(row.millis) }}</td>
@@ -140,13 +141,20 @@ const { data: rfcToBe, refresh: rfcToBeRefresh } = await useAsyncData(
 const now = new Date()
 
 const trackRows = computed(() =>
-  (timeline.value?.tracks ?? []).map(track => ({
-    key: `track-${track.assignmentId}`,
-    role: track.role,
-    person: track.personName,
-    isBlocked: track.isBlocked,
-    millis: totalMillis(track.segments, now)
-  }))
+  (timeline.value?.tracks ?? []).map((track) => {
+    // A final-review assignment can yield two tracks with the same assignmentId
+    // — a working row and an "awaiting ref" (blocked) row; segments carry the
+    // kind. Disambiguate the key and mark the awaiting row (as the gantt does).
+    const awaiting = track.segments.some(s => s.kind === KIND_AWAITING)
+    return {
+      key: `track-${track.assignmentId}-${awaiting ? 'awaiting' : 'main'}`,
+      role: track.role,
+      awaiting,
+      person: track.personName,
+      isBlocked: track.isBlocked,
+      millis: totalMillis(track.segments, now)
+    }
+  })
 )
 
 const totalWorkingMillis = computed(() => {

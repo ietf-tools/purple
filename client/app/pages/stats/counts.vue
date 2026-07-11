@@ -62,7 +62,7 @@
               <tr class="bg-gray-50 dark:bg-neutral-800">
                 <th :colspan="periods.length + 1" scope="colgroup" class="py-2 pl-4 pr-3 text-left font-semibold">Doc counts</th>
               </tr>
-              <tr v-for="row in docCountRows" :key="row.label">
+              <tr v-for="(row, i) in docCountRows" :key="`doc-${i}`">
                 <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal" :class="row.divider ? dividerClass : ''">
                   {{ row.label }}
                   <span v-if="row.note" class="block whitespace-normal text-xs opacity-60">{{ row.note }}</span>
@@ -74,7 +74,7 @@
               <tr class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
                 <th :colspan="periods.length + 1" scope="colgroup" class="py-2 pl-4 pr-3 text-left font-semibold">Page counts</th>
               </tr>
-              <tr v-for="row in pageCountRows" :key="row.label">
+              <tr v-for="(row, i) in pageCountRows" :key="`page-${i}`">
                 <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal" :class="row.divider ? dividerClass : ''">
                   {{ row.label }}
                   <span v-if="row.note" class="block whitespace-normal text-xs opacity-60">{{ row.note }}</span>
@@ -144,7 +144,9 @@ const {
 const periods = computed(() => stats.value?.periods ?? [])
 
 // Week labels (2026-W28) are terse; show the covered date range beneath them.
-const showWeekRange = computed(() => appliedPeriod.value === StatsQueuePeriodEnum.Week)
+// Keyed off the displayed data, not appliedPeriod, so stale rows during a
+// refetch keep their correct sublabels.
+const showWeekRange = computed(() => /^\d{4}-W\d{2}$/.test(periods.value[0]?.label ?? ''))
 function weekRange (p: QueueCountStatPeriod): string {
   const fmt = (d: Date) =>
     d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })

@@ -130,6 +130,7 @@ const height = computed(() =>
 function draw () {
   const svg = d3.select(svgEl.value)
   svg.selectAll('*').remove()
+  hideTooltip() // removing a hovered element never fires mouseleave
   if (!svgEl.value || lanes.value.length === 0) return
 
   const laneList = lanes.value

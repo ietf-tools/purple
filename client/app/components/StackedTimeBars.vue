@@ -160,6 +160,7 @@ function roundedTopRect (x: number, y: number, w: number, h: number, r: number):
 function draw () {
   const svg = d3.select(svgEl.value)
   svg.selectAll('*').remove()
+  hideTooltip() // removing a hovered element never fires mouseleave
   if (!svgEl.value || periods.value.length === 0) return
 
   const data = periods.value
