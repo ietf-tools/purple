@@ -211,12 +211,16 @@ class QueueRollupTests(TestCase):
             defaults={"name": "Waiting for Action Holder"},
         )
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=author,
-            since_when=_dt(2026, 6, 5), resolved=_dt(2026, 6, 15),
+            rfc_to_be=rfc,
+            reason=author,
+            since_when=_dt(2026, 6, 5),
+            resolved=_dt(2026, 6, 15),
         )
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=holder,
-            since_when=_dt(2026, 6, 20), resolved=_dt(2026, 6, 25),
+            rfc_to_be=rfc,
+            reason=holder,
+            since_when=_dt(2026, 6, 20),
+            resolved=_dt(2026, 6, 25),
         )
         june = queue_rollup("month", 2, self.now)[0]
         by_role = {r["role"]: r for r in june["by_role"]}
@@ -238,7 +242,8 @@ class QueueRollupTests(TestCase):
         rfc = RfcToBeFactory()
         _backdate_creation(rfc, _dt(2026, 1, 1))
         _make_assignment(
-            rfc, "blocked",
+            rfc,
+            "blocked",
             [(_dt(2026, 6, 1), "in_progress"), (_dt(2026, 6, 15), "done")],  # 14 days
         )
         reason, _ = BlockingReason.objects.get_or_create(
@@ -246,8 +251,10 @@ class QueueRollupTests(TestCase):
             defaults={"name": "Author Input Required"},
         )
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=reason,
-            since_when=_dt(2026, 6, 1), resolved=_dt(2026, 6, 30),  # overruns to 30
+            rfc_to_be=rfc,
+            reason=reason,
+            since_when=_dt(2026, 6, 1),
+            resolved=_dt(2026, 6, 30),  # overruns to 30
         )
         june = queue_rollup("month", 2, self.now)[0]
         by_role = {r["role"]: r for r in june["by_role"]}
@@ -352,7 +359,8 @@ class QueueCountsRollupTests(TestCase):
         # D: in queue since May, blocked the entire month (went to edit at entry).
         d = self._doc(_dt(2026, 5, 1), pages=8)
         _make_assignment(
-            d, "blocked",
+            d,
+            "blocked",
             [(_dt(2026, 5, 25), "in_progress"), (_dt(2026, 7, 5), "done")],
         )
 

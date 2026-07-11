@@ -295,7 +295,8 @@ def queue_rollup(
                 fre = result.get("final_review_editor")
                 if fre is not None:
                     result["final_review_editor"] = (
-                        fre[0], _subtract_intervals(fre[1], awaiting)
+                        fre[0],
+                        _subtract_intervals(fre[1], awaiting),
                     )
                 result["awaiting_ref"] = (True, awaiting)
         if doc_id in reason_ids:
@@ -439,8 +440,7 @@ def _missing_ref_intervals_by_doc(
         )
         # Missing while the row exists (not a delete) with a not-received slug.
         missing = (
-            row["history_type"] != "-"
-            and row["relationship__slug"] in not_received
+            row["history_type"] != "-" and row["relationship__slug"] in not_received
         )
         if missing and st["open"] is None:
             st["open"] = row["history_date"]

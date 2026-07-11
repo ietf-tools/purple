@@ -2,7 +2,6 @@
 """Tests for rpc.lifecycle.timeline (per-document reconstruction) and the
 document-timeline endpoint."""
 
-
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
@@ -148,16 +147,22 @@ class AssignmentTimelineTests(TestCase):
         )
         # Author-input applied twice (two stints); action-holder still open.
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=author,
-            since_when=_dt(2026, 6, 1), resolved=_dt(2026, 6, 5),
+            rfc_to_be=rfc,
+            reason=author,
+            since_when=_dt(2026, 6, 1),
+            resolved=_dt(2026, 6, 5),
         )
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=author,
-            since_when=_dt(2026, 6, 20), resolved=_dt(2026, 6, 22),
+            rfc_to_be=rfc,
+            reason=author,
+            since_when=_dt(2026, 6, 20),
+            resolved=_dt(2026, 6, 22),
         )
         RfcToBeBlockingReason.objects.create(
-            rfc_to_be=rfc, reason=actionholder,
-            since_when=_dt(2026, 6, 25), resolved=None,
+            rfc_to_be=rfc,
+            reason=actionholder,
+            since_when=_dt(2026, 6, 25),
+            resolved=None,
         )
         bands = blocked_reason_bands(rfc, self.now)
         assert {b.label for b in bands} == {author.name, actionholder.name}
