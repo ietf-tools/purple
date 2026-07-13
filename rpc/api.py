@@ -761,6 +761,7 @@ class QueueCounts(views.APIView):
     CACHE_KEY = "queue_counts"
     CACHE_TTL = 60  # seconds
 
+    @extend_schema(operation_id="queue_counts", responses={200: QueueCountsSerializer})
     def get(self, request):
         cached = cache.get(self.CACHE_KEY)
         if cached is not None:
