@@ -130,6 +130,16 @@ class DatatrackerPerson(models.Model):
         )
 
 
+class DocumentLabel(models.Model):
+    """Through model for linking Label to Document
+
+    This exists so we can specify on_delete=models.PROTECT for the label FK.
+    """
+
+    document = models.ForeignKey("Document", on_delete=models.CASCADE)
+    label = models.ForeignKey("rpc.Label", on_delete=models.PROTECT)
+
+
 class Document(models.Model):
     """Document known to the datatracker"""
 
@@ -144,10 +154,9 @@ class Document(models.Model):
     group = models.CharField(max_length=40, blank=True, help_text="Group of draft")
     pages = models.PositiveSmallIntegerField(help_text="Number of pages")
     intended_std_level = models.CharField(max_length=32, blank=True)
+    labels = models.ManyToManyField("rpc.Label", through=DocumentLabel)
 
-    # Labels applied to this instance. To track history, see
-    # https://django-simple-history.readthedocs.io/en/latest/historical_model.html#tracking-many-to-many-relationships
-    labels = models.ManyToManyField("rpc.Label", through="DocumentLabel")
+    history = HistoricalRecords(m2m_fields=[labels])
 
     def __str__(self):
         return f"{self.name}-{self.rev}"
@@ -213,13 +222,3 @@ class Document(models.Model):
             field_name,
             None,
         )
-
-
-class DocumentLabel(models.Model):
-    """Through model for linking Label to Document
-
-    This exists so we can specify on_delete=models.PROTECT for the label FK.
-    """
-
-    document = models.ForeignKey("Document", on_delete=models.CASCADE)
-    label = models.ForeignKey("rpc.Label", on_delete=models.PROTECT)
