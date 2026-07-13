@@ -6,8 +6,11 @@ logger = logging.getLogger(__name__)
 
 STREAMS = ("irtf", "editorial")
 
+# Datatracker acronyms that are real groups but not IRTF Research Groups (RGs) —
+# they shall remain empty in purple.
+NON_RG_GROUPS = {"int", "gen", "irtfopen"}
+
 FALLBACK_GROUPS = {
-    "draft-kamei-p2p-experiments-japan": "p2prg",
     "draft-dtnrg-ltp-cbhe-registries": "dtnrg",
 }
 
@@ -57,7 +60,7 @@ def backfill_missing_groups(dry_run: bool = False) -> tuple[int, int, int]:
             continue
 
         group = full_draft.group or ""
-        if group and group.lower() != "none":
+        if group and group.lower() != "none" and group.lower() not in NON_RG_GROUPS:
             if not dry_run:
                 rfctobe.group = group
                 rfctobe.save(update_fields=["group"])
@@ -94,4 +97,10 @@ def backfill_missing_groups(dry_run: bool = False) -> tuple[int, int, int]:
                 )
                 skipped += 1
 
+    logger.info(
+        "backfill_missing_groups: done — total=%d, updated=%d, skipped=%d",
+        total,
+        updated,
+        skipped,
+    )
     return total, updated, skipped
