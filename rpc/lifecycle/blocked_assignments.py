@@ -33,33 +33,37 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     """Compute whether blocked and collect blocking reasons."""
     reasons: set[str] = set()
 
+    # Gate 0: Always blocks regardless of current assignment
+    if rfc.labels.filter(slug="Author Input Required").exists():
+        reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
+    if rfc.labels.filter(slug="Stream Hold").exists():
+        reasons.add(BlockingReason.LABEL_STREAM_HOLD)
+    if rfc.labels.filter(slug="Tools Issue").exists():
+        reasons.add(BlockingReason.TOOLS_ISSUE)
+    if rfc.rpcrelateddocument_set.filter(
+        relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+    ).exists():
+        reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED)
+    if reasons:
+        return reasons
+
     # Gate 1: Blocks formatting / reference checks
     slugs = ["ref_checker", "formatting"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        action_holder_active_qs = rfc.actionholder_set.active()
-        if action_holder_active_qs.exists():
+        if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
-        stream_hold_qs = rfc.labels.filter(slug="Stream Hold")
-        if stream_hold_qs.exists():
-            reasons.add(BlockingReason.LABEL_STREAM_HOLD)
-        extref_hold_qs = rfc.labels.filter(slug="ExtRef Hold")
-        if extref_hold_qs.exists():
+        if rfc.labels.filter(slug="ExtRef Hold").exists():
             reasons.add(BlockingReason.LABEL_EXTREF_HOLD)
-        author_input_qs = rfc.labels.filter(slug="Author Input Required")
-        if author_input_qs.exists():
-            reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
-        # any related documents not received (incl. 2g/3g/withdrawn), add only first
-        blocking_slugs = DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS + [
-            DocRelationshipName.WITHDRAWNREF_RELATIONSHIP_SLUG
+        # any related documents not received (2g/3g/withdrawn), add only first
+        blocking_slugs = [
+            DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG,
+            DocRelationshipName.NOT_RECEIVED_3G_RELATIONSHIP_SLUG,
+            DocRelationshipName.WITHDRAWNREF_RELATIONSHIP_SLUG,
         ]
         if rfc.rpcrelateddocument_set.filter(
             relationship__slug__in=blocking_slugs
         ).exists():
             if rfc.rpcrelateddocument_set.filter(
-                relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
-            ).exists():
-                reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED)
-            elif rfc.rpcrelateddocument_set.filter(
                 relationship__slug=DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
             ).exists():
                 reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED_2G)
@@ -76,61 +80,32 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     # Gate 2: Blocks first edit
     slugs = ["first_editor"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        action_holder_active_qs = rfc.actionholder_set.active()
-        if action_holder_active_qs.exists():
+        if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
-        stream_or_author_hold_qs = rfc.labels.filter(
-            slug__in=["Stream Hold", "Author Input Required"]
-        )
-        if stream_or_author_hold_qs.exists():
-            # record specific reasons
-            if rfc.labels.filter(slug__in=["Stream Hold"]).exists():
-                reasons.add(BlockingReason.LABEL_STREAM_HOLD)
-            if rfc.labels.filter(slug__in=["Author Input Required"]).exists():
-                reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
         return reasons
 
     # Gate 3: Blocks second edit
     slugs = ["second_editor"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        action_holder_active_qs = rfc.actionholder_set.active()
-        if action_holder_active_qs.exists():
+        if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
-        labels_qs = rfc.labels.filter(slug__in=["Stream Hold", "IANA Hold"])
-        if labels_qs.exists():
-            if rfc.labels.filter(slug__in=["Stream Hold"]).exists():
-                reasons.add(BlockingReason.LABEL_STREAM_HOLD)
-            if rfc.labels.filter(slug__in=["IANA Hold"]).exists():
-                reasons.add(BlockingReason.LABEL_IANA_HOLD)
+        if rfc.labels.filter(slug="IANA Hold").exists():
+            reasons.add(BlockingReason.LABEL_IANA_HOLD)
         # any document this draft normatively references has not completed first edit
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
-                incomplete_first_edit_qs = (
-                    ref.target_rfctobe.incomplete_activities().filter(
-                        slug="first_editor"
-                    )
-                )
-                if incomplete_first_edit_qs.exists():
+                if (
+                    ref.target_rfctobe.incomplete_activities()
+                    .filter(slug="first_editor")
+                    .exists()
+                ):
                     reasons.add(BlockingReason.REFQUEUE_FIRST_EDIT_INCOMPLETE)
         return reasons
 
     # Gate 4: Blocks final review
     slugs = ["final_review_editor"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        # any document this draft normatively references has not completed 2nd edit
-        refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
-        if refqueue_qs.exists():
-            for ref in refqueue_qs:
-                incomplete_second_edit_qs = (
-                    ref.target_rfctobe.incomplete_activities().filter(
-                        slug="second_editor"
-                    )
-                )
-                if incomplete_second_edit_qs.exists():
-                    reasons.add(BlockingReason.REFQUEUE_SECOND_EDIT_INCOMPLETE)
-        if rfc.labels.filter(slug__in=["Stream Hold"]).exists():
-            reasons.add(BlockingReason.LABEL_STREAM_HOLD)
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
         return reasons
@@ -138,12 +113,8 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     # Gate 5: Blocks publishing
     slugs = ["publisher"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        if rfc.labels.filter(slug__in=["Stream Hold"]).exists():
-            reasons.add(BlockingReason.LABEL_STREAM_HOLD)
-        if rfc.labels.filter(slug__in=["IANA Hold"]).exists():
+        if rfc.labels.filter(slug="IANA Hold").exists():
             reasons.add(BlockingReason.LABEL_IANA_HOLD)
-        if rfc.labels.filter(slug__in=["Tools Issue"]).exists():
-            reasons.add(BlockingReason.TOOLS_ISSUE)
         # any document this draft normatively references is not ready for publication
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():

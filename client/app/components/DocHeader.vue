@@ -34,6 +34,14 @@
               <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
+          <BaseButton
+            v-if="props.rfcToBe?.disposition === 'in_progress'"
+            btn-type="delete"
+            @click="isWithdrawDialogShown = true"
+            class="flex items-center"
+          >
+            <span>Withdraw</span>
+          </BaseButton>
           <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
             <span>Manage Assignments</span>
             <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
@@ -44,6 +52,12 @@
       </div>
     </div>
   </header>
+
+  <WithdrawDraftDialog
+    v-model:is-shown="isWithdrawDialogShown"
+    :draft-name="props.draftName"
+    @success="emit('withdrawn')"
+  />
 </template>
 
 <script setup lang="ts">
@@ -58,7 +72,9 @@ type Props = {
 }
 
 const props = defineProps<Props>()
-const emit = defineEmits<{ assignmentsChanged: [] }>()
+const emit = defineEmits<{ assignmentsChanged: []; withdrawn: [] }>()
+
+const isWithdrawDialogShown = ref(false)
 
 const overlayModal = inject(overlayModalKey)
 const isAprilFirst = computed(() => props.rfcToBe?.isAprilFirstRfc === true)

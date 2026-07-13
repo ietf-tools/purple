@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="() => { rfcToBeRefresh(); historyRefresh() }" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -85,6 +85,7 @@ const {
   data: history,
   error: historyError,
   status: historyStatus,
+  refresh: historyRefresh,
 } = await useHistoryForDraft(draftName.value)
 
 const filteredHistory = computed(() => {
@@ -95,7 +96,7 @@ const filteredHistory = computed(() => {
   return entries.filter(e => e.model !== null && models.includes(e.model))
 })
 
-const { data: rfcToBe } = await useAsyncData(
+const { data: rfcToBe, refresh: rfcToBeRefresh } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {

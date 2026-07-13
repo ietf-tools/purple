@@ -6,6 +6,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from itertools import zip_longest
+from typing import Any
 
 from django.db import transaction
 
@@ -18,6 +19,69 @@ from rpc.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+def _already_parenthesized(s: str) -> bool:
+    if len(s) < 2 or s[0] != "(" or s[-1] != ")":
+        return False
+    count = 0
+    for c in s[1:-1]:
+        count += 1 if c == "(" else -1 if c == ")" else 0
+        if count < 0:
+            return False
+    return count == 0
+
+
+def _is_simple_expression(expr: str) -> bool:
+    """Return True if this expression is simple enough to render without added
+    parentheses.
+
+    Accepts a single alphanumeric string with no whitespace, optionally preceded
+    by a sign character. A non-integer decimal number is accepted as long as it
+    precedes any alphabetic characters. If the expression, excluding an allowed
+    leading sign character, is surrounded by balanced parentheses, True is
+    returned regardless of the contents. Logic matches xml2rfc's is_simple_expression.
+    """
+    if not expr:
+        return False
+    if expr[0] in "+-\u2212\u00b1\u2213\ufe63\uff0b\uff0d":  # xml2rfc sign chars
+        expr = expr[1:]
+    if not expr:
+        return False
+    if _already_parenthesized(expr):
+        return True
+    if "_" in expr:
+        return False
+    return re.match(r"^(?:\d+(?:\.\d+)?)?\w*$", expr) is not None
+
+
+def _inline_text(elem) -> str:
+    """Render an XML element to plain text using xml2rfc text conventions."""
+    parts = []
+    if elem.text:
+        parts.append(elem.text)
+    for child in elem:
+        tag = child.tag.split("}")[-1] if "}" in child.tag else child.tag
+        inner = _inline_text(child)
+        if tag == "tt":
+            parts.append(inner)
+        elif tag == "em":
+            parts.append(f"_{inner}_")
+        elif tag == "strong":
+            parts.append(f"*{inner}*")
+        elif tag == "sub":
+            parts.append(
+                f"_({inner})" if not _is_simple_expression(inner) else f"_{inner}"
+            )
+        elif tag == "sup":
+            parts.append(
+                f"^({inner})" if not _is_simple_expression(inner) else f"^{inner}"
+            )
+        else:
+            parts.append(inner)
+        if child.tail:
+            parts.append(child.tail)
+    return "".join(parts)
 
 
 class Metadata:
@@ -39,9 +103,8 @@ class Metadata:
         abstract_text = ""
         if abstract_elem is not None:
             paragraphs = [
-                re.sub(r"\s+", " ", t.text).strip()
+                re.sub(r"\s+", " ", _inline_text(t)).strip()
                 for t in abstract_elem.findall("t", ns)
-                if t.text and t.text.strip()
             ]
             abstract_text = "\n\n".join(p for p in paragraphs if p)
 
@@ -95,8 +158,8 @@ class Metadata:
             "subseries": subseries,
         }
 
-    @staticmethod
-    def update_metadata(rfctobe, metadata):
+    @classmethod
+    def update_metadata(cls, rfctobe, metadata):
         """Update metadata fields from metadata dictionary
 
         First compares all fields to see what needs to be updated,
@@ -199,11 +262,7 @@ class Metadata:
                                 )
 
                             # Verify names match
-                            xml_name = (
-                                xml_author.get("initials", "")
-                                + " "
-                                + xml_author.get("surname", "")
-                            ).strip()
+                            xml_name = cls.extract_name_from_author_dict(xml_author)
                             db_name = db_author.titlepage_name
                             if xml_name != db_name:
                                 raise ValueError(
@@ -289,6 +348,34 @@ class Metadata:
                         updated_fields["subseries"] = subseries
 
         return updated_fields
+
+    @staticmethod
+    def extract_name_from_author_dict(author_dict) -> str:
+        """Extract name from an author_dict
+
+        Extracts the name, formatted as for titlepage_name in datatracker. This should
+        match the Latinized form of the name in initials + surname format for now.
+        It's likely this will eventually change to capture non-Latin names, but we're
+        not doing that yet.
+        """
+        xml_name = (
+            author_dict.get("initials", "").rstrip()
+            + " "
+            + author_dict.get("surname", "").lstrip()
+        ).strip()
+        if not xml_name:
+            xml_fullname = (
+                author_dict.get("asciiFullname", "") or author_dict.get("fullname", "")
+            ).strip()
+            # Convert full name to initials format
+            name_parts = xml_fullname.split()
+            if len(name_parts) > 1:
+                # Convert all parts except last to initials, keep surname as-is
+                initials = [p[0] + "." if len(p) > 1 else p[0] for p in name_parts[:-1]]
+                xml_name = " ".join(initials + [name_parts[-1]])
+            else:
+                xml_name = xml_fullname
+        return xml_name
 
 
 class MetadataComparator:
@@ -430,7 +517,7 @@ class MetadataComparator:
         for position, (xml_author, db_author) in enumerate(
             zip_longest(xml_value, db_authors, fillvalue=None)
         ):
-            item = {"position": position}
+            item: dict[str, Any] = {"position": position}
 
             if xml_author is None or db_author is None:
                 # Mismatched lengths - cannot fix
@@ -442,22 +529,7 @@ class MetadataComparator:
                 continue
 
             # Extract author names
-            xml_name = (
-                xml_author.get("initials", "") + " " + xml_author.get("surname", "")
-            ).strip()
-            if not xml_name:
-                xml_fullname = (
-                    xml_author.get("asciiFullname", "")
-                    or xml_author.get("fullname", "")
-                ).strip()
-                # Convert full name to initials format
-                name_parts = xml_fullname.split()
-                if len(name_parts) > 1:
-                    # Convert all parts except last to initials, keep surname as-is
-                    initials = [p[0] + "." for p in name_parts[:-1]]
-                    xml_name = " ".join(initials + [name_parts[-1]])
-                else:
-                    xml_name = xml_fullname
+            xml_name = Metadata.extract_name_from_author_dict(xml_author)
             db_name = db_author.titlepage_name
 
             # Check if names match

@@ -21,7 +21,7 @@
     <DocumentDependenciesGraph v-if="filteredCluster" :cluster="filteredCluster" />
     <div v-else>No filtered cluster</div>
 
-    <ClusterReorder v-if="filteredCluster" :cluster="filteredCluster" :on-success="refresh" class="max-w-[800px]" :rfcs-to-be="rfcsToBe" />
+    <ClusterReorder v-if="filteredCluster" :cluster="filteredCluster" :on-success="refresh" :rfcs-to-be="rfcsToBe" />
 
     <ClusterMembershipHistory v-if="clusterNumber" :cluster-number="clusterNumber" class="mt-8 max-w-[800px]" />
   </div>

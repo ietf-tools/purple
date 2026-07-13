@@ -166,12 +166,15 @@ PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
 
 
 def resolve_rfctobe(identifier: str) -> RfcToBe:
-    """Return the preferred RfcToBe for a given draft name.
+    """Return the RfcToBe for a given identifier.
 
-    If identifier looks like 'rfc1234', look up by rfc_number instead.
-    When multiple RfcToBes share a draft name (e.g., one withdrawn and one
-    in-progress), the non-withdrawn one is preferred.
+    Identifiers are resolved in order:
+    - Numeric string → direct lookup by RfcToBe.pk (allows linking withdrawn records)
+    - 'rfc1234' → lookup by rfc_number; non-withdrawn preferred
+    - Draft name → lookup by draft name; non-withdrawn preferred
     """
+    if identifier.isdigit():
+        return get_object_or_404(RfcToBe, pk=int(identifier))
     if identifier.lower().startswith("rfc") and identifier[3:].strip().isdigit():
         rfc_number = int(identifier[3:].strip())
         qs = RfcToBe.objects.filter(rfc_number=rfc_number)
@@ -430,10 +433,12 @@ def submissions(request, *, rpcapi: rpcapi_client.PurpleApi):
     # Get submissions list from Datatracker
     with datatracker_api():
         submitted = rpcapi.submitted_to_rpc()
-    # Filter out I-Ds that already have an RfcToBe
-    already_in_queue = RfcToBe.objects.filter(
-        draft__datatracker_id__in=[s.id for s in submitted]
-    ).values_list("draft__datatracker_id", flat=True)
+    # Filter out I-Ds that already have an active (non-withdrawn) RfcToBe
+    already_in_queue = (
+        RfcToBe.objects.filter(draft__datatracker_id__in=[s.id for s in submitted])
+        .exclude(disposition__slug="withdrawn")
+        .values_list("draft__datatracker_id", flat=True)
+    )
     submitted = [s for s in submitted if s.id not in already_in_queue]
     return Response(SubmissionListItemSerializer(submitted, many=True).data)
 
@@ -474,7 +479,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "group": draft_info.group,
             "stream": draft_info.stream,
             "pages": draft_info.pages,
-            "intended_std_level": draft_info.intended_std_level,
+            "intended_std_level": draft_info.intended_std_level or "",
         },
     )
 
@@ -503,6 +508,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             "shepherd": shepherd.pk if shepherd is not None else None,
             "iesg_contact": iesg_contact.pk if iesg_contact is not None else None,
             "pages": draft.pages,
+            "rev": draft.rev,
             "consensus": draft_info.consensus,
         }
     )
@@ -599,7 +605,8 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                                 "group": draft_info_ref.group,
                                 "stream": draft_info_ref.stream,
                                 "pages": draft_info_ref.pages,
-                                "intended_std_level": draft_info_ref.intended_std_level,
+                                "intended_std_level": draft_info_ref.intended_std_level
+                                or "",
                             },
                         )
                     create_rpc_related_document("not-received", rfctobe.pk, draft.name)
@@ -743,7 +750,11 @@ class QueueFilter(django_filters.FilterSet):
         fields = ["disposition", "pending_final_approval", "pending_final_review"]
 
 
-@extend_schema(operation_id="queue_counts", responses={200: QueueCountsSerializer})
+@extend_schema_view(
+    get=extend_schema(
+        operation_id="queue_counts", responses={200: QueueCountsSerializer}
+    )
+)
 class QueueCounts(views.APIView):
     """Item counts for each queue tab"""
 
@@ -817,6 +828,7 @@ class QueueList(ListAPIView):
     queryset = (
         RfcToBe.objects.in_queue()
         .with_enqueued_at()
+        .with_final_review_started_at()
         .select_related("draft")
         .prefetch_related("labels")
         .with_active_assignments()
@@ -864,9 +876,15 @@ class PublicQueueList(QueueList):
     queryset = QueueList.queryset.prefetch_related(
         Prefetch(
             "actionholder_set",
-            queryset=ActionHolder.objects.select_related("datatracker_person"),
+            queryset=ActionHolder.objects.select_related("datatracker_person").order_by(
+                "since_when"
+            ),
             to_attr="all_actionholders",
-        )
+        ),
+        Prefetch(
+            "approvallogmessage_set",
+            queryset=ApprovalLogMessage.objects.order_by("-time"),
+        ),
     )
 
 
@@ -2166,11 +2184,12 @@ class SearchDatatrackerPersons(ListAPIView):
 class SubseriesMemberViewSet(viewsets.ModelViewSet):
     """ViewSet to track which RfcToBes have been assigned to which subseries"""
 
-    queryset = SubseriesMember.objects.select_related("type")
+    queryset = SubseriesMember.objects.select_related("type").order_by(
+        "type", "number", "id"
+    )
     serializer_class = SubseriesMemberSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["number", "type", "rfc_to_be"]
-    ordering = ["type", "number", "id"]
 
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
 
@@ -2255,13 +2274,13 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
     serializer_class = FinalApprovalSerializer
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["rfc_to_be__rfc_number", "approver__datatracker_id"]
-    ordering = ["-requested"]
 
     def get_queryset(self):
         return (
             super()
             .get_queryset()
             .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
+            .order_by("-requested")
         )
 
     def perform_create(self, serializer):
@@ -2287,7 +2306,6 @@ class ActionHolderViewSet(
     queryset = ActionHolder.objects.all()
     serializer_class = ActionHolderSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    ordering = ["since_when"]
 
     def get_queryset(self):
         draft_name = self.kwargs["draft_name"]
@@ -2295,7 +2313,7 @@ class ActionHolderViewSet(
         q = Q(target_rfctobe=rfctobe)
         if rfctobe.draft is not None:
             q |= Q(target_document__name=rfctobe.draft.name)
-        return super().get_queryset().filter(q)
+        return super().get_queryset().filter(q).order_by("since_when")
 
     def perform_create(self, serializer):
         serializer.save(target_rfctobe=resolve_rfctobe(self.kwargs["draft_name"]))
@@ -2311,13 +2329,13 @@ class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
     queryset = ApprovalLogMessage.objects.all()
     serializer_class = ApprovalLogMessageSerializer
     filter_backends = (filters.DjangoFilterBackend,)
-    ordering = ["-time"]
 
     def get_queryset(self):
         return (
             super()
             .get_queryset()
             .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
+            .order_by("-time")
         )
 
     def perform_create(self, serializer):
@@ -2483,7 +2501,8 @@ class RfcMailTemplatesList(views.APIView):
                 "cc": list(interested_parties),
             },
             "finalreview": {
-                "subject": f"RFC-to-be {rfc_number} {draft_name} for your review",
+                "subject": f"Final Review: RFC-to-be {rfc_number} ({draft_name}) "
+                "in XML",
                 "to": author_emails,
                 "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
             },
@@ -2718,7 +2737,10 @@ class MetadataValidationResultsViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        Metadata.update_metadata(rfc_to_be, metadata_result.metadata)
+        try:
+            Metadata.update_metadata(rfc_to_be, metadata_result.metadata)
+        except ValueError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         metadata_result.refresh_from_db()
         serializer = self.get_serializer(metadata_result)

@@ -130,6 +130,19 @@ class RfcToBeQuerySet(models.QuerySet):
         )
         return self.annotate(enqueued_at=enqueued_at_subquery)
 
+    def with_final_review_started_at(self):
+        HistoricalAssignment = Assignment.history.model
+        subquery = Subquery(
+            HistoricalAssignment.objects.filter(
+                rfc_to_be=OuterRef("pk"),
+                role__slug="final_review_editor",
+                history_type="+",
+            )
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+        return self.annotate(final_review_started_at=subquery)
+
     def with_active_assignments(self):
         return self.prefetch_related(
             Prefetch(
@@ -211,6 +224,11 @@ class RfcToBe(models.Model):
         validators=[validate_not_unusable_rfc_number],
     )
 
+    rev = models.CharField(
+        max_length=16,
+        blank=True,
+        help_text="Revision of draft being worked on.",
+    )
     title = models.CharField(max_length=255, help_text="Document title")
     abstract = models.TextField(
         max_length=32000,

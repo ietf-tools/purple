@@ -1,5 +1,20 @@
 import { Anchor, Icon, BaseBadge } from '#components'
-import type { Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
+import type { ActionHolder, Assignment, Cluster, RpcPerson, RfcToBeBlockingReason } from '~/purple_client'
+
+export const formatBlockingReasons = (
+  blockingReasons: RfcToBeBlockingReason[],
+  actionholders?: ActionHolder[]
+): string =>
+  blockingReasons
+    .map(br => {
+      if (br.reason?.slug === 'actionholder_active' && actionholders?.length) {
+        const names = actionholders.map(ah => ah.body || ah.person?.name).filter(Boolean).join(', ')
+        return `${br.reason.name}: ${names}`
+      }
+      return br.reason?.name
+    })
+    .filter(Boolean)
+    .join(', ')
 
 export const columnFormatterCluster = (clusterNumber?: Cluster["number"]) => {
   if (!clusterNumber) {
@@ -22,10 +37,11 @@ type ColumnFormatterAssignmentsProps = {
   people: RpcPerson[],
   queueItemsIsPending: boolean,
   blockingReasons?: RfcToBeBlockingReason[],
+  actionholders?: ActionHolder[],
   rowForDebug: unknown,
 }
 
-export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, queueItemsIsPending, blockingReasons, rowForDebug }: ColumnFormatterAssignmentsProps) => {
+export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, queueItemsIsPending, blockingReasons, actionholders, rowForDebug }: ColumnFormatterAssignmentsProps) => {
   if (!assignments) {
     return 'No assignments'
   }
@@ -46,7 +62,7 @@ export const columnFormatterAssignments = ({ assignments, rfcToBeId, people, que
 
     const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role, class: 'ml-2' })]
     if (assignment.role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
-      const reasons = blockingReasons.map(br => br.reason?.name).filter(Boolean).join(', ')
+      const reasons = formatBlockingReasons(blockingReasons, actionholders)
       roleBadgeChildren.push(h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-1' }, reasons))
     }
 

@@ -178,6 +178,8 @@ def process_rfctobe_changes_for_queue():
         task_run.last_run_at = current_check_time
         logger.info("Completed processing history changes")
 
+        return queue_rfcs.count()
+
     except Exception as e:
         logger.exception(f"Unexpected error in process_rfctobe_changes_for_queue: {e}")
         raise

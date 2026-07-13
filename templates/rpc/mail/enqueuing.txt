@@ -11,41 +11,27 @@ marker. Other markers are substituted based on the table below.
 
 Author(s),
 
-Your document {{ rfc_to_be.name }}, which has been approved for publication as
-an RFC, has been added to the RFC Editor queue
+Your document {{ rfc_to_be.name }}, which has been approved
+for publication as an RFC, has been added to the RFC Editor queue
 <https://queue.rfc-editor.org/>.
 
 If your XML file was submitted using the I-D submission tool
-<https://datatracker.ietf.org/submit/>, we have already retrieved it
-and have started working on it.
+<https://datatracker.ietf.org/submit/>, we have already retrieved it.
 
-If you did not submit the file via the I-D submission tool, or
-if you have an updated version (e.g., updated contact information),
-please send us the file at this time by attaching it
-in your reply to this message and specifying any differences
-between the approved I-D and the file that you are providing.
+If you did not submit the file via the I-D submission tool or if you
+worked in kramdown-rfc,  please send us the file at this time by attaching
+it in your reply to this message. Please specify any differences
+between the approved I-D and the file that you are providing (if any).
+Note that you may be asked to post a new version of your draft.
 
-If you have any style guidance for the terms used in your document
-(capitalization, hyphenation, use of quotation marks and underscores,
-etc.), please send us mail with your draft string in the subject line.
-This should help increase the pace with which documents move through
-the RFC Editor queue.
+Your document will be formatted as described at
+https://authors.ietf.org/rfc-publication-process#rfcxml-editing, and it
+will be edited for clarity and to conform with the RFC Style Guide
+(https://www.rfc-editor.org/authors/rfc-style-guide/). Once we have
+completed our edits, we will ask you to perform a Final Review and
+approve the RFC for publication.
 
-The first step that we take as your document moves through the queue
-is converting it to RFCXML (if it is not already in RFCXML) and
-applying the formatting steps listed at
-<https://www.rfc-editor.org/pubprocess/how-we-update/>.
-Next, we will edit for clarity and apply the style guide
-(<https://www.rfc-editor.org/styleguide/>).
-
-You can check the status of your document at
-<https://queue.rfc-editor.org/>.
-
-You will receive automatic notifications as your document changes
-queue state (for more information about these states, please see
-<https://www.rfc-editor.org/about/queue/>). When we have completed
-our edits, we will move your document to AUTH48 state and ask you
-to perform a final review of the document.
+You can check the status of your document at https://queue.rfc-editor.org.
 
 Please let us know if you have any questions.
 

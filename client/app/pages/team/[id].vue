@@ -71,15 +71,6 @@
                   <Icon v-else name="ei:spinner-3" size="0.8em" class="animate-spin" />
                 </dd>
               </div>
-              <!-- <div class="flex-auto pl-6 pt-6">
-                <dt class="text-sm font-semibold leading-6 text-gray-900">Availability</dt>
-                <dd class="mt-1 text-base font-semibold leading-6 text-gray-900">
-                  {{
-                    // FIXME: use person?.availability
-                    'Unknown'
-                  }}
-                </dd>
-              </div> -->
               <div class="flex-none px-6 pt-4">
                 <dt>Status</dt>
                 <dd v-if="person">
@@ -104,9 +95,6 @@
                 </dd>
               </div>
             </dl>
-            <div class="mt-6 border-t border-gray-900/5 px-6 py-6">
-              <a href="#" class="text-sm leading-6 text-gray-900">Add unavailability period (TODO)</a>
-            </div>
           </div>
         </div>
         <div class="lg:col-start-3 lg:row-end-2">

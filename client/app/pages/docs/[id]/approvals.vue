@@ -1,13 +1,13 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
       <div class="lg:col-span-full mt-6">
-        <DocumentFinalReviews :name="draftName" />
+        <DocumentFinalReviews :name="draftName" :rfc-number="rfcToBe?.rfcNumber" />
       </div>
 
       <div class="lg:col-span-full mt-6">

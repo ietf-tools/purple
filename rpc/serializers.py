@@ -557,6 +557,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     )
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
     enqueued_at = serializers.SerializerMethodField()
+    final_review_started_at = serializers.DateTimeField(read_only=True, allow_null=True)
     final_approval = FinalApprovalSerializer(
         source="finalapproval_set", many=True, read_only=True
     )
@@ -581,6 +582,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "rfc_number",
             "pages",
             "enqueued_at",
+            "final_review_started_at",
             "final_approval",
             "iana_status",
             "blocking_reasons",
@@ -618,10 +620,10 @@ class ApprovalLogMessageSerializer(serializers.Serializer):
         return ApprovalLogMessage.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        ApprovalLogMessage.objects.filter(pk=instance.pk).update(
-            **validated_data,
-        )
-        return ApprovalLogMessage.objects.get(pk=instance.pk)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
 
 
 class PublicQueueAuthorSerializer(RfcAuthorSerializer):
@@ -823,6 +825,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "stream_manager",
             "stream_manager_id",
             "is_april_first_rfc",
+            "rev",
         ]
         read_only_fields = ["id", "draft", "published_at"]
 
@@ -1173,6 +1176,7 @@ class CreateRfcToBeSerializer(serializers.ModelSerializer):
             "shepherd",
             "iesg_contact",
             "pages",
+            "rev",
             "keywords",
             "iana_status_slug",
             "consensus",
@@ -2393,4 +2397,5 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "references",
             "rev",
             "rfc_number",
+            "final_review_started_at",
         ]

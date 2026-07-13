@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -541,16 +541,20 @@ const metadataValidationResultsSyncHandler = async () => {
   }
   step.value = { type: 'loading' }
 
-  const metadataValidationResults = await api.metadataValidationResultsSync({
-    draftName: draftName.value,
-    syncMetadataRequestRequest: {
-      headSha,
+  try {
+    const metadataValidationResults = await api.metadataValidationResultsSync({
+      draftName: draftName.value,
+      syncMetadataRequestRequest: {
+        headSha,
+      }
+    })
+    step.value = {
+      type: 'diff',
+      ...metadataValidationResults,
     }
-  })
-
-  step.value = {
-    type: 'diff',
-    ...metadataValidationResults,
+  } catch (error: unknown) {
+    snackbarForErrors({ snackbar, defaultTitle: 'Metadata sync failed', error })
+    step.value = { type: 'cancelled', headSha }
   }
 }
 
