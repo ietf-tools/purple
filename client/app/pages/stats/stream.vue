@@ -28,7 +28,7 @@
                 type="number" min="1" max="52"
                 class="w-16 rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1"
                 @keyup.enter="apply"
-                @blur="pendingCount = clamp(pendingCount)"
+                @blur="pendingCount = clampCount(pendingCount)"
               >
             </label>
             <button
@@ -140,26 +140,10 @@ const isIetfSplit = ref(false)
 const mergeStream = (slug: string) =>
   (!isIetfSplit.value && (slug === 'ietf-wg' || slug === 'ietf-ad')) ? 'ietf' : slug
 
-// Deferred query controls: pending* bind to the inputs, applied* drive the query.
-const pendingPeriod = ref<StatsQueuePeriodEnum>(StatsQueuePeriodEnum.Year)
-const pendingCount = ref(4)
-const appliedPeriod = ref<StatsQueuePeriodEnum>(pendingPeriod.value)
-const appliedCount = ref(clamp(pendingCount.value))
-
-function clamp (n: number): number {
-  return Math.min(Math.max(Math.trunc(n || 1), 1), 52)
-}
-
-const isDirty = computed(() =>
-  pendingPeriod.value !== appliedPeriod.value || clamp(pendingCount.value) !== appliedCount.value
-)
-
-function apply () {
-  const c = clamp(pendingCount.value)
-  pendingCount.value = c
-  appliedPeriod.value = pendingPeriod.value
-  appliedCount.value = c
-}
+// Deferred period/count controls (shared across the stats tabs).
+const {
+  pendingPeriod, pendingCount, appliedPeriod, appliedCount, isDirty, apply, clampCount
+} = useDeferredPeriodControls(StatsQueuePeriodEnum.Year, 4)
 
 const {
   data: stats,

@@ -28,7 +28,7 @@
                 type="number" min="1" max="52"
                 class="w-16 rounded-md border border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-2 py-1"
                 @keyup.enter="apply"
-                @blur="pendingCount = clamp(pendingCount)"
+                @blur="pendingCount = clampCount(pendingCount)"
               >
             </label>
             <button
@@ -178,27 +178,10 @@ const HOURS_PER_YEAR = 365 * 24 // 8760
 const workingHoursPerYear = Number(useRuntimeConfig().public.workingHoursPerYear) || 2000
 const workingScale = computed(() => workingHoursPerYear / HOURS_PER_YEAR)
 
-// Query controls are deferred: `pending*` bind to the inputs, `applied*` drive
-// the (potentially long) query and only change when Apply is pressed.
-const pendingPeriod = ref<StatsQueuePeriodEnum>(StatsQueuePeriodEnum.Month)
-const pendingCount = ref(6)
-const appliedPeriod = ref<StatsQueuePeriodEnum>(pendingPeriod.value)
-const appliedCount = ref(clamp(pendingCount.value))
-
-function clamp (n: number): number {
-  return Math.min(Math.max(Math.trunc(n || 1), 1), 52)
-}
-
-const isDirty = computed(() =>
-  pendingPeriod.value !== appliedPeriod.value || clamp(pendingCount.value) !== appliedCount.value
-)
-
-function apply () {
-  const c = clamp(pendingCount.value)
-  pendingCount.value = c // reflect any clamping back into the input
-  appliedPeriod.value = pendingPeriod.value
-  appliedCount.value = c
-}
+// Deferred period/count controls (shared across the stats tabs).
+const {
+  pendingPeriod, pendingCount, appliedPeriod, appliedCount, isDirty, apply, clampCount
+} = useDeferredPeriodControls(StatsQueuePeriodEnum.Month, 6)
 
 const {
   data: stats,
