@@ -20,6 +20,7 @@
 </template>
 
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
@@ -40,7 +41,7 @@ type Lane = {
 
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
-const width = ref(720)
+const { width } = useElementSize(container) // reactive container width (VueUse)
 
 const ROW_H = 26
 const ROW_GAP = 6
@@ -262,21 +263,7 @@ function hideTooltip () {
   tooltip.visible = false
 }
 
-let observer: ResizeObserver | null = null
-onMounted(() => {
-  if (container.value) {
-    width.value = container.value.clientWidth
-    observer = new ResizeObserver(entries => {
-      const w = entries[0]?.contentRect.width
-      if (w && Math.abs(w - width.value) > 1) {
-        width.value = w
-      }
-    })
-    observer.observe(container.value)
-  }
-  draw()
-})
-onBeforeUnmount(() => observer?.disconnect())
-
+// useElementSize reports the container width after mount and on resize, which
+// drives the first paint; the watch redraws on that or on lane changes.
 watch([lanes, width], () => draw())
 </script>

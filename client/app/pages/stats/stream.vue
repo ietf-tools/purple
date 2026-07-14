@@ -34,7 +34,7 @@
             <button
               type="button"
               class="rounded-md px-3 py-1 font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="!dirty || statsStatus === 'pending'"
+              :disabled="!isDirty || statsStatus === 'pending'"
               @click="apply"
             >Apply</button>
           </div>
@@ -50,7 +50,7 @@
         <template v-else>
           <div class="mt-3 flex items-center justify-end">
             <label class="flex items-center gap-2 text-sm">
-              <input v-model="splitIetf" type="checkbox" class="rounded border-gray-300 dark:border-neutral-600">
+              <input v-model="isIetfSplit" type="checkbox" class="rounded border-gray-300 dark:border-neutral-600">
               <span>Split IETF into WG / AD-sponsored</span>
             </label>
           </div>
@@ -136,9 +136,9 @@ const streamLabel = (slug: string): string => STREAM_LABELS[slug] ?? slug
 
 // The backend always splits IETF into ietf-wg / ietf-ad; off (default) merges
 // them back into a single "ietf" bucket. Client-side only — no refetch.
-const splitIetf = ref(false)
+const isIetfSplit = ref(false)
 const mergeStream = (slug: string) =>
-  (!splitIetf.value && (slug === 'ietf-wg' || slug === 'ietf-ad')) ? 'ietf' : slug
+  (!isIetfSplit.value && (slug === 'ietf-wg' || slug === 'ietf-ad')) ? 'ietf' : slug
 
 // Deferred query controls: pending* bind to the inputs, applied* drive the query.
 const pendingPeriod = ref<StatsQueuePeriodEnum>(StatsQueuePeriodEnum.Year)
@@ -150,7 +150,7 @@ function clamp (n: number): number {
   return Math.min(Math.max(Math.trunc(n || 1), 1), 52)
 }
 
-const dirty = computed(() =>
+const isDirty = computed(() =>
   pendingPeriod.value !== appliedPeriod.value || clamp(pendingCount.value) !== appliedCount.value
 )
 

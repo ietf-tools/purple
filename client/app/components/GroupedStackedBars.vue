@@ -41,6 +41,7 @@
 </template>
 
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import type { QueuePublishedStatPeriod } from '~/purple_client'
 import { statusColor } from '~/utils/statsViz'
@@ -55,7 +56,7 @@ const props = defineProps<Props>()
 
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
-const containerWidth = ref(720)
+const { width: containerWidth } = useElementSize(container) // reactive (VueUse)
 const chartWidth = ref(720)
 const height = 340
 const MARGIN = { top: 16, right: 16, bottom: 56, left: 44 }
@@ -185,19 +186,7 @@ function hideTooltip () {
   tooltip.visible = false
 }
 
-let observer: ResizeObserver | null = null
-onMounted(() => {
-  if (container.value) {
-    containerWidth.value = container.value.clientWidth
-    observer = new ResizeObserver((entries) => {
-      const w = entries[0]?.contentRect.width
-      if (w && Math.abs(w - containerWidth.value) > 1) containerWidth.value = w
-    })
-    observer.observe(container.value)
-  }
-  draw()
-})
-onBeforeUnmount(() => observer?.disconnect())
-
+// useElementSize drives the first paint and resizes; the watch redraws on data,
+// width, legend toggles, or stream-set changes — no manual ResizeObserver.
 watch([periods, containerWidth, visibleStatuses, () => props.streams], () => draw())
 </script>

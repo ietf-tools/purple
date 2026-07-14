@@ -44,6 +44,7 @@
 </template>
 
 <script setup lang="ts">
+import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import type { QueuePeriodStat } from '~/purple_client'
 import {
@@ -69,7 +70,7 @@ type Category = {
 
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
-const width = ref(720)
+const { width } = useElementSize(container) // reactive container width (VueUse)
 const height = 340
 
 const MARGIN = { top: 16, right: 16, bottom: 52, left: 64 }
@@ -269,19 +270,8 @@ function hideTooltip () {
   tooltip.visible = false
 }
 
-let observer: ResizeObserver | null = null
-onMounted(() => {
-  if (container.value) {
-    width.value = container.value.clientWidth
-    observer = new ResizeObserver(entries => {
-      const w = entries[0]?.contentRect.width
-      if (w && Math.abs(w - width.value) > 1) width.value = w
-    })
-    observer.observe(container.value)
-  }
-  draw()
-})
-onBeforeUnmount(() => observer?.disconnect())
-
+// Redraw whenever the data, view mode, container width, or visible categories
+// change. useElementSize reports the width after mount (and on resize), which
+// drives the first paint — no manual ResizeObserver / lifecycle needed.
 watch([periods, width, () => props.mode, () => props.dayScale, visibleCats], () => draw())
 </script>

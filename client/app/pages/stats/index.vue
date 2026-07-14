@@ -34,7 +34,7 @@
             <button
               type="button"
               class="rounded-md px-3 py-1 font-medium text-white bg-violet-600 hover:bg-violet-700 disabled:opacity-40 disabled:cursor-not-allowed"
-              :disabled="!dirty || statsStatus === 'pending'"
+              :disabled="!isDirty || statsStatus === 'pending'"
               @click="apply"
             >Apply</button>
           </div>
@@ -189,7 +189,7 @@ function clamp (n: number): number {
   return Math.min(Math.max(Math.trunc(n || 1), 1), 52)
 }
 
-const dirty = computed(() =>
+const isDirty = computed(() =>
   pendingPeriod.value !== appliedPeriod.value || clamp(pendingCount.value) !== appliedCount.value
 )
 
