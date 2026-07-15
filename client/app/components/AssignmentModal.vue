@@ -11,6 +11,17 @@
           <BaseBadge :label="props.message.role" size="xl"></BaseBadge>
           assignment
         </span>
+        <span v-else-if="props.message.type === 'add'" class="flex items-center gap-2">
+          Add
+          <select
+            v-model="selectedRole"
+            class="text-base font-normal border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 min-w-[14rem]">
+            <option v-for="role in roleOptions" :key="role.slug" :value="role.slug">
+              {{ role.name }}
+            </option>
+          </select>
+          assignment
+        </span>
       </h1>
       <BaseButton btnType="cancel" class="m-2 flex items-center" @click="closeOverlayModal">
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
@@ -94,7 +105,7 @@
 <script setup lang="ts">
 import { watch } from 'vue'
 import { BaseButton } from '#components'
-import type { Assignment, RpcPerson } from '~/purple_client'
+import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
 import type { AssignmentMessageProps } from '~/utils/queue'
 import type { ResolvedQueueItem } from './AssignmentsTypes'
 import { overlayModalKey } from '~/providers/providerKeys'
@@ -110,8 +121,27 @@ type Props = {
   peopleWorkload: Record<number, RpcPersonWorkload>
   clusters: ResolvedCluster[]
   onSuccess: () => void
+  // Only used by the 'add' message type: the roles the assigner can choose from
+  // (caller should exclude the synthetic 'blocked' role) and the role to
+  // pre-select (typically the draft's next pending activity).
+  roles?: RpcRole[]
+  defaultRole?: Assignment['role']
 }
 const props = defineProps<Props>()
+
+// Role options for the 'add' picker; defensively drop the synthetic 'blocked'
+// role even if the caller forgot to.
+const roleOptions = computed(() => (props.roles ?? []).filter((role) => role.slug !== 'blocked'))
+
+const selectedRole = ref<Assignment['role']>(
+  props.message.type === 'add' ? (props.defaultRole ?? roleOptions.value[0]?.slug ?? '') : ''
+)
+
+// The role an 'assign' action should use: chosen in the modal for 'add', or
+// fixed by the trigger for 'assign'/'change'.
+const effectiveRole = computed<Assignment['role']>(() =>
+  props.message.type === 'add' ? selectedRole.value : props.message.role
+)
 
 const generateId = (personId: number | undefined, personIndex: number): string =>
   `person-${personId ?? personIndex}`
@@ -125,7 +155,9 @@ if (!overlayModalKeyInjection) {
 type SelectedPeople = Record<number, boolean>
 
 const getInitialState = (message: AssignmentMessageProps): SelectedPeople => {
-  if (message.type === 'assign') {
+  // 'assign' and 'add' start with nobody selected; only 'change' pre-selects the
+  // people currently assigned to the role.
+  if (message.type !== 'change') {
     return {}
   }
   return message.assignments.reduce((acc, assignment) => {
@@ -229,12 +261,12 @@ watch(
             }
           })
       )
-    } else if (props.message.type === 'assign') {
-      const message = props.message
+    } else if (props.message.type === 'assign' || props.message.type === 'add') {
+      const rfcToBeId = props.message.rfcToBeId
       // withdrawals
-      // there are no withdrawals when initially assigning
+      // there are no withdrawals when initially assigning or adding
 
-      // new assignments
+      // new assignments — role is fixed for 'assign', chosen for 'add'
       newActions.push(
         ...Object.entries(isPersonSelected.value)
           .filter(([personIdString, isSelected]) => {
@@ -245,17 +277,25 @@ watch(
             return {
               type: 'assign',
               personId,
-              rfcToBeId: message.rfcToBeId,
-              role: message.role
+              rfcToBeId,
+              role: effectiveRole.value
             }
           })
       )
     }
 
     actions.value = newActions
+    // Changing the role in 'add' mode must rebuild the pending actions with the
+    // new role, so watch selectedRole alongside the person selection.
   },
   { deep: true }
 )
+
+watch(selectedRole, () => {
+  actions.value = actions.value.map((action) =>
+    action.type === 'assign' ? { ...action, role: selectedRole.value } : action
+  )
+})
 
 // filter the list of editors to those who are active or currently assigned
 const visiblePeople = computed(() => {
