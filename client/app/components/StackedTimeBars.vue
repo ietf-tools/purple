@@ -2,7 +2,7 @@
   <div class="w-full">
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg
-        ref="svgEl" :width="width" :height="HEIGHT" class="block"
+        ref="svgEl" :width="width" :height="HEIGHT_PX" class="block"
         role="img" aria-label="Stacked bar chart of time spent per assignment role each period. The same data is in the table below."
       />
       <div
@@ -73,11 +73,11 @@ type Category = {
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width } = useElementSize(container) // reactive container width (VueUse)
-const HEIGHT = 340
+const HEIGHT_PX = 340
 
 const MARGIN = { top: 16, right: 16, bottom: 52, left: 64 }
-const SEG_GAP = 2 // px of surface between stacked segments (dataviz mark spec)
-const CORNER = 4 // px rounded top of each bar
+const SEG_GAP_PX = 2 // px of surface between stacked segments (dataviz mark spec)
+const CORNER_PX = 4 // px rounded top of each bar
 
 const hidden = reactive(new Set<string>())
 function toggle (key: string) {
@@ -168,7 +168,7 @@ function draw () {
   const isWeek = isWeekLabel(data[0]?.label)
   const marginBottom = isWeek ? MARGIN.bottom + 16 : MARGIN.bottom
   const innerW = Math.max(width.value - MARGIN.left - MARGIN.right, 10)
-  const innerH = HEIGHT - MARGIN.top - marginBottom
+  const innerH = HEIGHT_PX - MARGIN.top - marginBottom
   const isShare = props.mode === 'share'
   const dayScale = props.dayScale ?? 1
 
@@ -221,7 +221,7 @@ function draw () {
       if (val <= 0) continue
       const yTop = y(cursor + val)
       const yBottom = y(cursor)
-      const h = Math.max(yBottom - yTop - SEG_GAP, 0)
+      const h = Math.max(yBottom - yTop - SEG_GAP_PX, 0)
       if (h > 0) {
         const share = denom > 0 ? secs / denom : 0
         const attach = (sel: d3.Selection<never, unknown, null, undefined>) => sel
@@ -230,7 +230,7 @@ function draw () {
           .on('mousemove', (e: MouseEvent) => showTooltip(e, d, cat, secs, share))
           .on('mouseleave', hideTooltip)
         if (cat === topCat) {
-          attach(svg.append('path').attr('d', roundedTopRect(bx, yTop, bandW, h, CORNER)) as never)
+          attach(svg.append('path').attr('d', roundedTopRect(bx, yTop, bandW, h, CORNER_PX)) as never)
         } else {
           attach(svg.append('rect')
             .attr('x', bx).attr('y', yTop)

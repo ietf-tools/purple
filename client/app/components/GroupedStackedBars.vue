@@ -2,7 +2,7 @@
   <div class="w-full">
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg
-        ref="svgEl" :width="chartWidth" :height="HEIGHT" class="block"
+        ref="svgEl" :width="chartWidth" :height="HEIGHT_PX" class="block"
         role="img" aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below."
       />
       <div
@@ -59,10 +59,10 @@ const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width: containerWidth } = useElementSize(container) // reactive (VueUse)
 const chartWidth = ref(720)
-const HEIGHT = 340
+const HEIGHT_PX = 340
 const MARGIN = { top: 16, right: 16, bottom: 56, left: 44 }
-const SEG_GAP = 1
-const MIN_BAR_W = 16 // min px per stream sub-bar, else the chart scrolls
+const SEG_GAP_PX = 1
+const MIN_BAR_W_PX = 16 // min px per stream sub-bar, else the chart scrolls
 
 const hidden = reactive(new Set<string>())
 function toggle (key: string) {
@@ -101,11 +101,11 @@ function draw () {
   const data = periods.value
   const streams = props.streams
   // Scroll horizontally when the groups need more than the container's width.
-  const groupW = streams.length * MIN_BAR_W + 24
+  const groupW = streams.length * MIN_BAR_W_PX + 24
   const needed = MARGIN.left + MARGIN.right + data.length * groupW
   chartWidth.value = Math.max(containerWidth.value, needed)
   const innerW = chartWidth.value - MARGIN.left - MARGIN.right
-  const innerH = HEIGHT - MARGIN.top - MARGIN.bottom
+  const innerH = HEIGHT_PX - MARGIN.top - MARGIN.bottom
 
   const x0 = d3.scaleBand()
     .domain(data.map(d => d.label))
@@ -145,7 +145,7 @@ function draw () {
         const c = countOf(d.label, stream, status)
         if (c <= 0) continue
         const yTop = y(cursor + c)
-        const h = Math.max(y(cursor) - yTop - SEG_GAP, 0)
+        const h = Math.max(y(cursor) - yTop - SEG_GAP_PX, 0)
         if (h > 0) {
           svg.append('rect')
             .attr('x', sx).attr('y', yTop)
@@ -168,7 +168,7 @@ function draw () {
     }
     // Period label centered under the group.
     svg.append('text')
-      .attr('x', gx + x0.bandwidth() / 2).attr('y', HEIGHT - 6)
+      .attr('x', gx + x0.bandwidth() / 2).attr('y', HEIGHT_PX - 6)
       .attr('text-anchor', 'middle').attr('fill', 'currentColor')
       .attr('font-size', 10).attr('font-weight', 600)
       .text(d.label)

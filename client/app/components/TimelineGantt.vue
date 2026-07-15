@@ -43,9 +43,9 @@ const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width } = useElementSize(container) // reactive container width (VueUse)
 
-const ROW_H = 26
-const ROW_GAP = 6
-const GROUP_GAP = 20 // extra space setting the summary lanes apart from the detail lanes
+const ROW_H_PX = 26
+const ROW_GAP_PX = 6
+const GROUP_GAP_PX = 20 // extra space setting the summary lanes apart from the detail lanes
 const MARGIN = { top: 28, right: 16, bottom: 8, left: 180 }
 
 const now = new Date()
@@ -128,8 +128,8 @@ const hasGroupSplit = computed(() =>
 )
 
 const height = computed(() =>
-  MARGIN.top + MARGIN.bottom + lanes.value.length * (ROW_H + ROW_GAP)
-  + (hasGroupSplit.value ? GROUP_GAP : 0)
+  MARGIN.top + MARGIN.bottom + lanes.value.length * (ROW_H_PX + ROW_GAP_PX)
+  + (hasGroupSplit.value ? GROUP_GAP_PX : 0)
 )
 
 function draw () {
@@ -161,20 +161,20 @@ function draw () {
 
   const summaryN = summaryCount.value
   const rowY = (i: number) =>
-    MARGIN.top + i * (ROW_H + ROW_GAP) + (i >= summaryN ? GROUP_GAP : 0)
+    MARGIN.top + i * (ROW_H_PX + ROW_GAP_PX) + (i >= summaryN ? GROUP_GAP_PX : 0)
 
   // Box the summary lanes so it reads that they summarise the detail lanes,
-  // which are set apart below by GROUP_GAP. Drawn first, behind everything.
+  // which are set apart below by GROUP_GAP_PX. Drawn first, behind everything.
   if (summaryN > 0) {
     const boxTop = rowY(0) - 3
-    const boxBottom = rowY(summaryN - 1) + ROW_H + 3
+    const boxBottom = rowY(summaryN - 1) + ROW_H_PX + 3
     svg.append('rect')
       .attr('x', 4).attr('y', boxTop)
       .attr('width', Math.max(width.value - 8, 10))
       .attr('height', boxBottom - boxTop)
       .attr('fill', 'currentColor').attr('opacity', 0.06).attr('rx', 6)
     if (hasGroupSplit.value) {
-      const yDiv = (rowY(summaryN - 1) + ROW_H + rowY(summaryN)) / 2
+      const yDiv = (rowY(summaryN - 1) + ROW_H_PX + rowY(summaryN)) / 2
       svg.append('line')
         .attr('x1', 4).attr('x2', Math.max(width.value - 4, 10))
         .attr('y1', yDiv).attr('y2', yDiv)
@@ -209,7 +209,7 @@ function draw () {
 
     // Row label.
     svg.append('text')
-      .attr('x', MARGIN.left - 8).attr('y', y + ROW_H / 2)
+      .attr('x', MARGIN.left - 8).attr('y', y + ROW_H_PX / 2)
       .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
       .attr('fill', 'currentColor')
       .attr('font-size', 11)
@@ -217,7 +217,7 @@ function draw () {
       .text(lane.label)
     if (lane.sublabel) {
       svg.append('text')
-        .attr('x', MARGIN.left - 8).attr('y', y + ROW_H / 2 + 11)
+        .attr('x', MARGIN.left - 8).attr('y', y + ROW_H_PX / 2 + 11)
         .attr('text-anchor', 'end').attr('fill', 'currentColor')
         .attr('font-size', 9).attr('opacity', 0.6)
         .text(lane.sublabel)
@@ -226,7 +226,7 @@ function draw () {
     // Lane background.
     svg.append('rect')
       .attr('x', MARGIN.left).attr('y', y)
-      .attr('width', innerWidth).attr('height', ROW_H)
+      .attr('width', innerWidth).attr('height', ROW_H_PX)
       .attr('fill', 'currentColor').attr('opacity', 0.04).attr('rx', 3)
 
     // Segments. selectAll(null) forces an all-enter join (the SVG is rebuilt
@@ -238,7 +238,7 @@ function draw () {
       .attr('x', d => x(d.start))
       .attr('y', y + 2)
       .attr('width', d => Math.max(x(segmentEnd(d, now)) - x(d.start), 2))
-      .attr('height', ROW_H - 4)
+      .attr('height', ROW_H_PX - 4)
       .attr('rx', 2)
       .attr('fill', d => kindColor(d.kind))
       .attr('opacity', 0.85)
