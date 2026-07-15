@@ -78,6 +78,10 @@ KIND_LEGACY = "legacy_label"
 
 KIND_AWAITING = "awaiting_ref"
 
+# The set of segment/band kinds, as serializer choices so the OpenAPI schema
+# (and the generated TS client) expose them as an enum rather than a bare string.
+KIND_CHOICES = (KIND_BLOCKED, KIND_WORKING, KIND_LEGACY, KIND_AWAITING)
+
 
 # Manually-applied labels flagging a final-review doc that is waiting on a
 # referenced RFC-to-be. Only ever set while in the final_review_editor state.

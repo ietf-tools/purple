@@ -21,6 +21,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
+from rpc.lifecycle.timeline import KIND_CHOICES
 
 from .dt_v1_api_utils import datatracker_group_name
 from .models import (
@@ -343,7 +344,7 @@ class TimelineSegmentSerializer(serializers.Serializer):
 
     start = serializers.DateTimeField()
     end = serializers.DateTimeField(allow_null=True)
-    kind = serializers.CharField()
+    kind = serializers.ChoiceField(choices=KIND_CHOICES)
     role = serializers.CharField(allow_null=True, required=False)
     label = serializers.CharField(allow_null=True, required=False)
     person_id = serializers.IntegerField(allow_null=True, required=False)
@@ -365,7 +366,7 @@ class TimelineTrackSerializer(serializers.Serializer):
 class TimelineBandSerializer(serializers.Serializer):
     """An aggregate lane: blocked/working summary or one legacy label."""
 
-    kind = serializers.CharField()
+    kind = serializers.ChoiceField(choices=KIND_CHOICES)
     label = serializers.CharField(allow_null=True, required=False)
     segments = TimelineSegmentSerializer(many=True)
 

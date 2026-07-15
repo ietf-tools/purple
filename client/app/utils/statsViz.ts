@@ -1,24 +1,20 @@
 import humanizeDuration from 'humanize-duration'
 import { DateTime } from 'luxon'
-import type { TimelineSegment } from '~/purple_client'
+import { KindEnum, type TimelineSegment } from '~/purple_client'
 
 export const SECONDS_PER_DAY = 86_400
 export const MS_PER_DAY = 86_400_000
 
-// Segment kinds emitted by the backend (rpc.lifecycle.timeline). These mirror
-// the KIND_* values in rpc/lifecycle/timeline.py; there is no generated enum for
-// them, so this is a small hand-kept copy of that contract.
-export const KIND_BLOCKED = 'blocked'
-export const KIND_WORKING = 'working'
-export const KIND_LEGACY = 'legacy_label'
-export const KIND_AWAITING = 'awaiting_ref'
+// Segment kinds, sourced from the generated client's KindEnum (backed by the
+// backend's KIND_* choices in rpc.lifecycle.timeline) so there is one source of
+// truth rather than a hand-kept copy.
+export const KIND_BLOCKED = KindEnum.Blocked
+export const KIND_WORKING = KindEnum.Working
+export const KIND_LEGACY = KindEnum.LegacyLabel
+export const KIND_AWAITING = KindEnum.AwaitingRef
 
-/** The set of segment kinds, as a narrow type for keying the maps below. */
-export type Kind =
-  | typeof KIND_BLOCKED
-  | typeof KIND_WORKING
-  | typeof KIND_LEGACY
-  | typeof KIND_AWAITING
+/** The set of segment kinds, for keying the maps below. */
+export type Kind = KindEnum
 
 // Shared colors so the doc timeline and queue summary read as one system:
 // these match the lead hues of the per-role palettes below (blocked = warm red,
