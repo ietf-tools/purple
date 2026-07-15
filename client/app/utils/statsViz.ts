@@ -1,6 +1,11 @@
 import humanizeDuration from 'humanize-duration'
 import { DateTime } from 'luxon'
-import { KindEnum, type PublishedStatusEnum, type TimelineSegment } from '~/purple_client'
+import {
+  KindEnum,
+  type PublishedStatusEnum,
+  type PublishedStreamEnum,
+  type TimelineSegment
+} from '~/purple_client'
 
 export const SECONDS_PER_DAY = 86_400
 export const MS_PER_DAY = 86_400_000
@@ -130,6 +135,17 @@ export const OTHER_BLOCKED_COLOR = '#78716c' // stone-500 (neutral, warm)
 // amber and Unknown a neutral slate so they read as "other". Fallback slate.
 /** RFC status bucket, sourced from the generated client's enum. */
 export type Status = PublishedStatusEnum
+
+// Publication stream. The backend enum has the real streams; the Stream tab's
+// "Split IETF" toggle can merge ietf-wg + ietf-ad into a synthetic 'ietf', so
+// the display type is the enum plus that client-only value.
+export type Stream = PublishedStreamEnum | 'ietf'
+
+/** One (stream, status) cell of a period, in display terms (Stream may be 'ietf'). */
+export type StreamStatusCell = { stream: Stream, status: Status, count: number }
+
+/** A period of the Stream tab after the client-side IETF merge is applied. */
+export type StreamPeriod = { label: string, start: Date, end: Date, counts: StreamStatusCell[] }
 
 export const PUBLISHED_STATUS_COLORS: Record<Status, string> = {
   'Standards Track': '#0284c7',

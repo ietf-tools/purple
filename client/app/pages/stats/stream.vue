@@ -113,8 +113,10 @@
 </template>
 
 <script setup lang="ts">
-import { StatsQueuePeriodEnum, type QueuePublishedStatPeriod, type QueuePublishedStats } from '~/purple_client'
-import { formatWeekRange, isWeekLabel, statusColor, type Status } from '~/utils/statsViz'
+import { StatsQueuePeriodEnum, type QueuePublishedStats } from '~/purple_client'
+import {
+  formatWeekRange, isWeekLabel, statusColor, type Status, type Stream, type StreamPeriod
+} from '~/utils/statsViz'
 
 const api = useApi()
 
@@ -126,7 +128,7 @@ const PERIOD_OPTIONS = [
   { value: StatsQueuePeriodEnum.Ietf, label: 'IETF meetings' }
 ]
 
-const STREAM_LABELS: Record<string, string> = {
+const STREAM_LABELS: Record<Stream, string> = {
   ietf: 'IETF',
   'ietf-wg': 'IETF WG',
   'ietf-ad': 'IETF AD-sponsored',
@@ -135,12 +137,12 @@ const STREAM_LABELS: Record<string, string> = {
   iab: 'IAB',
   editorial: 'Editorial'
 }
-const streamLabel = (slug: string): string => STREAM_LABELS[slug] ?? slug
+const streamLabel = (slug: Stream): string => STREAM_LABELS[slug] ?? slug
 
 // The backend always splits IETF into ietf-wg / ietf-ad; off (default) merges
 // them back into a single "ietf" bucket. Client-side only — no refetch.
 const isIetfSplit = ref(false)
-const mergeStream = (slug: string) =>
+const mergeStream = (slug: Stream): Stream =>
   (!isIetfSplit.value && (slug === 'ietf-wg' || slug === 'ietf-ad')) ? 'ietf' : slug
 
 // Deferred period/count controls (shared across the stats tabs).
@@ -169,8 +171,8 @@ const statuses = computed(() => stats.value?.statuses ?? [])
 
 // Display streams, with ietf-wg/ietf-ad collapsed to ietf when not split.
 const streams = computed(() => {
-  const seen = new Set<string>()
-  const out: string[] = []
+  const seen = new Set<Stream>()
+  const out: Stream[] = []
   for (const s of stats.value?.streams ?? []) {
     const m = mergeStream(s)
     if (!seen.has(m)) { seen.add(m); out.push(m) }
@@ -179,9 +181,9 @@ const streams = computed(() => {
 })
 
 // Periods with counts re-aggregated under the merged stream keys.
-const periods = computed<QueuePublishedStatPeriod[]>(() =>
+const periods = computed<StreamPeriod[]>(() =>
   rawPeriods.value.map((p) => {
-    const agg = new Map<string, { stream: string, status: Status, count: number }>()
+    const agg = new Map<string, { stream: Stream, status: Status, count: number }>()
     for (const c of p.counts) {
       const stream = mergeStream(c.stream)
       const k = `${stream}|${c.status}`
@@ -203,13 +205,13 @@ const lookup = computed(() => {
   }
   return m
 })
-function count (p: QueuePublishedStatPeriod, stream: string, status: Status): number {
+function count (p: StreamPeriod, stream: Stream, status: Status): number {
   return lookup.value.get(p.label)?.get(`${stream}|${status}`) ?? 0
 }
-function streamTotal (p: QueuePublishedStatPeriod, stream: string): number {
+function streamTotal (p: StreamPeriod, stream: Stream): number {
   return statuses.value.reduce((sum, s) => sum + count(p, stream, s), 0)
 }
-function periodTotal (p: QueuePublishedStatPeriod): number {
+function periodTotal (p: StreamPeriod): number {
   return p.counts.reduce((sum, c) => sum + c.count, 0)
 }
 const fmt = (n: number) => (n === 0 ? '—' : n.toLocaleString())

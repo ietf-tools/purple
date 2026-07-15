@@ -21,7 +21,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
-from rpc.lifecycle.rollups import PUBLISHED_STATUS_ORDER
+from rpc.lifecycle.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
 from rpc.lifecycle.timeline import KIND_CHOICES
 
 from .dt_v1_api_utils import datatracker_group_name
@@ -441,7 +441,7 @@ class QueueCountStatsSerializer(serializers.Serializer):
 class PublishedStreamStatusCountSerializer(serializers.Serializer):
     """Count of RFCs published for one (stream, status) cell of a period."""
 
-    stream = serializers.CharField()
+    stream = serializers.ChoiceField(choices=PUBLISHED_STREAMS)
     status = serializers.ChoiceField(choices=PUBLISHED_STATUS_ORDER)
     count = serializers.IntegerField()
 
@@ -462,7 +462,9 @@ class QueuePublishedStatsSerializer(serializers.Serializer):
     axes to render); each period's ``counts`` holds only its non-zero cells.
     """
 
-    streams = serializers.ListField(child=serializers.CharField())
+    streams = serializers.ListField(
+        child=serializers.ChoiceField(choices=PUBLISHED_STREAMS)
+    )
     statuses = serializers.ListField(
         child=serializers.ChoiceField(choices=PUBLISHED_STATUS_ORDER)
     )

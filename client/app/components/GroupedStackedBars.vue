@@ -44,14 +44,13 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
-import type { QueuePublishedStatPeriod } from '~/purple_client'
-import { statusColor, type Status } from '~/utils/statsViz'
+import { statusColor, type Status, type Stream, type StreamPeriod } from '~/utils/statsViz'
 
 type Props = {
-  periods: QueuePublishedStatPeriod[]
-  streams: string[] // active stream slugs, display order
+  periods: StreamPeriod[]
+  streams: Stream[] // active streams, display order
   statuses: Status[] // active status buckets, display order
-  streamLabel: (slug: string) => string
+  streamLabel: (slug: Stream) => string
 }
 const props = defineProps<Props>()
 
@@ -85,10 +84,10 @@ const lookup = computed(() => {
   }
   return m
 })
-function countOf (label: string, stream: string, status: Status): number {
+function countOf (label: string, stream: Stream, status: Status): number {
   return lookup.value.get(label)?.get(`${stream}|${status}`) ?? 0
 }
-function stackTotal (label: string, stream: string): number {
+function stackTotal (label: string, stream: Stream): number {
   return visibleStatuses.value.reduce((sum, s) => sum + countOf(label, stream, s), 0)
 }
 
@@ -175,7 +174,7 @@ function draw () {
   })
 }
 
-function showTooltip (event: MouseEvent, label: string, stream: string, status: Status, count: number) {
+function showTooltip (event: MouseEvent, label: string, stream: Stream, status: Status, count: number) {
   const el = container.value
   const rect = el?.getBoundingClientRect()
   // Offset by the container's scroll so the tooltip tracks the pointer when the

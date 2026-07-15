@@ -120,6 +120,7 @@ SPECTACULAR_SETTINGS = {
     # collapses to a single component instead of duplicated/suffixed enums.
     "ENUM_NAME_OVERRIDES": {
         "PublishedStatusEnum": "rpc.lifecycle.rollups.PUBLISHED_STATUS_ORDER",
+        "PublishedStreamEnum": "rpc.lifecycle.rollups.PUBLISHED_STREAMS",
     },
 }
 

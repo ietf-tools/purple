@@ -829,6 +829,8 @@ PUBLISHED_STREAM_LABELS = {
     "iab": "IAB",
     "editorial": "Editorial",
 }
+# The stream keys, as serializer choices (see PUBLISHED_STATUS_ORDER's use).
+PUBLISHED_STREAMS = tuple(PUBLISHED_STREAM_LABELS)
 
 
 # Publication std-level slug -> status bucket, and the bucket display order.
