@@ -115,6 +115,12 @@ SPECTACULAR_SETTINGS = {
     "SCHEMA_PATH_PREFIX": "/api/rpc/",
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "COMPONENT_SPLIT_REQUEST": True,
+    # Give the shared stats-tab choice sets one canonical enum name so the same
+    # set used in multiple fields (e.g. a scalar `status` and a `statuses` list)
+    # collapses to a single component instead of duplicated/suffixed enums.
+    "ENUM_NAME_OVERRIDES": {
+        "PublishedStatusEnum": "rpc.lifecycle.rollups.PUBLISHED_STATUS_ORDER",
+    },
 }
 
 

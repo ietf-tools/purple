@@ -1,6 +1,6 @@
 import humanizeDuration from 'humanize-duration'
 import { DateTime } from 'luxon'
-import { KindEnum, type TimelineSegment } from '~/purple_client'
+import { KindEnum, type PublishedStatusEnum, type TimelineSegment } from '~/purple_client'
 
 export const SECONDS_PER_DAY = 86_400
 export const MS_PER_DAY = 86_400_000
@@ -128,7 +128,10 @@ export const OTHER_BLOCKED_COLOR = '#78716c' // stone-500 (neutral, warm)
 // Colors for the RFC-status buckets on the Stream tab (one categorical
 // dimension). Drawn from the same validator-clean palette; Historic is warm
 // amber and Unknown a neutral slate so they read as "other". Fallback slate.
-export const PUBLISHED_STATUS_COLORS: Record<string, string> = {
+/** RFC status bucket, sourced from the generated client's enum. */
+export type Status = PublishedStatusEnum
+
+export const PUBLISHED_STATUS_COLORS: Record<Status, string> = {
   'Standards Track': '#0284c7',
   'Best Current Practice': '#0d9488',
   Experimental: '#4f46e5',
@@ -136,7 +139,7 @@ export const PUBLISHED_STATUS_COLORS: Record<string, string> = {
   Historic: '#a16207',
   Unknown: '#64748b'
 }
-export function statusColor (status: string): string {
+export function statusColor (status: Status): string {
   return PUBLISHED_STATUS_COLORS[status] ?? '#64748b'
 }
 

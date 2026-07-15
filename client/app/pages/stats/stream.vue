@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePublishedStatPeriod, type QueuePublishedStats } from '~/purple_client'
-import { formatWeekRange, isWeekLabel, statusColor } from '~/utils/statsViz'
+import { formatWeekRange, isWeekLabel, statusColor, type Status } from '~/utils/statsViz'
 
 const api = useApi()
 
@@ -181,7 +181,7 @@ const streams = computed(() => {
 // Periods with counts re-aggregated under the merged stream keys.
 const periods = computed<QueuePublishedStatPeriod[]>(() =>
   rawPeriods.value.map((p) => {
-    const agg = new Map<string, { stream: string, status: string, count: number }>()
+    const agg = new Map<string, { stream: string, status: Status, count: number }>()
     for (const c of p.counts) {
       const stream = mergeStream(c.stream)
       const k = `${stream}|${c.status}`
@@ -203,7 +203,7 @@ const lookup = computed(() => {
   }
   return m
 })
-function count (p: QueuePublishedStatPeriod, stream: string, status: string): number {
+function count (p: QueuePublishedStatPeriod, stream: string, status: Status): number {
   return lookup.value.get(p.label)?.get(`${stream}|${status}`) ?? 0
 }
 function streamTotal (p: QueuePublishedStatPeriod, stream: string): number {
