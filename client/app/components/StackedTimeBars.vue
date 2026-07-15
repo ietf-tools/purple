@@ -1,21 +1,25 @@
 <template>
   <div class="w-full">
-    <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
-      <svg
-        ref="svgEl" :width="width" :height="HEIGHT_PX" class="block"
-        role="img" aria-label="Stacked bar chart of time spent per assignment role each period. The same data is in the table below."
-      />
+    <div ref="root" class="relative">
+      <div ref="container" class="w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
+        <svg
+          ref="svgEl" :width="width" :height="HEIGHT_PX" class="block"
+          role="img" aria-label="Stacked bar chart of time spent per assignment role each period. The same data is in the table below."
+        />
+        <div v-if="periods.length === 0" class="py-8 text-center text-sm opacity-60">
+          No data for the selected range.
+        </div>
+      </div>
+      <!-- Tooltip lives outside the scrolling container so it can't be clipped
+           or add to the scroll width; tooltipPosition flips it near edges. -->
       <div
         v-if="tooltip.visible"
         class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
-        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+        :style="tooltip.pos"
       >
         <div class="font-semibold">{{ tooltip.title }}</div>
         <div>{{ tooltip.detail }}</div>
         <div v-if="tooltip.members" class="mt-0.5 opacity-70">{{ tooltip.members }}</div>
-      </div>
-      <div v-if="periods.length === 0" class="py-8 text-center text-sm opacity-60">
-        No data for the selected range.
       </div>
     </div>
 
@@ -51,7 +55,7 @@ import type { QueuePeriodStat } from '~/purple_client'
 import {
   BLOCKED_PALETTE, KIND_LEGACY_COLOR, MAX_BLOCKED, MAX_NOT_BLOCKED, NOT_BLOCKED_PALETTE,
   OTHER_BLOCKED_COLOR, OTHER_NOT_BLOCKED_COLOR, SECONDS_PER_DAY, formatDays, formatWeekRange,
-  humanSeconds, isWeekLabel
+  humanSeconds, isWeekLabel, tooltipPosition, type TooltipPos
 } from '~/utils/statsViz'
 
 type Props = {
@@ -70,6 +74,7 @@ type Category = {
   color: string
 }
 
+const root = ref<HTMLElement | null>(null)
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width } = useElementSize(container) // reactive container width (VueUse)
@@ -85,7 +90,7 @@ function toggle (key: string) {
   else hidden.add(key)
 }
 
-const tooltip = reactive({ visible: false, x: 0, y: 0, title: '', detail: '', members: '' })
+const tooltip = reactive({ visible: false, pos: {} as TooltipPos, title: '', detail: '', members: '' })
 
 const periods = computed(() => props.periods)
 
@@ -250,12 +255,7 @@ function draw () {
 }
 
 function showTooltip (event: MouseEvent, d: QueuePeriodStat, cat: Category, seconds: number, share: number) {
-  const el = container.value
-  const rect = el?.getBoundingClientRect()
-  // Offset by the container's scroll so the tooltip tracks the pointer when the
-  // chart is scrolled horizontally.
-  tooltip.x = event.clientX - (rect?.left ?? 0) + (el?.scrollLeft ?? 0) + 12
-  tooltip.y = event.clientY - (rect?.top ?? 0) + (el?.scrollTop ?? 0) + 12
+  tooltip.pos = tooltipPosition(event, root.value)
   tooltip.visible = true
   const tag = cat.isBlocked ? 'blocked' : 'not blocked'
   const scaled = seconds * (props.dayScale ?? 1)

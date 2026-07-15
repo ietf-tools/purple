@@ -114,6 +114,32 @@ export function formatWeekRange (start: Date, end: Date): string {
   return `${fmt(start)} – ${fmt(new Date(end.getTime() - MS_PER_DAY))}`
 }
 
+/** CSS position for a chart tooltip, relative to a non-scrolling wrapper. */
+export type TooltipPos = { left?: string, right?: string, top?: string, bottom?: string }
+
+/**
+ * Place a tooltip near the pointer within ``wrapper`` (a non-scrolling,
+ * position:relative element), anchoring it away from whichever edge the pointer
+ * is nearest so it never overflows the chart or gets clipped: past the
+ * horizontal/vertical midpoint it grows left/up (anchored by ``right``/
+ * ``bottom``) instead of right/down.
+ */
+export function tooltipPosition (
+  event: MouseEvent, wrapper: HTMLElement | null, offset = 12
+): TooltipPos {
+  const rect = wrapper?.getBoundingClientRect()
+  const w = wrapper?.clientWidth ?? 0
+  const h = wrapper?.clientHeight ?? 0
+  const x = event.clientX - (rect?.left ?? 0)
+  const y = event.clientY - (rect?.top ?? 0)
+  const pos: TooltipPos = {}
+  if (x > w / 2) pos.right = `${Math.max(w - x + offset, 0)}px`
+  else pos.left = `${x + offset}px`
+  if (y > h / 2) pos.bottom = `${Math.max(h - y + offset, 0)}px`
+  else pos.top = `${y + offset}px`
+  return pos
+}
+
 // Palettes for per-role stacking: cool hues for not-blocked roles, warm hues
 // for blocked roles, so the blocked share of each bar reads at a glance. Both
 // pass the dataviz validator (lightness band, chroma, adjacent-CVD, contrast)

@@ -1,20 +1,24 @@
 <template>
   <div class="w-full">
-    <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
-      <svg
-        ref="svgEl" :width="chartWidth" :height="HEIGHT_PX" class="block"
-        role="img" aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below."
-      />
+    <div ref="root" class="relative">
+      <div ref="container" class="w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
+        <svg
+          ref="svgEl" :width="chartWidth" :height="HEIGHT_PX" class="block"
+          role="img" aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below."
+        />
+        <div v-if="periods.length === 0" class="py-8 text-center text-sm opacity-60">
+          No data for the selected range.
+        </div>
+      </div>
+      <!-- Tooltip outside the scrolling container so it can't be clipped or add
+           to the scroll width; tooltipPosition flips it near edges. -->
       <div
         v-if="tooltip.visible"
         class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
-        :style="{ left: `${tooltip.x}px`, top: `${tooltip.y}px` }"
+        :style="tooltip.pos"
       >
         <div class="font-semibold">{{ tooltip.title }}</div>
         <div>{{ tooltip.detail }}</div>
-      </div>
-      <div v-if="periods.length === 0" class="py-8 text-center text-sm opacity-60">
-        No data for the selected range.
       </div>
     </div>
 
@@ -44,7 +48,9 @@
 <script setup lang="ts">
 import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
-import { statusColor, type Status, type Stream, type StreamPeriod } from '~/utils/statsViz'
+import {
+  statusColor, tooltipPosition, type Status, type Stream, type StreamPeriod, type TooltipPos
+} from '~/utils/statsViz'
 
 type Props = {
   periods: StreamPeriod[]
@@ -54,6 +60,7 @@ type Props = {
 }
 const props = defineProps<Props>()
 
+const root = ref<HTMLElement | null>(null)
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width: containerWidth } = useElementSize(container) // reactive (VueUse)
@@ -69,7 +76,7 @@ function toggle (key: string) {
   else hidden.add(key)
 }
 
-const tooltip = reactive({ visible: false, x: 0, y: 0, title: '', detail: '' })
+const tooltip = reactive({ visible: false, pos: {} as TooltipPos, title: '', detail: '' })
 
 const periods = computed(() => props.periods)
 const visibleStatuses = computed(() => props.statuses.filter(s => !hidden.has(s)))
@@ -175,12 +182,7 @@ function draw () {
 }
 
 function showTooltip (event: MouseEvent, label: string, stream: Stream, status: Status, count: number) {
-  const el = container.value
-  const rect = el?.getBoundingClientRect()
-  // Offset by the container's scroll so the tooltip tracks the pointer when the
-  // grouped chart is scrolled horizontally.
-  tooltip.x = event.clientX - (rect?.left ?? 0) + (el?.scrollLeft ?? 0) + 12
-  tooltip.y = event.clientY - (rect?.top ?? 0) + (el?.scrollTop ?? 0) + 12
+  tooltip.pos = tooltipPosition(event, root.value)
   tooltip.visible = true
   tooltip.title = `${label} — ${props.streamLabel(stream)}`
   tooltip.detail = `${status}: ${count} RFC${count === 1 ? '' : 's'}`
