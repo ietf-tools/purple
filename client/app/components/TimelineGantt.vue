@@ -24,7 +24,7 @@ import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
-import { KIND_AWAITING, KIND_LABELS, KIND_LEGACY_COLOR, humanMillis, kindColor, segmentEnd, segmentMillis } from '~/utils/statsViz'
+import { KIND_AWAITING, KIND_LEGACY_COLOR, humanMillis, kindColor, kindLabel, segmentEnd, segmentMillis } from '~/utils/statsViz'
 
 type Props = {
   timeline: AssignmentTimeline
@@ -76,7 +76,7 @@ const lanes = computed<Lane[]>(() => {
     if (band.segments.length === 0) continue
     summary.push({
       key: `summary-${band.kind}`,
-      label: KIND_LABELS[band.kind] ?? band.kind,
+      label: kindLabel(band.kind),
       segments: band.segments,
       group: 'summary'
     })
@@ -249,11 +249,14 @@ function draw () {
 }
 
 function showTooltip (event: MouseEvent, lane: Lane, seg: TimelineSegment) {
-  const rect = container.value?.getBoundingClientRect()
+  const el = container.value
+  const rect = el?.getBoundingClientRect()
   const fmt = (dt: Date) => DateTime.fromJSDate(dt).toLocaleString(DateTime.DATE_MED)
+  // Offset by the container's scroll so the tooltip tracks the pointer when the
+  // timeline is scrolled horizontally.
+  tooltip.x = event.clientX - (rect?.left ?? 0) + (el?.scrollLeft ?? 0) + 12
+  tooltip.y = event.clientY - (rect?.top ?? 0) + (el?.scrollTop ?? 0) + 12
   tooltip.visible = true
-  tooltip.x = event.clientX - (rect?.left ?? 0) + 12
-  tooltip.y = event.clientY - (rect?.top ?? 0) + 12
   tooltip.title = lane.sublabel ? `${lane.label} — ${lane.sublabel}` : lane.label
   tooltip.detail = `${fmt(seg.start)} → ${seg.end ? fmt(seg.end) : 'ongoing'}`
   tooltip.duration = humanMillis(segmentMillis(seg, now))

@@ -1,11 +1,24 @@
 import humanizeDuration from 'humanize-duration'
+import { DateTime } from 'luxon'
 import type { TimelineSegment } from '~/purple_client'
 
-// Segment kinds emitted by the backend (rpc.lifecycle.timeline).
+export const SECONDS_PER_DAY = 86_400
+export const MS_PER_DAY = 86_400_000
+
+// Segment kinds emitted by the backend (rpc.lifecycle.timeline). These mirror
+// the KIND_* values in rpc/lifecycle/timeline.py; there is no generated enum for
+// them, so this is a small hand-kept copy of that contract.
 export const KIND_BLOCKED = 'blocked'
 export const KIND_WORKING = 'working'
 export const KIND_LEGACY = 'legacy_label'
 export const KIND_AWAITING = 'awaiting_ref'
+
+/** The set of segment kinds, as a narrow type for keying the maps below. */
+export type Kind =
+  | typeof KIND_BLOCKED
+  | typeof KIND_WORKING
+  | typeof KIND_LEGACY
+  | typeof KIND_AWAITING
 
 // Shared colors so the doc timeline and queue summary read as one system:
 // these match the lead hues of the per-role palettes below (blocked = warm red,
@@ -13,22 +26,28 @@ export const KIND_AWAITING = 'awaiting_ref'
 // three pass the dataviz validator on both the light (#fff) and dark (#000)
 // card surfaces.
 export const KIND_LEGACY_COLOR = '#7c3aed' // violet-600 (legacy states + transition marker)
-export const KIND_COLORS: Record<string, string> = {
+export const KIND_COLORS: Record<Kind, string> = {
   [KIND_BLOCKED]: '#dc2626', // red-600   — matches BLOCKED_PALETTE[0]
   [KIND_WORKING]: '#0d9488', // teal-600  — matches NOT_BLOCKED_PALETTE[0]
   [KIND_AWAITING]: '#b45309', // amber-700 — waiting on a reference (final review)
   [KIND_LEGACY]: KIND_LEGACY_COLOR
 }
 
-export const KIND_LABELS: Record<string, string> = {
+export const KIND_LABELS: Record<Kind, string> = {
   [KIND_BLOCKED]: 'Blocked',
   [KIND_WORKING]: 'Not blocked',
   [KIND_AWAITING]: 'Awaiting ref',
   [KIND_LEGACY]: 'Legacy state'
 }
 
+/** Color for a backend-supplied kind string (falls back to the legacy hue). */
 export function kindColor (kind: string): string {
-  return KIND_COLORS[kind] ?? KIND_COLORS[KIND_LEGACY]!
+  return KIND_COLORS[kind as Kind] ?? KIND_LEGACY_COLOR
+}
+
+/** Display label for a backend-supplied kind string (falls back to the raw kind). */
+export function kindLabel (kind: string): string {
+  return KIND_LABELS[kind as Kind] ?? kind
 }
 
 /** Segment end, defaulting an open-ended (ongoing) segment to `now`. */
@@ -70,8 +89,28 @@ export function formatDays (seconds: number): string {
   if (seconds <= 0) {
     return '—'
   }
-  const days = Math.round(seconds / 86400)
+  const days = Math.round(seconds / SECONDS_PER_DAY)
   return days === 0 ? '<1d' : `${days}d`
+}
+
+// Week period labels look like "2026-W28"; the stats tables/chart show the
+// covered date range beneath them.
+const WEEK_LABEL_RE = /^\d{4}-W\d{2}$/
+
+/** True if a period label is an ISO-week label (e.g. "2026-W28"). */
+export function isWeekLabel (label: string | undefined): boolean {
+  return WEEK_LABEL_RE.test(label ?? '')
+}
+
+/**
+ * Human date range covered by a week window, e.g. "Jul 6 – Jul 12". `end` is
+ * exclusive (the next Monday), so the last day shown is `end - 1 day`. Formatted
+ * in UTC to match the UTC-midnight window boundaries.
+ */
+export function formatWeekRange (start: Date, end: Date): string {
+  const fmt = (d: Date) =>
+    DateTime.fromJSDate(d, { zone: 'utc' }).toLocaleString({ month: 'short', day: 'numeric' })
+  return `${fmt(start)} – ${fmt(new Date(end.getTime() - MS_PER_DAY))}`
 }
 
 // Palettes for per-role stacking: cool hues for not-blocked roles, warm hues

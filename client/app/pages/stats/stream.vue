@@ -70,7 +70,7 @@
                   <th scope="col" class="py-2 pl-4 pr-3 text-left font-semibold">Stream / status</th>
                   <th v-for="p in periods" :key="p.label" scope="col" class="px-3 py-2 text-right font-semibold">
                     <div>{{ p.label }}</div>
-                    <div v-if="showWeekRange" class="text-xs font-normal opacity-60">{{ weekRange(p) }}</div>
+                    <div v-if="showWeekRange" class="text-xs font-normal opacity-60">{{ formatWeekRange(p.start, p.end) }}</div>
                   </th>
                 </tr>
               </thead>
@@ -114,7 +114,7 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePublishedStatPeriod, type QueuePublishedStats } from '~/purple_client'
-import { statusColor } from '~/utils/statsViz'
+import { formatWeekRange, isWeekLabel, statusColor } from '~/utils/statsViz'
 
 const api = useApi()
 
@@ -130,7 +130,10 @@ const STREAM_LABELS: Record<string, string> = {
   ietf: 'IETF',
   'ietf-wg': 'IETF WG',
   'ietf-ad': 'IETF AD-sponsored',
-  ise: 'ISE', irtf: 'IRTF', iab: 'IAB', editorial: 'Editorial'
+  ise: 'ISE',
+  irtf: 'IRTF',
+  iab: 'IAB',
+  editorial: 'Editorial'
 }
 const streamLabel = (slug: string): string => STREAM_LABELS[slug] ?? slug
 
@@ -141,9 +144,10 @@ const mergeStream = (slug: string) =>
   (!isIetfSplit.value && (slug === 'ietf-wg' || slug === 'ietf-ad')) ? 'ietf' : slug
 
 // Deferred period/count controls (shared across the stats tabs).
+const DEFAULT_PERIOD_COUNT = 4 // published RFCs are sparse per month; default to 4 years
 const {
   pendingPeriod, pendingCount, appliedPeriod, appliedCount, isDirty, apply, clampCount
-} = useDeferredPeriodControls(StatsQueuePeriodEnum.Year, 4)
+} = useDeferredPeriodControls(StatsQueuePeriodEnum.Year, DEFAULT_PERIOD_COUNT)
 
 const {
   data: stats,
@@ -210,12 +214,7 @@ function periodTotal (p: QueuePublishedStatPeriod): number {
 }
 const fmt = (n: number) => (n === 0 ? '—' : n.toLocaleString())
 
-const showWeekRange = computed(() => /^\d{4}-W\d{2}$/.test(periods.value[0]?.label ?? ''))
-function weekRange (p: QueuePublishedStatPeriod): string {
-  const f = (d: Date) => d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
-  const last = new Date(p.end.getTime() - 86400000)
-  return `${f(p.start)} – ${f(last)}`
-}
+const showWeekRange = computed(() => isWeekLabel(periods.value[0]?.label))
 
 useHeadSafe({ title: 'RFCs published by stream' })
 </script>

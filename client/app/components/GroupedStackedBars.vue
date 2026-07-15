@@ -2,7 +2,7 @@
   <div class="w-full">
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg
-        ref="svgEl" :width="chartWidth" :height="height" class="block"
+        ref="svgEl" :width="chartWidth" :height="HEIGHT" class="block"
         role="img" aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below."
       />
       <div
@@ -25,6 +25,7 @@
         <button
           v-for="s in statuses" :key="s"
           type="button"
+          :aria-pressed="!hidden.has(s)"
           class="flex items-center gap-1 rounded px-1 transition-opacity hover:bg-gray-100 dark:hover:bg-neutral-800"
           :class="hidden.has(s) ? 'opacity-35' : ''"
           @click="toggle(s)"
@@ -58,7 +59,7 @@ const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width: containerWidth } = useElementSize(container) // reactive (VueUse)
 const chartWidth = ref(720)
-const height = 340
+const HEIGHT = 340
 const MARGIN = { top: 16, right: 16, bottom: 56, left: 44 }
 const SEG_GAP = 1
 const MIN_BAR_W = 16 // min px per stream sub-bar, else the chart scrolls
@@ -104,7 +105,7 @@ function draw () {
   const needed = MARGIN.left + MARGIN.right + data.length * groupW
   chartWidth.value = Math.max(containerWidth.value, needed)
   const innerW = chartWidth.value - MARGIN.left - MARGIN.right
-  const innerH = height - MARGIN.top - MARGIN.bottom
+  const innerH = HEIGHT - MARGIN.top - MARGIN.bottom
 
   const x0 = d3.scaleBand()
     .domain(data.map(d => d.label))
@@ -167,7 +168,7 @@ function draw () {
     }
     // Period label centered under the group.
     svg.append('text')
-      .attr('x', gx + x0.bandwidth() / 2).attr('y', height - 6)
+      .attr('x', gx + x0.bandwidth() / 2).attr('y', HEIGHT - 6)
       .attr('text-anchor', 'middle').attr('fill', 'currentColor')
       .attr('font-size', 10).attr('font-weight', 600)
       .text(d.label)
@@ -175,10 +176,13 @@ function draw () {
 }
 
 function showTooltip (event: MouseEvent, label: string, stream: string, status: string, count: number) {
-  const rect = container.value?.getBoundingClientRect()
+  const el = container.value
+  const rect = el?.getBoundingClientRect()
+  // Offset by the container's scroll so the tooltip tracks the pointer when the
+  // grouped chart is scrolled horizontally.
+  tooltip.x = event.clientX - (rect?.left ?? 0) + (el?.scrollLeft ?? 0) + 12
+  tooltip.y = event.clientY - (rect?.top ?? 0) + (el?.scrollTop ?? 0) + 12
   tooltip.visible = true
-  tooltip.x = event.clientX - (rect?.left ?? 0) + 12
-  tooltip.y = event.clientY - (rect?.top ?? 0) + 12
   tooltip.title = `${label} — ${props.streamLabel(stream)}`
   tooltip.detail = `${status}: ${count} RFC${count === 1 ? '' : 's'}`
 }

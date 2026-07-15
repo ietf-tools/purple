@@ -2,7 +2,7 @@
   <div class="w-full">
     <div ref="container" class="relative w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg
-        ref="svgEl" :width="width" :height="height" class="block"
+        ref="svgEl" :width="width" :height="HEIGHT" class="block"
         role="img" aria-label="Stacked bar chart of time spent per assignment role each period. The same data is in the table below."
       />
       <div
@@ -26,6 +26,7 @@
         <button
           v-for="cat in categories" :key="cat.key"
           type="button"
+          :aria-pressed="!hidden.has(cat.key)"
           class="flex items-center gap-1 rounded px-1 transition-opacity hover:bg-gray-100 dark:hover:bg-neutral-800"
           :class="hidden.has(cat.key) ? 'opacity-35' : ''"
           :title="cat.isOther ? cat.members.join(', ') : ''"
@@ -49,7 +50,8 @@ import * as d3 from 'd3'
 import type { QueuePeriodStat } from '~/purple_client'
 import {
   BLOCKED_PALETTE, KIND_LEGACY_COLOR, MAX_BLOCKED, MAX_NOT_BLOCKED, NOT_BLOCKED_PALETTE,
-  OTHER_BLOCKED_COLOR, OTHER_NOT_BLOCKED_COLOR, formatDays, humanSeconds
+  OTHER_BLOCKED_COLOR, OTHER_NOT_BLOCKED_COLOR, SECONDS_PER_DAY, formatDays, formatWeekRange,
+  humanSeconds, isWeekLabel
 } from '~/utils/statsViz'
 
 type Props = {
@@ -71,16 +73,9 @@ type Category = {
 const container = ref<HTMLElement | null>(null)
 const svgEl = ref<SVGSVGElement | null>(null)
 const { width } = useElementSize(container) // reactive container width (VueUse)
-const height = 340
+const HEIGHT = 340
 
 const MARGIN = { top: 16, right: 16, bottom: 52, left: 64 }
-
-function weekRange (p: QueuePeriodStat): string {
-  const fmt = (d: Date) =>
-    d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric' })
-  const last = new Date(p.end.getTime() - 86400000) // end is exclusive (next Monday)
-  return `${fmt(p.start)} – ${fmt(last)}`
-}
 const SEG_GAP = 2 // px of surface between stacked segments (dataviz mark spec)
 const CORNER = 4 // px rounded top of each bar
 
@@ -170,10 +165,10 @@ function draw () {
   const data = periods.value
   const cats = visibleCats.value
   // Week ticks carry a second line (the date range), so they need more room.
-  const isWeek = /^\d{4}-W\d{2}$/.test(data[0]?.label ?? '')
+  const isWeek = isWeekLabel(data[0]?.label)
   const marginBottom = isWeek ? MARGIN.bottom + 16 : MARGIN.bottom
   const innerW = Math.max(width.value - MARGIN.left - MARGIN.right, 10)
-  const innerH = height - MARGIN.top - marginBottom
+  const innerH = HEIGHT - MARGIN.top - marginBottom
   const isShare = props.mode === 'share'
   const dayScale = props.dayScale ?? 1
 
@@ -189,7 +184,7 @@ function draw () {
     .nice()
 
   const yAxis = d3.axisLeft(y).ticks(5).tickFormat(d =>
-    isShare ? `${Math.round(Number(d) * 100)}%` : `${Math.round((Number(d) / 86400) * dayScale)}d`)
+    isShare ? `${Math.round(Number(d) * 100)}%` : `${Math.round((Number(d) / SECONDS_PER_DAY) * dayScale)}d`)
   const yG = svg.append('g').attr('transform', `translate(${MARGIN.left}, 0)`).call(yAxis)
   yG.selectAll('text').attr('fill', 'currentColor').attr('font-size', 10)
   yG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
@@ -208,7 +203,7 @@ function draw () {
       if (!p) return
       d3.select(this).append('tspan')
         .attr('x', 0).attr('dy', '1.1em').attr('font-size', 8).attr('opacity', 0.7)
-        .text(weekRange(p))
+        .text(formatWeekRange(p.start, p.end))
     })
   }
 
@@ -255,10 +250,13 @@ function draw () {
 }
 
 function showTooltip (event: MouseEvent, d: QueuePeriodStat, cat: Category, seconds: number, share: number) {
-  const rect = container.value?.getBoundingClientRect()
+  const el = container.value
+  const rect = el?.getBoundingClientRect()
+  // Offset by the container's scroll so the tooltip tracks the pointer when the
+  // chart is scrolled horizontally.
+  tooltip.x = event.clientX - (rect?.left ?? 0) + (el?.scrollLeft ?? 0) + 12
+  tooltip.y = event.clientY - (rect?.top ?? 0) + (el?.scrollTop ?? 0) + 12
   tooltip.visible = true
-  tooltip.x = event.clientX - (rect?.left ?? 0) + 12
-  tooltip.y = event.clientY - (rect?.top ?? 0) + 12
   const tag = cat.isBlocked ? 'blocked' : 'not blocked'
   const scaled = seconds * (props.dayScale ?? 1)
   tooltip.title = `${d.label} — ${cat.label} (${tag})`
