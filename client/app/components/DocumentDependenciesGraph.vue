@@ -1,13 +1,17 @@
 <template>
-  <div ref="container"
+  <div
+    ref="container"
     class="overflow-hidden h-[75vh] flex items-center justify-center border border-gray-700 dark:border-gray-200 rounded-md inset-shadow-sm text-center">
     <Icon name="ei:spinner-3" size="1.3rem" class="animate-spin" />
   </div>
 
-  <div v-show="tooltip.text" class="absolute transition-all" :style="{
-    left: `${tooltip.position[0]}px`,
-    top: `${tooltip.position[1]}px`,
-  }">
+  <div
+    v-show="tooltip.text"
+    class="absolute transition-all"
+    :style="{
+      left: `${tooltip.position[0]}px`,
+      top: `${tooltip.position[1]}px`
+    }">
     <div
       class="absolute transition-all bottom-0 text-xs text-center bg-white dark:bg-black text-black dark:text-white border border-gray-400 rounded-md shadow-xl p-2 w-[15em]">
       <p v-for="line in tooltip.text">{{ line }}</p>
@@ -23,7 +27,10 @@
         <option value="default">Show Cluster</option>
         <option value="legend">Show Legend</option>
       </select>
-      <BaseButton btn-type="default" :class="{ 'opacity-50': !canDownload }" @click="handleDownload">
+      <BaseButton
+        btn-type="default"
+        :class="{ 'opacity-50': !canDownload }"
+        @click="handleDownload">
         <span v-if="canDownload">
           <Icon name="el:download-alt" size="1.1em" class="mr-2" />
           Download
@@ -43,17 +50,28 @@
       <h3 class="mt-4 font-bold">Cluster</h3>
       <pre>{{ JSON.stringify(clusterToUse, null, 2) }}</pre>
       <h3 class="mt-4 font-bold">RFCsToBe</h3>
-      <pre>{{JSON.stringify(clusterToUse.documents?.flatMap(d => d.references ?? []), null, 2)}}</pre>
+      <pre>{{
+        JSON.stringify(
+          clusterToUse.documents?.flatMap((d) => d.references ?? []),
+          null,
+          2
+        )
+      }}</pre>
     </div>
   </details>
 </template>
 
 <script setup lang="ts">
-import { uniqBy } from 'lodash-es';
+import { uniqBy } from 'es-toolkit/array'
 import { type Cluster } from '~/purple_client'
-import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations';
-import { legendData, type DataParam, type LinkParam, type NodeParam } from '~/utils/document_relations-utils'
-import { downloadTextFile } from '~/utils/download';
+import { drawGraph, type DrawGraphParameters, type SetTooltip } from '~/utils/document_relations'
+import {
+  legendData,
+  type DataParam,
+  type LinkParam,
+  type NodeParam
+} from '~/utils/document_relations-utils'
+import { downloadTextFile } from '~/utils/download'
 
 type Props = {
   cluster: Cluster
@@ -73,7 +91,7 @@ const showLegend = ref(false)
 
 const canDownload = ref(false)
 
-type SnackbarType = NonNullable<Parameters<(typeof snackbar)["add"]>[0]["type"]>
+type SnackbarType = NonNullable<Parameters<(typeof snackbar)['add']>[0]['type']>
 
 const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
   snackbar.add({
@@ -86,7 +104,7 @@ const snackbarMessage = (title: string, type: SnackbarType = 'error'): void => {
 const handleChange = (e: Event) => {
   const { target } = e
   if (!(target instanceof HTMLSelectElement)) {
-    console.log("Expected <select>", e, target)
+    console.log('Expected <select>', e, target)
     return
   }
   switch (target.value) {
@@ -101,7 +119,10 @@ const handleChange = (e: Event) => {
   }
 }
 
-const tooltip = ref<{ text: string[] | undefined, position: [number, number] }>({ text: undefined, position: [0, 0] })
+const tooltip = ref<{ text: string[] | undefined; position: [number, number] }>({
+  text: undefined,
+  position: [0, 0]
+})
 
 const setTooltip: SetTooltip = (props) => {
   if (!props) {
@@ -121,26 +142,25 @@ const attemptToRenderGraph = () => {
   if (!container) {
     if (
       // only bother reporting error if DOM ref was expected to be found, ie after mounting
-      hasMounted.value === true) {
+      hasMounted.value === true
+    ) {
       console.error('container ref not found')
     }
     return
   }
 
-  const chosenGraphData: DrawGraphParameters[0]["data"] = structuredClone(
+  const chosenGraphData: DrawGraphParameters[0]['data'] = structuredClone(
     // the D3 code will mutate arg data so we'll make a copy
     // rendering bugs can be caused by not doing this
-    showLegend.value
-      ? legendData
-      : clusterGraphData.value
+    showLegend.value ? legendData : clusterGraphData.value
   )
 
   let [leg_el, leg_sim] = drawGraph({
     data: chosenGraphData,
     pushRouter: router.push,
     colorMode: colorMode.value === 'dark' ? 'dark' : 'light',
-    setTooltip,
-  });
+    setTooltip
+  })
 
   if (!(leg_el instanceof SVGElement) || !leg_sim) {
     console.error({ leg_el, leg_sim })
@@ -155,9 +175,11 @@ const attemptToRenderGraph = () => {
 
   if (leg_sim instanceof SVGSVGElement) {
     console.error({ leg_sim })
-    return snackbarMessage('Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See dev console.')
+    return snackbarMessage(
+      'Expected `leg_sim` to be D3 Simulation Node not SVGSVGElement. See dev console.'
+    )
   } else {
-    leg_sim.restart();
+    leg_sim.restart()
   }
 
   canDownload.value = true // now that we've rendered the SVG we can offer it for download
@@ -181,5 +203,4 @@ const handleDownload = () => {
   const svgString = container.innerHTML
   downloadTextFile(`cluster-${clusterToUse.value.number}.svg`, 'text/svg', svgString)
 }
-
 </script>

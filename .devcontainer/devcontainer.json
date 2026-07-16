@@ -48,7 +48,7 @@
     "vscode": {
       "extensions": [
         "batisteo.vscode-django",
-        "dbaeumer.vscode-eslint",
+        "oxc.oxc-vscode",
         "eamodio.gitlens",
         "editorconfig.editorconfig",
         "vue.volar@2.2.10",

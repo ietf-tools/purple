@@ -7,7 +7,5 @@
     { "path": "./.nuxt/tsconfig.shared.json" },
     { "path": "./.nuxt/tsconfig.node.json" }
   ],
-  "exclude": [
-    "purple_client"
-  ]
+  "exclude": ["purple_client"]
 }

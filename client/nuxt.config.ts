@@ -19,7 +19,6 @@ export default defineNuxtConfig({
   },
   modules: [
     '@nuxt/devtools',
-    '@nuxt/eslint',
     '@nuxt/icon',
     '@nuxtjs/color-mode',
     '@nuxtjs/tailwindcss',
@@ -78,9 +77,11 @@ export default defineNuxtConfig({
     optimizeDeps: {
       // Deps that vite does not detect statically
       include: [
-        'lodash-es',
-        'luxon',
+        'es-toolkit/array',
+        'es-toolkit/predicate',
+        'es-toolkit/string',
         'humanize-duration',
+        'luxon',
         '@vue/devtools-core',
         '@vue/devtools-kit',
         '@tanstack/vue-table',

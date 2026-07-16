@@ -13,8 +13,11 @@
     </div>
     <div class="flex-1 overflow-y-scroll px-4 pt-4 pb-7">
       <ul class="flex flex-col gap-4">
-        <li v-if="assignments.length > 0" v-for="([role, assignments], assignmentIndex) in assignmentsByRoles"
-          :key="role" class="w-full flex mx-1 flex-row gap-4 items-start">
+        <li
+          v-if="assignments.length > 0"
+          v-for="([role, assignments], assignmentIndex) in assignmentsByRoles"
+          :key="role"
+          class="w-full flex mx-1 flex-row gap-4 items-start">
           <div class="w-[15em] shrink-0 flex items-start">
             <BaseBadge :label="role" size="xl"></BaseBadge>
           </div>
@@ -23,13 +26,10 @@
               v-for="assignment in assignments"
               :assignment="assignment"
               :on-success="props.onSuccess"
-              :person-name="getPersonNameById(assignment.person)"
-            />
+              :person-name="getPersonNameById(assignment.person)" />
           </ul>
         </li>
-        <li v-else class="italic">
-          (no assignments)
-        </li>
+        <li v-else class="italic">(no assignments)</li>
       </ul>
     </div>
   </div>
@@ -37,10 +37,10 @@
 
 <script setup lang="ts">
 import { BaseButton } from '#components'
-import type { Assignment, RpcPerson } from '~/purple_client';
-import { overlayModalKey } from '~/providers/providerKeys';
-import { groupBy } from 'lodash-es';
-import { assignmentRoleOrder } from '~/utils/sort';
+import type { Assignment, RpcPerson } from '~/purple_client'
+import { overlayModalKey } from '~/providers/providerKeys'
+import { groupBy } from 'es-toolkit/array'
+import { assignmentRoleOrder } from '~/utils/sort'
 
 type Props = {
   rfcToBe: CookedDraft
@@ -50,20 +50,19 @@ type Props = {
 }
 const props = defineProps<Props>()
 
-const assignmentsByRolesObj = groupBy(
-  props.assignments,
-  (assignment) => assignment.role
-)
+const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
 
-const assignmentsByRoles = ref(Object.entries(assignmentsByRolesObj).sort(([keyA], [keyB]) => {
-  const a = assignmentRoleOrder.indexOf(keyA as typeof assignmentRoleOrder[number])
-  const b = assignmentRoleOrder.indexOf(keyB as typeof assignmentRoleOrder[number])
-  return (a === -1 ? Infinity : a) - (b === -1 ? Infinity : b)
-}))
+const assignmentsByRoles = ref(
+  Object.entries(assignmentsByRolesObj).sort(([keyA], [keyB]) => {
+    const a = assignmentRoleOrder.indexOf(keyA as (typeof assignmentRoleOrder)[number])
+    const b = assignmentRoleOrder.indexOf(keyB as (typeof assignmentRoleOrder)[number])
+    return (a === -1 ? Infinity : a) - (b === -1 ? Infinity : b)
+  })
+)
 
 const getPersonNameById = (personId?: number | null): string => {
   if (personId === undefined || personId === null) return '(System)'
-  const person = props.people.find(person => person.id === personId)
+  const person = props.people.find((person) => person.id === personId)
   return person?.name ?? 'Unknown'
 }
 
@@ -74,5 +73,4 @@ if (!overlayModalKeyInjection) {
 }
 
 const { closeOverlayModal } = overlayModalKeyInjection
-
 </script>

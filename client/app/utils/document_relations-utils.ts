@@ -1,4 +1,5 @@
-import { startCase, uniqBy } from "lodash-es";
+import { startCase } from 'es-toolkit/string'
+import { uniqBy } from 'es-toolkit/array'
 import type { Cluster, RfcToBe } from "~/purple_client";
 
 /**
@@ -201,7 +202,7 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
  * based on https://docs.google.com/spreadsheets/d/1WoPNZiFf9Hx4Qc6N5UE1-RKhYYNybBeCYZM72wL5TSM/edit?gid=0#gid=0
  */
 export const getCircleTheme = (node: NodeParam): CircleTheme => {
-  if (Boolean(node.isReceived) && !Boolean(node.hasNormRef) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+  if (Boolean(node.isReceived) && !node.hasNormRef && !node.isBlocked && node.disposition === 'in_progress') {
     return {
       fill: blue,
       textColor: black,
@@ -211,7 +212,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !Boolean(node.isBlocked) && node.disposition === 'in_progress') {
+  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !node.isBlocked && node.disposition === 'in_progress') {
     return {
       fill: green,
       textColor: black,
@@ -233,7 +234,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (!Boolean(node.isReceived) && Boolean(node.isNormRef)) {
+  if (!node.isReceived && Boolean(node.isNormRef)) {
     return {
       fill: orange,
       textColor: black,
@@ -244,7 +245,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     }
   }
 
-  if (Boolean(node.isReceived) && !Boolean(node.hasNormRefInQueue) && (!Boolean(node.hasNormRefBlocked) || !Boolean(node.isBlocked)) && node.disposition === 'published') {
+  if (Boolean(node.isReceived) && !node.hasNormRefInQueue && (!node.hasNormRefBlocked || !node.isBlocked) && node.disposition === 'published') {
     return {
       fill: gray200,
       textColor: black,

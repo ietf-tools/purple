@@ -9,8 +9,13 @@
             :key="col.key"
             scope="col"
             class="px-3 py-3.5 text-left text-sm flex-inline content-start font-semibold text-gray-900 dark:text-neutral-400"
-            :aria-sort="state.sortField === col.field ? state.sortDirection === 'asc' ? 'ascending' : 'descending' : undefined"
-          >
+            :aria-sort="
+              state.sortField === col.field
+                ? state.sortDirection === 'asc'
+                  ? 'ascending'
+                  : 'descending'
+                : undefined
+            ">
             <button
               v-if="col.sortable !== false && col.field"
               class="bg-transparent border-none"
@@ -18,22 +23,27 @@
               @click.prevent="sortBy(col.field)">
               <span>{{ col.label }}</span>
               <template v-if="state.sortField === col.field">
-                <Icon v-if="state.sortDirection === 'asc'" name="uil:arrow-up" class="text-lg -mt-0.5" />
-                <Icon v-else-if="state.sortDirection === 'desc'" name="uil:arrow-down" class="text-lg -mt-0.5" />
+                <Icon
+                  v-if="state.sortDirection === 'asc'"
+                  name="uil:arrow-up"
+                  class="text-lg -mt-0.5" />
+                <Icon
+                  v-else-if="state.sortDirection === 'desc'"
+                  name="uil:arrow-down"
+                  class="text-lg -mt-0.5" />
               </template>
               <template v-else>
                 <!-- else render a placeholder icon see https://github.com/ietf-tools/rpc/issues/49 -->
-                <Icon
-                  name="uil:arrow-down"
-                  class="text-lg -mt-0.5 opacity-0"
-                />
+                <Icon name="uil:arrow-down" class="text-lg -mt-0.5 opacity-0" />
               </template>
             </button>
             <span v-else>{{ col.label }}</span>
           </th>
         </tr>
       </thead>
-      <tbody v-if="!loading" class="text-sm divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
+      <tbody
+        v-if="!loading"
+        class="text-sm divide-y divide-gray-200 dark:divide-neutral-700 bg-white dark:bg-neutral-900">
         <tr v-for="(row, rowIndex) of rows" :key="`${row.key}${rowIndex}`">
           <td class="pl-3">
             <Icon name="uil:file-alt" size="1.25em" class="text-gray-400 dark:text-neutral-500" />
@@ -43,9 +53,10 @@
             :key="col.key"
             :class="[
               'px-3 py-4 text-gray-500 dark:text-neutral-400',
-              col.classes && isFunction(col.classes) ? col.classes(col.field ? (row as Record<string, unknown>)[col.field] : row) : col.classes
-            ]"
-          >
+              col.classes && isFunction(col.classes)
+                ? col.classes(col.field ? (row as Record<string, unknown>)[col.field] : row)
+                : col.classes
+            ]">
             <component :is="buildCell(col, row)" />
           </td>
         </tr>
@@ -58,8 +69,7 @@
     </div>
     <div
       v-if="!data || data.length < 1"
-      class="p-8 text-sm bg-white dark:bg-neutral-900 text-gray-500 dark:text-neutral-400"
-    >
+      class="p-8 text-sm bg-white dark:bg-neutral-900 text-gray-500 dark:text-neutral-400">
       <Icon v-if="loading" name="ei:spinner-3" size="1.5em" class="animate-spin mr-2" />
       <em>{{ loading ? 'Fetching data...' : 'No documents to display.' }}</em>
     </div>
@@ -68,7 +78,8 @@
 
 <script setup lang="ts">
 import { Anchor, RpcLabel, Icon } from '#components'
-import { isArray, isFunction, orderBy } from 'lodash-es'
+import { orderBy } from 'es-toolkit/array'
+import { isFunction } from 'es-toolkit/predicate'
 import type { Column, Row } from './DocumentTableTypes'
 import type { ColorEnum, Label } from '~/purple_client'
 
@@ -99,7 +110,9 @@ const state = reactive<{
 })
 
 const rows = computed(() => {
-  if (!props.data) { return [] }
+  if (!props.data) {
+    return []
+  }
   const dataWithKey = props.data.map((row) => ({ ...row, key: row[props.rowKey] }))
   if (state.sortField) {
     return orderBy(dataWithKey, [state.sortField], [state.sortDirection])
@@ -110,7 +123,7 @@ const rows = computed(() => {
 
 // METHODS
 
-function sortBy (fieldName: string) {
+function sortBy(fieldName: string) {
   if (state.sortField === fieldName) {
     state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc'
   } else {
@@ -122,13 +135,13 @@ function sortBy (fieldName: string) {
 /**
  * Build cell node
  */
-function buildCell (col: Column, row: Row) {
+function buildCell(col: Column, row: Row) {
   const value = col.field ? row[col.field] : null
-  const values = isArray(value) ? value : [value]
+  const values = Array.isArray(value) ? value : [value]
   const formattedValues = col.format
     ? col.formatType === 'all'
       ? col.format(values)
-      : values.map(v => col.format && col.format(v))
+      : values.map((v) => col.format && col.format(v))
     : values
   const children = []
   const formattedValuesArray = Array.isArray(formattedValues) ? formattedValues : [formattedValues]
@@ -149,19 +162,31 @@ function buildCell (col: Column, row: Row) {
     }
 
     if (isFunction(col.link)) {
-      children.push(h(Anchor, {
-        href: col.link(row, val),
-        class: [
-          ...cssClasses,
-          'text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100'
-        ]
-      }, () => contents))
+      children.push(
+        h(
+          Anchor,
+          {
+            href: col.link(row, val),
+            class: [
+              ...cssClasses,
+              'text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100'
+            ]
+          },
+          () => contents
+        )
+      )
     } else {
-      children.push(h('span', {
-        class: cssClasses
-      }, contents.map(val => {
-        return val
-      })))
+      children.push(
+        h(
+          'span',
+          {
+            class: cssClasses
+          },
+          contents.map((val) => {
+            return val
+          })
+        )
+      )
     }
 
     if (idx < formattedValuesArray.length - 1) {
@@ -181,7 +206,7 @@ function buildCell (col: Column, row: Row) {
 /**
  * Handle labels array in either string or object format
  */
-function transformLabels (val: string[], defaultColor: ColorEnum): Label[] {
+function transformLabels(val: string[], defaultColor: ColorEnum): Label[] {
   return val.map((item): Label => {
     if (typeof item === 'string') {
       return {
@@ -194,7 +219,6 @@ function transformLabels (val: string[], defaultColor: ColorEnum): Label[] {
     }
   })
 }
-
 </script>
 
 <style>

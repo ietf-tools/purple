@@ -1,13 +1,10 @@
 <template>
   <div>
-    <TitleBlock title="Queue" summary="Where the magic happens.">
-    </TitleBlock>
+    <TitleBlock title="Queue" summary="Where the magic happens."> </TitleBlock>
 
     <QueueTabs :current-tab="currentTab" />
 
-    <ErrorAlert v-if="error || peopleError">
-      {{ error }} {{ peopleError }}
-    </ErrorAlert>
+    <ErrorAlert v-if="error || peopleError"> {{ error }} {{ peopleError }} </ErrorAlert>
 
     <div class="flex flex-row gap-x-8 justify-between mb-4 text-gray-800 dark:text-gray-300">
       <fieldset>
@@ -16,16 +13,19 @@
           <span class="text-md">&nbsp;</span>
         </legend>
         <div class="flex flex-col gap-1 pt-1">
-          <RpcTristateButton :checked="needsAssignmentTristate"
-            @change="(tristate: TristateValue) => needsAssignmentTristate = tristate">
+          <RpcTristateButton
+            :checked="needsAssignmentTristate"
+            @change="(tristate: TristateValue) => (needsAssignmentTristate = tristate)">
             Needs Assignment?
           </RpcTristateButton>
-          <RpcTristateButton :checked="hasExceptionTristate"
-            @change="(tristate: TristateValue) => hasExceptionTristate = tristate">
+          <RpcTristateButton
+            :checked="hasExceptionTristate"
+            @change="(tristate: TristateValue) => (hasExceptionTristate = tristate)">
             Has Exception?
           </RpcTristateButton>
-          <RpcTristateButton :checked="isBlockedTristate"
-            @change="(tristate: TristateValue) => isBlockedTristate = tristate">
+          <RpcTristateButton
+            :checked="isBlockedTristate"
+            @change="(tristate: TristateValue) => (isBlockedTristate = tristate)">
             Is Blocked?
           </RpcTristateButton>
         </div>
@@ -80,7 +80,8 @@
           <span class="text-md">&nbsp;</span>
         </legend>
         <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 pt-1">
-          <LabelsFilter v-model:all-label-filters="allLabelFilters"
+          <LabelsFilter
+            v-model:all-label-filters="allLabelFilters"
             v-model:selected-label-filters="selectedLabelFilters" />
         </div>
       </fieldset>
@@ -94,42 +95,51 @@
     </div>
 
     <div class="p-2">
-    <RpcTable>
-      <RpcThead>
-        <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            :column-name="getVNodeText(header.column.columnDef.header)"
-            @click="header.column.getToggleSortingHandler()?.($event)">
-            <div class="flex items-center gap-2">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+      <RpcTable>
+        <RpcThead>
+          <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
+            <RpcTh
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()"
+              :sort-direction="header.column.getIsSorted()"
+              :column-name="getVNodeText(header.column.columnDef.header)"
+              @click="header.column.getToggleSortingHandler()?.($event)">
+              <div class="flex items-center gap-2">
+                <FlexRender
+                  v-if="!header.isPlaceholder"
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()" />
+              </div>
+            </RpcTh>
+          </tr>
+        </RpcThead>
+        <RpcTbody>
+          <RpcRowMessage
+            :status="[status, clustersStatus, peopleStatus]"
+            :error="[error, clustersError, peopleError]"
+            :column-count="table.getAllColumns().length"
+            :row-count="table.getRowModel().rows.length" />
+          <tr v-for="row in table.getRowModel().rows" :key="row.id">
+            <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
+              <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
+            </RpcTd>
+          </tr>
+        </RpcTbody>
+        <RpcTfoot>
+          <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
+            <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.footer"
                 :props="header.getContext()" />
-            </div>
-          </RpcTh>
-        </tr>
-      </RpcThead>
-      <RpcTbody>
-        <RpcRowMessage :status="[status, clustersStatus, peopleStatus]" :error="[error, clustersError, peopleError]" :column-count="table.getAllColumns().length"
-          :row-count="table.getRowModel().rows.length" />
-        <tr v-for="row in table.getRowModel().rows" :key="row.id">
-          <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
-            <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-          </RpcTd>
-        </tr>
-      </RpcTbody>
-      <RpcTfoot>
-        <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
-          <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-            <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
-              :props="header.getContext()" />
-          </RpcTh>
-        </tr>
-      </RpcTfoot>
-    </RpcTable>
+            </RpcTh>
+          </tr>
+        </RpcTfoot>
+      </RpcTable>
     </div>
   </div>
-
-
 </template>
 
 <script setup lang="ts">
@@ -141,38 +151,38 @@ import {
   useVueTable,
   createColumnHelper,
   getFilteredRowModel,
-  getSortedRowModel,
+  getSortedRowModel
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
-import { groupBy, uniqBy } from 'lodash-es'
+import { groupBy } from 'es-toolkit/array'
+import { uniqBy } from 'es-toolkit/array'
 import type { Assignment, Cluster, IanaStatus, Label, QueueItem, RpcPerson } from '~/purple_client'
 import { calculatePeopleWorkload, calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
 import { type QueueTabId, type AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { overlayModalKey } from '~/providers/providerKeys'
 
-const SELECT_STYLE = "px-3 py-1 bg-white dark:bg-black border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+const SELECT_STYLE =
+  'px-3 py-1 bg-white dark:bg-black border border-gray-300 text-gray-800 dark:text-gray-200 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500'
 
 const api = useApi()
 const currentTab: QueueTabId = 'queue'
 
-const {
-  data,
-  status,
-  pending,
-  refresh,
-  error,
-} = await useAsyncData(
+const { data, status, pending, refresh, error } = await useAsyncData(
   'queue2-queue',
   () => api.queueList(),
   {
     server: false,
     lazy: true,
-    default: () => [] as QueueItem[],
+    default: () => [] as QueueItem[]
   }
 )
 
-const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
+const {
+  data: people,
+  status: peopleStatus,
+  error: peopleError
+} = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
   lazy: true,
   default: () => [] as RpcPerson[]
@@ -181,7 +191,7 @@ const { data: people, status: peopleStatus, error: peopleError } = await useAsyn
 const { data: ianaStatuses } = await useAsyncData('iana-statuses', () => api.ianaStatusesList(), {
   server: false,
   lazy: true,
-  default: () => [] as IanaStatus[],
+  default: () => [] as IanaStatus[]
 })
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
@@ -198,236 +208,302 @@ const columns = [
   columnHelper.display({
     id: 'icon',
     header: '',
-    cell: () => h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
+    cell: () =>
+      h(Icon, {
+        name: 'uil:file-alt',
+        size: '1.25em',
+        class: 'text-gray-400 dark:text-neutral-500 mr-2'
+      })
   }),
   columnHelper.accessor('name', {
     header: 'Document',
-    cell: data => {
-      return h(Anchor, { href: `/docs/${data.row.original.name}`, 'class': ANCHOR_STYLE }, () => [
-        data.getValue(),
+    cell: (data) => {
+      return h(Anchor, { href: `/docs/${data.row.original.name}`, class: ANCHOR_STYLE }, () => [
+        data.getValue()
       ])
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.accessor('rfcNumber', {
     header: 'RFC Number',
-    cell: data => data.getValue(),
+    cell: (data) => data.getValue(),
     sortingFn: 'alphanumeric',
-    sortUndefined: 'last',
+    sortUndefined: 'last'
   }),
-  columnHelper.accessor(
-    'labels', {
+  columnHelper.accessor('labels', {
     header: 'Labels',
-    cell: data => {
+    cell: (data) => {
       const labels = data.getValue()
       if (!labels) return undefined
-      return h('span', labels.map(label => h(RpcLabel, { label, class: 'ml-2' })))
+      return h(
+        'span',
+        labels.map((label) => h(RpcLabel, { label, class: 'ml-2' }))
+      )
     },
-    enableSorting: false,
+    enableSorting: false
   }),
-  columnHelper.accessor(
-    'enqueuedAt',
-    {
-      header: () => h('div', { class: 'text-center' }, [
+  columnHelper.accessor('enqueuedAt', {
+    header: () =>
+      h('div', { class: 'text-center' }, [
         h('div', 'Enqueue Date'),
-        h('div', { class: "text-xs" }, '(Weeks in queue)')
+        h('div', { class: 'text-xs' }, '(Weeks in queue)')
       ]),
-      cell: data => {
-        const value = data.getValue()
-        if (!value) return ''
+    cell: (data) => {
+      const value = data.getValue()
+      if (!value) return ''
 
-        const enqueuedAtData = calculateEnqueuedAtData(value)
-        return renderEnqueuedAt(enqueuedAtData)
-      },
-      sortingFn: (rowA, rowB, columnId) => {
-        const now = DateTime.now()
+      const enqueuedAtData = calculateEnqueuedAtData(value)
+      return renderEnqueuedAt(enqueuedAtData)
+    },
+    sortingFn: (rowA, rowB, columnId) => {
+      const now = DateTime.now()
 
-        const a = rowA.getValue(columnId)
-        if (!(a instanceof Date)) {
-          console.error("Not date was", a)
-          throw Error(`Expected date but was something else. See console.`)
-        }
-        const aDateTime = DateTime.fromJSDate(a)
-        const aDiffInDays = now.diff(aDateTime, 'days').days
+      const a = rowA.getValue(columnId)
+      if (!(a instanceof Date)) {
+        console.error('Not date was', a)
+        throw Error(`Expected date but was something else. See console.`)
+      }
+      const aDateTime = DateTime.fromJSDate(a)
+      const aDiffInDays = now.diff(aDateTime, 'days').days
 
-        const b = rowB.getValue(columnId)
-        if (!(b instanceof Date)) {
-          console.error("Not date was", b)
-          throw Error(`Expected date but was something else. See console.`)
-        }
-        const bDateTime = DateTime.fromJSDate(b)
-        const bDiffInDays = now.diff(bDateTime, 'days').days
+      const b = rowB.getValue(columnId)
+      if (!(b instanceof Date)) {
+        console.error('Not date was', b)
+        throw Error(`Expected date but was something else. See console.`)
+      }
+      const bDateTime = DateTime.fromJSDate(b)
+      const bDiffInDays = now.diff(bDateTime, 'days').days
 
-        return (aDiffInDays > bDiffInDays) ? 1 : (aDiffInDays < bDiffInDays) ? -1 : 0
-      },
+      return aDiffInDays > bDiffInDays ? 1 : aDiffInDays < bDiffInDays ? -1 : 0
     }
-  ),
-  columnHelper.accessor(
-    'actionholderSet',
-    {
-      header: 'Action Holders',
-      cell: data => {
-        const value = data.getValue()
-        if (!value || value.length === 0) {
-          return undefined
-        }
-        return h('ul', { class: 'flex flex-col gap-1' }, value.map(actionHolder =>
+  }),
+  columnHelper.accessor('actionholderSet', {
+    header: 'Action Holders',
+    cell: (data) => {
+      const value = data.getValue()
+      if (!value || value.length === 0) {
+        return undefined
+      }
+      return h(
+        'ul',
+        { class: 'flex flex-col gap-1' },
+        value.map((actionHolder) =>
           h('li', actionHolder.body || actionHolder.person?.name || 'No name')
-        ))
-      },
-      sortingFn: 'alphanumeric',
-    }
-  ),
-  columnHelper.accessor(
-    'assignmentSet',
-    {
-      header: 'Assignees',
-      cell: (data) => {
-        const assignments = data.getValue()
-        if (!assignments) {
-          return 'No assignments'
-        }
-
-        const rfcToBeId = data.row.original.id
-        if (rfcToBeId === undefined) {
-          throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
-        }
-
-        const listItems: VNode[] = []
-
-        const assignmentsByRoles = groupBy(
-          assignments,
-          (assignment) => assignment.role
         )
+      )
+    },
+    sortingFn: 'alphanumeric'
+  }),
+  columnHelper.accessor('assignmentSet', {
+    header: 'Assignees',
+    cell: (data) => {
+      const assignments = data.getValue()
+      if (!assignments) {
+        return 'No assignments'
+      }
 
-        const orderedRoles = Object.keys(assignmentsByRoles)
-          .sort((a, b) => a.localeCompare(b, 'en'))
+      const rfcToBeId = data.row.original.id
+      if (rfcToBeId === undefined) {
+        throw Error(
+          `Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`
+        )
+      }
 
-        for (const role of orderedRoles) {
-          const assignmentsOfRole = assignmentsByRoles[role] ?? []
+      const listItems: VNode[] = []
 
-          const redundantAssignmentsOfSamePersonToSameRole = assignmentsOfRole.filter((assignment, _index, arr) => {
+      const assignmentsByRoles = groupBy(assignments, (assignment) => assignment.role)
+
+      const orderedRoles = Object.keys(assignmentsByRoles).sort((a, b) => a.localeCompare(b, 'en'))
+
+      for (const role of orderedRoles) {
+        const assignmentsOfRole = assignmentsByRoles[role] ?? []
+
+        const redundantAssignmentsOfSamePersonToSameRole = assignmentsOfRole.filter(
+          (assignment, _index, arr) => {
             const { person } = assignment
             if (person === undefined || person == null) {
               return false
             }
-            const firstAssignmentOfPersonToRole = arr.find(arrAssignment => assignment.person && arrAssignment.person && arrAssignment.person === assignment.person)
+            const firstAssignmentOfPersonToRole = arr.find(
+              (arrAssignment) =>
+                assignment.person &&
+                arrAssignment.person &&
+                arrAssignment.person === assignment.person
+            )
             if (!firstAssignmentOfPersonToRole) {
               console.log(`Couldn't find first assignment for person #${assignment.person} in`, arr)
-              throw Error(`Internal error. Should be able to find first assignment for person #${assignment.person}. See console`)
+              throw Error(
+                `Internal error. Should be able to find first assignment for person #${assignment.person}. See console`
+              )
             }
             // the first assignment of person in the list of assignments should always match the current assignment of person
             // because there shouldn't be duplicate/redundant assignments
             // but if the id is different then it is a redundant assignment,
             // so we'll prompt the user to delete them
             return assignment.id !== firstAssignmentOfPersonToRole.id
-          })
+          }
+        )
 
-          listItems.push(h('li', { class: 'flex gap-3' }, [
-            h('span',
-              h(BaseBadge, { label: role, class: 'mr-1' })),
-            h('ul', { class: 'flex flex-col gap-2' }, [
-              ...assignmentsOfRole.map(assignment => {
-                const rpcPerson = people.value.find((p) => p.id === assignment.person)
-                const children: (VNode | string)[] = [
-                  h(Anchor, {
-                    href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-                    class: [ANCHOR_STYLE, 'text-sm nowrap']
-                  }, () => [
-                    rpcPerson ? rpcPerson.name : '',
-                  ]),
-                ]
+        listItems.push(
+          h('li', { class: 'flex gap-3' }, [
+            h('span', h(BaseBadge, { label: role, class: 'mr-1' })),
+            h(
+              'ul',
+              { class: 'flex flex-col gap-2' },
+              assignmentsOfRole
+                .map((assignment) => {
+                  const rpcPerson = people.value.find((p) => p.id === assignment.person)
+                  const children: (VNode | string)[] = [
+                    h(
+                      Anchor,
+                      {
+                        href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+                        class: [ANCHOR_STYLE, 'text-sm nowrap']
+                      },
+                      () => [rpcPerson ? rpcPerson.name : '']
+                    )
+                  ]
 
-                // Show blocking reasons for blocked assignments
-                if (role === 'blocked' && data.row.original.blockingReasons && data.row.original.blockingReasons.length > 0) {
-                  const reasons = formatBlockingReasons(data.row.original.blockingReasons, data.row.original.actionholderSet)
-                  children.push(
-                    h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' }, reasons)
-                  )
-                }
+                  // Show blocking reasons for blocked assignments
+                  if (
+                    role === 'blocked' &&
+                    data.row.original.blockingReasons &&
+                    data.row.original.blockingReasons.length > 0
+                  ) {
+                    const reasons = formatBlockingReasons(
+                      data.row.original.blockingReasons,
+                      data.row.original.actionholderSet
+                    )
+                    children.push(
+                      h(
+                        'span',
+                        { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' },
+                        reasons
+                      )
+                    )
+                  }
 
-                return h('div', { class: 'inline-flex items-baseline' }, children)
-
-              }).reduce((acc, item, index, arr) => {
-                // add commas between items
-                const listItemChildren = []
-                listItemChildren.push(item)
-                if (index < arr.length - 1) {
-                  listItemChildren.push(', ')
-                } else {
-                  listItemChildren.push(' ')
-                }
-                const listItem = h('li', listItemChildren)
-                acc.push(listItem)
-                return acc
-              }, [] as (VNode | string)[])]),
+                  return h('div', { class: 'inline-flex items-baseline' }, children)
+                })
+                .reduce(
+                  (acc, item, index, arr) => {
+                    // add commas between items
+                    const listItemChildren = []
+                    listItemChildren.push(item)
+                    if (index < arr.length - 1) {
+                      listItemChildren.push(', ')
+                    } else {
+                      listItemChildren.push(' ')
+                    }
+                    const listItem = h('li', listItemChildren)
+                    acc.push(listItem)
+                    return acc
+                  },
+                  [] as (VNode | string)[]
+                )
+            ),
             h('span', [
-              h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: 'change', assignments: assignmentsOfRole, role, rfcToBeId }) }, () => 'Change'),
-              ...redundantAssignmentsOfSamePersonToSameRole.map(redundantAssignment => {
-                return h(BaseButton, { btnType: 'delete', size: 'xs', 'onClick': () => deleteRedundantAssignment(redundantAssignment) }, () => `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`)
-              })])
-          ]))
-        }
+              h(
+                BaseButton,
+                {
+                  btnType: 'outline',
+                  size: 'xs',
+                  onClick: () =>
+                    openAssignmentModal({
+                      type: 'change',
+                      assignments: assignmentsOfRole,
+                      role,
+                      rfcToBeId
+                    })
+                },
+                () => 'Change'
+              ),
+              ...redundantAssignmentsOfSamePersonToSameRole.map((redundantAssignment) => {
+                return h(
+                  BaseButton,
+                  {
+                    btnType: 'delete',
+                    size: 'xs',
+                    onClick: () => deleteRedundantAssignment(redundantAssignment)
+                  },
+                  () =>
+                    `Delete redundant assignment of ${getPersonNameById(redundantAssignment.person)}`
+                )
+              })
+            ])
+          ])
+        )
+      }
 
-        return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
-      },
-      enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'pendingActivities',
-    {
-      header: 'Pending Activities',
-      cell: data => {
-        const value = data.getValue()
-        if (!value) {
-          return undefined
-        }
+      return h('ul', { class: 'flex flex-col gap-x-1 gap-y-3' }, listItems)
+    },
+    enableSorting: false
+  }),
+  columnHelper.accessor('pendingActivities', {
+    header: 'Pending Activities',
+    cell: (data) => {
+      const value = data.getValue()
+      if (!value) {
+        return undefined
+      }
 
-        const rfcToBeId = data.row.original.id
-        if (rfcToBeId === undefined) {
-          throw Error(`Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`)
-        }
+      const rfcToBeId = data.row.original.id
+      if (rfcToBeId === undefined) {
+        throw Error(
+          `Internal error: expected queueItem to have id but was ${JSON.stringify(data.row.original)}`
+        )
+      }
 
-        const isBlocked = data.row.original.assignmentSet?.some(
-          a => a.role === 'blocked' && a.state === 'in_progress'
+      const isBlocked =
+        data.row.original.assignmentSet?.some(
+          (a) => a.role === 'blocked' && a.state === 'in_progress'
         ) ?? false
 
-        return h('ul', { class: 'flex flex-col gap-3' }, value.map(rpcRole =>
+      return h(
+        'ul',
+        { class: 'flex flex-col gap-3' },
+        value.map((rpcRole) =>
           h('li', { class: 'flex flex-row gap-2' }, [
             h('div', h(BaseBadge, { label: rpcRole.slug })),
-            !isBlocked && h('div', h(BaseButton, { btnType: 'outline', size: 'xs', 'onClick': () => openAssignmentModal({ type: "assign", role: rpcRole.slug, rfcToBeId }) }, () => 'Assign')),
+            !isBlocked &&
+              h(
+                'div',
+                h(
+                  BaseButton,
+                  {
+                    btnType: 'outline',
+                    size: 'xs',
+                    onClick: () =>
+                      openAssignmentModal({ type: 'assign', role: rpcRole.slug, rfcToBeId })
+                  },
+                  () => 'Assign'
+                )
+              )
           ])
-        ))
-      },
-      enableSorting: false,
-    }
-  ),
-  columnHelper.accessor(
-    'pages',
-    {
-      header: 'Pages',
-      cell: data => data.getValue() ?? '-',
-      sortingFn: 'alphanumeric',
-    }
-  ),
-  columnHelper.accessor(
-    'cluster',
-    {
-      header: 'Cluster',
-      cell: data => {
-        const value = data.getValue()
-        if (!value) {
-          return undefined
-        }
-        return h(Anchor, { href: `/clusters/${value.number}` }, () => [
-          h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
-          String(value.number)
-        ])
-      },
-      sortingFn: (rowA, rowB) => sortCluster(rowA.original.cluster, rowB.original.cluster),
-    }
-  ),
+        )
+      )
+    },
+    enableSorting: false
+  }),
+  columnHelper.accessor('pages', {
+    header: 'Pages',
+    cell: (data) => data.getValue() ?? '-',
+    sortingFn: 'alphanumeric'
+  }),
+  columnHelper.accessor('cluster', {
+    header: 'Cluster',
+    cell: (data) => {
+      const value = data.getValue()
+      if (!value) {
+        return undefined
+      }
+      return h(Anchor, { href: `/clusters/${value.number}` }, () => [
+        h(Icon, { name: 'pajamas:group', class: 'h-5 w-5 inline-block mr-1' }),
+        String(value.number)
+      ])
+    },
+    sortingFn: (rowA, rowB) => sortCluster(rowA.original.cluster, rowB.original.cluster)
+  })
 ]
 
 const allRoles = computed(() => {
@@ -435,7 +511,7 @@ const allRoles = computed(() => {
     return []
   }
   const roles = data.value.flatMap(
-    (doc) => doc.assignmentSet?.map(assignment => assignment.role) || []
+    (doc) => doc.assignmentSet?.map((assignment) => assignment.role) || []
   )
   return [...new Set(roles)].sort()
 })
@@ -445,7 +521,7 @@ const allPendingRoles = computed(() => {
     return []
   }
   const roleSlugs = data.value.flatMap(
-    (doc) => doc.pendingActivities?.map(role => role.slug) || []
+    (doc) => doc.pendingActivities?.map((role) => role.slug) || []
   )
   return [...new Set(roleSlugs)].sort()
 })
@@ -454,7 +530,7 @@ const selectedPendingRoleFilter = ref(null)
 const selectedIanaStatusFilter = ref<string | null>(null)
 
 const allIanaStatuses = computed(() =>
-  ianaStatuses.value.map(s => ({ slug: s.slug, label: s.desc }))
+  ianaStatuses.value.map((s) => ({ slug: s.slug, label: s.desc }))
 )
 
 const allLabelFilters = computed(() => {
@@ -462,10 +538,10 @@ const allLabelFilters = computed(() => {
     return []
   }
   const allLabels = data.value.flatMap(
-    (doc) => (doc && "labels" in doc ? doc.labels : []) as Label[]
+    (doc) => (doc && 'labels' in doc ? doc.labels : []) as Label[]
   )
-  const uniqueLabels = uniqBy(allLabels, label => label.id)
-  const usedUniqueLabels = uniqueLabels.filter(label => {
+  const uniqueLabels = uniqBy(allLabels, (label) => label.id)
+  const usedUniqueLabels = uniqueLabels.filter((label) => {
     return label.used !== undefined ? label.used : true
   })
   return usedUniqueLabels
@@ -491,7 +567,7 @@ const table = useVueTable({
     },
     get sorting() {
       return sorting.value
-    },
+    }
   },
   globalFilterFn: (row) => {
     const d = row.original
@@ -510,14 +586,18 @@ const table = useVueTable({
     }
 
     if (selectedRoleFilter.value) {
-      const hasRole = d.assignmentSet?.some(assignment => assignment.role === selectedRoleFilter.value)
+      const hasRole = d.assignmentSet?.some(
+        (assignment) => assignment.role === selectedRoleFilter.value
+      )
       if (!hasRole) {
         return false
       }
     }
 
     if (selectedPendingRoleFilter.value) {
-      const hasRole = d.pendingActivities?.some(role => role.slug === selectedPendingRoleFilter.value)
+      const hasRole = d.pendingActivities?.some(
+        (role) => role.slug === selectedPendingRoleFilter.value
+      )
       if (!hasRole) {
         return false
       }
@@ -552,9 +632,13 @@ const table = useVueTable({
 
     const isBlockedFilterFn = () => {
       if (isBlockedTristate.value === true) {
-        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length > 0 : false)
+        return Boolean(
+          d.assignmentSet ? d.assignmentSet.filter((a) => a.role === 'blocked').length > 0 : false
+        )
       } else if (isBlockedTristate.value === false) {
-        return Boolean(d.assignmentSet ? d.assignmentSet.filter(a => a.role === 'blocked').length === 0 : true)
+        return Boolean(
+          d.assignmentSet ? d.assignmentSet.filter((a) => a.role === 'blocked').length === 0 : true
+        )
       } else if (isBlockedTristate.value == TRISTATE_MIXED) {
         return true
       }
@@ -565,18 +649,19 @@ const table = useVueTable({
     }
 
     const entries = Object.entries(selectedLabelFilters.value)
-    if (!(entries.every(([labelIdStr, tristate]) => {
-      const labelId = parseFloat(labelIdStr)
-      switch (tristate) {
-        case TRISTATE_MIXED:
-          return true
-        case true:
-          return d.labels ? d.labels.some(label => label.id === labelId) : false
-        case false:
-          return d.labels ? !d.labels.some(label => label.id === labelId) : true
-      }
-    })
-    )) {
+    if (
+      !entries.every(([labelIdStr, tristate]) => {
+        const labelId = parseFloat(labelIdStr)
+        switch (tristate) {
+          case TRISTATE_MIXED:
+            return true
+          case true:
+            return d.labels ? d.labels.some((label) => label.id === labelId) : false
+          case false:
+            return d.labels ? !d.labels.some((label) => label.id === labelId) : true
+        }
+      })
+    ) {
       return false
     }
 
@@ -585,25 +670,24 @@ const table = useVueTable({
   getCoreRowModel: getCoreRowModel(),
   getFilteredRowModel: getFilteredRowModel(),
   getSortedRowModel: getSortedRowModel(),
-  onSortingChange: updaterOrValue => {
+  onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value)
-        : updaterOrValue
-  },
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
+  }
 })
 
 const searchQuery = ref('')
 
-const { data: clusters, refresh: refreshClusters, status: clustersStatus, error: clustersError } = await useAsyncData(
-  'queue2-clusterslist',
-  () => api.clustersList(),
-  {
-    server: false,
-    lazy: true,
-    default: () => [] as Cluster[]
-  }
-)
+const {
+  data: clusters,
+  refresh: refreshClusters,
+  status: clustersStatus,
+  error: clustersError
+} = await useAsyncData('queue2-clusterslist', () => api.clustersList(), {
+  server: false,
+  lazy: true,
+  default: () => [] as Cluster[]
+})
 
 const reloadTableAfterAssignmentChange = () => {
   refresh()
@@ -612,7 +696,7 @@ const reloadTableAfterAssignmentChange = () => {
 
 const getPersonNameById = (personId?: number | null): string => {
   if (personId === undefined || personId === null) return 'Unknown'
-  const person = people.value.find(person => person.id === personId)
+  const person = people.value.find((person) => person.id === personId)
   return person?.name ?? 'Unknown'
 }
 
@@ -671,11 +755,11 @@ const openAssignmentModal = (assignmentMessage: AssignmentMessageProps) => {
       clusters: clusters.value,
       peopleWorkload,
       onSuccess: reloadTableAfterAssignmentChange
-    },
-  }).catch(e => {
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
-      console.info("Modal has closed", { e })
+      console.info('Modal has closed', { e })
     } else {
       console.error(e)
       throw e
@@ -706,7 +790,7 @@ const deleteRedundantAssignment = async (redundantAssignment: Assignment) => {
     reloadTableAfterAssignmentChange()
     snackbar.add({
       type: 'success',
-      title: "Successfully deleted redundant assignment. Reloading...",
+      title: 'Successfully deleted redundant assignment. Reloading...',
       text: `${getPersonNameById(person)} had multiple assignments to role ${JSON.stringify(role)}`
     })
   } catch (e) {
