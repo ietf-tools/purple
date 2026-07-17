@@ -17,9 +17,15 @@ on:
         type: choice
         options:
           - Skip
+          - Dev Only
           - Staging Only
           - Staging + Demo
           - Staging + Prod
+      devNoDbRefresh:
+        description: 'Disable Daily DB Refresh (Dev Only)'
+        default: false
+        required: true
+        type: boolean
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -85,9 +91,10 @@ jobs:
             echo "pkg_version=${{ steps.semver.outputs.nextStrict }}" >> $GITHUB_OUTPUT
             echo "::notice::Release ${{ steps.semver.outputs.nextStrict }} created using branch $GITHUB_REF_NAME"
           else
-            echo "Using DEV mode: ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER"
-            echo "pkg_version=${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER" >> $GITHUB_OUTPUT
-            echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$GITHUB_RUN_NUMBER created using branch $GITHUB_REF_NAME"
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            echo "Using DEV mode: ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA"
+            echo "pkg_version=${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA" >> $GITHUB_OUTPUT
+            echo "::notice::Non-production build ${{ steps.semverdev.outputs.nextMajorStrict }}.0.0-dev.$SHORT_SHA created using branch $GITHUB_REF_NAME"
           fi
 
       - name: Login to GitHub Container Registry
@@ -223,6 +230,44 @@ jobs:
           name: ${{ steps.semver.outputs.nextStrict }}
           body: ${{ steps.changelog.outputs.changes }}
           token: ${{ github.token }}
+
+  # -----------------------------------------------------------------
+  # DEV
+  # -----------------------------------------------------------------
+  dev:
+    name: Deploy to Dev
+    if: ${{ !failure() && !cancelled() && inputs.deploy == 'Dev Only' }}
+    needs: [build]
+    runs-on: ubuntu-latest
+    environment:
+      name: dev
+    env:
+      BUILD_VERSION: ${{ needs.build.outputs.pkg_version }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Get Deploy Name
+        env:
+          DEBIAN_FRONTEND: noninteractive
+        run: |
+          echo "Install Get Deploy Name CLI dependencies..."
+          cd dev/k8s-get-deploy-name
+          npm ci
+          echo "Get Deploy Name..."
+          echo "DEPLOY_NAMESPACE=$(node cli.js --branch ${{ github.ref_name }})" >> "$GITHUB_ENV"
+
+      - name: Deploy to dev
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy-dev.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "app":"purple", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
+          waitForCompletionTimeout: 60m
 
   # -----------------------------------------------------------------
   # STAGING
