@@ -20,17 +20,12 @@
           <div class="px-0 pt-6 sm:px-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold leading-7">Assignments</h3>
-              <div class="flex items-center gap-2">
-                <BaseButton btn-type="default" @click="openAddAssignmentModal"
-                  >Add assignment</BaseButton
-                >
-                <BaseButton v-if="!hasManualHold" btn-type="cancel" @click="setManualHold"
-                  >Set Manual Hold</BaseButton
-                >
-                <BaseButton v-else btn-type="secondary" @click="clearManualHold"
-                  >Clear Manual Hold</BaseButton
-                >
-              </div>
+              <BaseButton v-if="!hasManualHold" btn-type="cancel" @click="setManualHold"
+                >Set Manual Hold</BaseButton
+              >
+              <BaseButton v-else btn-type="secondary" @click="clearManualHold"
+                >Clear Manual Hold</BaseButton
+              >
             </div>
             <div class="text-sm font-medium">
               <div v-if="rfcToBeAssignments.length === 0">None</div>
@@ -103,11 +98,10 @@ import { useAsyncData } from '#app'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { type DocTabId } from '~/utils/doc'
 import { teamMemberLink } from '~/utils/url'
-import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
+import type { Assignment, RpcPerson } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
-import { ManualHoldModal, AssignmentModal } from '#components'
-import { sortAssignmentsByRole, assignmentRoleOrder } from '~/utils/sort'
-import { calculatePeopleWorkload, type AssignmentMessageProps } from '~/utils/queue'
+import { ManualHoldModal } from '#components'
+import { sortAssignmentsByRole } from '~/utils/sort'
 
 const route = useRoute()
 const api = useApi()
@@ -261,102 +255,11 @@ watch(
   { deep: true }
 )
 
-const {
-  data: people,
-  status: peopleStatus,
-  execute: loadPeople
-} = await useAsyncData('rpc-people', () => api.rpcPersonList(), {
+const { data: people } = await useAsyncData('rpc-people', () => api.rpcPersonList(), {
   server: false,
   lazy: true,
   default: () => [] as RpcPerson[]
 })
-
-// Data for the "Add assignment" modal: the full role list for the type picker,
-// plus the queue + clusters used to show each person's current workload.
-const {
-  data: roles,
-  status: rolesStatus,
-  execute: loadRoles
-} = await useAsyncData('rpc-roles', () => api.rpcRolesList(), {
-  server: false,
-  lazy: true,
-  default: () => [] as RpcRole[]
-})
-
-// Only the assignment-pipeline roles are selectable — excludes non-assignment
-// roles like `manager` and the synthetic `blocked`. `assignmentRoleOrder` is the
-// canonical set/order of assignment roles.
-const assignmentRoles = computed<RpcRole[]>(() =>
-  (roles.value ?? [])
-    .filter((r) => (assignmentRoleOrder as readonly string[]).includes(r.slug))
-    .sort(
-      (a, b) =>
-        assignmentRoleOrder.indexOf(a.slug as (typeof assignmentRoleOrder)[number]) -
-        assignmentRoleOrder.indexOf(b.slug as (typeof assignmentRoleOrder)[number])
-    )
-)
-
-const {
-  data: clusters,
-  status: clustersStatus,
-  execute: loadClusters
-} = await useAsyncData('assignments-clusters', () => api.clustersList(), {
-  server: false,
-  lazy: true,
-  default: () => []
-})
-
-const {
-  data: queueItems,
-  status: queueStatus,
-  execute: loadQueue
-} = await useAsyncData('assignments-queue', () => api.queueList(), {
-  server: false,
-  lazy: true,
-  default: () => []
-})
-
-// Default the modal to the draft's next pending activity (earliest in the
-// pipeline order when several are pending), falling back to the first real role.
-const defaultRole = computed<string>(() => {
-  const pending = [...(rfcToBe.value?.pendingActivities ?? [])].sort(
-    (a, b) =>
-      assignmentRoleOrder.indexOf(a.slug as (typeof assignmentRoleOrder)[number]) -
-      assignmentRoleOrder.indexOf(b.slug as (typeof assignmentRoleOrder)[number])
-  )
-  return pending[0]?.slug ?? assignmentRoles.value[0]?.slug ?? ''
-})
-
-// The modal's data is loaded lazily, and openOverlayModal binds a one-time
-// snapshot of componentProps — so make sure everything has resolved before we
-// open, otherwise a still-in-flight fetch (e.g. the slower people list) would
-// snapshot as empty and show "(no people)".
-const ensureModalDataLoaded = () =>
-  Promise.all([
-    peopleStatus.value === 'success' ? undefined : loadPeople(),
-    rolesStatus.value === 'success' ? undefined : loadRoles(),
-    clustersStatus.value === 'success' ? undefined : loadClusters(),
-    queueStatus.value === 'success' ? undefined : loadQueue()
-  ])
-
-const openAddAssignmentModal = async () => {
-  const rfcToBeId = rfcToBe.value?.id
-  if (rfcToBeId === undefined) return
-  await ensureModalDataLoaded()
-  const peopleWorkload = calculatePeopleWorkload(clusters.value ?? [], queueItems.value ?? [])
-  openOverlayModal({
-    component: AssignmentModal,
-    componentProps: {
-      message: { type: 'add', rfcToBeId } satisfies AssignmentMessageProps,
-      people: people.value ?? [],
-      peopleWorkload,
-      clusters: clusters.value ?? [],
-      roles: assignmentRoles.value,
-      defaultRole: defaultRole.value,
-      onSuccess: refreshAll
-    }
-  }).catch(() => {})
-}
 
 useHeadSafe({ title: draftName.value })
 </script>
