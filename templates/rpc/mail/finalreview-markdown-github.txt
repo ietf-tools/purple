@@ -1,6 +1,3 @@
-Subject: Final Review: RFC-to-be NNNNN (draft-foo) in markdown/GitHub
-
-
 *****IMPORTANT*****
 
 RFC Author(s):
@@ -15,20 +12,20 @@ Final Review is being handled in GitHub as part of the GitHub pilot test
 (see https://www.rfc-editor.org/rpc/wiki/doku.php?id=rpc-github-phase-0-pilot-test).
 
 Your document is available for review at:
-https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN
+https://github.com/rfc-editor-drafts/FinalReview-rfc{{ rfc_number }}
 
 Please do the following:
 
 a) accept your invitations to join the repo as collaborators.
 
 b) see the README for details on the Final Review process:
-https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/blob/Approved/README.md
+https://github.com/rfc-editor-drafts/FinalReview-rfc{{ rfc_number }}/blob/Approved/README.md
 
 c) review the edits in the RPC-edits pull request:
-https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/pulls
+https://github.com/rfc-editor-drafts/FinalReview-rfc{{ rfc_number }}/pulls
 
 d) address the issues:
-https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/issues
+https://github.com/rfc-editor-drafts/FinalReview-rfc{{ rfc_number }}/issues
 
 Once the content of the .md file is stable, we will convert it to .xml
 and provide the .html, .pdf, .txt, and .xml files for review.
@@ -43,7 +40,7 @@ there are several remedies; see the Unavailable Authors section
 (https://authors.ietf.org/rfc-publication-process#unavailable-authors).
 
 Details on the status of your Final Review are here:
-   https://queue.rfc-editor.org/final-review/rfcNNNNN/
+   https://queue.rfc-editor.org/final-review/rfc{{ rfc_number }}/
 
 Please let us know if you have any questions.
 

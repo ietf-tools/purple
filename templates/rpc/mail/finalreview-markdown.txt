@@ -1,6 +1,3 @@
-Subject: Final Review: RFC-to-be NNNNN (draft-foo) in markdown
-
-
 *****IMPORTANT*****
 
 RFC Author(s):
@@ -21,25 +18,25 @@ Files
 -----
 
 The files are available here:
-  https://www.rfc-editor.org/authors/rfcNNNNN.md
-  https://www.rfc-editor.org/authors/rfcNNNNN.html
-  https://www.rfc-editor.org/authors/rfcNNNNN.pdf
-  https://www.rfc-editor.org/authors/rfcNNNNN.txt
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.md
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.pdf
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.txt
 
 Diff file of the text:
-  https://www.rfc-editor.org/authors/rfcNNNNN-diff.html
-  https://www.rfc-editor.org/authors/rfcNNNNN-rfcdiff.html (side by side)
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-diff.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-rfcdiff.html (side by side)
 
 Diff of the kramdown:
-  https://www.rfc-editor.org/authors/rfcNNNNN-md-diff.html
-  https://www.rfc-editor.org/authors/rfcNNNNN-md-rfcdiff.html (side by side)
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-md-diff.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-md-rfcdiff.html (side by side)
 
 
 Tracking progress
 -----------------
 
 The details about Final Review are here:
- https://queue.rfc-editor.org/final-review/rfcNNNNN/
+ https://queue.rfc-editor.org/final-review/rfc{{ rfc_number }}/
 
 
 Please let us know if you have any questions.
