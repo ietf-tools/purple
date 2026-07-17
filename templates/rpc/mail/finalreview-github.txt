@@ -1,0 +1,48 @@
+Subject: Final Review: RFC-to-be NNNNN (draft-foo) in XML/GitHub
+
+*****IMPORTANT*****
+
+RFC Author(s):
+--------------
+
+Your document has now entered Final Review (formerly AUTH48).
+
+Final Review is being handled in GitHub as part of the GitHub pilot test
+(see https://www.rfc-editor.org/rpc/wiki/doku.php?id=rpc-github-phase-0-pilot-test).
+
+Your document is available for review at:
+https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN
+
+Please do the following:
+
+a) accept your invitations to join the repo as collaborators.
+
+b) see the README for details on the Final Review process:
+https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/blob/Approved/README.md
+
+c) review the edits in the RPC-edits pull request:
+https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/pulls
+
+d) address the issues:
+https://github.com/rfc-editor-drafts/FinalReview-rfcNNNNN/issues
+
+Once the content is stable in GitHub, we will provide the updated XML file
+and the output files for review and approval.
+
+You and your coauthors are responsible for engaging other parties
+(e.g., Contributors or Working Group) as necessary before providing
+your approval.
+
+Once the document has been reviewed and approved by all of the authors,
+it will be published as an RFC.  If an author is no longer available,
+there are several remedies; see the Unavailable Authors section
+(https://authors.ietf.org/rfc-publication-process#unavailable-authors).
+
+Details on the status of your Final Review are here:
+   https://queue.rfc-editor.org/final-review/rfcNNNNN/
+
+Please let us know if you have any questions.
+
+Thank you for your cooperation,
+
+RFC Production Center
