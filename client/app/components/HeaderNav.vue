@@ -49,11 +49,7 @@
               <button
                 type="button"
                 class="flex w-full items-baseline gap-2 px-4 py-2 text-left text-sm hover:bg-gray-50 dark:hover:bg-neutral-700"
-                @mousedown.prevent="
-                  navigateTo(`/docs/${doc.disposition === 'withdrawn' ? doc.id : doc.name}`)
-                  navSearch = ''
-                  showResults = false
-                ">
+                @mousedown.prevent="selectDoc(doc)">
                 <span class="font-semibold text-gray-900 dark:text-neutral-100">{{
                   doc.name
                 }}</span>
@@ -297,6 +293,12 @@ const onSearchBlur = () => {
   setTimeout(() => {
     showResults.value = false
   }, 150)
+}
+
+const selectDoc = (doc: NonNullable<DocumentsSearchResponse['results']>[number]) => {
+  navigateTo(`/docs/${doc.disposition === 'withdrawn' ? doc.id : doc.name}`)
+  navSearch.value = ''
+  showResults.value = false
 }
 
 const dispositionClass = (disposition: string) => {
