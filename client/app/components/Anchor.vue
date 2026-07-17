@@ -2,15 +2,10 @@
   <NuxtLink
     v-if="isInternal && !isHash && !isMailTo && !isOidc"
     v-bind="sanitisedAnchorProps"
-    data-link-type="nuxt-link"
-  >
+    data-link-type="nuxt-link">
     <slot />
   </NuxtLink>
-  <a
-    v-else
-    v-bind="sanitisedAnchorProps"
-    data-link-type="html-anchor"
-  >
+  <a v-else v-bind="sanitisedAnchorProps" data-link-type="html-anchor">
     <slot />
   </a>
 </template>
@@ -31,7 +26,7 @@ type Props = { href?: string; id?: string }
 const props = defineProps<Props>()
 
 const isInternal = computed(() => isInternalLink(props.href))
-const isOidc= computed(() => isOidcLink(props.href))
+const isOidc = computed(() => isOidcLink(props.href))
 const isMailTo = computed(() => isMailToLink(props.href))
 const isHash = computed(() => isHashLink(props.href))
 

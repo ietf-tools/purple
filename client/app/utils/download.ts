@@ -9,11 +9,12 @@ export const downloadTextFile = (filename: string, mimeType: 'text/svg', data: s
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
 
-  const clickHandler = () => setTimeout(() => {
-    // Clean up
-    URL.revokeObjectURL(url)
-    link.removeEventListener('click', clickHandler)
-  }, 150)
+  const clickHandler = () =>
+    setTimeout(() => {
+      // Clean up
+      URL.revokeObjectURL(url)
+      link.removeEventListener('click', clickHandler)
+    }, 150)
 
   // Clean up after download
   link.addEventListener('click', clickHandler, false)

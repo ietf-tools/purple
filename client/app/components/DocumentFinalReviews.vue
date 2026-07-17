@@ -12,16 +12,14 @@
               type="button"
               class="inline-flex items-center text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400"
               :title="`Copy queue link: ${queueUrl}`"
-              @click="copyQueueUrl"
-            >
+              @click="copyQueueUrl">
               <Icon name="heroicons:clipboard-document" size="1em" />
             </button>
             <a
               :href="queueUrl"
               target="_blank"
               rel="noopener noreferrer"
-              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
-            >
+              class="inline-flex items-center gap-1 text-indigo-600 hover:text-indigo-500 dark:text-indigo-400">
               Queue Page
               <Icon name="heroicons:arrow-top-right-on-square" size="1em" />
             </a>
@@ -36,18 +34,27 @@
     <RpcTable>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
+          <RpcTh
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()"
+            :sort-direction="header.column.getIsSorted()"
+            :column-name="getVNodeText(header.column.columnDef.header)"
+            @click="header.column.getToggleSortingHandler()?.($event)">
             <div class="flex items-center gap-2">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </div>
           </RpcTh>
         </tr>
       </RpcThead>
       <RpcTbody>
-        <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+        <RpcRowMessage
+          :status="status"
+          :column-count="table.getAllColumns().length"
           :row-count="table.getRowModel().rows.length" />
         <tr v-for="row in table.getRowModel().rows" :key="row.id">
           <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
@@ -61,7 +68,14 @@
 
 <script setup lang="ts">
 import { Icon, BaseButton } from '#components'
-import { createColumnHelper, getCoreRowModel, getFilteredRowModel, getSortedRowModel, useVueTable, FlexRender } from '@tanstack/vue-table'
+import {
+  createColumnHelper,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  useVueTable,
+  FlexRender
+} from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
 import type { SortingState } from '@tanstack/vue-table'
 import type { BaseDatatrackerPerson, FinalApproval } from '~/purple_client'
@@ -96,7 +110,7 @@ const copyQueueUrl = async () => {
   snackbar.add({
     type: copied ? 'success' : 'error',
     title: copied ? 'Queue link copied' : 'Could not copy link',
-    text: copied ? queueUrl.value : '',
+    text: copied ? queueUrl.value : ''
   })
 }
 
@@ -105,14 +119,14 @@ const {
   pending,
   status,
   refresh,
-  error,
+  error
 } = await useAsyncData(
   'final-review-for-document',
   () => api.documentsFinalApprovalsList({ draftName: props.name }),
   {
     server: false,
     lazy: true,
-    default: () => [] as FinalApproval[],
+    default: () => [] as FinalApproval[]
   }
 )
 
@@ -126,7 +140,7 @@ const columnHelper = createColumnHelper<FinalApproval>()
 const columns = [
   columnHelper.accessor('approver.name', {
     header: 'Approver Name',
-    cell: data => {
+    cell: (data) => {
       const rowOriginal = data.row.original
       const { approver } = rowOriginal
       if (!approver) {
@@ -135,18 +149,27 @@ const columns = [
 
       const formatAuthor = (author: BaseDatatrackerPerson): VNode => {
         return h('span', [
-          h('a', { href: author.email ? datatrackerLinks.personByEmail(author.email) : undefined, class: ANCHOR_STYLE }, [
-            `${author.name}`,
-            h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, ` #${author.email}`)
-          ]),
+          h(
+            'a',
+            {
+              href: author.email ? datatrackerLinks.personByEmail(author.email) : undefined,
+              class: ANCHOR_STYLE
+            },
+            [
+              `${author.name}`,
+              h(
+                'span',
+                { class: 'font-normal text-gray-700 dark:text-gray-200' },
+                ` #${author.email}`
+              )
+            ]
+          )
         ])
       }
 
       const approverVNode = formatAuthor(approver)
       if (!rowOriginal.overridingApprover) {
-        return h('span', [
-          approverVNode,
-        ])
+        return h('span', [approverVNode])
       }
       return h('span', [
         formatAuthor(rowOriginal.overridingApprover),
@@ -154,71 +177,95 @@ const columns = [
         approverVNode
       ])
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
-  columnHelper.accessor(
-    'comment', {
+  columnHelper.accessor('comment', {
     header: 'Comment',
-    cell: data => {
+    cell: (data) => {
       const comment = data.getValue()
       if (!comment) {
         return ''
       }
       const truncated = comment.length > 30 ? comment.substring(0, 30) + '...' : comment
       return h('span', { class: 'text-sm', title: comment }, truncated)
-    },
+    }
   }),
-  columnHelper.accessor(
-    'requested', {
+  columnHelper.accessor('requested', {
     header: 'Date Requested',
-    cell: data => {
+    cell: (data) => {
       const date = data.getValue()
       if (!date) {
         return '(N/A)'
       }
       const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
-      return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      ))
+      return h(
+        'time',
+        { datetime: dateTime.toString() },
+        dateTime.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+      )
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.display({
     id: 'status',
     header: 'Approval Status',
-    cell: data => {
+    cell: (data) => {
       const status = finalApprovalToStatus(data.row.original)
       switch (status) {
         case 'approved':
-          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "duo-icons:approved", size: "1.25em", class: "text-green-400 dark:text-neutral-500 mr-2" }), 'Approved'])
+          return h('div', { class: 'flex flex-row items-center' }, [
+            h(Icon, {
+              name: 'duo-icons:approved',
+              size: '1.25em',
+              class: 'text-green-400 dark:text-neutral-500 mr-2'
+            }),
+            'Approved'
+          ])
         case 'pending':
-          return h('div', { class: 'flex flex-row items-center' }, [h(Icon, { name: "emojione:hourglass-not-done", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" }), 'Pending'])
+          return h('div', { class: 'flex flex-row items-center' }, [
+            h(Icon, {
+              name: 'emojione:hourglass-not-done',
+              size: '1.25em',
+              class: 'text-gray-400 dark:text-neutral-500 mr-2'
+            }),
+            'Pending'
+          ])
       }
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
-  columnHelper.accessor(
-    'approved', {
+  columnHelper.accessor('approved', {
     header: 'Date Approved',
-    cell: data => {
+    cell: (data) => {
       const date = data.getValue()
       if (!date) {
         return '(N/A)'
       }
       const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
-      return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      ))
+      return h(
+        'time',
+        { datetime: dateTime.toString() },
+        dateTime.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+      )
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.display({
     id: 'action',
     header: 'Action',
     cell: (data) => {
-      return h(BaseButton, { btnType: 'default', size: 'xs', title: `Edit Final Review approver`, 'onClick': () => openEditModal(data.row.original) }, () => 'Edit')
+      return h(
+        BaseButton,
+        {
+          btnType: 'default',
+          size: 'xs',
+          title: `Edit Final Review approver`,
+          onClick: () => openEditModal(data.row.original)
+        },
+        () => 'Edit'
+      )
     }
-  }),
+  })
 ]
 
 type FinalApprovalStatus = 'pending' | 'approved'
@@ -242,7 +289,7 @@ const table = useVueTable({
   },
   columns,
   initialState: {
-    globalFilter: () => true, // a truthy value is needed to trigger globalFilterFn below
+    globalFilter: () => true // a truthy value is needed to trigger globalFilterFn below
   },
   enableFilters: true,
   globalFilterFn: (row) => {
@@ -254,12 +301,11 @@ const table = useVueTable({
   state: {
     get sorting() {
       return sorting.value
-    },
+    }
   },
-  onSortingChange: updaterOrValue => {
+  onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value) : updaterOrValue
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
   }
 })
 
@@ -277,8 +323,8 @@ const openEditModal = (finalApproval: FinalApproval) => {
       finalApproval,
       name: props.name,
       onSuccess: reloadEverything
-    },
-  }).catch(e => {
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
     } else {
@@ -299,8 +345,8 @@ const openAddModal = () => {
     componentProps: {
       name: props.name,
       onSuccess: reloadEverything
-    },
-  }).catch(e => {
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
     } else {
@@ -309,5 +355,4 @@ const openAddModal = () => {
     }
   })
 }
-
 </script>

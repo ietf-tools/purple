@@ -32,8 +32,8 @@ export const docTabsFactory = (draftName: string) => {
       name: 'History',
       to: `/docs/${sanitisedDraftName}/history`,
       icon: 'fluent:history-28-filled'
-    },
+    }
   ] as const satisfies Tab[]
 }
 
-export type DocTabId = (ReturnType<typeof docTabsFactory>)[number]['id']
+export type DocTabId = ReturnType<typeof docTabsFactory>[number]['id']

@@ -1,15 +1,11 @@
 <template>
-  <tr v-if="statusArr.some(status => status === 'pending')">
-    <RpcTdMessage :colspan="props.columnCount">
-      Loading...
-    </RpcTdMessage>
+  <tr v-if="statusArr.some((status) => status === 'pending')">
+    <RpcTdMessage :colspan="props.columnCount"> Loading... </RpcTdMessage>
   </tr>
-  <tr v-else-if="statusArr.every(status => status === 'success') && props.rowCount === 0">
-    <RpcTdMessage :colspan="props.columnCount">
-      No rows found
-    </RpcTdMessage>
+  <tr v-else-if="statusArr.every((status) => status === 'success') && props.rowCount === 0">
+    <RpcTdMessage :colspan="props.columnCount"> No rows found </RpcTdMessage>
   </tr>
-  <tr v-else-if="errorArr.some(error => Boolean(error))">
+  <tr v-else-if="errorArr.some((error) => Boolean(error))">
     <RpcTdMessage :colspan="props.columnCount" class="bg-red-300">
       Error:
       <BaseBadge v-for="error in errorArr" color="red" class="mr-2">

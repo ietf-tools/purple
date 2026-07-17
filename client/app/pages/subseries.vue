@@ -3,13 +3,17 @@
     <h1 class="text-xl font-bold mb-4">Subseries List</h1>
     <nav class="mb-6 flex flex-wrap gap-4">
       <template v-for="type in subseriesTypes" :key="type.slug">
-        <a :href="`#subseries-type-${type.slug}`" class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700">
+        <a
+          :href="`#subseries-type-${type.slug}`"
+          class="px-3 py-1 rounded bg-gray-100 hover:bg-gray-200 text-sm font-medium text-gray-700">
           {{ type.name }} <span class="text-xs text-gray-500">({{ type.slug }})</span>
         </a>
       </template>
     </nav>
     <template v-for="(group, idx) in groupedSubseries" :key="group.type">
-      <h2 :id="`subseries-type-${group.type}`" class="text-lg font-semibold mt-8 mb-2">Type: {{ group.type.toUpperCase() }}</h2>
+      <h2 :id="`subseries-type-${group.type}`" class="text-lg font-semibold mt-8 mb-2">
+        Type: {{ group.type.toUpperCase() }}
+      </h2>
       <table class="min-w-full border border-gray-300 rounded mb-8">
         <thead class="bg-gray-100">
           <tr>
@@ -23,7 +27,9 @@
             <td class="px-3 py-2 text-xs w-[300px]">
               <template v-if="item.documents && item.documents.length">
                 <span>
-                  <template v-for="(doc, i) in item.documents" :key="doc.name + '-' + doc.rfcNumber">
+                  <template
+                    v-for="(doc, i) in item.documents"
+                    :key="doc.name + '-' + doc.rfcNumber">
                     <template v-if="doc.name?.startsWith('draft-')">
                       <NuxtLink :to="`/docs/${doc.name}`" class="text-blue-600 hover:underline">
                         {{ doc.rfcNumber }}
@@ -68,7 +74,7 @@ onMounted(async () => {
 })
 
 const groupedSubseries = computed(() => {
-  const groups: Record<string, { type: string, items: SubseriesDoc[] }> = {}
+  const groups: Record<string, { type: string; items: SubseriesDoc[] }> = {}
   for (const item of subseriesList.value) {
     const type = item.type || 'Unknown'
     if (!groups[type]) {

@@ -12,16 +12,29 @@
       </BaseButton>
     </template>
     <template v-else-if="props.uiMode.type === 'textbox'">
-      <textarea v-if="props.uiMode.rows > 1" :id="props.fieldName" v-model="valueStringRef" :rows="props.uiMode.rows"
+      <textarea
+        v-if="props.uiMode.rows > 1"
+        :id="props.fieldName"
+        v-model="valueStringRef"
+        :rows="props.uiMode.rows"
         class="px-2 py-1 flex-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
         :placeholder="props.uiMode.placeholder" />
-      <input v-if="props.uiMode.rows === 1" :type="props.uiMode.isNumber ? 'number' : 'text'" :id="props.fieldName"
-        v-model="valueStringRef" :class="[
+      <input
+        v-if="props.uiMode.rows === 1"
+        :type="props.uiMode.isNumber ? 'number' : 'text'"
+        :id="props.fieldName"
+        v-model="valueStringRef"
+        :class="[
           'px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
-          props.uiMode.isNumber ? 'input-number-no-spinners' : '',
-        ]" :placeholder="props.uiMode.placeholder" />
+          props.uiMode.isNumber ? 'input-number-no-spinners' : ''
+        ]"
+        :placeholder="props.uiMode.placeholder" />
       <div class="flex flex-col gap-1 h-full justify-between">
-        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">
+        <BaseButton
+          @click="isEditing = false"
+          size="xs"
+          btn-type="cancel"
+          aria-label="Cancel editting">
           Cancel
         </BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">
@@ -34,14 +47,22 @@
       <div class="flex-1 flex flex-row justify-center">
         <label>
           {{ props.uiMode.label }}
-          <input :aria-label="props.uiMode.label" type="checkbox" :id="props.fieldName" v-model="valueBooleanRef"
+          <input
+            :aria-label="props.uiMode.label"
+            type="checkbox"
+            :id="props.fieldName"
+            v-model="valueBooleanRef"
             :class="[
-              'pointer-click border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white',
+              'pointer-click border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white'
             ]" />
         </label>
       </div>
       <div class="flex flex-col gap-1 h-full justify-between">
-        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">
+        <BaseButton
+          @click="isEditing = false"
+          size="xs"
+          btn-type="cancel"
+          aria-label="Cancel editting">
           Cancel
         </BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">
@@ -51,16 +72,27 @@
       </div>
     </template>
     <template v-else-if="props.uiMode.type === 'select'">
-      <select :id="props.fieldName" v-model="valueStringRef"
+      <select
+        :id="props.fieldName"
+        v-model="valueStringRef"
         class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white">
-        <option v-if="typeof props.uiMode.options === 'function' && selectOptions.length === 0" readonly value="">
-          loading</option>
+        <option
+          v-if="typeof props.uiMode.options === 'function' && selectOptions.length === 0"
+          readonly
+          value="">
+          loading
+        </option>
         <option v-for="(option, index) in selectOptions" :key="index" :value="option.value">
           {{ option.label }}
         </option>
       </select>
       <div class="flex flex-col gap-1 h-full justify-between">
-        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel
+        <BaseButton
+          @click="isEditing = false"
+          size="xs"
+          btn-type="cancel"
+          aria-label="Cancel editting"
+          >Cancel
         </BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">
           Save
@@ -69,10 +101,17 @@
       </div>
     </template>
     <template v-else-if="props.uiMode.type === 'date'">
-      <input type="date" :id="props.fieldName" v-model="valueStringRef"
+      <input
+        type="date"
+        :id="props.fieldName"
+        v-model="valueStringRef"
         class="px-2 py-1 flex-1 min-w-0 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white" />
       <div class="flex flex-col gap-1 h-full justify-between">
-        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editing">
+        <BaseButton
+          @click="isEditing = false"
+          size="xs"
+          btn-type="cancel"
+          aria-label="Cancel editing">
           Cancel
         </BaseButton>
         <BaseButton @click="updateValue" btn-type="default" size="xs">
@@ -92,17 +131,23 @@ import type { RfcToBe, PatchedRfcToBeRequest } from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
 type UIMode =
-  | { type: 'textbox', rows: number, placeholder: string, isNumber?: boolean, initialValue?: string }
-  | { type: 'checkbox', label: string, initialValue?: boolean }
   | {
-    type: 'select'
-    options: SelectOption[] | (() => Promise<SelectOption[]>)
-    initialValue?: string
-  }
-  | { type: 'date', initialValue?: string }
+      type: 'textbox'
+      rows: number
+      placeholder: string
+      isNumber?: boolean
+      initialValue?: string
+    }
+  | { type: 'checkbox'; label: string; initialValue?: boolean }
+  | {
+      type: 'select'
+      options: SelectOption[] | (() => Promise<SelectOption[]>)
+      initialValue?: string
+    }
+  | { type: 'date'; initialValue?: string }
 
 type Props = {
-  draftName: NonNullable<RfcToBe["name"]>
+  draftName: NonNullable<RfcToBe['name']>
   isReadOnly: boolean
   uiMode: UIMode
   fieldName: keyof PatchedRfcToBeRequest
@@ -114,17 +159,33 @@ const props = defineProps<Props>()
 const api = useApi()
 const snackbar = useSnackbar()
 
-const valueStringRef = ref<string>(props.uiMode.type === 'select' || props.uiMode.type === 'textbox' || props.uiMode.type === 'date' ? props.uiMode.initialValue ?? '' : '')
-const valueBooleanRef = ref<boolean>(props.uiMode.type === 'checkbox' ? props.uiMode.initialValue ?? false : false)
+const valueStringRef = ref<string>(
+  props.uiMode.type === 'select' || props.uiMode.type === 'textbox' || props.uiMode.type === 'date'
+    ? (props.uiMode.initialValue ?? '')
+    : ''
+)
+const valueBooleanRef = ref<boolean>(
+  props.uiMode.type === 'checkbox' ? (props.uiMode.initialValue ?? false) : false
+)
 
 const isEditing = ref(false)
 const isSaving = ref(false)
 
-const selectOptions = ref<SelectOption[]>(props.uiMode.type === 'select' ? typeof props.uiMode.options === 'function' ? [] : props.uiMode.options : [])
+const selectOptions = ref<SelectOption[]>(
+  props.uiMode.type === 'select'
+    ? typeof props.uiMode.options === 'function'
+      ? []
+      : props.uiMode.options
+    : []
+)
 
 const switchToEditMode = async () => {
   isEditing.value = true
-  if (props.uiMode.type === 'select' && typeof props.uiMode.options === 'function' && selectOptions.value.length === 0) {
+  if (
+    props.uiMode.type === 'select' &&
+    typeof props.uiMode.options === 'function' &&
+    selectOptions.value.length === 0
+  ) {
     selectOptions.value = await props.uiMode.options()
     if (props.uiMode.initialValue) {
       valueStringRef.value = props.uiMode.initialValue
@@ -175,7 +236,11 @@ const updateValue = async () => {
     snackbar.add({ type: 'success', title: `${JSON.stringify(fieldName)} updated`, text: '' })
     isEditing.value = false
   } catch (error: unknown) {
-    snackbarForErrors({ snackbar, error, defaultTitle: `Failed to update ${JSON.stringify(fieldName)}` })
+    snackbarForErrors({
+      snackbar,
+      error,
+      defaultTitle: `Failed to update ${JSON.stringify(fieldName)}`
+    })
   }
   isSaving.value = false
 }

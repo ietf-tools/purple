@@ -113,7 +113,10 @@ const rows = computed(() => {
   if (!props.data) {
     return []
   }
-  const dataWithKey: Record<string, unknown>[] = props.data.map((row) => ({ ...row, key: row[props.rowKey] }))
+  const dataWithKey: Record<string, unknown>[] = props.data.map((row) => ({
+    ...row,
+    key: row[props.rowKey]
+  }))
   if (state.sortField) {
     return orderBy(dataWithKey, [state.sortField], [state.sortDirection])
   } else {

@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     'nuxt-snackbar',
     'nuxt-svgo',
     'nuxt-security',
-    'reka-ui/nuxt',
+    'reka-ui/nuxt'
   ],
   robots: {
     credits: false,
@@ -46,15 +46,8 @@ export default defineNuxtConfig({
     // https://nuxt-security.vercel.app/getting-started/configuration#defaults
     headers: {
       contentSecurityPolicy: {
-        'img-src': [
-          "'self'",
-          'data:',
-          '*.ietf.org'
-        ],
-        'script-src': [
-          "'strict-dynamic'",
-          "'nonce-{{nonce}}'"
-        ]
+        'img-src': ["'self'", 'data:', '*.ietf.org'],
+        'script-src': ["'strict-dynamic'", "'nonce-{{nonce}}'"]
       }
     }
   },
@@ -86,16 +79,16 @@ export default defineNuxtConfig({
         '@vue/devtools-kit',
         '@tanstack/vue-table',
         'canvas-confetti',
-        '@vueuse/core',
+        '@vueuse/core'
         // 'vue3-snackbar'
       ]
     },
     plugins: [
       {
         name: 'vue-docs',
-        transform (_code, id) {
+        transform(_code, id) {
           if (!/vue&type=docs/.test(id)) return
-          return 'export default \'\''
+          return "export default ''"
         }
       }
     ]

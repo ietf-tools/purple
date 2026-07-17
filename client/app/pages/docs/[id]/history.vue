@@ -1,6 +1,14 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="() => { rfcToBeRefresh(); historyRefresh() }" />
+    <DocHeader
+      :draft-name="draftName"
+      :rfc-to-be="rfcToBe"
+      @withdrawn="
+        () => {
+          rfcToBeRefresh()
+          historyRefresh()
+        }
+      " />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -14,11 +22,23 @@
         <div class="flex items-center justify-between">
           <h3 class="text-base font-semibold leading-7">
             History
-            <Icon v-show="historyStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+            <Icon
+              v-show="historyStatus === 'pending'"
+              name="ei:spinner-3"
+              size="1.5em"
+              class="animate-spin" />
           </h3>
           <div class="flex gap-1 text-sm">
-            <button v-for="f in FILTERS" :key="f.value" type="button"
-              :class="['px-2.5 py-1 rounded-md border transition-colors', filter === f.value ? 'bg-violet-100 border-violet-400 text-violet-900 dark:bg-violet-900/30 dark:border-violet-500 dark:text-violet-200' : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700']"
+            <button
+              v-for="f in FILTERS"
+              :key="f.value"
+              type="button"
+              :class="[
+                'px-2.5 py-1 rounded-md border transition-colors',
+                filter === f.value
+                  ? 'bg-violet-100 border-violet-400 text-violet-900 dark:bg-violet-900/30 dark:border-violet-500 dark:text-violet-200'
+                  : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+              ]"
               @click="filter = f.value">
               {{ f.label }}
             </button>
@@ -28,7 +48,9 @@
           <table class="w-full divide-y divide-gray-300">
             <thead class="bg-gray-50 dark:bg-neutral-800">
               <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">Date</th>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold sm:pl-6">
+                  Date
+                </th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">By</th>
                 <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold">Description</th>
               </tr>
@@ -41,12 +63,14 @@
                   </time>
                 </td>
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
-                  <NuxtLink v-if="entry.by?.personId" :to="`/team/${entry.by.personId}`"
+                  <NuxtLink
+                    v-if="entry.by?.personId"
+                    :to="`/team/${entry.by.personId}`"
                     class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100">
                     {{ entry.by.name }}
                   </NuxtLink>
                   <span v-else>
-                    {{ entry.by ? entry.by.name ? entry.by.name : '(unnamed)' : '(System)' }}
+                    {{ entry.by ? (entry.by.name ? entry.by.name : '(unnamed)') : '(System)' }}
                   </span>
                 </td>
                 <td class="px-3 py-4 text-sm">{{ entry.desc }}</td>
@@ -77,7 +101,7 @@ const FILTERS: { value: FilterValue; label: string; models: string[] }[] = [
   { value: 'assignment', label: 'Assignment', models: ['assignment', 'blocking_reason'] },
   { value: 'cluster', label: 'Cluster', models: ['cluster_member'] },
   { value: 'reference', label: 'Reference', models: ['reference'] },
-  { value: 'author', label: 'Author', models: ['rfc_author'] },
+  { value: 'author', label: 'Author', models: ['rfc_author'] }
 ]
 const filter = ref<FilterValue>('all')
 
@@ -85,15 +109,15 @@ const {
   data: history,
   error: historyError,
   status: historyStatus,
-  refresh: historyRefresh,
+  refresh: historyRefresh
 } = await useHistoryForDraft(draftName.value)
 
 const filteredHistory = computed(() => {
   const entries = history.value ?? []
   if (filter.value === 'all') return entries
-  const models = FILTERS.find(f => f.value === filter.value)?.models ?? []
+  const models = FILTERS.find((f) => f.value === filter.value)?.models ?? []
   if (!models.length) return entries
-  return entries.filter(e => e.model !== null && models.includes(e.model))
+  return entries.filter((e) => e.model !== null && models.includes(e.model))
 })
 
 const { data: rfcToBe, refresh: rfcToBeRefresh } = await useAsyncData(

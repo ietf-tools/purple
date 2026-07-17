@@ -7,20 +7,37 @@
       <DescriptionList>
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="disposition" :is-read-only="true"
-              :ui-mode="{ type: 'select', options: dispositionOptions, initialValue: rfcToBe.disposition }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="disposition"
+              :is-read-only="true"
+              :ui-mode="{
+                type: 'select',
+                options: dispositionOptions,
+                initialValue: rfcToBe.disposition
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="flex items-center gap-2">
-                <BaseBadge :label="rfcToBe.disposition" :color="dispositionColor(rfcToBe.disposition)" />
-                <template v-if="rfcToBe.disposition === 'in_progress' && rfcToBe.blockingReasons?.some(r => r.resolved == null)">
+                <BaseBadge
+                  :label="rfcToBe.disposition"
+                  :color="dispositionColor(rfcToBe.disposition)" />
+                <template
+                  v-if="
+                    rfcToBe.disposition === 'in_progress' &&
+                    rfcToBe.blockingReasons?.some((r) => r.resolved == null)
+                  ">
                   <BaseBadge label="blocked" color="red" />
                   <ul class="list-disc list-inside text-xs text-gray-500 leading-tight">
-                    <li v-for="br in rfcToBe.blockingReasons.filter(r => r.resolved == null)" :key="br.reason?.slug">
+                    <li
+                      v-for="br in rfcToBe.blockingReasons.filter((r) => r.resolved == null)"
+                      :key="br.reason?.slug">
                       {{ br.reason?.name ?? '(no name)' }}
                     </li>
                   </ul>
                 </template>
-                <span v-if="rfcToBe.disposition === 'published' && rfcToBe.publishedAt" class="text-sm text-gray-600">
+                <span
+                  v-if="rfcToBe.disposition === 'published' && rfcToBe.publishedAt"
+                  class="text-sm text-gray-600">
                   {{ DateTime.fromJSDate(rfcToBe.publishedAt).toLocaleString(DateTime.DATE_FULL) }}
                 </span>
               </div>
@@ -29,9 +46,18 @@
         </DescriptionListItem>
         <DescriptionListItem term="RFC Number" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="rfcNumber" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', isNumber: true, rows: 1, placeholder: 'RFC #', initialValue: rfcToBe.rfcNumber?.toString() }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="rfcNumber"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                isNumber: true,
+                rows: 1,
+                placeholder: 'RFC #',
+                initialValue: rfcToBe.rfcNumber?.toString()
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="font-mono">
                 {{ rfcToBe.rfcNumber || '(none)' }}
               </div>
@@ -40,9 +66,17 @@
         </DescriptionListItem>
         <DescriptionListItem term="Title" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="title" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'title', rows: 5, initialValue: rfcToBe.title }"
-              :draft-name="rfcToBe.name!" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="title"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                placeholder: 'title',
+                rows: 5,
+                initialValue: rfcToBe.title
+              }"
+              :draft-name="rfcToBe.name!"
+              :on-success="props.refresh">
               {{ rfcToBe.title }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -53,10 +87,13 @@
               <div v-if="rfcToBe.authors.length === 0">None</div>
               <div v-else class="w-full">
                 <div v-for="author of rfcToBe.authors" :key="author.id" class="py-1">
-                  <a :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined"
+                  <a
+                    :href="author.email ? datatrackerLinks.personByEmail(author.email) : undefined"
                     :class="ANCHOR_STYLE">
                     <span :class="ANCHOR_STYLE">{{ author.titlepageName }}</span>
-                    <span :class="PERSON_ID_STYLE" v-if="author.email">{{ SPACE }}{{ ` (${author.email})` }}</span>
+                    <span :class="PERSON_ID_STYLE" v-if="author.email"
+                      >{{ SPACE }}{{ ` (${author.email})` }}</span
+                    >
                     <span v-if="author.isEditor">(editor)</span>
                   </a>
                   <div class="text-xs text-gray-500" v-if="author.affiliation">
@@ -65,7 +102,8 @@
                 </div>
               </div>
               <div v-if="!props.isReadOnly">
-                <Anchor :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')"
+                <Anchor
+                  :href="draftAssignmentsHref(props.rfcToBe?.name, 'edit-authors')"
                   :class="[classForBtnType.outline, 'px-2 py-1']">
                   <Icon name="uil:pen" />
                 </Anchor>
@@ -75,18 +113,35 @@
         </DescriptionListItem>
         <DescriptionListItem term="Pages" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="pages" :is-read-only="false"
-              :ui-mode="{ type: 'textbox', placeholder: '# of pages', isNumber: true, rows: 1, initialValue: rfcToBe.pages?.toString() }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="pages"
+              :is-read-only="false"
+              :ui-mode="{
+                type: 'textbox',
+                placeholder: '# of pages',
+                isNumber: true,
+                rows: 1,
+                initialValue: rfcToBe.pages?.toString()
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               {{ rfcToBe.pages?.toString() }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Group" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="group" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'Group Acronym', initialValue: rfcToBe.group }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="group"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                rows: 1,
+                placeholder: 'Group Acronym',
+                initialValue: rfcToBe.group
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="font-mono">
                 {{ rfcToBe.group || '(none)' }}
               </div>
@@ -98,8 +153,7 @@
             <PersonSearchField
               :person="rfcToBe.shepherd"
               :is-read-only="props.isReadOnly"
-              :on-save="(id) => patchPerson('shepherdId', id)"
-            />
+              :on-save="(id) => patchPerson('shepherdId', id)" />
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="IESG Contact" :spacing="spacing">
@@ -107,18 +161,21 @@
             <PersonSearchField
               :person="rfcToBe.iesgContact"
               :is-read-only="props.isReadOnly"
-              :on-save="(id) => patchPerson('iesgContactId', id)"
-            />
+              :on-save="(id) => patchPerson('iesgContactId', id)" />
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="stream" :is-read-only="false"
+            <PatchRfcToBeField
+              fieldName="stream"
+              :is-read-only="false"
               :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.stream }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <span class="flex-1">
                 {{ rfcToBe.stream }}
-                <span v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
+                <span
+                  v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
                   (published as {{ rfcToBe.publicationStream }})
                 </span>
               </span>
@@ -130,38 +187,65 @@
             <PersonSearchField
               :person="rfcToBe.streamManager"
               :is-read-only="props.isReadOnly"
-              :on-save="(id) => patchPerson('streamManagerId', id)"
-            />
+              :on-save="(id) => patchPerson('streamManagerId', id)" />
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Submitted Format" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="submittedFormat" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadFormats, initialValue: rfcToBe.submittedFormat }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="submittedFormat"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'select',
+                options: loadFormats,
+                initialValue: rfcToBe.submittedFormat
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               {{ rfcToBe.submittedFormat }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Boilerplate" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="boilerplate" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'select', options: loadBoilerplates, initialValue: rfcToBe.submittedFormat }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="boilerplate"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'select',
+                options: loadBoilerplates,
+                initialValue: rfcToBe.submittedFormat
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               {{ rfcToBe.boilerplate }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Status" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="stdLevel" :is-read-only="false"
-              :ui-mode="{ type: 'select', options: loadStandardLevels, initialValue: rfcToBe.stdLevel }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="stdLevel"
+              :is-read-only="false"
+              :ui-mode="{
+                type: 'select',
+                options: loadStandardLevels,
+                initialValue: rfcToBe.stdLevel
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               {{ rfcToBe.stdLevel }}
-              <span v-if="rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel">
+              <span
+                v-if="
+                  rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel
+                ">
                 (published as {{ rfcToBe.publicationStdLevel }})
               </span>
-              <span v-if="rfcToBe.draft?.intendedStdLevel && rfcToBe.draft?.intendedStdLevel !== rfcToBe.stdLevel">
+              <span
+                v-if="
+                  rfcToBe.draft?.intendedStdLevel &&
+                  rfcToBe.draft?.intendedStdLevel !== rfcToBe.stdLevel
+                ">
                 (draft intended as {{ rfcToBe.draft?.intendedStdLevel }})
               </span>
             </PatchRfcToBeField>
@@ -171,13 +255,19 @@
           <DescriptionListDetails>
             <template v-if="rfcToBe.subseries && rfcToBe.subseries.length > 0">
               <div v-for="(sub, idx) in rfcToBe.subseries" :key="idx">
-                <EditSubseries :id="rfcToBe.id" :initial-subseries="sub" :on-success="() => props.refresh?.()">
+                <EditSubseries
+                  :id="rfcToBe.id"
+                  :initial-subseries="sub"
+                  :on-success="() => props.refresh?.()">
                   {{ sub.displayName }}<span v-if="idx < rfcToBe.subseries.length - 1">, </span>
                 </EditSubseries>
               </div>
             </template>
             <template v-else>
-              <EditSubseries :id="rfcToBe.id" :initial-subseries="null" :on-success="() => props.refresh?.()">
+              <EditSubseries
+                :id="rfcToBe.id"
+                :initial-subseries="null"
+                :on-success="() => props.refresh?.()">
                 (none)
               </EditSubseries>
             </template>
@@ -185,7 +275,8 @@
         </DescriptionListItem>
         <DescriptionListItem term="Additional Emails" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="!isEditingAdditionalEmails"
+            <div
+              v-if="!isEditingAdditionalEmails"
               class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="additionalEmails && additionalEmails.length > 0" class="w-full">
                 <div v-for="email in additionalEmails" :key="email.id">
@@ -194,32 +285,47 @@
               </div>
               <div v-else class="flex-1 text-gray-500">(none)</div>
               <div v-if="!props.isReadOnly">
-                <button @click="isEditingAdditionalEmails = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                <button
+                  @click="isEditingAdditionalEmails = true"
+                  :class="[classForBtnType.outline, 'px-2 py-1']">
                   <Icon name="uil:pen" />
                 </button>
               </div>
             </div>
             <div v-else class="w-full flex flex-col gap-2">
               <div v-if="additionalEmails && additionalEmails.length > 0" class="space-y-1">
-                <div v-for="email in additionalEmails" :key="email.id"
+                <div
+                  v-for="email in additionalEmails"
+                  :key="email.id"
                   class="flex items-center justify-between text-sm">
                   <span>{{ email.email }}</span>
-                  <button v-if="email.id" @click="removeEmail(email.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button
+                    v-if="email.id"
+                    @click="removeEmail(email.id)"
+                    class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:trash" />
                   </button>
                 </div>
               </div>
               <div v-else class="text-sm text-gray-500">(none)</div>
               <div class="flex gap-2">
-                <input v-model="newEmail" type="email" placeholder="email@example.com"
-                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newEmailInput" @keyup.enter="addEmail" />
-                <button @click="addEmail" :disabled="!newEmail"
+                <input
+                  v-model="newEmail"
+                  type="email"
+                  placeholder="email@example.com"
+                  class="flex-1 px-3 py-1 text-sm border rounded"
+                  ref="newEmailInput"
+                  @keyup.enter="addEmail" />
+                <button
+                  @click="addEmail"
+                  :disabled="!newEmail"
                   class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
                   Add
                 </button>
               </div>
               <div class="flex justify-end">
-                <button @click="isEditingAdditionalEmails = false"
+                <button
+                  @click="isEditingAdditionalEmails = false"
                   class="text-xs text-gray-500 hover:text-gray-700 underline">
                   Done
                 </button>
@@ -229,20 +335,21 @@
         </DescriptionListItem>
         <DescriptionListItem term="Consensus" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="consensus" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'checkbox', label: 'consensus?', initialValue: rfcToBe.consensus ?? false }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="consensus"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'checkbox',
+                label: 'consensus?',
+                initialValue: rfcToBe.consensus ?? false
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="w-full flex justify-between">
                 <div>
-                  <span v-if="rfcToBe.consensus === true" class="text-green-600">
-                    Yes
-                  </span>
-                  <span v-else-if="rfcToBe.consensus === false" class="text-red-600">
-                    No
-                  </span>
-                  <span v-else>
-                    Unknown
-                  </span>
+                  <span v-if="rfcToBe.consensus === true" class="text-green-600"> Yes </span>
+                  <span v-else-if="rfcToBe.consensus === false" class="text-red-600"> No </span>
+                  <span v-else> Unknown </span>
                 </div>
               </div>
             </PatchRfcToBeField>
@@ -250,46 +357,65 @@
         </DescriptionListItem>
         <DescriptionListItem term="Obsoletes" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="!isEditingObsoletes"
+            <div
+              v-if="!isEditingObsoletes"
               class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="obsoletes && obsoletes.length > 0" class="flex-1">
                 <span v-for="(doc, idx) in obsoletes" :key="doc.id">
-                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                    RFC {{ doc.targetRfcNumber }}
-                  </NuxtLink><span v-if="idx < obsoletes.length - 1">, </span>
+                  <NuxtLink
+                    :to="`/docs/${doc.targetDraftName}`"
+                    class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }} </NuxtLink
+                  ><span v-if="idx < obsoletes.length - 1">, </span>
                 </span>
               </div>
               <div v-else class="flex-1 text-gray-500">(none)</div>
               <div>
-                <button @click="isEditingObsoletes = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                <button
+                  @click="isEditingObsoletes = true"
+                  :class="[classForBtnType.outline, 'px-2 py-1']">
                   <Icon name="uil:pen" />
                 </button>
               </div>
             </div>
             <div v-else class="w-full flex flex-col gap-2">
               <div v-if="obsoletes && obsoletes.length > 0" class="space-y-1">
-                <div v-for="doc in obsoletes" :key="doc.id"
+                <div
+                  v-for="doc in obsoletes"
+                  :key="doc.id"
                   class="flex items-center justify-between text-sm">
-                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                  <NuxtLink
+                    :to="`/docs/${doc.targetDraftName}`"
+                    class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
-                  <button v-if="doc.id" @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button
+                    v-if="doc.id"
+                    @click="removeRelatedDocument(doc.id)"
+                    class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:times" />
                   </button>
                 </div>
               </div>
               <div v-else class="text-sm text-gray-500">(none)</div>
               <div class="flex gap-2">
-                <input v-model="newObsoletesRfc" type="text" placeholder="RFC number (e.g., 9999)"
-                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newObsoletesInput"
+                <input
+                  v-model="newObsoletesRfc"
+                  type="text"
+                  placeholder="RFC number (e.g., 9999)"
+                  class="flex-1 px-3 py-1 text-sm border rounded"
+                  ref="newObsoletesInput"
                   @keyup.enter="addRelatedDocument(newObsoletesRfc, 'obs')" />
-                <button @click="addRelatedDocument(newObsoletesRfc, 'obs')" :disabled="!newObsoletesRfc"
+                <button
+                  @click="addRelatedDocument(newObsoletesRfc, 'obs')"
+                  :disabled="!newObsoletesRfc"
                   class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
                   Add
                 </button>
               </div>
               <div class="flex justify-end">
-                <button @click="isEditingObsoletes = false"
+                <button
+                  @click="isEditingObsoletes = false"
                   class="text-xs text-gray-500 hover:text-gray-700 underline">
                   Done
                 </button>
@@ -299,46 +425,65 @@
         </DescriptionListItem>
         <DescriptionListItem term="Updates" :spacing="spacing">
           <DescriptionListDetails>
-            <div v-if="!isEditingUpdates"
+            <div
+              v-if="!isEditingUpdates"
               class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="updates && updates.length > 0" class="flex-1">
                 <span v-for="(doc, idx) in updates" :key="doc.id">
-                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                    RFC {{ doc.targetRfcNumber }}
-                  </NuxtLink><span v-if="idx < updates.length - 1">, </span>
+                  <NuxtLink
+                    :to="`/docs/${doc.targetDraftName}`"
+                    class="text-blue-600 hover:underline">
+                    RFC {{ doc.targetRfcNumber }} </NuxtLink
+                  ><span v-if="idx < updates.length - 1">, </span>
                 </span>
               </div>
               <div v-else class="flex-1 text-gray-500">(none)</div>
               <div>
-                <button @click="isEditingUpdates = true" :class="[classForBtnType.outline, 'px-2 py-1']">
+                <button
+                  @click="isEditingUpdates = true"
+                  :class="[classForBtnType.outline, 'px-2 py-1']">
                   <Icon name="uil:pen" />
                 </button>
               </div>
             </div>
             <div v-else class="w-full flex flex-col gap-2">
               <div v-if="updates && updates.length > 0" class="space-y-1">
-                <div v-for="doc in updates" :key="doc.id"
+                <div
+                  v-for="doc in updates"
+                  :key="doc.id"
                   class="flex items-center justify-between text-sm">
-                  <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
+                  <NuxtLink
+                    :to="`/docs/${doc.targetDraftName}`"
+                    class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
-                  <button v-if="doc.id" @click="removeRelatedDocument(doc.id)" class="text-red-600 hover:text-red-800 px-2 py-1">
+                  <button
+                    v-if="doc.id"
+                    @click="removeRelatedDocument(doc.id)"
+                    class="text-red-600 hover:text-red-800 px-2 py-1">
                     <Icon name="uil:times" />
                   </button>
                 </div>
               </div>
               <div v-else class="text-sm text-gray-500">(none)</div>
               <div class="flex gap-2">
-                <input v-model="newUpdatesRfc" type="text" placeholder="RFC number (e.g., 9999)"
-                  class="flex-1 px-3 py-1 text-sm border rounded" ref="newUpdatesInput"
+                <input
+                  v-model="newUpdatesRfc"
+                  type="text"
+                  placeholder="RFC number (e.g., 9999)"
+                  class="flex-1 px-3 py-1 text-sm border rounded"
+                  ref="newUpdatesInput"
                   @keyup.enter="addRelatedDocument(newUpdatesRfc, 'updates')" />
-                <button @click="addRelatedDocument(newUpdatesRfc, 'updates')" :disabled="!newUpdatesRfc"
+                <button
+                  @click="addRelatedDocument(newUpdatesRfc, 'updates')"
+                  :disabled="!newUpdatesRfc"
                   class="px-3 py-1 text-sm bg-blue-600 text-white rounded disabled:bg-gray-300">
                   Add
                 </button>
               </div>
               <div class="flex justify-end">
-                <button @click="isEditingUpdates = false"
+                <button
+                  @click="isEditingUpdates = false"
                   class="text-xs text-gray-500 hover:text-gray-700 underline">
                   Done
                 </button>
@@ -350,9 +495,15 @@
           <DescriptionListDetails>
             <div v-if="obsoletedBy && obsoletedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in obsoletedBy" :key="doc.id">
-                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  {{ doc.targetDisposition === 'published' ? `RFC ${doc.targetRfcNumber}` : doc.targetDraftName }}
-                </NuxtLink><span v-if="idx < obsoletedBy.length - 1">, </span>
+                <NuxtLink
+                  :to="`/docs/${doc.targetDraftName}`"
+                  class="text-blue-600 hover:underline">
+                  {{
+                    doc.targetDisposition === 'published'
+                      ? `RFC ${doc.targetRfcNumber}`
+                      : doc.targetDraftName
+                  }} </NuxtLink
+                ><span v-if="idx < obsoletedBy.length - 1">, </span>
               </span>
             </div>
             <div v-else class="text-sm text-gray-500">(none)</div>
@@ -362,9 +513,15 @@
           <DescriptionListDetails>
             <div v-if="updatedBy && updatedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in updatedBy" :key="doc.id">
-                <NuxtLink :to="`/docs/${doc.targetDraftName}`" class="text-blue-600 hover:underline">
-                  {{ doc.targetDisposition === 'published' ? `RFC ${doc.targetRfcNumber}` : doc.targetDraftName }}
-                </NuxtLink><span v-if="idx < updatedBy.length - 1">, </span>
+                <NuxtLink
+                  :to="`/docs/${doc.targetDraftName}`"
+                  class="text-blue-600 hover:underline">
+                  {{
+                    doc.targetDisposition === 'published'
+                      ? `RFC ${doc.targetRfcNumber}`
+                      : doc.targetDraftName
+                  }} </NuxtLink
+                ><span v-if="idx < updatedBy.length - 1">, </span>
               </span>
             </div>
             <div v-else class="text-sm text-gray-500">(none)</div>
@@ -372,43 +529,89 @@
         </DescriptionListItem>
         <DescriptionListItem term="Revision" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="rev" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'e.g. 14', rows: 1, initialValue: rfcToBe.rev || undefined }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="rev"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                placeholder: 'e.g. 14',
+                rows: 1,
+                initialValue: rfcToBe.rev || undefined
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <span class="font-mono">{{ rfcToBe.rev || '(none)' }}</span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Repository" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="repository" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., rfc-editor-drafts/{draft_name}', initialValue: rfcToBe.repository }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="repository"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                rows: 1,
+                placeholder: 'e.g., rfc-editor-drafts/{draft_name}',
+                initialValue: rfcToBe.repository
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="font-mono">
-                <a v-if="rfcToBe.repository" :href="`https://www.github.com/${rfcToBe.repository}`" target="_blank" rel="noopener noreferrer"
+                <a
+                  v-if="rfcToBe.repository"
+                  :href="`https://www.github.com/${rfcToBe.repository}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
                   class="text-blue-600 hover:underline">
                   {{ rfcToBe.repository }}
                 </a>
                 <span v-else>(none)</span>
               </div>
-              <p v-if="rfcToBe.repository" class="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">click link to test</p>
+              <p
+                v-if="rfcToBe.repository"
+                class="text-xs text-gray-400 dark:text-neutral-500 mt-0.5">
+                click link to test
+              </p>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="External Deadline" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="externalDeadline" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'date', initialValue: rfcToBe.externalDeadline ? jsDateToInputTypeDate(rfcToBe.externalDeadline) : undefined }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
-              <span>{{ rfcToBe.externalDeadline ? DateTime.fromJSDate(rfcToBe.externalDeadline, { zone: 'utc' }).toLocaleString(DateTime.DATE_FULL) : '(none)' }}</span>
+            <PatchRfcToBeField
+              fieldName="externalDeadline"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'date',
+                initialValue: rfcToBe.externalDeadline
+                  ? jsDateToInputTypeDate(rfcToBe.externalDeadline)
+                  : undefined
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
+              <span>{{
+                rfcToBe.externalDeadline
+                  ? DateTime.fromJSDate(rfcToBe.externalDeadline, { zone: 'utc' }).toLocaleString(
+                      DateTime.DATE_FULL
+                    )
+                  : '(none)'
+              }}</span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Keywords" :spacing="spacing">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="keywords" :is-read-only="false"
-              :ui-mode="{ type: 'textbox', rows: 1, placeholder: 'e.g., keyword1, keyword2', initialValue: rfcToBe.keywords }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="keywords"
+              :is-read-only="false"
+              :ui-mode="{
+                type: 'textbox',
+                rows: 1,
+                placeholder: 'e.g., keyword1, keyword2',
+                initialValue: rfcToBe.keywords
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <div class="font-mono">
                 <span v-if="rfcToBe.keywords">{{ rfcToBe.keywords }}</span>
                 <span v-else>(none)</span>
@@ -418,9 +621,17 @@
         </DescriptionListItem>
         <DescriptionListItem term="Abstract" :spacing="spacing" class="col-span-2">
           <DescriptionListDetails>
-            <PatchRfcToBeField fieldName="_abstract" :is-read-only="props.isReadOnly"
-              :ui-mode="{ type: 'textbox', placeholder: 'Abstract', rows: 8, initialValue: rfcToBe._abstract ?? '' }"
-              :draft-name="rfcToBe.name ?? ''" :on-success="props.refresh">
+            <PatchRfcToBeField
+              fieldName="_abstract"
+              :is-read-only="props.isReadOnly"
+              :ui-mode="{
+                type: 'textbox',
+                placeholder: 'Abstract',
+                rows: 8,
+                initialValue: rfcToBe._abstract ?? ''
+              }"
+              :draft-name="rfcToBe.name ?? ''"
+              :on-success="props.refresh">
               <span class="whitespace-pre-wrap text-sm">{{ rfcToBe._abstract }}</span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
@@ -449,7 +660,7 @@ const patchPerson = async (field: PatchPersonField, personId: number | null) => 
   if (!props.rfcToBe?.name) return
   await api.documentsPartialUpdate({
     draftName: props.rfcToBe.name,
-    patchedRfcToBeRequest: { [field]: personId },
+    patchedRfcToBeRequest: { [field]: personId }
   })
   await props.refresh?.()
 }
@@ -472,7 +683,10 @@ const snackbar = useSnackbar()
 
 const { data: additionalEmails, refresh: refreshEmails } = await useAsyncData(
   () => `additional-emails-${props.draftName}`,
-  () => props.draftName ? api.documentsAdditionalEmailsList({ draftName: props.draftName }) : Promise.resolve([]),
+  () =>
+    props.draftName
+      ? api.documentsAdditionalEmailsList({ draftName: props.draftName })
+      : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
@@ -527,14 +741,21 @@ const removeEmail = async (id: number) => {
 
 const { data: relatedDocs, refresh: refreshRelatedDocs } = await useAsyncData(
   () => `related-${props.draftName}`,
-  () => props.draftName ? api.documentsRelatedList({ draftName: props.draftName }) : Promise.resolve([]),
+  () =>
+    props.draftName
+      ? api.documentsRelatedList({ draftName: props.draftName })
+      : Promise.resolve([]),
   { server: false, lazy: true, default: () => [] }
 )
 
-const obsoletes = computed(() => relatedDocs.value?.filter(d => d.relationship === 'obs') ?? [])
-const updates = computed(() => relatedDocs.value?.filter(d => d.relationship === 'updates') ?? [])
-const obsoletedBy = computed(() => relatedDocs.value?.filter(d => d.relationship === 'obsoleted_by') ?? [])
-const updatedBy = computed(() => relatedDocs.value?.filter(d => d.relationship === 'updated_by') ?? [])
+const obsoletes = computed(() => relatedDocs.value?.filter((d) => d.relationship === 'obs') ?? [])
+const updates = computed(() => relatedDocs.value?.filter((d) => d.relationship === 'updates') ?? [])
+const obsoletedBy = computed(
+  () => relatedDocs.value?.filter((d) => d.relationship === 'obsoleted_by') ?? []
+)
+const updatedBy = computed(
+  () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
+)
 
 const isEditingObsoletes = ref(false)
 const isEditingUpdates = ref(false)
@@ -632,8 +853,8 @@ const removeRelatedDocument = async (id: number) => {
 const loadStreams = async (): Promise<SelectOption[]> => {
   const streamNames = await api.streamNamesList()
   return streamNames
-    .filter(streamName => streamName.used)
-    .map(streamName => {
+    .filter((streamName) => streamName.used)
+    .map((streamName) => {
       return {
         value: streamName.slug,
         label: streamName.name
@@ -644,8 +865,8 @@ const loadStreams = async (): Promise<SelectOption[]> => {
 const loadFormats = async (): Promise<SelectOption[]> => {
   const formatNames = await api.sourceFormatNamesList()
   return formatNames
-    .filter(formatName => formatName.used)
-    .map(formatName => {
+    .filter((formatName) => formatName.used)
+    .map((formatName) => {
       return {
         value: formatName.slug,
         label: formatName.name
@@ -656,8 +877,8 @@ const loadFormats = async (): Promise<SelectOption[]> => {
 const loadBoilerplates = async (): Promise<SelectOption[]> => {
   const boilerplates = await api.tlpBoilerplateChoiceNamesList()
   return boilerplates
-    .filter(boilerplate => boilerplate.used)
-    .map(boilerplate => {
+    .filter((boilerplate) => boilerplate.used)
+    .map((boilerplate) => {
       return {
         value: boilerplate.slug,
         label: boilerplate.name
@@ -668,8 +889,8 @@ const loadBoilerplates = async (): Promise<SelectOption[]> => {
 const loadStandardLevels = async (): Promise<SelectOption[]> => {
   const standardLevels = await api.stdLevelNamesList()
   return standardLevels
-    .filter(standardLevel => standardLevel.used)
-    .map(standardLevel => {
+    .filter((standardLevel) => standardLevel.used)
+    .map((standardLevel) => {
       return {
         value: standardLevel.slug,
         label: standardLevel.name
@@ -679,18 +900,23 @@ const loadStandardLevels = async (): Promise<SelectOption[]> => {
 
 const dispositionColor = (disposition: string | undefined): ColorEnum => {
   switch (disposition) {
-    case 'created':     return 'blue'
-    case 'in_progress': return 'amber'
-    case 'published':   return 'green'
-    case 'withdrawn':   return 'red'
-    default:            return 'gray'
+    case 'created':
+      return 'blue'
+    case 'in_progress':
+      return 'amber'
+    case 'published':
+      return 'green'
+    case 'withdrawn':
+      return 'red'
+    default:
+      return 'gray'
   }
 }
 
 const dispositionOptions = computed((): SelectOption[] => {
   return dispositionValues
-    .filter(dispositionValue => typeof dispositionValue === 'string')
-    .map(dispositionValue => {
+    .filter((dispositionValue) => typeof dispositionValue === 'string')
+    .map((dispositionValue) => {
       return {
         value: dispositionValue,
         label: dispositionValue
@@ -698,5 +924,5 @@ const dispositionOptions = computed((): SelectOption[] => {
     })
 })
 
-const spacing = computed(() => props.isReadOnly ? 'small' : 'large')
+const spacing = computed(() => (props.isReadOnly ? 'small' : 'large'))
 </script>

@@ -1,7 +1,9 @@
 <template>
-  <div :id="props.id" :class="{
-    'highlight-section': isFlashing
-  }">
+  <div
+    :id="props.id"
+    :class="{
+      'highlight-section': isFlashing
+    }">
     <slot />
   </div>
 </template>
@@ -21,11 +23,11 @@ const checkForFlash = () => {
 
 onMounted(() => {
   setTimeout(checkForFlash, 250)
-  addEventListener("hashchange", checkForFlash)
+  addEventListener('hashchange', checkForFlash)
 })
 
 onUnmounted(() => {
-  removeEventListener("hashchange", checkForFlash)
+  removeEventListener('hashchange', checkForFlash)
 })
 </script>
 

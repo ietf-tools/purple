@@ -3,5 +3,5 @@ const runtimeConfig = useRuntimeConfig()
 
 export const useQueueLinks = () => ({
   finalReview: (rfcNumber: number) =>
-    `${ runtimeConfig.public.queueBase }/final-review/rfc${ rfcNumber }/`
+    `${runtimeConfig.public.queueBase}/final-review/rfc${rfcNumber}/`
 })

@@ -1,4 +1,4 @@
-import type { NuxtError } from "#app"
+import type { NuxtError } from '#app'
 
 type SnackbarService = ReturnType<typeof useSnackbar>
 
@@ -25,9 +25,9 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   let title = defaultTitle ?? 'Error.'
   let text = `${error}`
 
-  console.error("Snackbar error", defaultTitle, error)
+  console.error('Snackbar error', defaultTitle, error)
 
-  if(error) {
+  if (error) {
     const fetchResponse = getFetchResponse(error)
     if (fetchResponse) {
       text = await getErrorTextFromFetchResponse(fetchResponse, text)
@@ -42,8 +42,8 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
   // showing too much text to users in a toast isn't good UX,
   // so we'll truncate but tell them to read dev console for more
   const wasTruncated = text.length > MAX_TEXT_LENGTH
-  if(wasTruncated) {
-    console.log("Error", error, "had text:", text)
+  if (wasTruncated) {
+    console.log('Error', error, 'had text:', text)
   }
   text = text.substring(0, MAX_TEXT_LENGTH)
   if (wasTruncated) {
@@ -59,13 +59,23 @@ export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props
 
 const getFetchResponse = (error: unknown): Response | null => {
   // Direct ResponseError (error.response is a fetch Response)
-  if (typeof error === 'object' && error !== null && 'response' in error && error.response instanceof Response) {
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'response' in error &&
+    error.response instanceof Response
+  ) {
     return error.response as Response
   }
   // NuxtError wraps the original error as `cause` (via h3's createError)
   if (typeof error === 'object' && error !== null && 'cause' in error) {
     const cause = (error as { cause?: unknown }).cause
-    if (typeof cause === 'object' && cause !== null && 'response' in cause && (cause as { response?: unknown }).response instanceof Response) {
+    if (
+      typeof cause === 'object' &&
+      cause !== null &&
+      'response' in cause &&
+      (cause as { response?: unknown }).response instanceof Response
+    ) {
       return (cause as { response: Response }).response
     }
   }
@@ -74,11 +84,11 @@ const getFetchResponse = (error: unknown): Response | null => {
 
 const getErrorTextFromFetchResponse = async (response: Response, text: string): Promise<string> => {
   const contentTypeHeader = response.headers.get('Content-Type')
-  if(!contentTypeHeader) {
+  if (!contentTypeHeader) {
     return text
   }
   // contentTypeHeader looks like either 'text/html' or 'text/html; charset=utf-8' and we only want the front
-  const [ contentType ] = contentTypeHeader.split(';')
+  const [contentType] = contentTypeHeader.split(';')
 
   switch (contentType) {
     case 'application/json':

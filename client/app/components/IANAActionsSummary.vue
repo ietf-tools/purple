@@ -8,9 +8,9 @@
 </template>
 
 <script setup lang="ts">
-import { overlayModalKey } from '~/providers/providerKeys';
+import { overlayModalKey } from '~/providers/providerKeys'
 import IANAActionsModal from './IANAActionsModal.vue'
-import type { RfcToBe } from '~/purple_client';
+import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   name: string
@@ -29,14 +29,14 @@ if (!overlayModalKeyInjection) {
 const { openOverlayModal } = overlayModalKeyInjection
 
 const openModal = () => {
- openOverlayModal({
+  openOverlayModal({
     component: IANAActionsModal,
     componentProps: {
       name: props.name,
       rfcToBe: props.rfcToBe,
       onSuccess: props.onSuccess
-    },
-  }).catch(e => {
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // ignore... it's just signalling that the modal has closed
     } else {

@@ -25,11 +25,13 @@ type Props = {
   mode?: 'inline' | 'rows'
 }
 
-const props = withDefaults(defineProps<Props>(), { 'mode': 'inline' })
+const props = withDefaults(defineProps<Props>(), { mode: 'inline' })
 
-const elementName = computed(() => props.mode === 'inline' ? 'span' : 'div')
+const elementName = computed(() => (props.mode === 'inline' ? 'span' : 'div'))
 
 const orderedRoles = computed(() => {
-  return Object.entries(props.workload.pageCountByRole).sort(([keyA, _valueA], [keyB, _valueB]) => keyA.localeCompare(keyB, 'en'))
+  return Object.entries(props.workload.pageCountByRole).sort(([keyA, _valueA], [keyB, _valueB]) =>
+    keyA.localeCompare(keyB, 'en')
+  )
 })
 </script>

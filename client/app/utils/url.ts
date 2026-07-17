@@ -5,7 +5,8 @@ export const AUTH_PATH = '/auth'
 
 export const testIsAuthRoute = (path: string) => path.startsWith(AUTH_PATH)
 
-export const documentPathBuilder = (document: Pick<ResolvedQueueItem, 'name'>) => `/docs/${document.name}/`
+export const documentPathBuilder = (document: Pick<ResolvedQueueItem, 'name'>) =>
+  `/docs/${document.name}/`
 
 export const QUEUE_QUEUE_PATH = '/queue/queue'
 export const QUEUE_SUBMISSIONS_PATH = '/queue/submissions'
@@ -35,9 +36,13 @@ export const isOidcLink = (href?: string): boolean => {
   return oidcRegex.test(href ?? '')
 }
 
-export const teamMemberLink = (personId: number | undefined | null) => personId ? `/team/${personId}` : undefined
+export const teamMemberLink = (personId: number | undefined | null) =>
+  personId ? `/team/${personId}` : undefined
 
-export const draftAssignmentsHref = (draftName: string | undefined | null, hashState: 'edit-authors' | 'edit-document-shepherd' | 'edit-stream-manger') => {
+export const draftAssignmentsHref = (
+  draftName: string | undefined | null,
+  hashState: 'edit-authors' | 'edit-document-shepherd' | 'edit-stream-manger'
+) => {
   if (!draftName) {
     return undefined
   }

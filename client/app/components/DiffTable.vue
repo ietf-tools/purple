@@ -2,10 +2,16 @@
   <table class="w-full border-collapse text-sm">
     <thead>
       <tr>
-        <th class="border-b border-gray-300 p-2 text-left text-xs">{{ props.columns.nameColumn }}</th>
-        <th class="border-b border-gray-300 p-2 text-left text-xs">{{ props.columns.leftColumn }}</th>
+        <th class="border-b border-gray-300 p-2 text-left text-xs">
+          {{ props.columns.nameColumn }}
+        </th>
+        <th class="border-b border-gray-300 p-2 text-left text-xs">
+          {{ props.columns.leftColumn }}
+        </th>
         <th class="border-b border-gray-300 p-2"></th>
-        <th class="border-b border-gray-300 p-2 text-left text-xs">{{ props.columns.rightColumn }}</th>
+        <th class="border-b border-gray-300 p-2 text-left text-xs">
+          {{ props.columns.rightColumn }}
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -15,12 +21,20 @@
         </tr>
       </template>
       <template v-for="(row, index) in computedRows" :key="index">
-        <tr :class="{
-          [badgeColors.green]: row.rowValue.isMatch && !row.rowValue.isError,
-          [yellowBackground]: row.rowValue.isMatch && row.rowValue.isError || row.rowValue.detail && row.rowValue.detail.length > 0,
-          [badgeColors.red]: !row.rowValue.isMatch && row.rowValue.isError && (!row.rowValue.detail || row.rowValue.detail.length === 0),
-        }">
-          <td class="p-2" :style="row.rowNameListDepth > 0 && `padding-left: ${row.rowNameListDepth}rem`">
+        <tr
+          :class="{
+            [badgeColors.green]: row.rowValue.isMatch && !row.rowValue.isError,
+            [yellowBackground]:
+              (row.rowValue.isMatch && row.rowValue.isError) ||
+              (row.rowValue.detail && row.rowValue.detail.length > 0),
+            [badgeColors.red]:
+              !row.rowValue.isMatch &&
+              row.rowValue.isError &&
+              (!row.rowValue.detail || row.rowValue.detail.length === 0)
+          }">
+          <td
+            class="p-2"
+            :style="row.rowNameListDepth > 0 && `padding-left: ${row.rowNameListDepth}rem`">
             <template v-if="row.rowNameListDepth > 0">&bull;</template>
             {{ row.rowName }}
           </td>
@@ -28,7 +42,12 @@
             <component :is="row.renderableLeftValue ?? emptySpan" />
           </td>
           <td class="align-middle">
-            <Icon v-if="row.rowValue.isMatch" name="ic:outline-equals" size="1rem" aria-label="=" title="=" />
+            <Icon
+              v-if="row.rowValue.isMatch"
+              name="ic:outline-equals"
+              size="1rem"
+              aria-label="="
+              title="=" />
             <Icon v-else name="ic:outline-not-equal" size="1rem" aria-label="!=" title="!=" />
           </td>
           <td class="p-2">
@@ -65,29 +84,45 @@ type RenderableRow = DiffRow & {
   renderableRightValue: ReturnType<typeof h>
 }
 
-const invalidCharAttribute = { class: "bg-red-900 dark:bg-red-950 text-white" }
+const invalidCharAttribute = { class: 'bg-red-900 dark:bg-red-950 text-white' }
 
 const computedRows = computed((): RenderableRow[] => {
-  return props.rows.map(row => {
+  return props.rows.map((row) => {
+    const targetLength = Math.max(
+      row.rowValue.leftValue?.length ?? 0,
+      row.rowValue.rightValue.length ?? 0
+    )
 
-    const targetLength = Math.max(row.rowValue.leftValue?.length ?? 0, row.rowValue.rightValue.length ?? 0)
+    const leftValueString = `${row.rowValue.leftValue.padEnd(targetLength)}`
+    const renderableLeftValue = h(
+      'span',
+      leftValueString.split('').map((leftChar, index) => {
+        const rightChar = leftValueString.charAt(index)
+        const isSame = leftChar !== rightChar
+        const isWhitespace = leftChar.match(/\s/)
+        return h(
+          'span',
+          isSame ? invalidCharAttribute : {},
+          !isSame && isWhitespace ? `${NBSP} ` : (leftChar ?? '')
+        )
+      })
+    )
 
-    const leftValueString = `${(row.rowValue.leftValue).padEnd(targetLength)}`
-    const renderableLeftValue = h('span', leftValueString.split('').map((leftChar, index) => {
-      const rightChar = leftValueString.charAt(index)
-      const isSame = leftChar !== rightChar
-      const isWhitespace = leftChar.match(/\s/)
-      return h('span', isSame ? invalidCharAttribute : {}, !isSame && isWhitespace ? `${NBSP} ` : leftChar ?? '')
-    }))
+    const rightValueString = `${row.rowValue.rightValue.padEnd(targetLength)}`
 
-    const rightValueString = `${(row.rowValue.rightValue).padEnd(targetLength)}`
-
-    const renderableRightValue = h('span', rightValueString.split('').map((rightChar, index) => {
-      const leftChar = rightValueString.charAt(index)
-      const isSame = leftChar !== rightChar
-      const isWhitespace = rightChar.match(/\s/)
-      return h('span', isSame ? invalidCharAttribute : {}, !isSame && isWhitespace ? `${NBSP} ` : rightChar ?? '')
-    }))
+    const renderableRightValue = h(
+      'span',
+      rightValueString.split('').map((rightChar, index) => {
+        const leftChar = rightValueString.charAt(index)
+        const isSame = leftChar !== rightChar
+        const isWhitespace = rightChar.match(/\s/)
+        return h(
+          'span',
+          isSame ? invalidCharAttribute : {},
+          !isSame && isWhitespace ? `${NBSP} ` : (rightChar ?? '')
+        )
+      })
+    )
 
     return {
       ...row,
@@ -96,5 +131,4 @@ const computedRows = computed((): RenderableRow[] => {
     }
   })
 })
-
 </script>
