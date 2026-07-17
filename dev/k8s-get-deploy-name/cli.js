@@ -17,6 +17,6 @@ branch = slugify(branch, { lower: true, strict: true })
 if (branch.length < 1) {
   throw new Error('Branch name is empty!')
 }
-process.stdout.write(`dt-${branch}`)
+process.stdout.write(`pl-${branch}`)
 
 process.exit(0)
