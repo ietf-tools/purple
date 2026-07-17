@@ -68,7 +68,7 @@ jobs:
           patchList: fix, bugfix, perf, refactor, test, tests, chore
 
       - name: Get Dev Version
-        if: ${{ inputs.deploy == 'Skip' }}
+        if: ${{ inputs.deploy == 'Skip' || inputs.deploy == 'Dev Only' }}
         id: semverdev
         uses: ietf-tools/semver-action@v1
         with:
