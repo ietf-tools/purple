@@ -5,7 +5,6 @@
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
     <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
       <div class="lg:col-span-full mt-6">
         <DocumentFinalReviews :name="draftName" :rfc-number="rfcToBe?.rfcNumber" />
       </div>
@@ -24,17 +23,23 @@
             <CardHeader title="Approval Logs (public)" />
           </template>
           <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-            <RpcApprovalLogTextarea v-if="rfcToBe" :draft-name="draftName" :reload="approvalLogsListReload"
+            <RpcApprovalLogTextarea
+              v-if="rfcToBe"
+              :draft-name="draftName"
+              :reload="approvalLogsListReload"
               class="w-4/5 min-w-100" />
-            <DocumentApprovalLogs :draft-name="draftName" :rfc-to-be-id="rfcToBe.id"
-              :is-loading="approvalLogsListPending" :error="approvalLogsListError" :comment-list="approvalLogsList"
-              :reload="approvalLogsListReload" class="w-3/5 min-w-100" />
+            <DocumentApprovalLogs
+              :draft-name="draftName"
+              :rfc-to-be-id="rfcToBe.id"
+              :is-loading="approvalLogsListPending"
+              :error="approvalLogsListError"
+              :comment-list="approvalLogsList"
+              :reload="approvalLogsListReload"
+              class="w-3/5 min-w-100" />
           </div>
         </BaseCard>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -51,7 +56,12 @@ const currentTab: DocTabId = 'approvals'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
+const {
+  data: rfcToBe,
+  error: rfcToBeError,
+  status: rfcToBeStatus,
+  refresh: rfcToBeRefresh
+} = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {

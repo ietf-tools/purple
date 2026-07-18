@@ -1,13 +1,14 @@
 <template>
-  <span :class="[
-    'inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset',
-    {
-      'text-xs': props.size === 'xs',
-      'text-lg': props.size === 'lg',
-      'text-xl': props.size === 'xl',
-    },
-    badgeColors[props.color]
-  ]">
+  <span
+    :class="[
+      'inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset',
+      {
+        'text-xs': props.size === 'xs',
+        'text-lg': props.size === 'lg',
+        'text-xl': props.size === 'xl'
+      },
+      badgeColors[props.color]
+    ]">
     {{ props.label }}
     <!-- @slot Optional badge content. Appears after the label, if any. -->
     <slot />
@@ -26,7 +27,7 @@ type Props = {
   /**
    * Tailwind color name
    */
-  color?: ColorEnum,
+  color?: ColorEnum
   size?: 'xs' | 'lg' | 'xl'
 }
 
@@ -35,5 +36,4 @@ const props = withDefaults(defineProps<Props>(), {
   label: '',
   size: 'xs'
 })
-
 </script>

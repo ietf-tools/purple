@@ -5,16 +5,15 @@
     <main class="lg:pl-72">
       <HeaderNav />
       <div class="px-4 py-10 sm:px-6 lg:px-8 lg:py-6">
-        <slot  />
+        <slot />
       </div>
     </main>
     <OverlayModal
       v-model:is-shown="overlayModalState.isShown"
       :opts="overlayModalState.opts"
       @close-ok="overlayModalState.promiseResolve"
-      @close-cancel="overlayModalState.promiseReject"
-    />
-</div>
+      @close-cancel="overlayModalState.promiseReject" />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -71,9 +70,13 @@ provide(overlayModalKey, {
 </script>
 
 <style>
-:root { font-family: 'Inter', sans-serif; }
+:root {
+  font-family: 'Inter', sans-serif;
+}
 @supports (font-variation-settings: normal) {
-  :root { font-family: 'Inter var', sans-serif; }
+  :root {
+    font-family: 'Inter var', sans-serif;
+  }
 }
 
 body {
@@ -83,6 +86,6 @@ body {
   background-color: #0a0a0a;
 }
 #__nuxt {
-  min-height: 100vh
+  min-height: 100vh;
 }
 </style>

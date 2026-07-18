@@ -1,9 +1,11 @@
 export const sortObject = <T extends Record<string, unknown>>(obj: T): T => {
-    return Object.keys(obj).sort().reduce(function (result, _key) {
-        const key: keyof T = _key
-        result[key] = obj[key];
-        return result;
-    }, {} as T);
+  return Object.keys(obj)
+    .sort()
+    .reduce(function (result, _key) {
+      const key: keyof T = _key
+      result[key] = obj[key]
+      return result
+    }, {} as T)
 }
 
 export const assignmentRoleOrder = [
@@ -13,7 +15,7 @@ export const assignmentRoleOrder = [
   'first_editor',
   'second_editor',
   'final_review_editor',
-  'publisher',
+  'publisher'
 ] as const
 
 export const sortAssignees = (
@@ -21,15 +23,19 @@ export const sortAssignees = (
   people: { id?: number; name?: string }[]
 ): string =>
   assignments
-    ?.map(a => people.find(p => p.id !== undefined && p.id === a.person)?.name ?? '')
+    ?.map((a) => people.find((p) => p.id !== undefined && p.id === a.person)?.name ?? '')
     .sort((a, b) => a.localeCompare(b))[0] ?? ''
 
 /** Sort assignments by role order, interleaving 'blocked' entries chronologically by id. */
-export function sortAssignmentsByRole<T extends { id?: number | null; role: string }>(assignments: T[]): T[] {
+export function sortAssignmentsByRole<T extends { id?: number | null; role: string }>(
+  assignments: T[]
+): T[] {
   const nonBlocked = assignments
     .filter((a) => a.role !== 'blocked')
     .sort((a, b) => {
-      const roleDiff = assignmentRoleOrder.indexOf(a.role as typeof assignmentRoleOrder[number]) - assignmentRoleOrder.indexOf(b.role as typeof assignmentRoleOrder[number])
+      const roleDiff =
+        assignmentRoleOrder.indexOf(a.role as (typeof assignmentRoleOrder)[number]) -
+        assignmentRoleOrder.indexOf(b.role as (typeof assignmentRoleOrder)[number])
       if (roleDiff !== 0) return roleDiff
       return (a.id ?? 0) - (b.id ?? 0)
     })

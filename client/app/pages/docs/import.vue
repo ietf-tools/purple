@@ -3,12 +3,12 @@
     <TitleBlock
       class="pb-3"
       :title="`Ingest Document: ${submission?.name || '&hellip;'}`"
-      summary="Pull the submission into the RPC tracker so the editing process can begin."/>
+      summary="Pull the submission into the RPC tracker so the editing process can begin." />
 
     <div v-if="!backendPending" class="space-y-4">
       <BaseCard>
         <template #header>
-          <CardHeader title="Document Info"/>
+          <CardHeader title="Document Info" />
         </template>
         <!-- DRAFT INFO SUMMARY -->
         <div class="px-4 py-5 sm:p-2">
@@ -20,22 +20,23 @@
                 class="text-violet-900 hover:text-violet-500 dark:text-violet-300 hover:dark:text-violet-100">
                 {{ submission?.name }}-{{ submission?.rev }}
               </NuxtLink>
-              <span v-else>
-                    {{ submission?.name }}-{{ submission?.rev }}
-                  </span>
+              <span v-else> {{ submission?.name }}-{{ submission?.rev }} </span>
             </li>
             <li>Title: {{ submission?.title }}</li>
-            <li>Authors:
-                  <span v-for="auth of submission?.authors" :key="auth.id" class="pr-2">
-                    {{ auth.plainName }}
-                  </span>
+            <li>
+              Authors:
+              <span v-for="auth of submission?.authors" :key="auth.id" class="pr-2">
+                {{ auth.plainName }}
+              </span>
             </li>
             <li>Submitted pages: {{ submission?.pages }}</li>
-            <li>Document shepherd: {{ submission?.shepherd }}</li><!-- todo fetch person details -->
+            <li>Document shepherd: {{ submission?.shepherd }}</li>
+            <!-- todo fetch person details -->
             <li>Stream: {{ submission?.stream.name }}</li>
             <li>Submitted standard level: {{ submission?.stdLevel?.name }}</li>
             <li>Submitted format: {{ submission?.sourceFormat.name }}</li>
-            <li>Consensus:
+            <li>
+              Consensus:
               <span v-if="submission?.consensus === true" class="text-green-600">Yes</span>
               <span v-else-if="submission?.consensus === false" class="text-red-600">No</span>
               <span v-else class="text-gray-500">Unknown</span>
@@ -46,7 +47,7 @@
 
       <BaseCard>
         <template #header>
-          <CardHeader title="Document Details"/>
+          <CardHeader title="Document Details" />
         </template>
 
         <form class="space-y-4">
@@ -57,7 +58,7 @@
               :key="fmtChoice.slug"
               :value="fmtChoice"
               :name="fmtChoice.name"
-              :desc="fmtChoice.desc"/>
+              :desc="fmtChoice.desc" />
           </RpcListbox>
 
           <!-- Stream -->
@@ -67,7 +68,7 @@
               :key="streamChoice.slug"
               :value="streamChoice"
               :name="streamChoice.name"
-              :desc="streamChoice.desc"/>
+              :desc="streamChoice.desc" />
           </RpcListbox>
 
           <!-- Standard Level -->
@@ -77,7 +78,7 @@
               :key="stdLevChoice.slug"
               :value="stdLevChoice"
               :name="stdLevChoice.name"
-              :desc="stdLevChoice.desc"/>
+              :desc="stdLevChoice.desc" />
           </RpcListbox>
 
           <!-- TLP Boilerplate -->
@@ -87,27 +88,29 @@
               :key="bpChoice.slug"
               :value="bpChoice"
               :name="bpChoice.name"
-              :desc="bpChoice.desc"/>
+              :desc="bpChoice.desc" />
           </RpcListbox>
 
           <!-- DEADLINE -->
           <div class="mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
             <div class="sm:col-span-4">
-              <label for="deadline" class="block text-sm font-medium leading-6 text-gray-900">Deadline</label>
+              <label for="deadline" class="block text-sm font-medium leading-6 text-gray-900"
+                >Deadline</label
+              >
               <div class="mt-2">
                 <div
-                  class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600  sm:max-w-md">
+                  class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
                   <input
                     id="deadline"
                     v-model="state.deadline"
                     type="date"
                     name="deadline"
                     class="block flex-1 rounded-md border-0 ring-1 ring-inset ring-gray-300 bg-white py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                    placeholder="Deadline">
+                    placeholder="Deadline" />
                 </div>
-                <span v-if="timeToDeadline" class="text-sm leading-6 text-gray-500">{{
-                    timeToDeadline
-                  }} from today</span>
+                <span v-if="timeToDeadline" class="text-sm leading-6 text-gray-500"
+                  >{{ timeToDeadline }} from today</span
+                >
               </div>
             </div>
           </div>
@@ -121,7 +124,9 @@
 
     <div class="mt-6 flex items-center justify-end gap-x-6">
       <BaseButton btn-type="cancel" @click="navigateTo(QUEUE_SUBMISSIONS_PATH)">Cancel</BaseButton>
-      <BaseButton btn-type="default" :disabled="!haveRequiredValues" @click="importSubmission">Save</BaseButton>
+      <BaseButton btn-type="default" :disabled="!haveRequiredValues" @click="importSubmission"
+        >Save</BaseButton
+      >
     </div>
   </div>
 </template>
@@ -175,29 +180,39 @@ const timeToDeadline = computed(() => {
   try {
     if (state.deadline) {
       const dt = DateTime.fromISO(state.deadline).diff(today.value, 'days')
-      return humanizeDuration(
-        dt.toMillis(),
-        { units: (dt.as('days') < 14) ? ['d'] : ['w', 'd'], round: true }
-      )
+      return humanizeDuration(dt.toMillis(), {
+        units: dt.as('days') < 14 ? ['d'] : ['w', 'd'],
+        round: true
+      })
     }
   } catch {}
   return ''
 })
 
-const haveRequiredValues = computed(() => Boolean(
-  submission.value && state.boilerplate && state.sourceFormat && state.stdLevel && state.stream && state.deadline
-))
-
-// FUNCTIONS
-
-async function importSubmission () {
-  if (!(submission.value &&
+const haveRequiredValues = computed(() =>
+  Boolean(
+    submission.value &&
     state.boilerplate &&
     state.sourceFormat &&
     state.stdLevel &&
     state.stream &&
     state.deadline
-  )) {
+  )
+)
+
+// FUNCTIONS
+
+async function importSubmission() {
+  if (
+    !(
+      submission.value &&
+      state.boilerplate &&
+      state.sourceFormat &&
+      state.stdLevel &&
+      state.stream &&
+      state.deadline
+    )
+  ) {
     return
   }
   let imported
@@ -247,20 +262,26 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
       const submission = await api.submissionsRetrieve({ documentId: documentId.value })
       // ...then the various name choices, which ensures that the backend has created any that
       // were new with this draft.
-      const [boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices] = await Promise.all([
-        api.tlpBoilerplateChoiceNamesList(),
-        api.sourceFormatNamesList(),
-        api.stdLevelNamesList(),
-        api.streamNamesList()
-      ])
+      const [boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices] =
+        await Promise.all([
+          api.tlpBoilerplateChoiceNamesList(),
+          api.sourceFormatNamesList(),
+          api.stdLevelNamesList(),
+          api.streamNamesList()
+        ])
 
       // Initialize the state
       // state.boilerplate = boilerplateChoices ? boilerplateChoices[0] : null
       state.sourceFormat = submission.sourceFormat
       state.stream = submission.stream
-      state.stdLevel = submission.stdLevel || (stdLevelChoices ? stdLevelChoices[0] ?? null : null)
+      state.stdLevel =
+        submission.stdLevel || (stdLevelChoices ? (stdLevelChoices[0] ?? null) : null)
       return {
-        submission, boilerplateChoices, sourceFormatChoices, stdLevelChoices, streamChoices
+        submission,
+        boilerplateChoices,
+        sourceFormatChoices,
+        stdLevelChoices,
+        streamChoices
       }
     } catch (e) {
       snackbar.add({
@@ -274,5 +295,4 @@ const { data: fetchedData, pending: backendPending } = await useAsyncData(
 )
 
 const submissionName = computed(() => fetchedData.value?.submission?.name)
-
 </script>

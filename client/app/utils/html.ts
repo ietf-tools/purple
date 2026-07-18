@@ -11,10 +11,11 @@ export const TARGET_NEW_WINDOW = '_blank'
  **/
 export const EXTERNAL_LINK_REL = 'noopener'
 
-export const ANCHOR_STYLE = 'text-violet-600 dark:text-violet-500 font-semibold no-underline hover:underline focus:underline'
+export const ANCHOR_STYLE =
+  'text-violet-600 dark:text-violet-500 font-semibold no-underline hover:underline focus:underline'
 
 export const PERSON_ID_STYLE = 'font-normal text-gray-600 dark:text-gray-200 ml-1'
 
 export type HeadingLevel = 1 | 2 | 3 | 4 | 5 | 6
 
-export type SelectOption = { value: string, label: string }
+export type SelectOption = { value: string; label: string }

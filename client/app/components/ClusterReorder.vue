@@ -3,7 +3,12 @@
     <template #header>
       <CardHeader :title="`Cluster-Members C${props.cluster.number}`">
         <template #actions>
-          <Icon v-if="queueStatus === 'pending'" name="ei:spinner-3" size="1.3rem" class="animate-spin" title="Loading additional information about cluster documents" />
+          <Icon
+            v-if="queueStatus === 'pending'"
+            name="ei:spinner-3"
+            size="1.3rem"
+            class="animate-spin"
+            title="Loading additional information about cluster documents" />
           <span v-else-if="queueStatus === 'error'" class="text-red-800 dark:text-red-400">
             {{ queueError }}
           </span>
@@ -13,7 +18,8 @@
     <p class="italic text-sm mb-2">(drag to reorder)</p>
     <table class="w-full text-sm">
       <thead>
-        <tr class="border-b border-gray-200 dark:border-gray-600 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+        <tr
+          class="border-b border-gray-200 dark:border-gray-600 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           <th class="pb-2 w-6"></th>
           <th class="pb-2">Document</th>
           <th class="pb-2 w-48">Labels</th>
@@ -25,7 +31,10 @@
         </tr>
       </thead>
       <tbody ref="parent">
-        <tr v-for="(clusterDocument, index) in clusterDocumentsRef" :index="index" :key="clusterDocument.name"
+        <tr
+          v-for="(clusterDocument, index) in clusterDocumentsRef"
+          :index="index"
+          :key="clusterDocument.name"
           class="cursor-ns-resize bg-white dark:bg-gray-700 border-b border-gray-100 dark:border-gray-600 select-none hover:bg-gray-50 dark:hover:bg-gray-650">
           <td class="py-2 pl-1 pr-2">
             <Icon name="fluent:re-order-dots-vertical-24-regular" class="text-gray-400" />
@@ -34,28 +43,50 @@
             {{ clusterDocument.name }}
           </td>
           <td class="py-2 pr-3">
-            <span v-for="(label, labelIndex) in labelsByDraftName[clusterDocument.name]" :key="labelIndex">
+            <span
+              v-for="(label, labelIndex) in labelsByDraftName[clusterDocument.name]"
+              :key="labelIndex">
               <RpcLabel :label="label" />
             </span>
           </td>
           <td class="py-2 pr-3 text-gray-600 dark:text-gray-300">
-            <component v-if="enqueuedAtByDraftName[clusterDocument.name]" :is="enqueuedAtByDraftName[clusterDocument.name]" />
+            <component
+              v-if="enqueuedAtByDraftName[clusterDocument.name]"
+              :is="enqueuedAtByDraftName[clusterDocument.name]" />
           </td>
           <td class="py-2 pr-3">
             <template v-if="queueItemByDraftName[clusterDocument.name]?.assignmentSet?.length">
-              <span v-for="role in [...new Set(queueItemByDraftName[clusterDocument.name]?.assignmentSet?.map(a => a.role))]" :key="role"
+              <span
+                v-for="role in [
+                  ...new Set(
+                    queueItemByDraftName[clusterDocument.name]?.assignmentSet?.map((a) => a.role)
+                  )
+                ]"
+                :key="role"
                 class="mr-1">
                 <BaseBadge :label="role" />
               </span>
-              <span v-if="queueItemByDraftName[clusterDocument.name]?.assignmentSet?.some(a => a.role === 'blocked')"
+              <span
+                v-if="
+                  queueItemByDraftName[clusterDocument.name]?.assignmentSet?.some(
+                    (a) => a.role === 'blocked'
+                  )
+                "
                 class="text-xs text-gray-500 dark:text-gray-400">
-                {{ queueItemByDraftName[clusterDocument.name]?.blockingReasons?.map(br => br.reason?.name).filter(Boolean).join(', ') }}
+                {{
+                  queueItemByDraftName[clusterDocument.name]?.blockingReasons
+                    ?.map((br) => br.reason?.name)
+                    .filter(Boolean)
+                    .join(', ')
+                }}
               </span>
             </template>
           </td>
           <td class="py-2 pr-3">
             <ul class="space-y-0.5">
-              <li v-for="assignment in queueItemByDraftName[clusterDocument.name]?.assignmentSet" :key="assignment.id"
+              <li
+                v-for="assignment in queueItemByDraftName[clusterDocument.name]?.assignmentSet"
+                :key="assignment.id"
                 class="flex items-center gap-1.5 text-sm">
                 <BaseBadge :label="assignment.role" class="shrink-0" />
                 <span class="text-gray-700 dark:text-gray-300 truncate">
@@ -65,17 +96,26 @@
             </ul>
           </td>
           <td class="py-2 pr-3 text-center">
-            <Anchor :href="`/docs/${clusterDocument.name}/approvals`"
+            <Anchor
+              :href="`/docs/${clusterDocument.name}/approvals`"
               class="text-violet-700 dark:text-violet-300 hover:underline whitespace-nowrap font-mono text-sm">
-              {{ queueItemByDraftName[clusterDocument.name]?.finalApproval?.filter(a => a.approved !== undefined).length ?? 0 }}
+              {{
+                queueItemByDraftName[clusterDocument.name]?.finalApproval?.filter(
+                  (a) => a.approved !== undefined
+                ).length ?? 0
+              }}
               /
               {{ queueItemByDraftName[clusterDocument.name]?.finalApproval?.length ?? 0 }}
             </Anchor>
           </td>
           <td class="py-2 text-right">
-            <button type="button" class="p-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 focus:bg-gray-200 text-xs"
+            <button
+              type="button"
+              class="p-1 rounded bg-gray-100 text-gray-800 hover:bg-gray-200 focus:bg-gray-200 text-xs"
               :aria-label="`Remove ${clusterDocument.name}`"
-              @click="() => removeDocument(clusterDocument.name)">&times;</button>
+              @click="() => removeDocument(clusterDocument.name)">
+              &times;
+            </button>
           </td>
         </tr>
       </tbody>
@@ -87,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { useDragAndDrop } from "fluid-dnd/vue";
+import { useDragAndDrop } from 'fluid-dnd/vue'
 import { type Cluster, type RfcToBe, type QueueItem, type RpcPerson } from '~/purple_client'
 import { Anchor } from '#components'
 import BaseButton from './BaseButton.vue'
@@ -104,26 +144,20 @@ const {
   status: queueStatus,
   pending,
   refresh,
-  error: queueError,
-} = await useAsyncData(
-  'queue-for-cluster',
-  () => api.queueList(),
-  {
-    server: false,
-    lazy: true,
-    default: () => [] as QueueItem[],
-  }
-)
+  error: queueError
+} = await useAsyncData('queue-for-cluster', () => api.queueList(), {
+  server: false,
+  lazy: true,
+  default: () => [] as QueueItem[]
+})
 
-const { data: people } = await useAsyncData(
-  'rpc-people-for-cluster',
-  () => api.rpcPersonList(),
-  { server: false, lazy: true, default: () => [] as RpcPerson[] }
-)
+const { data: people } = await useAsyncData('rpc-people-for-cluster', () => api.rpcPersonList(), {
+  server: false,
+  lazy: true,
+  default: () => [] as RpcPerson[]
+})
 
-const personById = computed(() =>
-  Object.fromEntries(people.value.map(p => [p.id, p]))
-)
+const personById = computed(() => Object.fromEntries(people.value.map((p) => [p.id, p])))
 
 const snackbar = useSnackbar()
 
@@ -131,28 +165,32 @@ const props = defineProps<Props>()
 
 type QueueItemByDraftName = Record<string, QueueItem | undefined>
 
-const queueItemByDraftName = computed(() => queue.value.reduce((acc, queueItem) => {
-  const { name } = queueItem
-  if (name !== undefined) {
-    acc[name] = queueItem
-  }
-  return acc
-}, {} as QueueItemByDraftName))
+const queueItemByDraftName = computed(() =>
+  queue.value.reduce((acc, queueItem) => {
+    const { name } = queueItem
+    if (name !== undefined) {
+      acc[name] = queueItem
+    }
+    return acc
+  }, {} as QueueItemByDraftName)
+)
 
 type EnqueuedAtByDraftName = Record<string, ReturnType<typeof renderEnqueuedAt> | undefined>
-const enqueuedAtByDraftName = computed(() => queue.value.reduce((acc, queueItem) => {
-  const { name, enqueuedAt, cluster } = queueItem
-  if (name !== undefined && enqueuedAt) {
-    const vNodes = renderEnqueuedAt(calculateEnqueuedAtData(enqueuedAt))
-    if (cluster?.number === props.cluster.number) {
-      console.log("cluster hit", name)
-    } else {
-      console.log("cluster miss", name)
+const enqueuedAtByDraftName = computed(() =>
+  queue.value.reduce((acc, queueItem) => {
+    const { name, enqueuedAt, cluster } = queueItem
+    if (name !== undefined && enqueuedAt) {
+      const vNodes = renderEnqueuedAt(calculateEnqueuedAtData(enqueuedAt))
+      if (cluster?.number === props.cluster.number) {
+        console.log('cluster hit', name)
+      } else {
+        console.log('cluster miss', name)
+      }
+      acc[name] = vNodes
     }
-    acc[name] = vNodes
-  }
-  return acc
-}, {} as EnqueuedAtByDraftName))
+    return acc
+  }, {} as EnqueuedAtByDraftName)
+)
 
 const clusterDocumentsRef = ref(props.cluster.documents ?? [])
 
@@ -162,14 +200,14 @@ const labelsByDraftName = computed(() =>
   )
 )
 
-const [parent] = useDragAndDrop(clusterDocumentsRef);
+const [parent] = useDragAndDrop(clusterDocumentsRef)
 
 const api = useApi()
 
 const removeDocument = async (name: string) => {
   const reallyRemove = confirm(`Really remove ${JSON.stringify(name)} from cluster?`)
   if (!reallyRemove) {
-    console.info("User rejected removing member from cluster")
+    console.info('User rejected removing member from cluster')
     return
   }
 
@@ -177,11 +215,11 @@ const removeDocument = async (name: string) => {
     const serverCluster = await api.clustersRemoveDocument({
       number: props.cluster.number,
       clusterAddRemoveDocumentRequest: {
-        draftName: name,
+        draftName: name
       }
     })
 
-    if (serverCluster.documents?.some(clusterMember => clusterMember.name === name)) {
+    if (serverCluster.documents?.some((clusterMember) => clusterMember.name === name)) {
       snackbar.add({ type: 'error', title: `Cluster member removal failed.`, text: `` })
       return
     }
@@ -195,11 +233,15 @@ const removeDocument = async (name: string) => {
 
 const handleSaveReorder = async () => {
   if (clusterDocumentsRef.value.length <= 1) {
-    snackbar.add({ type: 'info', title: `Can't reorder a cluster with ${clusterDocumentsRef.value.length} documents`, text: '' })
+    snackbar.add({
+      type: 'info',
+      title: `Can't reorder a cluster with ${clusterDocumentsRef.value.length} documents`,
+      text: ''
+    })
     return
   }
   try {
-    const draftNames = clusterDocumentsRef.value.map(doc => doc.name)
+    const draftNames = clusterDocumentsRef.value.map((doc) => doc.name)
     const serverCluster = await api.clustersReorderDocuments({
       number: props.cluster.number,
       clusterReorderDocumentsRequest: {
@@ -208,15 +250,26 @@ const handleSaveReorder = async () => {
     })
 
     if (!serverCluster.documents) {
-      snackbar.add({ type: 'error', title: `Server cluster reorder request failed.`, text: `Returned 0 docs when it should have returned ${draftNames.length}` })
+      snackbar.add({
+        type: 'error',
+        title: `Server cluster reorder request failed.`,
+        text: `Returned 0 docs when it should have returned ${draftNames.length}`
+      })
       return
     }
 
-    const serverDraftNames = serverCluster.documents.map(doc => doc.name)
+    const serverDraftNames = serverCluster.documents.map((doc) => doc.name)
 
-    if (serverDraftNames.length !== draftNames.length || JSON.stringify(draftNames) !== JSON.stringify(serverDraftNames)) {
-      console.error("Server rejected reorder", { draftNames, newDraftNames: serverDraftNames })
-      snackbar.add({ type: 'error', title: `Server cluster reorder failed.`, text: `See dev console for details` })
+    if (
+      serverDraftNames.length !== draftNames.length ||
+      JSON.stringify(draftNames) !== JSON.stringify(serverDraftNames)
+    ) {
+      console.error('Server rejected reorder', { draftNames, newDraftNames: serverDraftNames })
+      snackbar.add({
+        type: 'error',
+        title: `Server cluster reorder failed.`,
+        text: `See dev console for details`
+      })
       return
     }
 

@@ -1,7 +1,6 @@
 <template>
   <div>
-    <TitleBlock title="Queue" summary="Where the magic happens.">
-    </TitleBlock>
+    <TitleBlock title="Queue" summary="Where the magic happens."> </TitleBlock>
 
     <QueueTabs :current-tab="currentTab" />
 
@@ -20,18 +19,28 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
-            <div class="flex items-center gap-2">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
-                :props="header.getContext()" />
-            </div>
-          </RpcTh>
+            <RpcTh
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()"
+              :sort-direction="header.column.getIsSorted()"
+              :column-name="getVNodeText(header.column.columnDef.header)"
+              @click="header.column.getToggleSortingHandler()?.($event)">
+              <div class="flex items-center gap-2">
+                <FlexRender
+                  v-if="!header.isPlaceholder"
+                  :render="header.column.columnDef.header"
+                  :props="header.getContext()" />
+              </div>
+            </RpcTh>
           </tr>
         </RpcThead>
         <RpcTbody>
-          <RpcRowMessage :status="status" :column-count="table.getAllColumns().length" :row-count="table.getRowModel().rows.length" />
+          <RpcRowMessage
+            :status="status"
+            :column-count="table.getAllColumns().length"
+            :row-count="table.getRowModel().rows.length" />
           <tr v-for="row in table.getRowModel().rows" :key="row.id">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
@@ -41,7 +50,9 @@
         <RpcTfoot>
           <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
             <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.footer"
                 :props="header.getContext()" />
             </RpcTh>
           </tr>
@@ -49,7 +60,6 @@
       </RpcTable>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -61,7 +71,7 @@ import {
   createColumnHelper,
   getFilteredRowModel,
   getSortedRowModel,
-  type SortingState,
+  type SortingState
 } from '@tanstack/vue-table'
 import type { QueueItem, RpcPerson } from '~/purple_client'
 import { type QueueTabId } from '~/utils/queue'
@@ -77,19 +87,13 @@ const currentTab: QueueTabId = 'pending-announcement'
 
 type Row = QueueItem
 
-const {
-  data,
-  pending,
-  refresh,
-  status,
-  error,
-} = await useAsyncData(
+const { data, pending, refresh, status, error } = await useAsyncData(
   'queue2-pending-announcement',
   () => api.queueList({ pendingFinalReview: false }),
   {
     server: false,
     lazy: true,
-    default: () => [] as QueueItem[],
+    default: () => [] as QueueItem[]
   }
 )
 
@@ -99,15 +103,15 @@ const { data: people } = await useAsyncData(
   {
     server: false,
     lazy: true,
-    default: () => [] as RpcPerson[],
+    default: () => [] as RpcPerson[]
   }
 )
 
 const ASSIGNMENT_SET_ROLE_PUBLISHER = 'publisher'
 
 const queueItems = computed(() =>
-  data.value.filter(
-    item => item.assignmentSet?.some(a => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER)
+  data.value.filter((item) =>
+    item.assignmentSet?.some((a) => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER)
   )
 )
 
@@ -117,35 +121,44 @@ const columns = [
   columnHelper.display({
     id: 'icon',
     header: '',
-    cell: () => h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
+    cell: () =>
+      h(Icon, {
+        name: 'uil:file-alt',
+        size: '1.25em',
+        class: 'text-gray-400 dark:text-neutral-500 mr-2'
+      })
   }),
   columnHelper.accessor('rfcNumber', {
     header: 'RFC',
-    cell: data => {
-      return h('span', { class: 'px-3 py-4 text-gray-500 dark:text-neutral-400' }, `RFC ${data.getValue()}`)
+    cell: (data) => {
+      return h(
+        'span',
+        { class: 'px-3 py-4 text-gray-500 dark:text-neutral-400' },
+        `RFC ${data.getValue()}`
+      )
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.accessor('name', {
     header: 'Document',
-    cell: data => {
-      return h(Anchor, { href: `/docs/${data.row.original.name}`, 'class': ANCHOR_STYLE }, () => [
-        data.getValue(),
+    cell: (data) => {
+      return h(Anchor, { href: `/docs/${data.row.original.name}`, class: ANCHOR_STYLE }, () => [
+        data.getValue()
       ])
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.display({
     id: 'pubOwner',
     header: 'PUB Owner',
     cell: (data) => {
       const assignment = data.row.original.assignmentSet?.find(
-        a => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER
+        (a) => a.role === ASSIGNMENT_SET_ROLE_PUBLISHER
       )
       if (!assignment?.person) return '-'
-      const person = people.value.find(p => p.id === assignment.person)
+      const person = people.value.find((p) => p.id === assignment.person)
       return person?.name ?? (status.value === 'pending' ? '...' : '-')
-    },
+    }
   }),
   columnHelper.display({
     id: 'icon',
@@ -164,7 +177,7 @@ const columns = [
           btnType: 'default',
           size: 'xs',
           onClick: async () => {
-            if(!overlayModal) {
+            if (!overlayModal) {
               console.error({ overlayModal })
               throw Error('Expected overlayModal to be available. See console.')
             }
@@ -188,14 +201,14 @@ const columns = [
           }
         },
         () => [
-          "Announce publication",
+          'Announce publication',
           isLoadingByRfcToBeId.value[id.toString()]
             ? h(Icon, { name: 'ei:spinner-3', size: '1rem', class: 'animate-spin' })
             : undefined
         ]
       )
     }
-  }),
+  })
 ]
 
 const isLoadingByRfcToBeId = ref<Record<string, boolean>>({})
@@ -213,13 +226,11 @@ const table = useVueTable({
   state: {
     get sorting() {
       return sorting.value
-    },
+    }
   },
-  onSortingChange: updaterOrValue => {
+  onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value) : updaterOrValue
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
   }
 })
-
 </script>

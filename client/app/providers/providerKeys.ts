@@ -12,8 +12,8 @@ export type OverlayModal = {
     mode?: Mode
   }) => Promise<string | undefined>
   /**
- * Close an overlay modal
- */
+   * Close an overlay modal
+   */
   closeOverlayModal: () => void
 }
 
@@ -36,7 +36,7 @@ export const overlayModalMethodsKey = Symbol('overlayModalMethodsKey') as Inject
  * (injection for Vue)
  */
 export const assignEditorKey = Symbol('assignEditorKey') as InjectionKey<
-(doc: unknown, editor: unknown) => void
+  (doc: unknown, editor: unknown) => void
 >
 
 /**
@@ -44,5 +44,5 @@ export const assignEditorKey = Symbol('assignEditorKey') as InjectionKey<
  * (injection for Vue)
  */
 export const deleteAssignmentKey = Symbol('deleteAssignmentKey') as InjectionKey<
-(assignment: unknown) => void
+  (assignment: unknown) => void
 >

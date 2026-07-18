@@ -87,16 +87,16 @@ export const sortCluster = (
 
 export type AssignmentMessageProps =
   | {
-    type: 'assign'
-    role: Assignment['role']
-    rfcToBeId: number
-  }
+      type: 'assign'
+      role: Assignment['role']
+      rfcToBeId: number
+    }
   | {
-    type: 'change'
-    assignments: Assignment[]
-    role: Assignment['role']
-    rfcToBeId: number
-  }
+      type: 'change'
+      assignments: Assignment[]
+      role: Assignment['role']
+      rfcToBeId: number
+    }
 
 export type RpcPersonWorkload = {
   personId: number
@@ -109,17 +109,29 @@ export type RpcPeopleWorkload = Record<number, RpcPersonWorkload>
 /**
  * Calculate the workload of people
  */
-export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<QueueItem, 'id' | 'name' | 'assignmentSet' | 'pages'>[]): RpcPeopleWorkload => {
+export const calculatePeopleWorkload = (
+  clusters: Cluster[],
+  queueItems: Pick<QueueItem, 'id' | 'name' | 'assignmentSet' | 'pages'>[]
+): RpcPeopleWorkload => {
   const peopleWorkload: Record<number, RpcPersonWorkload> = {}
 
-  const addToPersonWorkload = (personId: number | null | undefined, clusterIds: number[], role: Assignment['role'], pageCount: number | undefined): void => {
+  const addToPersonWorkload = (
+    personId: number | null | undefined,
+    clusterIds: number[],
+    role: Assignment['role'],
+    pageCount: number | undefined
+  ): void => {
     assertIsNumber(personId)
     assert(role.length !== 0)
     assert(typeof pageCount === 'number')
 
-    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? { personId, clusterIds: [], pageCountByRole: {} }
+    const editorWorkload: RpcPersonWorkload = peopleWorkload[personId] ?? {
+      personId,
+      clusterIds: [],
+      pageCountByRole: {}
+    }
     if (clusterIds !== undefined) {
-      clusterIds.forEach(clusterId => {
+      clusterIds.forEach((clusterId) => {
         if (!editorWorkload.clusterIds.includes(clusterId)) {
           editorWorkload.clusterIds.push(clusterId)
         }
@@ -129,16 +141,24 @@ export const calculatePeopleWorkload = (clusters: Cluster[], queueItems: Pick<Qu
 
     peopleWorkload[personId] = editorWorkload
   }
-  queueItems.forEach(doc => {
-    const clustersWithDocument = clusters.filter(cluster => cluster.documents?.some(clusterDocument =>
-      clusterDocument.name === doc.name
-    ))
-    const clusterIds = clustersWithDocument.map(cluster => cluster.number)
-    doc.assignmentSet?.forEach(assignment => {
+  queueItems.forEach((doc) => {
+    const clustersWithDocument = clusters.filter((cluster) =>
+      cluster.documents?.some((clusterDocument) => clusterDocument.name === doc.name)
+    )
+    const clusterIds = clustersWithDocument.map((cluster) => cluster.number)
+    doc.assignmentSet?.forEach((assignment) => {
       if (assignment.person !== undefined && assignment.person !== null) {
         addToPersonWorkload(assignment.person, clusterIds, assignment.role, doc.pages)
       } else {
-        console.warn("Doc name", doc.name, `(#${doc.id})`, "  has assignment without person ", assignment.person, typeof assignment.person, JSON.stringify(assignment))
+        console.warn(
+          'Doc name',
+          doc.name,
+          `(#${doc.id})`,
+          '  has assignment without person ',
+          assignment.person,
+          typeof assignment.person,
+          JSON.stringify(assignment)
+        )
       }
     })
   })
@@ -150,15 +170,16 @@ export const calculateEnqueuedAtData = (enqueuedAtJSDate: Date) => {
   const enqueuedAt = DateTime.fromJSDate(enqueuedAtJSDate)
   const now = DateTime.now()
   const diffInDays = now.diff(enqueuedAt, 'days').days
-  const weeksInQueue = Math.floor(diffInDays / 7 * 2) / 2 // Floor to nearest 0.5
+  const weeksInQueue = Math.floor((diffInDays / 7) * 2) / 2 // Floor to nearest 0.5
   return { enqueuedAt, diffInDays, weeksInQueue }
 }
 
-export const renderEnqueuedAt = ({ enqueuedAt, weeksInQueue }: ReturnType<typeof calculateEnqueuedAtData>) => {
-  return h('div',
-    { class: 'text-xs' },
-    [
-      h('div', enqueuedAt.toISODate() ?? ''),
-      h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
-    ])
+export const renderEnqueuedAt = ({
+  enqueuedAt,
+  weeksInQueue
+}: ReturnType<typeof calculateEnqueuedAtData>) => {
+  return h('div', { class: 'text-xs' }, [
+    h('div', enqueuedAt.toISODate() ?? ''),
+    h('div', `(${weeksInQueue} week${weeksInQueue !== 1 ? 's' : ''})`)
+  ])
 }

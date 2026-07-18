@@ -3,13 +3,22 @@
   <ErrorAlert v-if="error" title="API Error for Done / PUB">
     {{ error }}
   </ErrorAlert>
-  <FinalReviewsDone :queue-items="queueItemsFilterDone" :error="error" :status="status" :heading-level="4" :people="people" />
-  <FinalReviewsForPublication :queue-items="queueItemsFilterPublisher" :error="error" :status="status" :people="people"
+  <FinalReviewsDone
+    :queue-items="queueItemsFilterDone"
+    :error="error"
+    :status="status"
+    :heading-level="4"
+    :people="people" />
+  <FinalReviewsForPublication
+    :queue-items="queueItemsFilterPublisher"
+    :error="error"
+    :status="status"
+    :people="people"
     :heading-level="4" />
 </template>
 
 <script setup lang="ts">
-import type { QueueItem, RpcPerson } from '~/purple_client';
+import type { QueueItem, RpcPerson } from '~/purple_client'
 
 type Props = {
   name?: string
@@ -25,14 +34,14 @@ const {
   pending,
   status,
   refresh,
-  error,
+  error
 } = await useAsyncData(
   'final-review-pending-false',
   () => api.queueList({ pendingFinalReview: false }),
   {
     server: false,
     lazy: true,
-    default: () => [] as QueueItem[],
+    default: () => [] as QueueItem[]
   }
 )
 
@@ -40,7 +49,7 @@ const queueListWithFilters = computed(() => {
   if (!props.name) {
     return queueList.value
   }
-  return queueList.value.filter(queueItem => {
+  return queueList.value.filter((queueItem) => {
     queueItem.name == props.name
   })
 })
@@ -48,20 +57,30 @@ const queueListWithFilters = computed(() => {
 const ASSIGNMENT_SET_ROLE_PUBLISHER = 'publisher'
 
 const queueItemsFilterPublisher = computed((): QueueItem[] => {
-  return queueListWithFilters.value?.filter(
-    queueItem => queueItem.assignmentSet?.some(
-      assignmentSetItem => assignmentSetItem.role === ASSIGNMENT_SET_ROLE_PUBLISHER
-    )
-  ) ?? []
+  return (
+    queueListWithFilters.value?.filter((queueItem) =>
+      queueItem.assignmentSet?.some(
+        (assignmentSetItem) => assignmentSetItem.role === ASSIGNMENT_SET_ROLE_PUBLISHER
+      )
+    ) ?? []
+  )
 })
 
 const queueItemsFilterDone = computed((): QueueItem[] => {
-  return queueListWithFilters.value?.filter(
-    queueItem => queueItemsFilterPublisher.value.every(queueItemPublisher => queueItemPublisher.id !== queueItem.id)
-  ) ?? []
+  return (
+    queueListWithFilters.value?.filter((queueItem) =>
+      queueItemsFilterPublisher.value.every(
+        (queueItemPublisher) => queueItemPublisher.id !== queueItem.id
+      )
+    ) ?? []
+  )
 })
 
-const { data: people, status: peopleStatus, error: peopleError } = await useAsyncData(() => api.rpcPersonList(), {
+const {
+  data: people,
+  status: peopleStatus,
+  error: peopleError
+} = await useAsyncData(() => api.rpcPersonList(), {
   server: false,
   lazy: true,
   default: () => [] as RpcPerson[]

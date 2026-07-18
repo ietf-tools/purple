@@ -1,17 +1,32 @@
 /**
  * Ported from https://github.com/ietf-tools/datatracker/blob/b3f2756f6b5d6adf853eb7779412950291169c38/ietf/static/js/document_relations.js#L106
  */
-import * as d3 from "d3"
-import { black, font, getHumanReadableRelationshipName, green, line_height, orange, red, teal, type DataParam, type Line, type Link, type LinkParam, type Node, type Relationship } from "./document_relations-utils"
+import * as d3 from 'd3'
+import {
+  black,
+  font,
+  getHumanReadableRelationshipName,
+  green,
+  line_height,
+  orange,
+  red,
+  teal,
+  type DataParam,
+  type Line,
+  type Link,
+  type LinkParam,
+  type Node,
+  type Relationship
+} from './document_relations-utils'
 import { getAncestors } from './dom'
 
 const TOOLTIP_BUFFER_Y = 5
 
 const link_color: Record<Relationship, string> = {
-  "refqueue": green,
-  "not-received": red,
-  "not-received-2g": orange,
-  'not-received-3g': teal,
+  refqueue: green,
+  'not-received': red,
+  'not-received-2g': orange,
+  'not-received-3g': teal
 } as const
 
 const getLinkColor = (rel: Relationship) => {
@@ -38,12 +53,14 @@ function textRadius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof drawGraph>
 
-export type SetTooltip = (props?: undefined | { text: string[], position: [number, number] }) => void
+export type SetTooltip = (
+  props?: undefined | { text: string[]; position: [number, number] }
+) => void
 
 type Props = {
-  data: DataParam,
-  pushRouter: (path: string) => void,
-  colorMode: "light" | "dark",
+  data: DataParam
+  pushRouter: (path: string) => void
+  colorMode: 'light' | 'dark'
   setTooltip: SetTooltip
 }
 
@@ -53,49 +70,49 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
   const width = 1000
   const height = 1000
 
-  const svgElement = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-  svgElement.setAttribute('class', "block w-full h-full")
+  const svgElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+  svgElement.setAttribute('class', 'block w-full h-full')
 
   const svg = d3
     .select(svgElement)
-    .style("font", font)
-    .attr("text-anchor", "middle")
-    .attr("dominant-baseline", "central")
-    .attr('overflow', "visible")
-    .attr("version", "1.1")
-    .attr("viewBox", [-width / 2, -height / 2, width, height].join(" "))
+    .style('font', font)
+    .attr('text-anchor', 'middle')
+    .attr('dominant-baseline', 'central')
+    .attr('overflow', 'visible')
+    .attr('version', '1.1')
+    .attr('viewBox', [-width / 2, -height / 2, width, height].join(' '))
 
   svg
-    .append("defs")
-    .selectAll("marker")
+    .append('defs')
+    .selectAll('marker')
     .data(new Set(data.links.map((d) => d.rel)))
-    .join("marker")
-    .attr("id", (d) => `marker-${d}`)
-    .attr("viewBox", "0 -5 10 10")
-    .attr("refX", 7.85)
-    .attr("markerWidth", 4)
-    .attr("markerHeight", 4)
-    .attr("stroke-width", 0.2)
-    .attr("stroke", black)
-    .attr("orient", "auto")
-    .attr("fill", (d) => getLinkColor(d))
-    .append("path")
-    .attr("d", "M0,-5L10,0L0,5")
+    .join('marker')
+    .attr('id', (d) => `marker-${d}`)
+    .attr('viewBox', '0 -5 10 10')
+    .attr('refX', 7.85)
+    .attr('markerWidth', 4)
+    .attr('markerHeight', 4)
+    .attr('stroke-width', 0.2)
+    .attr('stroke', black)
+    .attr('orient', 'auto')
+    .attr('fill', (d) => getLinkColor(d))
+    .append('path')
+    .attr('d', 'M0,-5L10,0L0,5')
 
   const LINE_STROKE_WIDTH = 5
 
   // links between circles
   const link = svg
-    .append("g")
-    .attr("fill", "none")
-    .attr("stroke-width", LINE_STROKE_WIDTH)
-    .selectAll("path")
+    .append('g')
+    .attr('fill', 'none')
+    .attr('stroke-width', LINE_STROKE_WIDTH)
+    .selectAll('path')
     .data(data.links)
-    .join("path")
-    .attr("title", (d) => {
+    .join('path')
+    .attr('title', (d) => {
       return getLinkTitle(d)
     })
-    .attr("stroke-dasharray", (d) => {
+    .attr('stroke-dasharray', (d) => {
       switch (d.rel) {
         case 'not-received-2g':
         case 'not-received-3g':
@@ -104,77 +121,78 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       return 0
     })
     .attr('tabindex', 0)
-    .on("focus mouseover", function (e, d) {
-      d3.select(this).transition()
-        .duration(200)
-        .attr("opacity", 0.5)
+    .on('focus mouseover', function (e, d) {
+      d3.select(this).transition().duration(200).attr('opacity', 0.5)
 
       e.preventDefault()
       const { target } = e
       if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
-        console.error("Expected element but received ", target)
+        console.error('Expected element but received ', target)
         return
       }
       const group = target.closest('g')
       if (!(group instanceof SVGElement)) {
-        console.error("Expected svg element but received ", group, ' from ', target)
+        console.error('Expected svg element but received ', group, ' from ', target)
         return
       }
       const boundingClientRect = group.getBoundingClientRect()
 
       setTooltip({
         text: getLinkTitle(d),
-        position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
+        position: [
+          boundingClientRect.left + window.scrollX,
+          boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y
+        ]
       })
     })
     .on('blur mouseout', function () {
-      d3.select(this).transition()
-        .duration(200)
-        .attr("opacity", 1)
+      d3.select(this).transition().duration(200).attr('opacity', 1)
 
       setTooltip()
     })
-    .attr("marker-end", (d) => `url(#marker-${d.rel})`)
-    .attr("stroke", (d) => getLinkColor(d.rel))
-    .attr("class", (d) =>
-      d.rel // TODO: the graph code was originally ported from Datatracker. This line appears to depend on specific CSS class names being available. Confirm whether this does anything
+    .attr('marker-end', (d) => `url(#marker-${d.rel})`)
+    .attr('stroke', (d) => getLinkColor(d.rel))
+    .attr(
+      'class',
+      (d) => d.rel // TODO: the graph code was originally ported from Datatracker. This line appears to depend on specific CSS class names being available. Confirm whether this does anything
     )
 
-  const node = svg.append("g").selectAll("g").data(data.nodes).join("g")
+  const node = svg.append('g').selectAll('g').data(data.nodes).join('g')
 
   let max_r = 0
   const a = node
-    .append("a")
-    .attr("href", (d) =>
-      d.url ?? '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available. Accessibility-wise we should probably use a <button> rather than a '#' link.
+    .append('a')
+    .attr(
+      'href',
+      (d) => d.url ?? '#' // we need a href (eg '#') to be focusable even if it doesn't have a d.url so that the `title` is available. Accessibility-wise we should probably use a <button> rather than a '#' link.
     )
-    .attr("class", (d) => {
+    .attr('class', (d) => {
       return d.url ? 'underline' : 'no-underline'
     })
-    .attr("rel", (d) => {
+    .attr('rel', (d) => {
       if (isExternalLink(d.url)) {
         return 'noopener'
       }
       return null
     })
-    .attr("target", (d) => {
+    .attr('target', (d) => {
       if (isExternalLink(d.url)) {
         return '_blank'
       }
       return null
     })
-    .attr("title", (d) => getCircleTheme(d).tooltip?.join(" ") ?? null)
-    .on("focus mouseover", function (e, d) {
+    .attr('title', (d) => getCircleTheme(d).tooltip?.join(' ') ?? null)
+    .on('focus mouseover', function (e, d) {
       e.preventDefault()
       const { target } = e
       if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
-        console.error("Expected element but received ", target)
+        console.error('Expected element but received ', target)
         return
       }
 
       const anchor = target.closest('a')
       if (!(anchor instanceof SVGElement || anchor instanceof HTMLElement)) {
-        console.error("Expected svg element but received ", anchor, ' from ', target)
+        console.error('Expected svg element but received ', anchor, ' from ', target)
         return
       }
       const boundingClientRect = anchor.getBoundingClientRect()
@@ -182,13 +200,16 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       const { tooltip } = getCircleTheme(d)
 
       if (tooltip) {
-        console.log("has tooltip", tooltip)
+        console.log('has tooltip', tooltip)
         setTooltip({
           text: tooltip,
-          position: [boundingClientRect.left + window.scrollX, boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y]
+          position: [
+            boundingClientRect.left + window.scrollX,
+            boundingClientRect.top + window.scrollY - TOOLTIP_BUFFER_Y
+          ]
         })
       } else {
-        console.log("hide tooltip?")
+        console.log('hide tooltip?')
         setTooltip()
       }
     })
@@ -199,7 +220,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       e.preventDefault()
       const { target } = e
       if (!(target instanceof SVGElement || target instanceof HTMLElement)) {
-        console.error("Expected element but received ", target)
+        console.error('Expected element but received ', target)
         return
       }
       const anchor = target.closest('a')
@@ -209,60 +230,62 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       }
       const href = anchor.getAttribute('href')
       if (!href) {
-        console.error("Closest <a> didn't have `href` attribute.", { parents: getAncestors(target) })
+        console.error("Closest <a> didn't have `href` attribute.", {
+          parents: getAncestors(target)
+        })
         return
       }
       if (href === '#') {
         console.info('Ignoring href navigation to empty internal link ie "#"')
         return
       }
-      console.log("SPA navigating to ", href)
+      console.log('SPA navigating to ', href)
       pushRouter(href)
     })
 
-  a.append("text")
-    .attr("fill", (d) => getCircleTheme(d).textColor)
+  a.append('text')
+    .attr('fill', (d) => getCircleTheme(d).textColor)
     .each((d) => {
-      (d as Node).lines = getCircleTheme(d).text;
-      (d as Node).r = textRadius((d as Node).lines!)
+      ;(d as Node).lines = getCircleTheme(d).text
+      ;(d as Node).r = textRadius((d as Node).lines!)
       max_r = Math.max((d as Node).r, max_r)
     })
-    .selectAll("tspan")
+    .selectAll('tspan')
     .data((d) => (d as Node).lines ?? [])
-    .join("tspan")
-    .attr("x", 0)
-    .attr("style", (d) => d.style ?? '')
-    .attr("y", (d, i, x) => (i - x.length / 2 + 0.5) * line_height)
+    .join('tspan')
+    .attr('x', 0)
+    .attr('style', (d) => d.style ?? '')
+    .attr('y', (d, i, x) => (i - x.length / 2 + 0.5) * line_height)
     .text((d) => {
       return d.text
     })
 
-  a.append("circle")
-    .attr("stroke", black)
+  a.append('circle')
+    .attr('stroke', black)
     .lower()
-    .attr("fill", (d) => {
+    .attr('fill', (d) => {
       return getCircleTheme(d).fill
     })
     .each((d) => {
-      (d as Node).stroke = getCircleTheme(d).strokeWidth
+      ;(d as Node).stroke = getCircleTheme(d).strokeWidth
     })
-    .attr("r", (d) => {
+    .attr('r', (d) => {
       const dNode = d as Node
       if (dNode.stroke === undefined) {
         console.error(d)
-        throw Error("Expected stroke to be defined. See console.")
+        throw Error('Expected stroke to be defined. See console.')
       }
       return (dNode.r ?? 0) + dNode.stroke / 2
     })
-    .attr("stroke-width", (d) => {
+    .attr('stroke-width', (d) => {
       const dNode = d as Node
       if (dNode.stroke === undefined) {
         console.error(d)
-        throw Error("Expected stroke to be defined. See console.")
+        throw Error('Expected stroke to be defined. See console.')
       }
       return dNode.stroke
     })
-    .attr("stroke-dasharray", (d) => {
+    .attr('stroke-dasharray', (d) => {
       const { strokeStyle } = getCircleTheme(d)
       switch (strokeStyle) {
         case 'dotted':
@@ -278,7 +301,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
   function ticked(
     // TSDOCS: "`this` parameters are fake parameters that come first in the parameter list of a function" -
     // https://www.typescriptlang.org/docs/handbook/functions.html#this-parameters
-    this: d3.Simulation<d3.SimulationNodeDatum, undefined>,
+    this: d3.Simulation<d3.SimulationNodeDatum, undefined>
   ) {
     // don't animate each tick
     for (let i = 0; i < 3; i++) {
@@ -304,7 +327,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
     // });
 
     // code for arced links:
-    link.attr("d", (d) => {
+    link.attr('d', (d) => {
       const dLink = d as unknown as Link
       const { source, target } = dLink
 
@@ -314,7 +337,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
         target.r === undefined ||
         target.stroke === undefined
       ) {
-        return ""
+        return ''
       }
 
       if (
@@ -323,13 +346,13 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
         target.x === undefined ||
         target.y === undefined
       ) {
-        return ""
+        return ''
       }
       const r = Math.hypot(target.x - source.x, target.y - source.y)
       return `M${source.x},${source.y} A${r},${r} 0 0,1 ${target.x},${target.y}`
     })
     // TODO: figure out how to combine this with above
-    link.attr("d", function (d) {
+    link.attr('d', function (d) {
       const dLink = d as unknown as Link
       if (!(this instanceof SVGPathElement)) {
         console.error('SVGPathElement expected but was ', this)
@@ -338,9 +361,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
 
       const pl = this.getTotalLength()
       const start = this.getPointAtLength(
-        typeof d.source !== "string"
-          ? (dLink.source.r ?? 0) + (dLink.source.stroke ?? 0)
-          : 0,
+        typeof d.source !== 'string' ? (dLink.source.r ?? 0) + (dLink.source.stroke ?? 0) : 0
       )
 
       const { source, target } = dLink
@@ -351,7 +372,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
         target.r === undefined ||
         target.stroke === undefined
       ) {
-        return ""
+        return ''
       }
 
       if (
@@ -360,7 +381,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
         target.x === undefined ||
         target.y === undefined
       ) {
-        return ""
+        return ''
       }
 
       const end = this.getPointAtLength(pl - target.r - target.stroke)
@@ -369,7 +390,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       return `M${start.x},${start.y} A${r},${r} 0 0,1 ${end.x},${end.y}`
     })
 
-    node.selectAll("circle, text").attr("transform", (d) => {
+    node.selectAll('circle, text').attr('transform', (d) => {
       const dNode = d as Node
       return `translate(${dNode.x}, ${dNode.y})`
     })
@@ -378,15 +399,15 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
     const _svgNode = svg.node()
     if (!_svgNode) {
       console.error({ svg, _svgNode })
-      throw Error("Unable to get SVG Node from D3. See console.")
+      throw Error('Unable to get SVG Node from D3. See console.')
     }
     const svgNode = _svgNode as unknown as SVGGraphicsElement
     const bbox = svgNode.getBBox()
-    svg.attr("viewBox", [
+    svg.attr('viewBox', [
       bbox.x - adjust,
       bbox.y - adjust,
       bbox.width + 2 * adjust,
-      bbox.height + 2 * adjust,
+      bbox.height + 2 * adjust
     ])
   }
 
@@ -396,7 +417,7 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
       .forceSimulation()
       .nodes(data.nodes as Node[])
       .force(
-        "link",
+        'link',
         d3
           .forceLink(data.links)
           .id((d) => {
@@ -406,17 +427,15 @@ export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Pr
           .distance(0)
           .strength(0.1)
       )
-      .force("charge", d3.forceManyBody().strength(-max_r))
-      .force("collision", d3.forceCollide(1.25 * max_r))
-      .force("x", d3.forceX())
-      .force("y", d3.forceY())
+      .force('charge', d3.forceManyBody().strength(-max_r))
+      .force('collision', d3.forceCollide(1.25 * max_r))
+      .force('x', d3.forceX())
+      .force('y', d3.forceY())
       .stop()
-      .on("tick", ticked),
+      .on('tick', ticked)
   ]
 }
 
 const getLinkTitle = (d: LinkParam): string[] => {
-  return [
-    getHumanReadableRelationshipName(d.rel),
-  ]
+  return [getHumanReadableRelationshipName(d.rel)]
 }

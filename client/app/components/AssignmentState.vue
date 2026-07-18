@@ -8,7 +8,7 @@
 import type { Assignment, ColorEnum } from '~/purple_client'
 
 type Props = {
-  state: Assignment["state"]
+  state: Assignment['state']
 }
 
 const props = defineProps<Props>()
@@ -26,5 +26,4 @@ const color = computed((): ColorEnum => {
   }
   return 'gray'
 })
-
 </script>

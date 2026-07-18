@@ -1,17 +1,23 @@
 <template>
   <div class="h-full flex flex-col bg-white text-black dark:bg-black dark:text-white">
-    <div class="flex flex-row bg-gray-200 dark:bg-gray-800 justify-between border-b border-gray-300 dark:border-gray-500">
+    <div
+      class="flex flex-row bg-gray-200 dark:bg-gray-800 justify-between border-b border-gray-300 dark:border-gray-500">
       <div class="flex flex-row items-end pt-1 pb-2">
-        <h1 class="text-xl font-bold pt-4 px-4 inline-block">
-          Send Email
-        </h1>
+        <h1 class="text-xl font-bold pt-4 px-4 inline-block">Send Email</h1>
         <div class="flex flex-row items-center">
-          <p class="inline-block text-sm ml-4 mr-2 font-bold text-xs text-gray-700 dark:text-gray-300">templates: </p>
+          <p
+            class="inline-block text-sm ml-4 mr-2 font-bold text-xs text-gray-700 dark:text-gray-300">
+            templates:
+          </p>
           <ul class="flex flex-row flex-wrap gap-2">
             <li v-for="mailTemplate in props.mailTemplates">
-              <BaseButton @click="applyEmailTemplate(mailTemplate)" size="xs"
-                :aria-selected="mailTemplate.template.msgtype === msgType" :class="{
-                  'border-2 border-black dark:border-white shadow-xl': mailTemplate.template.msgtype === msgType,
+              <BaseButton
+                @click="applyEmailTemplate(mailTemplate)"
+                size="xs"
+                :aria-selected="mailTemplate.template.msgtype === msgType"
+                :class="{
+                  'border-2 border-black dark:border-white shadow-xl':
+                    mailTemplate.template.msgtype === msgType,
                   'opacity-70': mailTemplate.template.msgtype !== msgType
                 }">
                 {{ mailTemplate.label }}
@@ -27,19 +33,30 @@
     <div class="flex-1 flex flex-col gap-5 overflow-y-scroll px-4 pt-4 pb-7">
       <EmailFieldEmails v-model="toEmails" label="To" />
       <EmailFieldEmails v-model="ccEmails" label="CC" />
-      <EmailFieldText v-model="subject" label="Subject" field-id="subject" :is-multiline="false" fieldClass="flex-1" />
-      <EmailFieldText v-model="body" label="Body" field-id="body" :is-multiline="true" class="flex-1"
+      <EmailFieldText
+        v-model="subject"
+        label="Subject"
+        field-id="subject"
+        :is-multiline="false"
+        fieldClass="flex-1" />
+      <EmailFieldText
+        v-model="body"
+        label="Body"
+        field-id="body"
+        :is-multiline="true"
+        class="flex-1"
         fieldClass="flex-1" />
     </div>
-    <div class="flex flex-row border-t-2 bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-500 justify-end px-8 py-4 w-full">
+    <div
+      class="flex flex-row border-t-2 bg-gray-200 dark:bg-gray-800 border-gray-300 dark:border-gray-500 justify-end px-8 py-4 w-full">
       <BaseButton @click="confirmSend">Send</BaseButton>
     </div>
   </div>
 </template>
 <script setup lang="ts">
 import { BaseButton } from '#components'
-import { overlayModalKey } from '~/providers/providerKeys';
-import type { MailTemplate } from '~/purple_client';
+import { overlayModalKey } from '~/providers/providerKeys'
+import type { MailTemplate } from '~/purple_client'
 
 type Props = {
   draftName: string
@@ -60,8 +77,10 @@ if (!firstMailTemplate) {
 
 const snackbar = useSnackbar()
 
-const toEmails = ref<string[]>(firstMailTemplate.template.to.split(',').filter(s => s.length > 0))
-const ccEmails = ref<string[]>(firstMailTemplate.template.cc?.split(',').filter(s => s.length > 0) ?? [])
+const toEmails = ref<string[]>(firstMailTemplate.template.to.split(',').filter((s) => s.length > 0))
+const ccEmails = ref<string[]>(
+  firstMailTemplate.template.cc?.split(',').filter((s) => s.length > 0) ?? []
+)
 const subject = ref<string>(firstMailTemplate.template.subject ?? '')
 const body = ref<string>(firstMailTemplate.template.body ?? '')
 const msgType = ref<MailTemplate['template']['msgtype']>(firstMailTemplate.template.msgtype)
@@ -73,7 +92,7 @@ if (!overlayModalKeyInjection) {
 const { closeOverlayModal } = overlayModalKeyInjection
 
 const confirmSend = async () => {
-  const shouldSend = confirm("Really send email?")
+  const shouldSend = confirm('Really send email?')
   if (!shouldSend) {
     return
   }
@@ -123,16 +142,17 @@ const confirmSend = async () => {
 
 const applyEmailTemplate = (mailTemplate: MailTemplate) => {
   if (subject.value.trim().length > 0 || body.value.trim().length > 0) {
-    const shouldOverwrite = confirm(`Email subject/body are not blank. Overwrite with template '${mailTemplate.label}'?`)
+    const shouldOverwrite = confirm(
+      `Email subject/body are not blank. Overwrite with template '${mailTemplate.label}'?`
+    )
     if (!shouldOverwrite) {
       return
     }
   }
-  toEmails.value = mailTemplate.template.to.split(',').filter(s => s.length > 0)
-  ccEmails.value = mailTemplate.template.cc?.split(',').filter(s => s.length > 0) ?? []
+  toEmails.value = mailTemplate.template.to.split(',').filter((s) => s.length > 0)
+  ccEmails.value = mailTemplate.template.cc?.split(',').filter((s) => s.length > 0) ?? []
   subject.value = mailTemplate.template.subject
   body.value = mailTemplate.template.body
   msgType.value = mailTemplate.template.msgtype
 }
-
 </script>

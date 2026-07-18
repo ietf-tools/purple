@@ -8,21 +8,20 @@
         :checked="Boolean(selectedLabelIds?.includes(label.id ?? 0))"
         :class="[
           'pl-1 mb-1 pr-2 rounded-md text-xs font-medium ring-1 ring-inset text-xs',
-          badgeColors[label.color ?? 'gray' satisfies ColorEnum]
+          badgeColors[label.color ?? ('gray' satisfies ColorEnum)]
         ]"
         @change="handleCheckboxChange"
         size="small"
-        :label="`${label.isException ? '⚠️ ' : ''}${label.slug.substring(label.slug.indexOf(SLUG_SEPARATOR) + 1)}`"
-      />
+        :label="`${label.isException ? '⚠️ ' : ''}${label.slug.substring(label.slug.indexOf(SLUG_SEPARATOR) + 1)}`" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { type Label, type ColorEnum } from '~/purple_client';
+import { type Label, type ColorEnum } from '~/purple_client'
 import { SLUG_SEPARATOR } from '~/utils/labels'
 import { badgeColors } from '~/utils/badge'
-import { assert } from '~/utils/typescript';
+import { assert } from '~/utils/typescript'
 
 type Props = {
   slugGroup: string
@@ -35,7 +34,7 @@ const props = defineProps<Props>()
 const selectedLabelIds = defineModel<number[]>()
 
 const handleCheckboxChange = (e: Event) => {
-  const { target } = e;
+  const { target } = e
   if (!(target instanceof HTMLInputElement)) {
     console.error(e)
     throw Error(`Unsupported event wasn't from expected element`)
@@ -52,7 +51,9 @@ const handleCheckboxChange = (e: Event) => {
   } else if (!checked && selectedLabelIds.value.includes(value)) {
     const indexOf = selectedLabelIds.value.indexOf(value)
     if (indexOf === -1) {
-      throw Error(`Unexpected state. Should be able to find indexOf ${value} in ${JSON.stringify(selectedLabelIds.value)}`)
+      throw Error(
+        `Unexpected state. Should be able to find indexOf ${value} in ${JSON.stringify(selectedLabelIds.value)}`
+      )
     }
     selectedLabelIds.value.splice(indexOf, 1)
   }

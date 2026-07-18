@@ -1,6 +1,10 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @assignments-changed="refreshAll" @withdrawn="rfcToBeRefresh" />
+    <DocHeader
+      :draft-name="draftName"
+      :rfc-to-be="rawRfcToBe"
+      @assignments-changed="refreshAll"
+      @withdrawn="rfcToBeRefresh" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -10,30 +14,45 @@
       </ErrorAlert>
       <div
         class="mx-auto grid max-w-2xl grid-cols-1 grid-rows-1 place-items-stretch gap-x-8 gap-y-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-
         <!-- Status summary -->
         <BaseCard class="grid place-items-stretch">
           <h2 class="sr-only">Status Summary</h2>
           <div class="px-0 pt-6 sm:px-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold leading-7">Assignments</h3>
-              <BaseButton v-if="!hasManualHold" btn-type="cancel" @click="setManualHold">Set Manual Hold</BaseButton>
-              <BaseButton v-else btn-type="secondary" @click="clearManualHold">Clear Manual Hold</BaseButton>
+              <BaseButton v-if="!hasManualHold" btn-type="cancel" @click="setManualHold"
+                >Set Manual Hold</BaseButton
+              >
+              <BaseButton v-else btn-type="secondary" @click="clearManualHold"
+                >Clear Manual Hold</BaseButton
+              >
             </div>
             <div class="text-sm font-medium">
-              <div v-if="rfcToBeAssignments.length === 0">
-                None
-              </div>
+              <div v-if="rfcToBeAssignments.length === 0">None</div>
               <dl v-else>
-                <div v-for="assignment of rfcToBeAssignments" :key="assignment.id" class="py-1 grid grid-cols-2">
-                  <dt><Anchor :href="teamMemberLink(assignment?.person)"><RpcPerson :person-id="assignment.person" :people="people" /></Anchor></dt>
+                <div
+                  v-for="assignment of rfcToBeAssignments"
+                  :key="assignment.id"
+                  class="py-1 grid grid-cols-2">
+                  <dt>
+                    <Anchor :href="teamMemberLink(assignment?.person)"
+                      ><RpcPerson :person-id="assignment.person" :people="people"
+                    /></Anchor>
+                  </dt>
                   <dd class="relative">
                     <BaseBadge :label="assignment.role" />
                     <AssignmentState :state="assignment.state" />
-                    <template v-if="assignment.role === 'blocked' && assignment.state === 'in_progress' && blockingReasons.length > 0">
-                      <ul class="mt-0.5 ml-4 text-xs text-gray-500 dark:text-neutral-400 list-disc list-inside">
+                    <template
+                      v-if="
+                        assignment.role === 'blocked' &&
+                        assignment.state === 'in_progress' &&
+                        blockingReasons.length > 0
+                      ">
+                      <ul
+                        class="mt-0.5 ml-4 text-xs text-gray-500 dark:text-neutral-400 list-disc list-inside">
                         <li v-for="br in blockingReasons" :key="br.name">
-                          {{ br.name }}<span v-if="br.comment" class="italic"> — {{ br.comment }}</span>
+                          {{ br.name
+                          }}<span v-if="br.comment" class="italic"> — {{ br.comment }}</span>
                         </li>
                       </ul>
                     </template>
@@ -45,11 +64,16 @@
           <div class="px-0 pt-6 sm:px-6">
             <h3 class="text-base font-semibold leading-7">Pending Activities</h3>
             <div class="text-sm font-medium">
-              <div v-if="!rfcToBe || !rfcToBe.pendingActivities || rfcToBe.pendingActivities.length === 0">
+              <div
+                v-if="
+                  !rfcToBe || !rfcToBe.pendingActivities || rfcToBe.pendingActivities.length === 0
+                ">
                 None
               </div>
               <dl v-else>
-                <div v-for="pendingAct of rfcToBe?.pendingActivities" :key="pendingAct.slug"
+                <div
+                  v-for="pendingAct of rfcToBe?.pendingActivities"
+                  :key="pendingAct.slug"
                   class="py-1 grid grid-cols-2">
                   <dd class="relative">
                     <BaseBadge :label="pendingAct.slug" />
@@ -71,9 +95,9 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { useAsyncData } from '#app'
-import { snackbarForErrors } from "~/utils/snackbar"
+import { snackbarForErrors } from '~/utils/snackbar'
 import { type DocTabId } from '~/utils/doc'
-import { teamMemberLink }  from '~/utils/url'
+import { teamMemberLink } from '~/utils/url'
 import type { Assignment } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { ManualHoldModal } from '#components'
@@ -97,7 +121,12 @@ const {
   refresh: commentsReload
 } = await useCommentsForDraft(draftName.value)
 
-const { data: rawRfcToBe, error: rawRfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
+const {
+  data: rawRfcToBe,
+  error: rawRfcToBeError,
+  status: rfcToBeStatus,
+  refresh: rfcToBeRefresh
+} = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
@@ -119,7 +148,7 @@ const rfcToBeAssignments = computed(() => {
 })
 
 const initialSelectedLabelIds = computed(() => {
-  console.log("recomputing initial selected label ids")
+  console.log('recomputing initial selected label ids')
   return [...(rawRfcToBe.value?.labels ?? [])]
 })
 
@@ -145,7 +174,7 @@ const setManualHold = () => {
         try {
           await api.documentsManualBlock({
             draftName: draftName.value,
-            manualBlockRequestRequest: { comment },
+            manualBlockRequestRequest: { comment }
           })
           await Promise.all([rfcToBeRefresh(), refreshAssignments()])
           snackbar.add({ type: 'success', title: 'Manual hold set', text: '' })
@@ -153,8 +182,8 @@ const setManualHold = () => {
           snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to set manual hold' })
           throw e
         }
-      },
-    },
+      }
+    }
   }).catch(() => {})
 }
 
@@ -177,10 +206,9 @@ const rfcToBe = computed((): CookedDraft | null => {
     }
     return {
       ...rawRfcToBe.value,
-      externalDeadline:
-        rawRfcToBe.value.externalDeadline
-          ? DateTime.fromJSDate(rawRfcToBe.value.externalDeadline, { zone: 'utc' })
-          : null
+      externalDeadline: rawRfcToBe.value.externalDeadline
+        ? DateTime.fromJSDate(rawRfcToBe.value.externalDeadline, { zone: 'utc' })
+        : null
     }
   }
   return null
@@ -196,15 +224,14 @@ watch(
     const selectedValues = new Set([...selectedLabelIds.value])
 
     const areSetsSame = (a: Set<number>, b: Set<number>): boolean =>
-      a.size === b.size &&
-      [...a].every((x) => b.has(x));
+      a.size === b.size && [...a].every((x) => b.has(x))
 
     if (areSetsSame(initialValues, selectedValues)) {
-      console.log("No change in label ids. Not saving. ", initialValues, ' vs ', selectedValues)
+      console.log('No change in label ids. Not saving. ', initialValues, ' vs ', selectedValues)
       return
     }
 
-    console.log("Changes found in label ids so saving: ",  initialValues, ' vs ', selectedValues)
+    console.log('Changes found in label ids so saving: ', initialValues, ' vs ', selectedValues)
 
     try {
       await api.documentsPartialUpdate({
@@ -217,7 +244,6 @@ watch(
         title: `Updated labels for "${draftName.value}"`,
         text: ''
       })
-
     } catch (e: unknown) {
       snackbarForErrors({
         snackbar,
@@ -229,10 +255,10 @@ watch(
   { deep: true }
 )
 
-const { data: people } = await useAsyncData(
-  () => api.rpcPersonList(),
-  { server: false, lazy: true }
-)
+const { data: people } = await useAsyncData(() => api.rpcPersonList(), {
+  server: false,
+  lazy: true
+})
 
 useHeadSafe({ title: draftName.value })
 </script>

@@ -1,5 +1,5 @@
 export type DialogOption = {
-  label: string,
-  description?: string;
+  label: string
+  description?: string
   value: string
 }

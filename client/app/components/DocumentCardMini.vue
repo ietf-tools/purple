@@ -8,8 +8,7 @@
         : props.document.isReceived === false
           ? 'bg-[#ee828d] text-white'
           : 'text-gray-700 dark:text-gray-200'
-    ]"
-  >
+    ]">
     <span v-if="props.document.rfcNumber">
       <span class="font-normal">RFC{{ NBSP }}</span>
       <span class="font-semibold">{{ `${props.document.rfcNumber}:${SPACE} ` }}</span>
@@ -23,7 +22,7 @@
 
 <script setup lang="ts">
 import { Anchor, BaseBadge } from '#components'
-import type { ClusterMember } from '~/purple_client';
+import type { ClusterMember } from '~/purple_client'
 
 type Props = {
   document: ClusterMember

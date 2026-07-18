@@ -1,7 +1,6 @@
 <template>
   <div>
-    <TitleBlock title="Queue" summary="Where the magic happens.">
-    </TitleBlock>
+    <TitleBlock title="Queue" summary="Where the magic happens."> </TitleBlock>
 
     <QueueTabs :current-tab="currentTab" />
 
@@ -20,18 +19,28 @@
       <RpcTable>
         <RpcThead>
           <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-            <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-              :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-              :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
+            <RpcTh
+              v-for="header in headerGroup.headers"
+              :key="header.id"
+              :colSpan="header.colSpan"
+              :is-sortable="header.column.getCanSort()"
+              :sort-direction="header.column.getIsSorted()"
+              :column-name="getVNodeText(header.column.columnDef.header)"
+              @click="header.column.getToggleSortingHandler()?.($event)">
               <div class="flex items-center gap-2">
-                <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+                <FlexRender
+                  v-if="!header.isPlaceholder"
+                  :render="header.column.columnDef.header"
                   :props="header.getContext()" />
               </div>
             </RpcTh>
           </tr>
         </RpcThead>
         <RpcTbody>
-          <RpcRowMessage :status="status" :column-count="table.getAllColumns().length" :row-count="table.getRowModel().rows.length" />
+          <RpcRowMessage
+            :status="status"
+            :column-count="table.getAllColumns().length"
+            :row-count="table.getRowModel().rows.length" />
           <tr v-for="row in table.getRowModel().rows" :key="row.id">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
@@ -41,7 +50,9 @@
         <RpcTfoot>
           <tr v-for="footerGroup in table.getFooterGroups()" :key="footerGroup.id">
             <RpcTh v-for="header in footerGroup.headers" :key="header.id" :colSpan="header.colSpan">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.footer"
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.footer"
                 :props="header.getContext()" />
             </RpcTh>
           </tr>
@@ -49,7 +60,6 @@
       </RpcTable>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">
@@ -59,7 +69,7 @@ import {
   getCoreRowModel,
   useVueTable,
   createColumnHelper,
-  getSortedRowModel,
+  getSortedRowModel
 } from '@tanstack/vue-table'
 import type { SortingState } from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
@@ -72,19 +82,13 @@ const snackbar = useSnackbar()
 
 const currentTab: QueueTabId = 'submissions'
 
-const {
-  data,
-  pending,
-  refresh,
-  status,
-  error,
-} = await useAsyncData(
+const { data, pending, refresh, status, error } = await useAsyncData(
   'queue2-submissions',
   () => api.submissionsList(),
   {
     server: false,
     lazy: true,
-    default: () => [] as SubmissionListItem[],
+    default: () => [] as SubmissionListItem[]
   }
 )
 
@@ -97,36 +101,43 @@ watch(error, (err) => {
 const columnHelper = createColumnHelper<SubmissionListItem>()
 
 const columns = [
-  columnHelper.display(
-    {
-      id: 'icon',
-      header: '',
-      cell: _data => {
-        return h(Icon, { name: "uil:file-alt", size: "1.25em", class: "text-gray-400 dark:text-neutral-500 mr-2" })
-      }
-    }),
+  columnHelper.display({
+    id: 'icon',
+    header: '',
+    cell: (_data) => {
+      return h(Icon, {
+        name: 'uil:file-alt',
+        size: '1.25em',
+        class: 'text-gray-400 dark:text-neutral-500 mr-2'
+      })
+    }
+  }),
   columnHelper.accessor('name', {
     header: 'Document',
-    cell: data => {
-      return h(Anchor, { href: `/docs/import/?documentId=${data.row.original.id}`, 'class': ANCHOR_STYLE }, () => [
-        data.getValue()
-      ])
+    cell: (data) => {
+      return h(
+        Anchor,
+        { href: `/docs/import/?documentId=${data.row.original.id}`, class: ANCHOR_STYLE },
+        () => [data.getValue()]
+      )
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.accessor('stream', {
     header: 'Labels',
-    cell: _data => '',
-    enableSorting: false,
+    cell: (_data) => '',
+    enableSorting: false
   }),
   columnHelper.accessor('submitted', {
     header: 'Submitted',
-    cell: data =>
-      h('span', { class: 'text-xs' }, DateTime.fromJSDate(data.getValue()).toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      )),
+    cell: (data) =>
+      h(
+        'span',
+        { class: 'text-xs' },
+        DateTime.fromJSDate(data.getValue()).toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+      ),
     sortingFn: (rowA, rowB) => sortDate(rowA.original.submitted, rowB.original.submitted)
-  }),
+  })
 ]
 
 const sorting = ref<SortingState>([])
@@ -141,14 +152,11 @@ const table = useVueTable({
   state: {
     get sorting() {
       return sorting.value
-    },
+    }
   },
-  onSortingChange: updaterOrValue => {
+  onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value)
-        : updaterOrValue
-  },
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
+  }
 })
-
 </script>
