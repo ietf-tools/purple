@@ -11,7 +11,7 @@ import rpcapi_client
 from django import forms
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Exists, Max, OuterRef, Prefetch, Q
+from django.db.models import Exists, Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -368,6 +368,22 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     def get_queryset(self):
         req_person_id = int(self.kwargs["person_id"])
 
+        HistoricalRfcToBe = RfcToBe.history.model
+        enqueued_at_subquery = Subquery(
+            HistoricalRfcToBe.objects.filter(
+                id=OuterRef("rfc_to_be_id"), history_type="+"
+            )
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+
+        HistoricalAssignment = Assignment.history.model
+        assigned_at_subquery = Subquery(
+            HistoricalAssignment.objects.filter(id=OuterRef("id"), history_type="+")
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+
         queryset = (
             super()
             .get_queryset()
@@ -381,6 +397,10 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
                     ).select_related("reason"),
                     to_attr="blocking_reasons",
                 )
+            )
+            .annotate(
+                enqueued_at=enqueued_at_subquery,
+                assigned_at=assigned_at_subquery,
             )
         )
 

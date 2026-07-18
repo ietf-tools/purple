@@ -4732,6 +4732,16 @@ components:
           type: string
         time_spent:
           type: string
+        enqueued_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
         - role
     PaginatedBaseDatatrackerPersonList:
