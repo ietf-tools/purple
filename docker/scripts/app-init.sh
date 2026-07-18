@@ -57,6 +57,12 @@ cd client
 npm install
 cd ..
 
+# oxc-format the generated spec (needs client deps) and refresh the snapshot
+if [[ -x client/node_modules/.bin/oxfmt ]]; then
+    client/node_modules/.bin/oxfmt purple_api.yaml || true
+    /bin/cp purple_api.yaml client/app/purple_client/.purple_api.yaml
+fi
+
 
 sudo touch /.dev-ready
 

@@ -36,6 +36,12 @@ fi
 
 # Generate OpenAPI schema for the Purple api
 ./manage.py spectacular --file purple_api.yaml
+# oxc-format the generated spec so regen diffs show only real API changes
+if [[ -x "$WORKSPACE/client/node_modules/.bin/oxfmt" ]]; then
+  "$WORKSPACE/client/node_modules/.bin/oxfmt" "$WORKSPACE/purple_api.yaml"
+else
+  echo "WARNING: oxfmt not found; skipping purple_api.yaml formatting"
+fi
 
 if ! diff -q purple_api.yaml "$WORKSPACE/client/app/purple_client/.purple_api.yaml" > /dev/null 2>&1; then
   echo "Generating purple API client from purple_api.yaml"
