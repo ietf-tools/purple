@@ -262,16 +262,6 @@ jobs:
           echo "LATEST_DT=$LATEST_DT" >> "$GITHUB_ENV"
           echo "Will use datatracker version $LATEST_DT"
 
-      - name: Deploy purple to dev
-        uses: ietf-tools/workflow-dispatch-action@v1
-        with:
-          workflow: deploy-dev.yml
-          repo: ietf-tools/infra-k8s
-          ref: main
-          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "app":"purple", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
-          waitForCompletionTimeout: 30m
-
       - name: Deploy embedded datatracker to dev
         uses: ietf-tools/workflow-dispatch-action@v1
         with:
@@ -279,8 +269,18 @@ jobs:
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "app":"datatracker", "appVersion":"${{ env.LATEST_DT }}", "remoteRef":"${{ env.LATEST_DT }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "disableNsCleanup": true }'
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.LATEST_DT }}", "remoteRef":"${{ env.LATEST_DT }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
           waitForCompletionTimeout: 60m
+
+      - name: Deploy purple to dev
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy-dev.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "app":"purple", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "disableNsCleanup": true }'
+          waitForCompletionTimeout: 30m
 
   # -----------------------------------------------------------------
   # STAGING
