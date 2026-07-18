@@ -10,16 +10,13 @@
       "request": "launch",
       "python": "/usr/local/bin/python",
       "program": "${workspaceFolder}/manage.py",
-      "args": [
-        "runserver",
-        "0.0.0.0:8001"
-      ],
+      "args": ["runserver", "0.0.0.0:8001"],
       "django": true,
       "presentation": {
         "hidden": false,
         "group": "main",
         "order": 1
       }
-    },
+    }
   ]
 }

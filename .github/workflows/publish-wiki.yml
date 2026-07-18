@@ -32,4 +32,3 @@ jobs:
         uses: Andrew-Chen-Wang/github-wiki-action@v5
         with:
           path: docs/output
-

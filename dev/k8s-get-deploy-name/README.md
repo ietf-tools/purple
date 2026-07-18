@@ -5,10 +5,13 @@ This tool process and slugify a git branch into an appropriate subdomain name.
 ## Usage
 
 1. From the `dev/k8s-get-deploy-name` directory, install the dependencies:
+
 ```sh
 npm install
 ```
+
 2. Run the command: (replacing the `branch` argument)
+
 ```sh
 node /cli.js --branch feat/fooBar-123
 ```

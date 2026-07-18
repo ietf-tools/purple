@@ -10,10 +10,7 @@
   "tasks": [
     {
       "label": "Create terminals",
-      "dependsOn": [
-        "Server",
-        "Client"
-      ],
+      "dependsOn": ["Server", "Client"],
       // Mark as the default build task so cmd/ctrl+shift+b will create them
       "group": {
         "kind": "build",
@@ -49,7 +46,7 @@
       "command": "/bin/zsh",
       "args": ["-c", "../.devcontainer/term-client.sh"],
       "options": {
-        "cwd": "/workspace/client",
+        "cwd": "/workspace/client"
       },
       "isBackground": true,
       "problemMatcher": [],

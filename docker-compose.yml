@@ -40,7 +40,7 @@ services:
 
   celery:
     image: "${COMPOSE_PROJECT_NAME}-app"
-    command: [ "/celery-init.sh" ]  # without beat
+    command: ["/celery-init.sh"] # without beat
     # command: [ "/celery-init.sh", "-BE" ]  # with beat
     volumes:
       - .:/workspace
@@ -84,14 +84,14 @@ services:
     image: dpage/pgadmin4:latest
     restart: unless-stopped
     environment:
-        - PGADMIN_DEFAULT_EMAIL=dev@ietf.org
-        - PGADMIN_DEFAULT_PASSWORD=dev
-        - PGADMIN_CONFIG_LOGIN_BANNER="Login with dev@ietf.org / dev"
-        - PGADMIN_DISABLE_POSTFIX=True
-        - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
-        - SCRIPT_NAME=/pgadmin
+      - PGADMIN_DEFAULT_EMAIL=dev@ietf.org
+      - PGADMIN_DEFAULT_PASSWORD=dev
+      - PGADMIN_CONFIG_LOGIN_BANNER="Login with dev@ietf.org / dev"
+      - PGADMIN_DISABLE_POSTFIX=True
+      - PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED=False
+      - SCRIPT_NAME=/pgadmin
     volumes:
-        - ./docker/configs/pgadmin-servers.json:/pgadmin4/servers.json
+      - ./docker/configs/pgadmin-servers.json:/pgadmin4/servers.json
 
 volumes:
   postgresdb-data:
