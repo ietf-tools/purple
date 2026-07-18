@@ -54,7 +54,7 @@ fi
 
 # Install client dependencies
 cd client
-npm install
+npm ci
 cd ..
 
 # oxc-format the generated spec (needs client deps) and refresh the snapshot
