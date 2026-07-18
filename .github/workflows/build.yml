@@ -258,8 +258,11 @@ jobs:
           npm ci
           echo "Get Deploy Name..."
           echo "DEPLOY_NAMESPACE=$(node cli.js --branch ${{ github.ref_name }})" >> "$GITHUB_ENV"
+          LATEST_DT=$(curl -fsSL https://api.github.com/repos/ietf-tools/datatracker/releases/latest | jq -r '.tag_name')
+          echo "LATEST_DT=$LATEST_DT" >> "$GITHUB_ENV"
+          echo "Will use datatracker version $LATEST_DT"
 
-      - name: Deploy to dev
+      - name: Deploy purple to dev
         uses: ietf-tools/workflow-dispatch-action@v1
         with:
           workflow: deploy-dev.yml
@@ -267,6 +270,16 @@ jobs:
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
           inputs: '{ "app":"purple", "appVersion":"${{ env.BUILD_VERSION }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }} }'
+          waitForCompletionTimeout: 30m
+
+      - name: Deploy embedded datatracker to dev
+        uses: ietf-tools/workflow-dispatch-action@v1
+        with:
+          workflow: deploy-dev.yml
+          repo: ietf-tools/infra-k8s
+          ref: main
+          token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.LATEST_DT }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "disableNsCleanup": "true" }'
           waitForCompletionTimeout: 60m
 
   # -----------------------------------------------------------------
