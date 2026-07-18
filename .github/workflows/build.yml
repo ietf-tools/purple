@@ -279,7 +279,7 @@ jobs:
           repo: ietf-tools/infra-k8s
           ref: main
           token: ${{ secrets.GH_INFRA_K8S_TOKEN }}
-          inputs: '{ "app":"datatracker", "appVersion":"${{ env.LATEST_DT }}", "remoteRef":"${{ github.sha }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "disableNsCleanup": true }'
+          inputs: '{ "app":"datatracker", "appVersion":"${{ env.LATEST_DT }}", "remoteRef":"${{ env.LATEST_DT }}", "namespace":"${{ env.DEPLOY_NAMESPACE }}", "disableDailyDbRefresh":${{ inputs.devNoDbRefresh }}, "disableNsCleanup": true }'
           waitForCompletionTimeout: 60m
 
   # -----------------------------------------------------------------
