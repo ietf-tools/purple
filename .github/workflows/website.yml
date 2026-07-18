@@ -3,12 +3,12 @@ name: Nuxt Vitest, TypeScript check, ESLint
 on:
   push:
     paths:
-      - 'client/**'
+      - "client/**"
   pull_request:
     branches:
       - main
     paths:
-      - 'client/**'
+      - "client/**"
   workflow_dispatch:
 
 jobs:

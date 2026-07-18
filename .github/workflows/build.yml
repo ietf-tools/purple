@@ -6,13 +6,13 @@ on:
   workflow_dispatch:
     inputs:
       datatrackerRef:
-        description: 'Datatracker API Spec Repo Ref'
+        description: "Datatracker API Spec Repo Ref"
         required: true
         type: string
-        default: 'main'
+        default: "main"
       deploy:
-        description: 'Deploy to K8S'
-        default: 'Skip'
+        description: "Deploy to K8S"
+        default: "Skip"
         required: true
         type: choice
         options:
@@ -22,7 +22,7 @@ on:
           - Staging + Demo
           - Staging + Prod
       devNoDbRefresh:
-        description: 'Disable Daily DB Refresh (Dev Only)'
+        description: "Disable Daily DB Refresh (Dev Only)"
         default: false
         required: true
         type: boolean
@@ -75,8 +75,8 @@ jobs:
           token: ${{ github.token }}
           branch: main
           skipInvalidTags: true
-          noVersionBumpBehavior: 'current'
-          noNewCommitBehavior: 'current'
+          noVersionBumpBehavior: "current"
+          noNewCommitBehavior: "current"
 
       - name: Set Release Flag
         if: ${{ inputs.deploy == 'Staging Only' || inputs.deploy == 'Staging + Demo' || inputs.deploy == 'Staging + Prod' }}
@@ -204,7 +204,7 @@ jobs:
           commit: ${{ github.sha }}
           tag: ${{ steps.semver.outputs.nextStrict }}
           name: ${{ steps.semver.outputs.nextStrict }}
-          body: '*pending*'
+          body: "*pending*"
           token: ${{ github.token }}
 
       - name: Generate CHANGELOG
