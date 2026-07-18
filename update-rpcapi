@@ -38,7 +38,7 @@ fi
 ./manage.py spectacular --file purple_api.yaml
 # oxc-format the generated spec so regen diffs show only real API changes
 if [[ -x "$WORKSPACE/client/node_modules/.bin/oxfmt" ]]; then
-  "$WORKSPACE/client/node_modules/.bin/oxfmt" "$WORKSPACE/purple_api.yaml"
+  "$WORKSPACE/client/node_modules/.bin/oxfmt" purple_api.yaml || echo "WARNING: oxfmt failed; skipping purple_api.yaml formatting"
 else
   echo "WARNING: oxfmt not found; skipping purple_api.yaml formatting"
 fi
