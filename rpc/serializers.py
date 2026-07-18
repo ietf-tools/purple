@@ -1196,6 +1196,11 @@ class NestedAssignmentSerializer(AssignmentSerializer):
     """Assignment serializer with nested RfcToBe details"""
 
     rfc_to_be = RfcToBeSerializer(read_only=True)
+    enqueued_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    assigned_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+    class Meta(AssignmentSerializer.Meta):
+        fields = AssignmentSerializer.Meta.fields + ["enqueued_at", "assigned_at"]
 
 
 def _rfctobe_is_blocked(rfctobe: RfcToBe | None) -> bool:
