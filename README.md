@@ -6,10 +6,10 @@
 
 [![Release](https://img.shields.io/github/release/ietf-tools/purple.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/purple/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/purple)](https://github.com/ietf-tools/purple/blob/main/LICENSE)
-![Python Version](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)
+![Python Version](https://img.shields.io/badge/python-3.13-blue?logo=python&logoColor=white)
 ![Django Version](https://img.shields.io/badge/django-5.0-teal?logo=django&logoColor=white)
-![Node Version](https://img.shields.io/badge/node.js-22-green?logo=node.js&logoColor=white)
-![Nuxt Version](https://img.shields.io/badge/nuxt-3-green?logo=nuxt.js&logoColor=white)
+![Node Version](https://img.shields.io/badge/node.js-26-green?logo=node.js&logoColor=white)
+![Nuxt Version](https://img.shields.io/badge/nuxt-4-green?logo=nuxt.js&logoColor=white)
 ![Vue Version](https://img.shields.io/badge/vue-3-green?logo=vue.js&logoColor=white)
 
 ##### Web tool for the RFC Production Center
