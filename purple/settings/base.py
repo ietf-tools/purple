@@ -119,8 +119,8 @@ SPECTACULAR_SETTINGS = {
     # set used in multiple fields (e.g. a scalar `status` and a `statuses` list)
     # collapses to a single component instead of duplicated/suffixed enums.
     "ENUM_NAME_OVERRIDES": {
-        "PublishedStatusEnum": "rpc.lifecycle.rollups.PUBLISHED_STATUS_ORDER",
-        "PublishedStreamEnum": "rpc.lifecycle.rollups.PUBLISHED_STREAMS",
+        "PublishedStatusEnum": "rpc.stats.rollups.PUBLISHED_STATUS_ORDER",
+        "PublishedStreamEnum": "rpc.stats.rollups.PUBLISHED_STREAMS",
     },
 }
 

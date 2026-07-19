@@ -1,5 +1,5 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Tests for rpc.lifecycle.rollups (queue period rollups), the queue-stats
+"""Tests for rpc.stats.rollups (queue period rollups), the queue-stats
 endpoints, and the IETF-meeting cache."""
 
 import datetime
@@ -10,15 +10,19 @@ from django.contrib.auth import get_user_model
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 
-from .factories import (
+from ..factories import (
     DispositionNameFactory,
     LabelFactory,
     RfcToBeFactory,
     StdLevelNameFactory,
     StreamNameFactory,
 )
-from .lifecycle import rollups
-from .lifecycle.rollups import (
+from ..models import (
+    BlockingReason,
+    RfcToBeBlockingReason,
+)
+from . import rollups
+from .rollups import (
     _candidate_docs,
     _label_intervals_by_doc,
     _missing_ref_intervals_by_doc,
@@ -27,17 +31,13 @@ from .lifecycle.rollups import (
     queue_published_rollup,
     queue_rollup,
 )
-from .lifecycle_test_helpers import (
+from .test_helpers import (
     _apply_label_over,
     _backdate_creation,
     _dt,
     _make_assignment,
     _missing_ref_over,
     _missing_ref_upgraded,
-)
-from .models import (
-    BlockingReason,
-    RfcToBeBlockingReason,
 )
 
 

@@ -64,12 +64,6 @@ from .lifecycle.publication import (
     clear_failed_publication_attempt,
     validate_ready_to_publish,
 )
-from .lifecycle.rollups import (
-    queue_counts_rollup,
-    queue_published_rollup,
-    queue_rollup,
-)
-from .lifecycle.timeline import build_document_timeline
 from .models import (
     ASSIGNMENT_INACTIVE_STATES,
     ActionHolder,
@@ -157,6 +151,12 @@ from .serializers import (
     VersionInfoSerializer,
     collect_rfctobe_history,
 )
+from .stats.rollups import (
+    queue_counts_rollup,
+    queue_published_rollup,
+    queue_rollup,
+)
+from .stats.timeline import build_document_timeline
 from .tasks import (
     RPC_PERSON_NAME_MAP_CACHE_KEY,
     RPC_PERSON_NAME_MAP_CACHE_TTL,
@@ -1957,7 +1957,7 @@ class DocumentAssignmentTimeline(views.APIView):
     """Assignment/blocked timeline for a single document over time.
 
     Combines post-transition Assignment/Blocked history with pre-transition
-    label-derived states (see rpc.lifecycle.timeline).
+    label-derived states (see rpc.stats.timeline).
     """
 
     @extend_schema(

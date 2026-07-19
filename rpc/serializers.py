@@ -21,8 +21,8 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
-from rpc.lifecycle.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
-from rpc.lifecycle.timeline import KIND_CHOICES
+from rpc.stats.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
+from rpc.stats.timeline import KIND_CHOICES
 
 from .dt_v1_api_utils import datatracker_group_name
 from .models import (
@@ -341,7 +341,7 @@ class DocumentAssignmentSerializer(serializers.ModelSerializer):
 
 
 class TimelineSegmentSerializer(serializers.Serializer):
-    """One span of time in a single state (see rpc.lifecycle.timeline)."""
+    """One span of time in a single state (see rpc.stats.timeline)."""
 
     start = serializers.DateTimeField()
     end = serializers.DateTimeField(allow_null=True)

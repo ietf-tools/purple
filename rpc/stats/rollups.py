@@ -5,8 +5,8 @@ Aggregates per-document history into per-period (week / month / quarter / year /
 IETF-meeting) figures for the Time, Counts and Stream tabs. The bulk ``*_by_doc``
 helpers reload each document's history once, so a rollup runs a handful of
 queries regardless of queue size. Per-document reconstruction and the shared
-interval algebra live in :mod:`rpc.lifecycle.timeline` and
-:mod:`rpc.lifecycle.intervals`.
+interval algebra live in :mod:`rpc.stats.timeline` and
+:mod:`rpc.stats.intervals`.
 """
 
 import datetime

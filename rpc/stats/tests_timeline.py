@@ -1,17 +1,26 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Tests for rpc.lifecycle.timeline (per-document reconstruction) and the
+"""Tests for rpc.stats.timeline (per-document reconstruction) and the
 document-timeline endpoint."""
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 from django.urls import reverse
 
-from .factories import (
+from ..factories import (
     LabelFactory,
     RfcToBeFactory,
 )
-from .lifecycle import timeline
-from .lifecycle.timeline import (
+from ..models import (
+    BlockingReason,
+    RfcToBeBlockingReason,
+)
+from . import timeline
+from .test_helpers import (
+    _apply_label_over,
+    _dt,
+    _make_assignment,
+)
+from .timeline import (
     KIND_AWAITING,
     KIND_BLOCKED,
     KIND_LEGACY,
@@ -21,15 +30,6 @@ from .lifecycle.timeline import (
     blocked_reason_bands,
     build_document_timeline,
     document_intervals,
-)
-from .lifecycle_test_helpers import (
-    _apply_label_over,
-    _dt,
-    _make_assignment,
-)
-from .models import (
-    BlockingReason,
-    RfcToBeBlockingReason,
 )
 
 

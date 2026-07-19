@@ -8,7 +8,7 @@ persisted. Two eras are stitched together at ``TRANSITION_DATE``: on/after it,
 captured as ``RfcToBe`` labels and are reconstructed via
 :meth:`~rpc.models.RfcToBe.time_intervals_with_label`. Intervals straddling the
 boundary are clipped at it so the two eras never double-count. Queue-wide
-period aggregation lives in :mod:`rpc.lifecycle.rollups`.
+period aggregation lives in :mod:`rpc.stats.rollups`.
 """
 
 import datetime

@@ -1,10 +1,10 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Shared fixtures and history-rewriting builders for the rpc.lifecycle tests."""
+"""Shared fixtures and history-rewriting builders for the rpc.stats tests."""
 
 import datetime
 
-from .factories import AssignmentFactory, RfcToBeFactory, RpcRoleFactory
-from .models import DocRelationshipName, RpcRelatedDocument
+from ..factories import AssignmentFactory, RfcToBeFactory, RpcRoleFactory
+from ..models import DocRelationshipName, RpcRelatedDocument
 
 UTC = datetime.UTC
 DAY = datetime.timedelta(days=1)

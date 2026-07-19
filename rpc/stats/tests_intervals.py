@@ -1,16 +1,16 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Tests for rpc.lifecycle.intervals (pure interval algebra)."""
+"""Tests for rpc.stats.intervals (pure interval algebra)."""
 
 from django.test import SimpleTestCase
 
-from .lifecycle.intervals import (
+from .intervals import (
     _active_runs,
     _clip,
     _first_clear_after,
     _merge_intervals,
     _overlap_seconds,
 )
-from .lifecycle_test_helpers import _dt
+from .test_helpers import _dt
 
 
 class PureHelperTests(SimpleTestCase):
