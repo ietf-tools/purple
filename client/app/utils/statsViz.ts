@@ -42,27 +42,27 @@ export const KIND_LABELS: Record<Kind, string> = {
 }
 
 /** Color for a backend-supplied kind string (falls back to the legacy hue). */
-export function kindColor (kind: string): string {
+export function kindColor(kind: string): string {
   return KIND_COLORS[kind as Kind] ?? KIND_LEGACY_COLOR
 }
 
 /** Display label for a backend-supplied kind string (falls back to the raw kind). */
-export function kindLabel (kind: string): string {
+export function kindLabel(kind: string): string {
   return KIND_LABELS[kind as Kind] ?? kind
 }
 
 /** Segment end, defaulting an open-ended (ongoing) segment to `now`. */
-export function segmentEnd (segment: TimelineSegment, now: Date = new Date()): Date {
+export function segmentEnd(segment: TimelineSegment, now: Date = new Date()): Date {
   return segment.end ?? now
 }
 
 /** Duration of a segment in milliseconds (open-ended clamped to `now`). */
-export function segmentMillis (segment: TimelineSegment, now: Date = new Date()): number {
+export function segmentMillis(segment: TimelineSegment, now: Date = new Date()): number {
   return segmentEnd(segment, now).getTime() - segment.start.getTime()
 }
 
 /** Total milliseconds across a set of segments. */
-export function totalMillis (segments: TimelineSegment[], now: Date = new Date()): number {
+export function totalMillis(segments: TimelineSegment[], now: Date = new Date()): number {
   return segments.reduce((sum, s) => sum + segmentMillis(s, now), 0)
 }
 
@@ -73,7 +73,7 @@ const humanize = humanizeDuration.humanizer({
 })
 
 /** Human-readable duration from milliseconds, e.g. "3 days, 4 hours". */
-export function humanMillis (ms: number): string {
+export function humanMillis(ms: number): string {
   if (ms <= 0) {
     return '0'
   }
@@ -81,12 +81,12 @@ export function humanMillis (ms: number): string {
 }
 
 /** Human-readable duration from seconds (backend stats are in seconds). */
-export function humanSeconds (seconds: number): string {
+export function humanSeconds(seconds: number): string {
   return humanMillis(seconds * 1000)
 }
 
 /** Whole-day rendering for the queue summary (never sub-day units). */
-export function formatDays (seconds: number): string {
+export function formatDays(seconds: number): string {
   if (seconds <= 0) {
     return '—'
   }
@@ -99,7 +99,7 @@ export function formatDays (seconds: number): string {
 const WEEK_LABEL_RE = /^\d{4}-W\d{2}$/
 
 /** True if a period label is an ISO-week label (e.g. "2026-W28"). */
-export function isWeekLabel (label: string | undefined): boolean {
+export function isWeekLabel(label: string | undefined): boolean {
   return WEEK_LABEL_RE.test(label ?? '')
 }
 
@@ -108,14 +108,14 @@ export function isWeekLabel (label: string | undefined): boolean {
  * exclusive (the next Monday), so the last day shown is `end - 1 day`. Formatted
  * in UTC to match the UTC-midnight window boundaries.
  */
-export function formatWeekRange (start: Date, end: Date): string {
+export function formatWeekRange(start: Date, end: Date): string {
   const fmt = (d: Date) =>
     DateTime.fromJSDate(d, { zone: 'utc' }).toLocaleString({ month: 'short', day: 'numeric' })
   return `${fmt(start)} – ${fmt(new Date(end.getTime() - MS_PER_DAY))}`
 }
 
 /** CSS position for a chart tooltip, relative to a non-scrolling wrapper. */
-export type TooltipPos = { left?: string, right?: string, top?: string, bottom?: string }
+export type TooltipPos = { left?: string; right?: string; top?: string; bottom?: string }
 
 /**
  * Place a tooltip near the pointer within ``wrapper`` (a non-scrolling,
@@ -124,8 +124,10 @@ export type TooltipPos = { left?: string, right?: string, top?: string, bottom?:
  * horizontal/vertical midpoint it grows left/up (anchored by ``right``/
  * ``bottom``) instead of right/down.
  */
-export function tooltipPosition (
-  event: MouseEvent, wrapper: HTMLElement | null, offset = 12
+export function tooltipPosition(
+  event: MouseEvent,
+  wrapper: HTMLElement | null,
+  offset = 12
 ): TooltipPos {
   const rect = wrapper?.getBoundingClientRect()
   const w = wrapper?.clientWidth ?? 0
@@ -148,7 +150,13 @@ export function tooltipPosition (
 // it supports (cool 7, warm 4); roles beyond the cap fold into a neutral
 // "Other" bucket (see MAX_* / OTHER_* below and StackedTimeBars).
 export const NOT_BLOCKED_PALETTE = [
-  '#0d9488', '#0284c7', '#16a34a', '#4f46e5', '#0891b2', '#65a30d', '#2563eb'
+  '#0d9488',
+  '#0284c7',
+  '#16a34a',
+  '#4f46e5',
+  '#0891b2',
+  '#65a30d',
+  '#2563eb'
 ] // cool hues for not-blocked roles
 export const BLOCKED_PALETTE = ['#dc2626', '#ea580c', '#e11d48', '#a16207'] // warm hues for blocked roles
 export const MAX_NOT_BLOCKED = NOT_BLOCKED_PALETTE.length
@@ -168,10 +176,10 @@ export type Status = PublishedStatusEnum
 export type Stream = PublishedStreamEnum | 'ietf'
 
 /** One (stream, status) cell of a period, in display terms (Stream may be 'ietf'). */
-export type StreamStatusCell = { stream: Stream, status: Status, count: number }
+export type StreamStatusCell = { stream: Stream; status: Status; count: number }
 
 /** A period of the Stream tab after the client-side IETF merge is applied. */
-export type StreamPeriod = { label: string, start: Date, end: Date, counts: StreamStatusCell[] }
+export type StreamPeriod = { label: string; start: Date; end: Date; counts: StreamStatusCell[] }
 
 export const PUBLISHED_STATUS_COLORS: Record<Status, string> = {
   'Standards Track': '#0284c7',
@@ -181,7 +189,7 @@ export const PUBLISHED_STATUS_COLORS: Record<Status, string> = {
   Historic: '#a16207',
   Unknown: '#64748b'
 }
-export function statusColor (status: Status): string {
+export function statusColor(status: Status): string {
   return PUBLISHED_STATUS_COLORS[status] ?? '#64748b'
 }
 
@@ -190,10 +198,14 @@ export function statusColor (status: Status): string {
  * blocked, each alphabetical. (The chart colors/orders its own bars by total;
  * this ordering is just for the table's columns.)
  */
-export function orderedRoles (
-  roles: { role: string, isBlocked: boolean }[]
-): string[] {
-  const notBlocked = roles.filter(r => !r.isBlocked).map(r => r.role).sort()
-  const blocked = roles.filter(r => r.isBlocked).map(r => r.role).sort()
+export function orderedRoles(roles: { role: string; isBlocked: boolean }[]): string[] {
+  const notBlocked = roles
+    .filter((r) => !r.isBlocked)
+    .map((r) => r.role)
+    .sort()
+  const blocked = roles
+    .filter((r) => r.isBlocked)
+    .map((r) => r.role)
+    .sort()
   return [...notBlocked, ...blocked]
 }

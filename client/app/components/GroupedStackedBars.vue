@@ -3,9 +3,12 @@
     <div ref="root" class="relative">
       <div ref="container" class="w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
         <svg
-          ref="svgEl" :width="chartWidth" :height="HEIGHT_PX" class="block"
-          role="img" aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below."
-        />
+          ref="svgEl"
+          :width="chartWidth"
+          :height="HEIGHT_PX"
+          class="block"
+          role="img"
+          aria-label="Grouped bar chart of RFCs published each period, one bar per stream stacked by status. The same data is in the table below." />
         <div v-if="periods.length === 0" class="py-8 text-center text-sm opacity-60">
           No data for the selected range.
         </div>
@@ -15,8 +18,7 @@
       <div
         v-if="tooltip.visible"
         class="pointer-events-none absolute z-10 max-w-xs rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
-        :style="tooltip.pos"
-      >
+        :style="tooltip.pos">
         <div class="font-semibold">{{ tooltip.title }}</div>
         <div>{{ tooltip.detail }}</div>
       </div>
@@ -24,20 +26,21 @@
 
     <!-- Interactive legend: click a status to hide/show it (chart rescales). -->
     <div v-if="statuses.length" class="mt-3 text-xs">
-      <p class="mb-1 opacity-50">Color = status; each group is one period, one bar per stream. Click a status to hide it.</p>
+      <p class="mb-1 opacity-50">
+        Color = status; each group is one period, one bar per stream. Click a status to hide it.
+      </p>
       <div class="flex flex-wrap gap-x-4 gap-y-1">
         <button
-          v-for="s in statuses" :key="s"
+          v-for="s in statuses"
+          :key="s"
           type="button"
           :aria-pressed="!hidden.has(s)"
           class="flex items-center gap-1 rounded px-1 transition-opacity hover:bg-gray-100 dark:hover:bg-neutral-800"
           :class="hidden.has(s) ? 'opacity-35' : ''"
-          @click="toggle(s)"
-        >
+          @click="toggle(s)">
           <span
             class="inline-block h-3 w-3 rounded-sm ring-1 ring-inset ring-black/10"
-            :style="{ backgroundColor: statusColor(s) }"
-          />
+            :style="{ backgroundColor: statusColor(s) }" />
           <span :class="hidden.has(s) ? 'line-through' : ''">{{ s }}</span>
         </button>
       </div>
@@ -49,7 +52,12 @@
 import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import {
-  statusColor, tooltipPosition, type Status, type Stream, type StreamPeriod, type TooltipPos
+  statusColor,
+  tooltipPosition,
+  type Status,
+  type Stream,
+  type StreamPeriod,
+  type TooltipPos
 } from '~/utils/statsViz'
 
 type Props = {
@@ -71,7 +79,7 @@ const SEG_GAP_PX = 1
 const MIN_BAR_W_PX = 16 // min px per stream sub-bar, else the chart scrolls
 
 const hidden = reactive(new Set<string>())
-function toggle (key: string) {
+function toggle(key: string) {
   if (hidden.has(key)) hidden.delete(key)
   else hidden.add(key)
 }
@@ -79,7 +87,7 @@ function toggle (key: string) {
 const tooltip = reactive({ visible: false, pos: {} as TooltipPos, title: '', detail: '' })
 
 const periods = computed(() => props.periods)
-const visibleStatuses = computed(() => props.statuses.filter(s => !hidden.has(s)))
+const visibleStatuses = computed(() => props.statuses.filter((s) => !hidden.has(s)))
 
 // period label -> "stream|status" -> count
 const lookup = computed(() => {
@@ -91,14 +99,14 @@ const lookup = computed(() => {
   }
   return m
 })
-function countOf (label: string, stream: Stream, status: Status): number {
+function countOf(label: string, stream: Stream, status: Status): number {
   return lookup.value.get(label)?.get(`${stream}|${status}`) ?? 0
 }
-function stackTotal (label: string, stream: Stream): number {
+function stackTotal(label: string, stream: Stream): number {
   return visibleStatuses.value.reduce((sum, s) => sum + countOf(label, stream, s), 0)
 }
 
-function draw () {
+function draw() {
   const svg = d3.select(svgEl.value)
   svg.selectAll('*').remove()
   hideTooltip()
@@ -113,33 +121,38 @@ function draw () {
   const innerW = chartWidth.value - MARGIN.left - MARGIN.right
   const innerH = HEIGHT_PX - MARGIN.top - MARGIN.bottom
 
-  const x0 = d3.scaleBand()
-    .domain(data.map(d => d.label))
+  const x0 = d3
+    .scaleBand()
+    .domain(data.map((d) => d.label))
     .range([MARGIN.left, MARGIN.left + innerW])
-    .paddingInner(0.25).paddingOuter(0.1)
-  const x1 = d3.scaleBand<string>()
-    .domain(streams)
-    .range([0, x0.bandwidth()])
-    .padding(0.15)
+    .paddingInner(0.25)
+    .paddingOuter(0.1)
+  const x1 = d3.scaleBand<string>().domain(streams).range([0, x0.bandwidth()]).padding(0.15)
 
-  const maxCount = d3.max(
-    data.flatMap(d => streams.map(s => stackTotal(d.label, s)))
-  ) ?? 0
-  const y = d3.scaleLinear()
+  const maxCount = d3.max(data.flatMap((d) => streams.map((s) => stackTotal(d.label, s)))) ?? 0
+  const y = d3
+    .scaleLinear()
     .domain([0, maxCount === 0 ? 1 : maxCount])
     .range([MARGIN.top + innerH, MARGIN.top])
     .nice()
 
-  const yAxis = d3.axisLeft(y).ticks(5).tickFormat(d => `${d}`)
+  const yAxis = d3
+    .axisLeft(y)
+    .ticks(5)
+    .tickFormat((d) => `${d}`)
   const yG = svg.append('g').attr('transform', `translate(${MARGIN.left}, 0)`).call(yAxis)
   yG.selectAll('text').attr('fill', 'currentColor').attr('font-size', 10)
   yG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
 
   const baseline = MARGIN.top + innerH
-  svg.append('line')
-    .attr('x1', MARGIN.left).attr('x2', MARGIN.left + innerW)
-    .attr('y1', baseline).attr('y2', baseline)
-    .attr('stroke', 'currentColor').attr('opacity', 0.3)
+  svg
+    .append('line')
+    .attr('x1', MARGIN.left)
+    .attr('x2', MARGIN.left + innerW)
+    .attr('y1', baseline)
+    .attr('y2', baseline)
+    .attr('stroke', 'currentColor')
+    .attr('opacity', 0.3)
 
   const barW = x1.bandwidth()
   data.forEach((d) => {
@@ -153,9 +166,12 @@ function draw () {
         const yTop = y(cursor + c)
         const h = Math.max(y(cursor) - yTop - SEG_GAP_PX, 0)
         if (h > 0) {
-          svg.append('rect')
-            .attr('x', sx).attr('y', yTop)
-            .attr('width', barW).attr('height', h)
+          svg
+            .append('rect')
+            .attr('x', sx)
+            .attr('y', yTop)
+            .attr('width', barW)
+            .attr('height', h)
             .attr('rx', 1)
             .attr('fill', statusColor(status))
             .style('cursor', 'pointer')
@@ -165,29 +181,43 @@ function draw () {
         cursor += c
       }
       // Stream label under each sub-bar (rotated to fit narrow bars).
-      svg.append('text')
-        .attr('x', sx + barW / 2).attr('y', baseline + 4)
+      svg
+        .append('text')
+        .attr('x', sx + barW / 2)
+        .attr('y', baseline + 4)
         .attr('transform', `rotate(-45, ${sx + barW / 2}, ${baseline + 4})`)
-        .attr('text-anchor', 'end').attr('fill', 'currentColor')
-        .attr('font-size', 8).attr('opacity', 0.7)
+        .attr('text-anchor', 'end')
+        .attr('fill', 'currentColor')
+        .attr('font-size', 8)
+        .attr('opacity', 0.7)
         .text(props.streamLabel(stream))
     }
     // Period label centered under the group.
-    svg.append('text')
-      .attr('x', gx + x0.bandwidth() / 2).attr('y', HEIGHT_PX - 6)
-      .attr('text-anchor', 'middle').attr('fill', 'currentColor')
-      .attr('font-size', 10).attr('font-weight', 600)
+    svg
+      .append('text')
+      .attr('x', gx + x0.bandwidth() / 2)
+      .attr('y', HEIGHT_PX - 6)
+      .attr('text-anchor', 'middle')
+      .attr('fill', 'currentColor')
+      .attr('font-size', 10)
+      .attr('font-weight', 600)
       .text(d.label)
   })
 }
 
-function showTooltip (event: MouseEvent, label: string, stream: Stream, status: Status, count: number) {
+function showTooltip(
+  event: MouseEvent,
+  label: string,
+  stream: Stream,
+  status: Status,
+  count: number
+) {
   tooltip.pos = tooltipPosition(event, root.value)
   tooltip.visible = true
   tooltip.title = `${label} — ${props.streamLabel(stream)}`
   tooltip.detail = `${status}: ${count} RFC${count === 1 ? '' : 's'}`
 }
-function hideTooltip () {
+function hideTooltip() {
   tooltip.visible = false
 }
 

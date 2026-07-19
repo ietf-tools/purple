@@ -2,9 +2,12 @@
   <div ref="root" class="relative w-full">
     <div ref="container" class="w-full overflow-x-auto text-gray-600 dark:text-neutral-300">
       <svg
-        ref="svgEl" :width="width" :height="height" class="block"
-        role="img" aria-label="Timeline showing when this document was in each assignment state, blocked, or a legacy state."
-      />
+        ref="svgEl"
+        :width="width"
+        :height="height"
+        class="block"
+        role="img"
+        aria-label="Timeline showing when this document was in each assignment state, blocked, or a legacy state." />
       <div v-if="lanes.length === 0" class="py-8 text-center text-sm opacity-60">
         No assignment or state history to display.
       </div>
@@ -14,8 +17,7 @@
     <div
       v-if="tooltip.visible"
       class="pointer-events-none absolute z-10 rounded-md border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-2 py-1 text-xs shadow-lg text-gray-800 dark:text-neutral-100"
-      :style="tooltip.pos"
-    >
+      :style="tooltip.pos">
       <div class="font-semibold">{{ tooltip.title }}</div>
       <div>{{ tooltip.detail }}</div>
       <div class="opacity-70">{{ tooltip.duration }}</div>
@@ -28,7 +30,17 @@ import { useElementSize } from '@vueuse/core'
 import * as d3 from 'd3'
 import { DateTime } from 'luxon'
 import type { AssignmentTimeline, TimelineSegment } from '~/purple_client'
-import { KIND_AWAITING, KIND_LEGACY_COLOR, humanMillis, kindColor, kindLabel, segmentEnd, segmentMillis, tooltipPosition, type TooltipPos } from '~/utils/statsViz'
+import {
+  KIND_AWAITING,
+  KIND_LEGACY_COLOR,
+  humanMillis,
+  kindColor,
+  kindLabel,
+  segmentEnd,
+  segmentMillis,
+  tooltipPosition,
+  type TooltipPos
+} from '~/utils/statsViz'
 
 type Props = {
   timeline: AssignmentTimeline
@@ -64,7 +76,7 @@ const tooltip = reactive({
 })
 
 // Earliest segment start of a lane (Infinity if it has none), for ordering.
-function firstStart (segments: TimelineSegment[]): number {
+function firstStart(segments: TimelineSegment[]): number {
   let min = Infinity
   for (const seg of segments) min = Math.min(min, seg.start.getTime())
   return min
@@ -110,7 +122,7 @@ const lanes = computed<Lane[]>(() => {
   for (const track of tl.tracks) {
     // A final_review_editor assignment is split by the backend into a working
     // row and an "awaiting ref" row (segments carry the kind); label each.
-    const awaiting = track.segments.some(s => s.kind === KIND_AWAITING)
+    const awaiting = track.segments.some((s) => s.kind === KIND_AWAITING)
     detail.push({
       key: `track-${track.assignmentId}-${awaiting ? 'awaiting' : 'main'}`,
       label: track.role,
@@ -126,17 +138,20 @@ const lanes = computed<Lane[]>(() => {
 
 // The leading summary lanes ("Not blocked" / "Blocked") aggregate the detail
 // lanes below them, so they get boxed together and set apart with a gap.
-const summaryCount = computed(() => lanes.value.filter(l => l.group === 'summary').length)
-const hasGroupSplit = computed(() =>
-  summaryCount.value > 0 && summaryCount.value < lanes.value.length
+const summaryCount = computed(() => lanes.value.filter((l) => l.group === 'summary').length)
+const hasGroupSplit = computed(
+  () => summaryCount.value > 0 && summaryCount.value < lanes.value.length
 )
 
-const height = computed(() =>
-  MARGIN.top + MARGIN.bottom + lanes.value.length * (ROW_H_PX + ROW_GAP_PX)
-  + (hasGroupSplit.value ? GROUP_GAP_PX : 0)
+const height = computed(
+  () =>
+    MARGIN.top +
+    MARGIN.bottom +
+    lanes.value.length * (ROW_H_PX + ROW_GAP_PX) +
+    (hasGroupSplit.value ? GROUP_GAP_PX : 0)
 )
 
-function draw () {
+function draw() {
   const svg = d3.select(svgEl.value)
   svg.selectAll('*').remove()
   hideTooltip() // removing a hovered element never fires mouseleave
@@ -158,7 +173,8 @@ function draw () {
   ends.push(props.timeline.transitionDate)
   const minDate = d3.min(starts) ?? props.timeline.transitionDate
   const maxDate = d3.max(ends) ?? now
-  const x = d3.scaleTime()
+  const x = d3
+    .scaleTime()
     .domain([minDate, maxDate === minDate ? now : maxDate])
     .range([MARGIN.left, MARGIN.left + innerWidth])
     .nice()
@@ -172,38 +188,52 @@ function draw () {
   if (summaryN > 0) {
     const boxTop = rowY(0) - 3
     const boxBottom = rowY(summaryN - 1) + ROW_H_PX + 3
-    svg.append('rect')
-      .attr('x', 4).attr('y', boxTop)
+    svg
+      .append('rect')
+      .attr('x', 4)
+      .attr('y', boxTop)
       .attr('width', Math.max(width.value - 8, 10))
       .attr('height', boxBottom - boxTop)
-      .attr('fill', 'currentColor').attr('opacity', 0.06).attr('rx', 6)
+      .attr('fill', 'currentColor')
+      .attr('opacity', 0.06)
+      .attr('rx', 6)
     if (hasGroupSplit.value) {
       const yDiv = (rowY(summaryN - 1) + ROW_H_PX + rowY(summaryN)) / 2
-      svg.append('line')
-        .attr('x1', 4).attr('x2', Math.max(width.value - 4, 10))
-        .attr('y1', yDiv).attr('y2', yDiv)
-        .attr('stroke', 'currentColor').attr('opacity', 0.15)
+      svg
+        .append('line')
+        .attr('x1', 4)
+        .attr('x2', Math.max(width.value - 4, 10))
+        .attr('y1', yDiv)
+        .attr('y2', yDiv)
+        .attr('stroke', 'currentColor')
+        .attr('opacity', 0.15)
     }
   }
 
   // Top time axis.
   const axis = d3.axisTop(x).ticks(Math.max(2, Math.floor(innerWidth / 110)))
-  const axisG = svg.append('g')
-    .attr('transform', `translate(0, ${MARGIN.top})`)
-    .call(axis)
+  const axisG = svg.append('g').attr('transform', `translate(0, ${MARGIN.top})`).call(axis)
   axisG.selectAll('text').attr('fill', 'currentColor').attr('font-size', 10)
   axisG.selectAll('line, path').attr('stroke', 'currentColor').attr('opacity', 0.3)
 
   // Transition marker.
   const tx = x(props.timeline.transitionDate)
   if (tx >= MARGIN.left && tx <= MARGIN.left + innerWidth) {
-    svg.append('line')
-      .attr('x1', tx).attr('x2', tx)
-      .attr('y1', MARGIN.top).attr('y2', height.value - MARGIN.bottom)
-      .attr('stroke', KIND_LEGACY_COLOR).attr('stroke-dasharray', '4 3').attr('opacity', 0.8)
-    svg.append('text')
-      .attr('x', tx + 3).attr('y', MARGIN.top - 16)
-      .attr('fill', KIND_LEGACY_COLOR).attr('font-size', 9)
+    svg
+      .append('line')
+      .attr('x1', tx)
+      .attr('x2', tx)
+      .attr('y1', MARGIN.top)
+      .attr('y2', height.value - MARGIN.bottom)
+      .attr('stroke', KIND_LEGACY_COLOR)
+      .attr('stroke-dasharray', '4 3')
+      .attr('opacity', 0.8)
+    svg
+      .append('text')
+      .attr('x', tx + 3)
+      .attr('y', MARGIN.top - 16)
+      .attr('fill', KIND_LEGACY_COLOR)
+      .attr('font-size', 9)
       .text('transition')
   }
 
@@ -212,39 +242,52 @@ function draw () {
     const y = rowY(i)
 
     // Row label.
-    svg.append('text')
-      .attr('x', MARGIN.left - 8).attr('y', y + ROW_H_PX / 2)
-      .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+    svg
+      .append('text')
+      .attr('x', MARGIN.left - 8)
+      .attr('y', y + ROW_H_PX / 2)
+      .attr('text-anchor', 'end')
+      .attr('dominant-baseline', 'middle')
       .attr('fill', 'currentColor')
       .attr('font-size', 11)
       .attr('font-weight', lane.group === 'summary' ? 600 : 400)
       .text(lane.label)
     if (lane.sublabel) {
-      svg.append('text')
-        .attr('x', MARGIN.left - 8).attr('y', y + ROW_H_PX / 2 + 11)
-        .attr('text-anchor', 'end').attr('fill', 'currentColor')
-        .attr('font-size', 9).attr('opacity', 0.6)
+      svg
+        .append('text')
+        .attr('x', MARGIN.left - 8)
+        .attr('y', y + ROW_H_PX / 2 + 11)
+        .attr('text-anchor', 'end')
+        .attr('fill', 'currentColor')
+        .attr('font-size', 9)
+        .attr('opacity', 0.6)
         .text(lane.sublabel)
     }
 
     // Lane background.
-    svg.append('rect')
-      .attr('x', MARGIN.left).attr('y', y)
-      .attr('width', innerWidth).attr('height', ROW_H_PX)
-      .attr('fill', 'currentColor').attr('opacity', 0.04).attr('rx', 3)
+    svg
+      .append('rect')
+      .attr('x', MARGIN.left)
+      .attr('y', y)
+      .attr('width', innerWidth)
+      .attr('height', ROW_H_PX)
+      .attr('fill', 'currentColor')
+      .attr('opacity', 0.04)
+      .attr('rx', 3)
 
     // Segments. selectAll(null) forces an all-enter join (the SVG is rebuilt
     // each draw), avoiding a phantom class selector that matched nothing.
-    svg.selectAll(null)
+    svg
+      .selectAll(null)
       .data(lane.segments)
       .enter()
       .append('rect')
-      .attr('x', d => x(d.start))
+      .attr('x', (d) => x(d.start))
       .attr('y', y + 2)
-      .attr('width', d => Math.max(x(segmentEnd(d, now)) - x(d.start), 2))
+      .attr('width', (d) => Math.max(x(segmentEnd(d, now)) - x(d.start), 2))
       .attr('height', ROW_H_PX - 4)
       .attr('rx', 2)
-      .attr('fill', d => kindColor(d.kind))
+      .attr('fill', (d) => kindColor(d.kind))
       .attr('opacity', 0.85)
       .style('cursor', 'pointer')
       .on('mousemove', (event: MouseEvent, d: TimelineSegment) => showTooltip(event, lane, d))
@@ -252,7 +295,7 @@ function draw () {
   })
 }
 
-function showTooltip (event: MouseEvent, lane: Lane, seg: TimelineSegment) {
+function showTooltip(event: MouseEvent, lane: Lane, seg: TimelineSegment) {
   const fmt = (dt: Date) => DateTime.fromJSDate(dt).toLocaleString(DateTime.DATE_MED)
   tooltip.pos = tooltipPosition(event, root.value)
   tooltip.visible = true
@@ -261,7 +304,7 @@ function showTooltip (event: MouseEvent, lane: Lane, seg: TimelineSegment) {
   tooltip.duration = humanMillis(segmentMillis(seg, now))
 }
 
-function hideTooltip () {
+function hideTooltip() {
   tooltip.visible = false
 }
 

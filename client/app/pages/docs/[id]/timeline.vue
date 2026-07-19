@@ -13,23 +13,35 @@
         <div class="flex items-center justify-between">
           <h3 class="text-base font-semibold leading-7">
             Assignment timeline
-            <Icon v-show="timelineStatus === 'pending'" name="ei:spinner-3" size="1.5em" class="animate-spin" />
+            <Icon
+              v-show="timelineStatus === 'pending'"
+              name="ei:spinner-3"
+              size="1.5em"
+              class="animate-spin" />
           </h3>
           <div class="flex items-center gap-3 text-xs">
             <span class="flex items-center gap-1">
-              <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_WORKING] }" />
+              <span
+                class="inline-block h-3 w-3 rounded-sm"
+                :style="{ backgroundColor: KIND_COLORS[KIND_WORKING] }" />
               Not blocked
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_BLOCKED] }" />
+              <span
+                class="inline-block h-3 w-3 rounded-sm"
+                :style="{ backgroundColor: KIND_COLORS[KIND_BLOCKED] }" />
               Blocked
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_AWAITING] }" />
+              <span
+                class="inline-block h-3 w-3 rounded-sm"
+                :style="{ backgroundColor: KIND_COLORS[KIND_AWAITING] }" />
               Awaiting ref
             </span>
             <span class="flex items-center gap-1">
-              <span class="inline-block h-3 w-3 rounded-sm" :style="{ backgroundColor: KIND_COLORS[KIND_LEGACY] }" />
+              <span
+                class="inline-block h-3 w-3 rounded-sm"
+                :style="{ backgroundColor: KIND_COLORS[KIND_LEGACY] }" />
               Legacy state
             </span>
           </div>
@@ -59,8 +71,12 @@
                 <span v-if="row.awaiting" class="ml-2 text-xs opacity-60">awaiting ref</span>
               </td>
               <td class="px-3 py-2">{{ row.person ?? '—' }}</td>
-              <td class="px-3 py-2 text-right">{{ row.isBlocked ? '—' : humanMillis(row.millis) }}</td>
-              <td class="px-3 py-2 text-right">{{ row.isBlocked ? humanMillis(row.millis) : '—' }}</td>
+              <td class="px-3 py-2 text-right">
+                {{ row.isBlocked ? '—' : humanMillis(row.millis) }}
+              </td>
+              <td class="px-3 py-2 text-right">
+                {{ row.isBlocked ? humanMillis(row.millis) : '—' }}
+              </td>
             </tr>
             <tr v-if="trackRows.length === 0">
               <td colspan="4" class="px-3 py-3 text-center opacity-60">No assignments yet.</td>
@@ -145,7 +161,7 @@ const trackRows = computed(() =>
     // A final-review assignment can yield two tracks with the same assignmentId
     // — a working row and an "awaiting ref" (blocked) row; segments carry the
     // kind. Disambiguate the key and mark the awaiting row (as the gantt does).
-    const awaiting = track.segments.some(s => s.kind === KIND_AWAITING)
+    const awaiting = track.segments.some((s) => s.kind === KIND_AWAITING)
     return {
       key: `track-${track.assignmentId}-${awaiting ? 'awaiting' : 'main'}`,
       role: track.role,
@@ -158,17 +174,17 @@ const trackRows = computed(() =>
 )
 
 const totalWorkingMillis = computed(() => {
-  const band = (timeline.value?.summary ?? []).find(b => b.kind === KIND_WORKING)
+  const band = (timeline.value?.summary ?? []).find((b) => b.kind === KIND_WORKING)
   return band ? totalMillis(band.segments, now) : 0
 })
 
 const totalBlockedMillis = computed(() => {
-  const band = (timeline.value?.summary ?? []).find(b => b.kind === KIND_BLOCKED)
+  const band = (timeline.value?.summary ?? []).find((b) => b.kind === KIND_BLOCKED)
   return band ? totalMillis(band.segments, now) : 0
 })
 
 const legacyRows = computed(() =>
-  (timeline.value?.legacy ?? []).map(band => ({
+  (timeline.value?.legacy ?? []).map((band) => ({
     key: `legacy-${band.label}`,
     label: band.label ?? '(label)',
     kind: band.kind,

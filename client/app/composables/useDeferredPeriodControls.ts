@@ -5,7 +5,7 @@ const MIN_COUNT = 1
 const MAX_COUNT = 52
 
 /** Count coerced to an integer in [1, 52]; empty / NaN / 0 become 1. */
-export function clampCount (n: number): number {
+export function clampCount(n: number): number {
   return clamp(Math.trunc(n || 1), MIN_COUNT, MAX_COUNT)
 }
 
@@ -15,7 +15,7 @@ export function clampCount (n: number): number {
  * long) query and only change when `apply()` is called — pass the `applied*`
  * refs to useAsyncData's `watch`. `isDirty` reflects whether an Apply is due.
  */
-export function useDeferredPeriodControls (
+export function useDeferredPeriodControls(
   initialPeriod: StatsQueuePeriodEnum,
   initialCount: number
 ) {
@@ -24,12 +24,13 @@ export function useDeferredPeriodControls (
   const appliedPeriod = ref<StatsQueuePeriodEnum>(initialPeriod)
   const appliedCount = ref(clampCount(initialCount))
 
-  const isDirty = computed(() =>
-    pendingPeriod.value !== appliedPeriod.value ||
-    clampCount(pendingCount.value) !== appliedCount.value
+  const isDirty = computed(
+    () =>
+      pendingPeriod.value !== appliedPeriod.value ||
+      clampCount(pendingCount.value) !== appliedCount.value
   )
 
-  function apply () {
+  function apply() {
     const count = clampCount(pendingCount.value)
     pendingCount.value = count // reflect any clamping back into the input
     appliedPeriod.value = pendingPeriod.value
