@@ -27,14 +27,14 @@ from ..models import (
 )
 from .intervals import (
     Run,
-    _active_runs,
-    _clip,
-    _covered_at,
-    _first_clear_after,
-    _intersect_intervals,
-    _merge_intervals,
-    _overlap_seconds,
-    _subtract_intervals,
+    active_runs,
+    clip,
+    covered_at,
+    first_clear_after,
+    intersect_intervals,
+    merge_intervals,
+    overlap_seconds,
+    subtract_intervals,
 )
 from .timeline import (
     AWAITING_REF_LABEL_PREFIX,
@@ -44,7 +44,7 @@ from .timeline import (
 )
 
 # Lightweight stand-in for an assignment history record when read in bulk via
-# ``.values_list`` — only the fields ``_active_runs`` touches.
+# ``.values_list`` — only the fields ``active_runs`` touches.
 _HistRec = namedtuple("_HistRec", ["state", "history_date"])
 
 
@@ -54,7 +54,8 @@ def _add_months(year: int, month: int, delta: int) -> tuple[int, int]:
     return index // 12, index % 12 + 1
 
 
-def _aware(d: datetime.date) -> datetime.datetime:
+def _midnight_utc(d: datetime.date) -> datetime.datetime:
+    """Return the aware datetime at 00:00 UTC on ``d``."""
     return datetime.datetime.combine(d, datetime.time.min, tzinfo=datetime.UTC)
 
 
@@ -66,7 +67,9 @@ def period_windows(period: str, count: int, now: datetime.datetime) -> list[dict
     """
     if count < 1:
         return []
-    today = now.date()
+    # Take the calendar day in UTC so the window boundaries line up with
+    # _midnight_utc(), which anchors each window's start/end at 00:00 UTC.
+    today = now.astimezone(datetime.UTC).date()
     windows: list[dict] = []
 
     if period == "year":
@@ -114,7 +117,7 @@ def period_windows(period: str, count: int, now: datetime.datetime) -> list[dict
         raise ValueError(f"Unknown period: {period!r}")
 
     return [
-        {"label": label, "start": _aware(start), "end": _aware(end)}
+        {"label": label, "start": _midnight_utc(start), "end": _midnight_utc(end)}
         for label, start, end in windows
     ]
 
@@ -125,7 +128,6 @@ def period_windows(period: str, count: int, now: datetime.datetime) -> list[dict
 # this window of entry as "present at entry"; a reference discovered later (days)
 # is well outside it.
 _MISSING_REF_ENTRY_GRACE = datetime.timedelta(minutes=5)
-
 
 # The legacy (pre-transition) MISSREF label was often applied in a batch some
 # days after a doc was enqueued, yet reflects its state at entry. Count a MISSREF
@@ -139,7 +141,7 @@ def _missing_ref_at_entry(
     grace: datetime.timedelta,
 ) -> bool:
     """True if a missing-ref interval covers ``enq`` or starts within ``grace``."""
-    return _covered_at(intervals, enq) or any(
+    return covered_at(intervals, enq) or any(
         enq <= start <= enq + grace for start, _ in intervals
     )
 
@@ -275,13 +277,13 @@ def queue_rollup(
             for lpk, slug in legacy_slug_by_pk.items():
                 is_blocked = slug in LEGACY_BLOCKED_LABEL_SLUGS
                 for start, end in label_iv.get(doc_id, {}).get(lpk, []):
-                    clipped = _clip(start, end, hi=TRANSITION_DATE)
+                    clipped = clip(start, end, hi=TRANSITION_DATE)
                     if clipped is None:
                         continue
                     _b, intervals = raw.setdefault(slug, (is_blocked, []))
                     intervals.append(clipped)
         result = {
-            category: (is_blocked, _merge_intervals(intervals, now))
+            category: (is_blocked, merge_intervals(intervals, now))
             for category, (is_blocked, intervals) in raw.items()
         }
         if doc_id in awaiting_ids:
@@ -290,13 +292,13 @@ def queue_rollup(
                 for lpk in awaiting_pks
                 for iv in label_iv.get(doc_id, {}).get(lpk, [])
             ]
-            awaiting = _merge_intervals(awaiting_raw, now) if awaiting_raw else []
+            awaiting = merge_intervals(awaiting_raw, now) if awaiting_raw else []
             if awaiting:
                 fre = result.get("final_review_editor")
                 if fre is not None:
                     result["final_review_editor"] = (
                         fre[0],
-                        _subtract_intervals(fre[1], awaiting),
+                        subtract_intervals(fre[1], awaiting),
                     )
                 result["awaiting_ref"] = (True, awaiting)
         if doc_id in reason_ids:
@@ -311,12 +313,12 @@ def queue_rollup(
                 blocked_ivs = blocked_cat[1] if blocked_cat else []
                 covered: list = []
                 for name, intervals in reasons.items():
-                    within = _intersect_intervals(intervals, blocked_ivs)
+                    within = intersect_intervals(intervals, blocked_ivs)
                     if within:
                         result[name] = (True, within)
                         covered.extend(within)
-                remainder = _subtract_intervals(
-                    blocked_ivs, _merge_intervals(covered, now)
+                remainder = subtract_intervals(
+                    blocked_ivs, merge_intervals(covered, now)
                 )
                 if remainder:
                     result["blocked (other)"] = (True, remainder)
@@ -350,7 +352,7 @@ def queue_rollup(
                 # Per-period flow: only the portion of each interval that falls
                 # within this window, so long-running states (e.g. MISSREF, EDIT)
                 # do not accumulate into an ever-growing cumulative total.
-                seconds = _overlap_seconds(intervals, start, eff_end)
+                seconds = overlap_seconds(intervals, start, eff_end)
                 if seconds <= 0:
                     continue
                 slot = role_totals.setdefault(role, [is_blocked, 0.0])
@@ -547,8 +549,8 @@ def _assignment_segments_by_doc(
         if not history:
             continue
         runs = []
-        for start, end, state in _active_runs(history):
-            clipped = _clip(start, end, lo=TRANSITION_DATE)
+        for start, end, state in active_runs(history):
+            clipped = clip(start, end, lo=TRANSITION_DATE)
             if clipped is not None:
                 runs.append((clipped[0], clipped[1], state))
         if runs:
@@ -589,12 +591,12 @@ def _blocked_intervals_by_doc(
         if doc_id in legacy_ids:
             for lpk in legacy_blocked_pks:
                 for start, end in label_iv.get(doc_id, {}).get(lpk, []):
-                    clipped = _clip(start, end, hi=TRANSITION_DATE)
+                    clipped = clip(start, end, hi=TRANSITION_DATE)
                     if clipped is not None:
                         raw.append(clipped)
         for lpk in awaiting_pks:  # awaiting time counts as blocked, all eras
             raw.extend(label_iv.get(doc_id, {}).get(lpk, []))
-        out[doc_id] = _merge_intervals(raw, now)
+        out[doc_id] = merge_intervals(raw, now)
     return out
 
 
@@ -617,7 +619,7 @@ def _blocked_reason_intervals_by_doc(
     ):
         raw.setdefault(doc_id, {}).setdefault(name, []).append((since, resolved))
     return {
-        doc_id: {name: _merge_intervals(ivs, now) for name, ivs in by_reason.items()}
+        doc_id: {name: merge_intervals(ivs, now) for name, ivs in by_reason.items()}
         for doc_id, by_reason in raw.items()
     }
 
@@ -675,11 +677,11 @@ def queue_counts_rollup(
         enq = d["enqueued_at"]
         rel = notrecv.get(d["pk"], [])
         lab = missref_intervals.get(d["pk"], [])
-        d["gone_to_edit"] = _first_clear_after(rel + lab, enq) if enq else None
+        d["gone_to_edit"] = first_clear_after(rel + lab, enq) if enq else None
         if rel:
-            relation_merged[d["pk"]] = _merge_intervals(rel, now)
+            relation_merged[d["pk"]] = merge_intervals(rel, now)
         if lab:
-            label_merged[d["pk"]] = _merge_intervals(lab, now)
+            label_merged[d["pk"]] = merge_intervals(lab, now)
 
     # Full pages history per doc (one query), to read the page count in effect
     # at any instant — period boundaries, enqueue, publish, gone-to-edit.
@@ -726,9 +728,7 @@ def queue_counts_rollup(
     blocked_intervals: dict[int, list] = {}
     for pk in relevant_ids:
         missing = notrecv.get(pk, []) + missref_intervals.get(pk, [])
-        blocked_intervals[pk] = _merge_intervals(
-            base_blocked.get(pk, []) + missing, now
-        )
+        blocked_intervals[pk] = merge_intervals(base_blocked.get(pk, []) + missing, now)
 
     periods: list[dict] = []
     for window in windows:
@@ -767,7 +767,7 @@ def queue_counts_rollup(
             # pages of docs still in the queue, split blocked vs in progress.
             if enq <= eff_end and (pub is None or pub > eff_end):
                 end_pages = pages_at_boundary(d["pk"], eff_end)
-                if _covered_at(blocked_intervals.get(d["pk"], []), eff_end):
+                if covered_at(blocked_intervals.get(d["pk"], []), eff_end):
                     pages_blocked_end += end_pages
                 else:
                     pages_in_progress_end += end_pages
@@ -778,7 +778,7 @@ def queue_counts_rollup(
                 ).total_seconds()
                 if in_queue <= 0:
                     continue
-                blocked = _overlap_seconds(
+                blocked = overlap_seconds(
                     blocked_intervals.get(d["pk"], []), start, eff_end
                 )
                 if blocked >= in_queue:  # blocked the whole time it was in queue
@@ -832,7 +832,6 @@ PUBLISHED_STREAM_LABELS = {
 # The stream keys, as serializer choices (see PUBLISHED_STATUS_ORDER's use).
 PUBLISHED_STREAMS = tuple(PUBLISHED_STREAM_LABELS)
 
-
 # Publication std-level slug -> status bucket, and the bucket display order.
 _STD_LEVEL_BUCKET = {
     "ps": "Standards Track",
@@ -844,7 +843,6 @@ _STD_LEVEL_BUCKET = {
     "hist": "Historic",
     "unkn": "Unknown",
 }
-
 
 PUBLISHED_STATUS_ORDER = [
     "Standards Track",

@@ -10,11 +10,11 @@ UTC = datetime.UTC
 DAY = datetime.timedelta(days=1)
 
 
-def _dt(year, month, day):
+def dt(year, month, day):
     return datetime.datetime(year, month, day, tzinfo=UTC)
 
 
-def _make_assignment(rfc, role_slug, transitions, person=None):
+def make_assignment(rfc, role_slug, transitions, person=None):
     """Create an Assignment and rewrite its history to the given transitions.
 
     ``transitions`` is a list of ``(datetime, state)`` in chronological order;
@@ -36,7 +36,7 @@ def _make_assignment(rfc, role_slug, transitions, person=None):
     return assignment
 
 
-def _backdate_creation(rfc, when):
+def backdate_creation(rfc, when):
     """Set the doc's creation (enqueue) history date, which drives bin
     membership in the queue rollup."""
     create_rec = rfc.history.filter(history_type="+").order_by("history_date").first()
@@ -44,7 +44,7 @@ def _backdate_creation(rfc, when):
     create_rec.save()
 
 
-def _missing_ref_over(rfc, start, end):
+def missing_ref_over(rfc, start, end):
     """Give ``rfc`` a not-received reference active over ``[start, end)``."""
     rel, _ = DocRelationshipName.objects.get_or_create(
         slug="not-received", defaults={"name": "Not Received", "desc": ""}
@@ -63,7 +63,7 @@ def _missing_ref_over(rfc, start, end):
     rm.save()
 
 
-def _missing_ref_upgraded(rfc, start, upgraded):
+def missing_ref_upgraded(rfc, start, upgraded):
     """not-received reference added at ``start``, upgraded to refqueue at
     ``upgraded`` in place (the 1g-resolution path — no delete row)."""
     nr, _ = DocRelationshipName.objects.get_or_create(
@@ -86,7 +86,7 @@ def _missing_ref_upgraded(rfc, start, upgraded):
     upd.save()
 
 
-def _apply_label_over(rfc, label, start, end):
+def apply_label_over(rfc, label, start, end):
     """Give ``rfc`` ``label`` for the interval ``[start, end)`` via history."""
     # The document is created before any label is applied, so backdate the
     # creation record (as is always the case in production).

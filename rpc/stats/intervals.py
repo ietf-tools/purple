@@ -1,10 +1,15 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Pure interval algebra shared by the per-document timeline and the queue
-rollups.
+"""Interval algebra shared by the per-document timeline and the queue rollups.
 
-Half-open ``[start, end)`` spans as ``(datetime, datetime | None)`` tuples,
-where ``None`` means still open. Nothing here touches the database beyond the
-``ASSIGNMENT_INACTIVE_STATES`` constant used to classify assignment runs.
+Half-open ``[start, end)`` spans are ``(datetime, datetime | None)`` tuples,
+where ``None`` means still open. The public functions here are the API consumed
+by :mod:`rpc.stats.timeline` and :mod:`rpc.stats.rollups`; module-private
+helpers keep the ``_`` prefix.
+
+Everything is generic set algebra over spans except :func:`active_runs`, the one
+assignment-aware entry point: it collapses an ordered stream of assignment
+history records into active spans using ``ASSIGNMENT_INACTIVE_STATES`` (the only
+database-derived value this module references).
 """
 
 import datetime
@@ -15,7 +20,7 @@ from ..models import ASSIGNMENT_INACTIVE_STATES
 Run = tuple[datetime.datetime, datetime.datetime | None, str | None]
 
 
-def _clip(
+def clip(
     start: datetime.datetime,
     end: datetime.datetime | None,
     lo: datetime.datetime | None = None,
@@ -34,7 +39,7 @@ def _clip(
     return start, end
 
 
-def _active_runs(history_records) -> list[Run]:
+def active_runs(history_records) -> list[Run]:
     """Return ``(start, end, state_at_start)`` for each contiguous active span.
 
     ``history_records`` must be ordered oldest-first. ``end`` is ``None`` for a
@@ -57,7 +62,7 @@ def _active_runs(history_records) -> list[Run]:
     return runs
 
 
-def _merge_intervals(
+def merge_intervals(
     intervals: list[tuple[datetime.datetime, datetime.datetime | None]],
     now: datetime.datetime,
 ) -> list[tuple[datetime.datetime, datetime.datetime]]:
@@ -75,14 +80,14 @@ def _merge_intervals(
     return merged
 
 
-def _split_runs_by_intervals(
+def split_runs_by_intervals(
     runs: list[Run],
     intervals: list[tuple[datetime.datetime, datetime.datetime]],
     now: datetime.datetime,
 ) -> tuple[list[tuple], list[tuple]]:
     """Partition ``runs`` into (inside-intervals, outside-intervals) spans.
 
-    ``intervals`` must be sorted and non-overlapping (as from _merge_intervals).
+    ``intervals`` must be sorted and non-overlapping (as from merge_intervals).
     Open-ended runs are treated as ending ``now``.
     """
     inside: list[tuple] = []
@@ -103,7 +108,7 @@ def _split_runs_by_intervals(
     return inside, outside
 
 
-def _subtract_intervals(
+def subtract_intervals(
     base: list[tuple[datetime.datetime, datetime.datetime]],
     cuts: list[tuple[datetime.datetime, datetime.datetime]],
 ) -> list[tuple[datetime.datetime, datetime.datetime]]:
@@ -124,15 +129,15 @@ def _subtract_intervals(
     return result
 
 
-def _intersect_intervals(
+def intersect_intervals(
     a: list[tuple[datetime.datetime, datetime.datetime]],
     b: list[tuple[datetime.datetime, datetime.datetime]],
 ) -> list[tuple[datetime.datetime, datetime.datetime]]:
     """``a`` ∩ ``b`` (both merged, sorted, closed): ``a`` minus (``a`` minus ``b``)."""
-    return _subtract_intervals(a, _subtract_intervals(a, b))
+    return subtract_intervals(a, subtract_intervals(a, b))
 
 
-def _overlap_seconds(
+def overlap_seconds(
     intervals: list[tuple[datetime.datetime, datetime.datetime]],
     window_start: datetime.datetime,
     window_end: datetime.datetime,
@@ -146,7 +151,7 @@ def _overlap_seconds(
     return total
 
 
-def _covered_at(
+def covered_at(
     intervals: list[tuple[datetime.datetime, datetime.datetime]],
     when: datetime.datetime,
 ) -> bool:
@@ -172,7 +177,7 @@ def _merge_open_intervals(
     return merged
 
 
-def _first_clear_after(
+def first_clear_after(
     intervals: list[tuple[datetime.datetime, datetime.datetime | None]],
     since: datetime.datetime,
 ) -> datetime.datetime | None:

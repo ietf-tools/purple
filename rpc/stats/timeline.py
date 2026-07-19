@@ -20,16 +20,15 @@ from django.utils import timezone
 from ..models import Assignment, Label, RfcToBe, RfcToBeBlockingReason
 from .intervals import (
     Run,
-    _active_runs,
-    _clip,
-    _merge_intervals,
-    _split_runs_by_intervals,
-    _subtract_intervals,
+    active_runs,
+    clip,
+    merge_intervals,
+    split_runs_by_intervals,
+    subtract_intervals,
 )
 
 # The day the Assignment/Blocked model replaced the old label-based states.
 TRANSITION_DATE = datetime.datetime(2026, 5, 20, tzinfo=datetime.UTC)
-
 
 # Labels that captured old RFC-editor workflow states before the transition.
 # Only these labels are reconstructed on the timeline; every other label
@@ -51,7 +50,6 @@ LEGACY_STATE_LABEL_SLUGS = frozenset(
     }
 )
 
-
 # The subset of old-editor states that count as "blocked". The remaining
 # legacy states (EDIT, REF, RFC-EDITOR, AUTH48-DONE, PENDING) are active work.
 LEGACY_BLOCKED_LABEL_SLUGS = frozenset(
@@ -65,23 +63,15 @@ LEGACY_BLOCKED_LABEL_SLUGS = frozenset(
     }
 )
 
-
 # Segment kinds
 KIND_BLOCKED = "blocked"
-
-
 KIND_WORKING = "working"
-
-
 KIND_LEGACY = "legacy_label"
-
-
 KIND_AWAITING = "awaiting_ref"
 
 # The set of segment/band kinds, as serializer choices so the OpenAPI schema
 # (and the generated TS client) expose them as an enum rather than a bare string.
 KIND_CHOICES = (KIND_BLOCKED, KIND_WORKING, KIND_LEGACY, KIND_AWAITING)
-
 
 # Manually-applied labels flagging a final-review doc that is waiting on a
 # referenced RFC-to-be. Only ever set while in the final_review_editor state.
@@ -161,8 +151,8 @@ def _assignment_segments(
         if not history:
             continue
         runs = []
-        for start, end, state in _active_runs(history):
-            clipped = _clip(start, end, lo=TRANSITION_DATE)
+        for start, end, state in active_runs(history):
+            clipped = clip(start, end, lo=TRANSITION_DATE)
             if clipped is not None:
                 runs.append((clipped[0], clipped[1], state))
         if runs:
@@ -188,7 +178,7 @@ def _awaiting_ref_intervals(
     for label in labels:
         for interval in rfc.time_intervals_with_label(label):
             raw.append((interval.start, interval.end))
-    return _merge_intervals(raw, now) if raw else []
+    return merge_intervals(raw, now) if raw else []
 
 
 def _make_track(assignment, person_name: str | None, is_blocked: bool, segments):
@@ -233,7 +223,7 @@ def assignment_tracks(
     for assignment, is_blocked, runs in _assignment_segments(rfc):
         person_name = _person_name(assignment)
         if assignment.role_id == "final_review_editor" and awaiting:
-            inside, outside = _split_runs_by_intervals(runs, awaiting, now)
+            inside, outside = split_runs_by_intervals(runs, awaiting, now)
             if outside:
                 segs = _spans_to_segments(
                     outside, KIND_WORKING, assignment, person_name, now
@@ -314,7 +304,7 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
         is_blocked = label.slug in LEGACY_BLOCKED_LABEL_SLUGS
         segments: list[Segment] = []
         for interval in rfc.time_intervals_with_label(label):
-            clipped = _clip(interval.start, interval.end, hi=TRANSITION_DATE)
+            clipped = clip(interval.start, interval.end, hi=TRANSITION_DATE)
             if clipped is None:
                 continue
             segments.append(
@@ -367,12 +357,12 @@ def document_intervals(
             target = blocked_raw if band.kind == KIND_BLOCKED else working_raw
             target.extend((seg.start, seg.end) for seg in band.segments)
 
-    blocked = _merge_intervals(blocked_raw, now)
-    working = _merge_intervals(working_raw, now)
+    blocked = merge_intervals(blocked_raw, now)
+    working = merge_intervals(working_raw, now)
     awaiting = _awaiting_ref_intervals(rfc, now)
     if awaiting:
-        blocked = _merge_intervals([*blocked, *awaiting], now)
-        working = _subtract_intervals(working, awaiting)
+        blocked = merge_intervals([*blocked, *awaiting], now)
+        working = subtract_intervals(working, awaiting)
     return blocked, working
 
 

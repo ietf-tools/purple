@@ -16,9 +16,9 @@ from ..models import (
 )
 from . import timeline
 from .test_helpers import (
-    _apply_label_over,
-    _dt,
-    _make_assignment,
+    apply_label_over,
+    dt,
+    make_assignment,
 )
 from .timeline import (
     KIND_AWAITING,
@@ -35,19 +35,19 @@ from .timeline import (
 
 class AssignmentTimelineTests(TestCase):
     def setUp(self):
-        self.now = _dt(2026, 7, 1)
+        self.now = dt(2026, 7, 1)
 
     def test_working_and_blocked_tracks(self):
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
         )
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
         )
         tracks = timeline.assignment_tracks(rfc)
         by_role = {t.role: t for t in tracks}
@@ -56,35 +56,35 @@ class AssignmentTimelineTests(TestCase):
         assert by_role["first_editor"].is_blocked is False
         seg = by_role["first_editor"].segments[0]
         assert seg.kind == KIND_WORKING
-        assert seg.start == _dt(2026, 6, 1)
-        assert seg.end == _dt(2026, 6, 11)
+        assert seg.start == dt(2026, 6, 1)
+        assert seg.end == dt(2026, 6, 11)
 
     def test_document_intervals_split_blocked_working(self):
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
         )
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
         )
         blocked, working = document_intervals(rfc, self.now)
-        assert working == [(_dt(2026, 6, 1), _dt(2026, 6, 11))]
-        assert blocked == [(_dt(2026, 6, 15), _dt(2026, 6, 18))]
+        assert working == [(dt(2026, 6, 1), dt(2026, 6, 11))]
+        assert blocked == [(dt(2026, 6, 15), dt(2026, 6, 18))]
 
     def test_assignment_before_transition_is_clipped(self):
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 5, 10), "assigned"), (_dt(2026, 5, 25), "done")],
+            [(dt(2026, 5, 10), "assigned"), (dt(2026, 5, 25), "done")],
         )
         _blocked, working = document_intervals(rfc, self.now)
         # Span started before the transition; the pre-transition part is dropped.
-        assert working == [(TRANSITION_DATE, _dt(2026, 5, 25))]
+        assert working == [(TRANSITION_DATE, dt(2026, 5, 25))]
 
     def test_legacy_state_labels_before_transition(self):
         rfc = RfcToBeFactory()
@@ -93,9 +93,9 @@ class AssignmentTimelineTests(TestCase):
         working_state = LabelFactory(slug="EDIT")
         # A complexity/type label that must be ignored (not a workflow state).
         noise = LabelFactory(slug="refs: hard")
-        _apply_label_over(rfc, blocking_state, _dt(2026, 3, 1), _dt(2026, 3, 15))
-        _apply_label_over(rfc, working_state, _dt(2026, 4, 1), _dt(2026, 4, 8))
-        _apply_label_over(rfc, noise, _dt(2026, 4, 10), _dt(2026, 4, 20))
+        apply_label_over(rfc, blocking_state, dt(2026, 3, 1), dt(2026, 3, 15))
+        apply_label_over(rfc, working_state, dt(2026, 4, 1), dt(2026, 4, 8))
+        apply_label_over(rfc, noise, dt(2026, 4, 10), dt(2026, 4, 20))
 
         bands = {b.label: b for b in timeline.legacy_bands(rfc)}
         assert set(bands) == {"IANA", "EDIT"}  # "refs: hard" ignored
@@ -103,13 +103,13 @@ class AssignmentTimelineTests(TestCase):
         assert bands["EDIT"].kind == KIND_LEGACY
 
         blocked, working = document_intervals(rfc, self.now)
-        assert (_dt(2026, 3, 1), _dt(2026, 3, 15)) in blocked
-        assert (_dt(2026, 4, 1), _dt(2026, 4, 8)) in working
+        assert (dt(2026, 3, 1), dt(2026, 3, 15)) in blocked
+        assert (dt(2026, 4, 1), dt(2026, 4, 8)) in working
 
     def test_include_legacy_false_skips_labels(self):
         rfc = RfcToBeFactory()
-        _apply_label_over(
-            rfc, LabelFactory(slug="IANA"), _dt(2026, 3, 1), _dt(2026, 3, 15)
+        apply_label_over(
+            rfc, LabelFactory(slug="IANA"), dt(2026, 3, 1), dt(2026, 3, 15)
         )
         blocked, working = document_intervals(rfc, self.now, include_legacy=False)
         assert blocked == []
@@ -117,16 +117,16 @@ class AssignmentTimelineTests(TestCase):
 
     def test_build_document_timeline_shape(self):
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
         )
         # A blocked assignment is itemised per reason, not shown as a track.
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
         )
         payload = build_document_timeline(rfc, self.now)
         assert payload["transition_date"] == TRANSITION_DATE
@@ -149,19 +149,19 @@ class AssignmentTimelineTests(TestCase):
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=author,
-            since_when=_dt(2026, 6, 1),
-            resolved=_dt(2026, 6, 5),
+            since_when=dt(2026, 6, 1),
+            resolved=dt(2026, 6, 5),
         )
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=author,
-            since_when=_dt(2026, 6, 20),
-            resolved=_dt(2026, 6, 22),
+            since_when=dt(2026, 6, 20),
+            resolved=dt(2026, 6, 22),
         )
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=actionholder,
-            since_when=_dt(2026, 6, 25),
+            since_when=dt(2026, 6, 25),
             resolved=None,
         )
         bands = blocked_reason_bands(rfc, self.now)
@@ -174,19 +174,19 @@ class AssignmentTimelineTests(TestCase):
         assert actionholder_seg.end is None
 
     def test_final_review_editor_split_by_awaiting_ref(self):
-        now = _dt(2026, 9, 1)
+        now = dt(2026, 9, 1)
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "final_review_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 8, 1), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 8, 1), "done")],
         )
         # "awaiting ref:" label applied for part of the final-review window.
-        _apply_label_over(
+        apply_label_over(
             rfc,
             LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
-            _dt(2026, 6, 10),
-            _dt(2026, 6, 20),
+            dt(2026, 6, 10),
+            dt(2026, 6, 20),
         )
         tracks = assignment_tracks(rfc, now)
         fre = [t for t in tracks if t.role == "final_review_editor"]
@@ -196,8 +196,8 @@ class AssignmentTimelineTests(TestCase):
         working = next(t for t in fre if t.segments[0].kind == KIND_WORKING)
         # Awaiting = the labelled sub-interval (10 days), counted as blocked.
         assert len(awaiting.segments) == 1
-        assert awaiting.segments[0].start == _dt(2026, 6, 10)
-        assert awaiting.segments[0].end == _dt(2026, 6, 20)
+        assert awaiting.segments[0].start == dt(2026, 6, 10)
+        assert awaiting.segments[0].end == dt(2026, 6, 20)
         assert awaiting.is_blocked is True
         # Working = the surrounding time, in two pieces, not blocked.
         assert len(working.segments) == 2
@@ -206,9 +206,9 @@ class AssignmentTimelineTests(TestCase):
         # The awaiting-ref window counts as blocked in the doc summary, and is
         # carved out of working time.
         blocked, work = document_intervals(rfc, now)
-        assert (_dt(2026, 6, 10), _dt(2026, 6, 20)) in blocked
-        assert (_dt(2026, 6, 1), _dt(2026, 6, 10)) in work
-        assert (_dt(2026, 6, 20), _dt(2026, 8, 1)) in work
+        assert (dt(2026, 6, 10), dt(2026, 6, 20)) in blocked
+        assert (dt(2026, 6, 1), dt(2026, 6, 10)) in work
+        assert (dt(2026, 6, 20), dt(2026, 8, 1)) in work
 
 
 class DocumentTimelineEndpointTests(TestCase):
@@ -227,15 +227,15 @@ class DocumentTimelineEndpointTests(TestCase):
     def test_document_timeline_ok(self):
         self.client.force_login(self.user)
         rfc = RfcToBeFactory()
-        _make_assignment(
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
         )
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
         )
         resp = self.client.get(
             reverse("document-assignment-timeline", args=[rfc.draft.name])

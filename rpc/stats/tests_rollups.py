@@ -32,39 +32,39 @@ from .rollups import (
     queue_rollup,
 )
 from .test_helpers import (
-    _apply_label_over,
-    _backdate_creation,
-    _dt,
-    _make_assignment,
-    _missing_ref_over,
-    _missing_ref_upgraded,
+    apply_label_over,
+    backdate_creation,
+    dt,
+    make_assignment,
+    missing_ref_over,
+    missing_ref_upgraded,
 )
 
 
 class PeriodWindowTests(SimpleTestCase):
     def test_month_windows_oldest_first(self):
-        windows = period_windows("month", 3, _dt(2026, 7, 15))
+        windows = period_windows("month", 3, dt(2026, 7, 15))
         assert [w["label"] for w in windows] == ["2026-05", "2026-06", "2026-07"]
-        assert windows[0]["start"] == _dt(2026, 5, 1)
-        assert windows[-1]["end"] == _dt(2026, 8, 1)
+        assert windows[0]["start"] == dt(2026, 5, 1)
+        assert windows[-1]["end"] == dt(2026, 8, 1)
 
     def test_quarter_windows(self):
-        windows = period_windows("quarter", 2, _dt(2026, 5, 10))
+        windows = period_windows("quarter", 2, dt(2026, 5, 10))
         assert [w["label"] for w in windows] == ["2026 Q1", "2026 Q2"]
-        assert windows[0]["start"] == _dt(2026, 1, 1)
-        assert windows[1]["end"] == _dt(2026, 7, 1)
+        assert windows[0]["start"] == dt(2026, 1, 1)
+        assert windows[1]["end"] == dt(2026, 7, 1)
 
     def test_year_windows(self):
-        windows = period_windows("year", 2, _dt(2026, 5, 10))
+        windows = period_windows("year", 2, dt(2026, 5, 10))
         assert [w["label"] for w in windows] == ["2025", "2026"]
-        assert windows[0]["start"] == _dt(2025, 1, 1)
-        assert windows[1]["end"] == _dt(2027, 1, 1)
+        assert windows[0]["start"] == dt(2025, 1, 1)
+        assert windows[1]["end"] == dt(2027, 1, 1)
 
     def test_week_windows_align_to_monday(self):
         # 2026-07-15 is a Wednesday; its ISO week starts Monday 2026-07-13.
-        windows = period_windows("week", 2, _dt(2026, 7, 15))
-        assert windows[-1]["start"] == _dt(2026, 7, 13)
-        assert windows[-1]["end"] == _dt(2026, 7, 20)
+        windows = period_windows("week", 2, dt(2026, 7, 15))
+        assert windows[-1]["start"] == dt(2026, 7, 13)
+        assert windows[-1]["end"] == dt(2026, 7, 20)
 
     # IETF meetings, date ascending; two of these are in the future relative to
     # the 2026-07-10 "now" used below (IETF 126 on 07-18 and IETF 127 in Nov).
@@ -81,55 +81,55 @@ class PeriodWindowTests(SimpleTestCase):
         with mock.patch.object(
             rollups, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
         ):
-            windows = period_windows("ietf", 3, _dt(2026, 7, 10))
+            windows = period_windows("ietf", 3, dt(2026, 7, 10))
         # Current period ends at IETF 126 (nearest future), IETF 127 excluded.
         assert [w["label"] for w in windows] == ["IETF 124", "IETF 125", "IETF 126"]
-        assert windows[-1]["start"] == _dt(2026, 3, 14)
-        assert windows[-1]["end"] == _dt(2026, 7, 18)
+        assert windows[-1]["start"] == dt(2026, 3, 14)
+        assert windows[-1]["end"] == dt(2026, 7, 18)
 
     def test_ietf_windows_no_future_meeting(self):
         with mock.patch.object(
             rollups, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
         ):
-            windows = period_windows("ietf", 2, _dt(2027, 1, 1))
+            windows = period_windows("ietf", 2, dt(2027, 1, 1))
         # No future meeting: current period ends at the most recent past one.
         assert [w["label"] for w in windows] == ["IETF 126", "IETF 127"]
-        assert windows[-1]["end"] == _dt(2026, 11, 14)
+        assert windows[-1]["end"] == dt(2026, 11, 14)
 
     def test_ietf_windows_too_few_meetings(self):
         one_meeting = [("127", datetime.date(2026, 11, 14))]
         with mock.patch.object(
             rollups, "datatracker_ietf_meetings", return_value=one_meeting
         ):
-            assert period_windows("ietf", 3, _dt(2026, 7, 10)) == []
+            assert period_windows("ietf", 3, dt(2026, 7, 10)) == []
 
     def test_zero_count_is_empty(self):
-        assert period_windows("month", 0, _dt(2026, 7, 15)) == []
+        assert period_windows("month", 0, dt(2026, 7, 15)) == []
 
     def test_unknown_period_raises(self):
         with self.assertRaises(ValueError):
-            period_windows("decade", 1, _dt(2026, 7, 15))
+            period_windows("decade", 1, dt(2026, 7, 15))
 
 
 class QueueRollupTests(TestCase):
     def setUp(self):
-        self.now = _dt(2026, 7, 1)
+        self.now = dt(2026, 7, 1)
 
     def _doc_with_work(self, disposition_slug="in_progress", published_at=None):
         rfc = RfcToBeFactory(
             disposition=DispositionNameFactory(slug=disposition_slug),
             published_at=published_at,
         )
-        _backdate_creation(rfc, _dt(2026, 1, 1))
-        _make_assignment(
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 11), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
         )
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 15), "in_progress"), (_dt(2026, 6, 18), "done")],
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
         )
         return rfc
 
@@ -152,13 +152,13 @@ class QueueRollupTests(TestCase):
         # A single long-running interval spanning two months must be split
         # across the bins (per-period flow), not counted in full in each. Uses
         # fully post-transition dates so the TRANSITION_DATE clip doesn't apply.
-        now = _dt(2026, 9, 1)
+        now = dt(2026, 9, 1)
         rfc = RfcToBeFactory(disposition=DispositionNameFactory(slug="in_progress"))
-        _backdate_creation(rfc, _dt(2026, 1, 1))
-        _make_assignment(
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 8, 1), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 8, 1), "done")],
         )
         periods = {p["label"]: p for p in queue_rollup("month", 4, now)}
         # June [06-01, 07-01] = 30 days; July [07-01, 08-01] = 31 days; the
@@ -169,17 +169,17 @@ class QueueRollupTests(TestCase):
 
     def test_awaiting_ref_counts_as_blocked_in_stats(self):
         rfc = RfcToBeFactory()
-        _backdate_creation(rfc, _dt(2026, 1, 1))
-        _make_assignment(
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
             rfc,
             "final_review_editor",
-            [(_dt(2026, 6, 1), "assigned"), (_dt(2026, 6, 30), "done")],
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 30), "done")],
         )
-        _apply_label_over(
+        apply_label_over(
             rfc,
             LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
-            _dt(2026, 6, 10),
-            _dt(2026, 6, 20),
+            dt(2026, 6, 10),
+            dt(2026, 6, 20),
         )
         june = queue_rollup("month", 2, self.now)[0]
         assert june["label"] == "2026-06"
@@ -195,12 +195,12 @@ class QueueRollupTests(TestCase):
 
     def test_blocked_time_itemised_by_reason_in_stats(self):
         rfc = RfcToBeFactory()
-        _backdate_creation(rfc, _dt(2026, 1, 1))
+        backdate_creation(rfc, dt(2026, 1, 1))
         # A blocked assignment whose time is itemised by reason below.
-        _make_assignment(
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 1), "in_progress"), (_dt(2026, 6, 30), "done")],
+            [(dt(2026, 6, 1), "in_progress"), (dt(2026, 6, 30), "done")],
         )
         author, _ = BlockingReason.objects.get_or_create(
             slug="label_author_input_required",
@@ -213,14 +213,14 @@ class QueueRollupTests(TestCase):
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=author,
-            since_when=_dt(2026, 6, 5),
-            resolved=_dt(2026, 6, 15),
+            since_when=dt(2026, 6, 5),
+            resolved=dt(2026, 6, 15),
         )
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=holder,
-            since_when=_dt(2026, 6, 20),
-            resolved=_dt(2026, 6, 25),
+            since_when=dt(2026, 6, 20),
+            resolved=dt(2026, 6, 25),
         )
         june = queue_rollup("month", 2, self.now)[0]
         by_role = {r["role"]: r for r in june["by_role"]}
@@ -240,11 +240,11 @@ class QueueRollupTests(TestCase):
         # A reason record that overruns the blocked assignment is clipped to it,
         # so it can't credit blocked time the doc wasn't actually blocked for.
         rfc = RfcToBeFactory()
-        _backdate_creation(rfc, _dt(2026, 1, 1))
-        _make_assignment(
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
             rfc,
             "blocked",
-            [(_dt(2026, 6, 1), "in_progress"), (_dt(2026, 6, 15), "done")],  # 14 days
+            [(dt(2026, 6, 1), "in_progress"), (dt(2026, 6, 15), "done")],  # 14 days
         )
         reason, _ = BlockingReason.objects.get_or_create(
             slug="label_author_input_required",
@@ -253,8 +253,8 @@ class QueueRollupTests(TestCase):
         RfcToBeBlockingReason.objects.create(
             rfc_to_be=rfc,
             reason=reason,
-            since_when=_dt(2026, 6, 1),
-            resolved=_dt(2026, 6, 30),  # overruns to 30
+            since_when=dt(2026, 6, 1),
+            resolved=dt(2026, 6, 30),  # overruns to 30
         )
         june = queue_rollup("month", 2, self.now)[0]
         by_role = {r["role"]: r for r in june["by_role"]}
@@ -268,7 +268,7 @@ class QueueRollupTests(TestCase):
         assert periods[0]["total_working_seconds"] == 0
 
     def test_published_in_range_included(self):
-        self._doc_with_work(disposition_slug="published", published_at=_dt(2026, 6, 20))
+        self._doc_with_work(disposition_slug="published", published_at=dt(2026, 6, 20))
         june = queue_rollup("month", 2, self.now)[0]
         assert june["doc_count"] == 1
         assert june["total_working_seconds"] == 10 * 24 * 3600
@@ -276,11 +276,11 @@ class QueueRollupTests(TestCase):
     def test_membership_snapshot_by_period_end(self):
         # A doc created after a period's end is not a member of that period.
         rfc = RfcToBeFactory()
-        _backdate_creation(rfc, _dt(2026, 6, 15))  # created mid-June
-        _make_assignment(
+        backdate_creation(rfc, dt(2026, 6, 15))  # created mid-June
+        make_assignment(
             rfc,
             "first_editor",
-            [(_dt(2026, 6, 16), "assigned"), (_dt(2026, 6, 20), "done")],
+            [(dt(2026, 6, 16), "assigned"), (dt(2026, 6, 20), "done")],
         )
         # month x3 ending 2026-07-01 -> May, June, July windows.
         periods = {p["label"]: p for p in queue_rollup("month", 3, self.now)}
@@ -289,7 +289,7 @@ class QueueRollupTests(TestCase):
         assert periods["2026-06"]["doc_count"] == 1
 
     def test_legacy_included_flag_for_old_period(self):
-        periods = queue_rollup("month", 6, _dt(2026, 7, 1))
+        periods = queue_rollup("month", 6, dt(2026, 7, 1))
         by_label = {p["label"]: p for p in periods}
         assert by_label["2026-03"]["legacy_included"] is True
         assert by_label["2026-06"]["legacy_included"] is False
@@ -298,28 +298,28 @@ class QueueRollupTests(TestCase):
         # No assignment, just a pre-transition state label. It must still be
         # picked up as a candidate and contribute to the March window.
         rfc = RfcToBeFactory()
-        _apply_label_over(
-            rfc, LabelFactory(slug="IANA"), _dt(2026, 3, 1), _dt(2026, 3, 15)
+        apply_label_over(
+            rfc, LabelFactory(slug="IANA"), dt(2026, 3, 1), dt(2026, 3, 15)
         )
         periods = queue_rollup("month", 6, self.now)
         by_label = {p["label"]: p for p in periods}
         assert by_label["2026-03"]["total_blocked_seconds"] == 14 * 24 * 3600
 
     def test_candidate_docs_filtering(self):
-        earliest = _dt(2026, 6, 1)
+        earliest = dt(2026, 6, 1)
         # Included: has an assignment.
         with_assignment = self._doc_with_work()
         # Included: legacy state label, published within range.
         legacy_only = RfcToBeFactory(
             disposition=DispositionNameFactory(slug="published"),
-            published_at=_dt(2026, 6, 10),
+            published_at=dt(2026, 6, 10),
         )
-        _apply_label_over(
-            legacy_only, LabelFactory(slug="TI"), _dt(2026, 3, 1), _dt(2026, 3, 5)
+        apply_label_over(
+            legacy_only, LabelFactory(slug="TI"), dt(2026, 3, 1), dt(2026, 3, 5)
         )
         # Excluded: published before the range.
         old_published = self._doc_with_work(disposition_slug="published")
-        old_published.published_at = _dt(2026, 1, 1)
+        old_published.published_at = dt(2026, 1, 1)
         old_published.save()
         # Excluded: no assignment, only a non-state (complexity) label.
         RfcToBeFactory().labels.add(LabelFactory(slug="refs: hard"))
@@ -334,7 +334,7 @@ class QueueRollupTests(TestCase):
 
 class QueueCountsRollupTests(TestCase):
     def setUp(self):
-        self.now = _dt(2026, 7, 1)  # June window = [06-01, 07-01)
+        self.now = dt(2026, 7, 1)  # June window = [06-01, 07-01)
 
     def _doc(self, enq, *, pages=0, published_at=None, slug="in_progress"):
         rfc = RfcToBeFactory(
@@ -342,26 +342,26 @@ class QueueCountsRollupTests(TestCase):
             published_at=published_at,
             pages=pages,
         )
-        _backdate_creation(rfc, enq)
+        backdate_creation(rfc, enq)
         return rfc
 
     def test_counts_rollup(self):
         # A: in queue since May, missing a reference until June 10 -> goes to
         # edit June 10 (10 pages). not-received is not "blocked" time.
-        a = self._doc(_dt(2026, 5, 1), pages=10)
-        _missing_ref_over(a, _dt(2026, 5, 1), _dt(2026, 6, 10))
+        a = self._doc(dt(2026, 5, 1), pages=10)
+        missing_ref_over(a, dt(2026, 5, 1), dt(2026, 6, 10))
         # B: enters in June with no missing refs -> goes to edit at entry.
-        self._doc(_dt(2026, 6, 5), pages=20)
+        self._doc(dt(2026, 6, 5), pages=20)
         # C: in queue since January, published in June (no missing refs).
         self._doc(
-            _dt(2026, 1, 1), pages=5, published_at=_dt(2026, 6, 20), slug="published"
+            dt(2026, 1, 1), pages=5, published_at=dt(2026, 6, 20), slug="published"
         )
         # D: in queue since May, blocked the entire month (went to edit at entry).
-        d = self._doc(_dt(2026, 5, 1), pages=8)
-        _make_assignment(
+        d = self._doc(dt(2026, 5, 1), pages=8)
+        make_assignment(
             d,
             "blocked",
-            [(_dt(2026, 5, 25), "in_progress"), (_dt(2026, 7, 5), "done")],
+            [(dt(2026, 5, 25), "in_progress"), (dt(2026, 7, 5), "done")],
         )
 
         june = queue_counts_rollup("month", 2, self.now)[0]
@@ -387,14 +387,14 @@ class QueueCountsRollupTests(TestCase):
 
     def test_docs_entering_with_missing_references(self):
         # E enters in June already missing a reference; F enters clean.
-        e = self._doc(_dt(2026, 6, 3), pages=7)
-        _missing_ref_over(e, _dt(2026, 6, 3), _dt(2026, 6, 25))
-        self._doc(_dt(2026, 6, 4), pages=9)
+        e = self._doc(dt(2026, 6, 3), pages=7)
+        missing_ref_over(e, dt(2026, 6, 3), dt(2026, 6, 25))
+        self._doc(dt(2026, 6, 4), pages=9)
         # G's not-received relationship is stamped seconds after enqueue (the
         # non-atomic intake) — still "entering with missing references".
-        g_enq = _dt(2026, 6, 6)
+        g_enq = dt(2026, 6, 6)
         g = self._doc(g_enq, pages=5)
-        _missing_ref_over(g, g_enq + datetime.timedelta(seconds=30), _dt(2026, 6, 20))
+        missing_ref_over(g, g_enq + datetime.timedelta(seconds=30), dt(2026, 6, 20))
         june = queue_counts_rollup("month", 2, self.now)[0]
         assert june["docs_entered"] == 3
         assert june["docs_entered_missing_ref"] == 2  # E and G
@@ -403,15 +403,15 @@ class QueueCountsRollupTests(TestCase):
         # Pre-transition, the MISSREF label is often applied a few days after
         # enqueue but reflects entry state: within a week counts, beyond doesn't.
         missref = LabelFactory(slug="MISSREF")
-        h_enq = _dt(2026, 3, 5)
+        h_enq = dt(2026, 3, 5)
         h = self._doc(h_enq)
-        _apply_label_over(
-            h, missref, h_enq + datetime.timedelta(days=3), _dt(2026, 3, 20)
+        apply_label_over(
+            h, missref, h_enq + datetime.timedelta(days=3), dt(2026, 3, 20)
         )
-        i_enq = _dt(2026, 3, 5)
+        i_enq = dt(2026, 3, 5)
         i = self._doc(i_enq)
-        _apply_label_over(
-            i, missref, i_enq + datetime.timedelta(days=10), _dt(2026, 3, 25)
+        apply_label_over(
+            i, missref, i_enq + datetime.timedelta(days=10), dt(2026, 3, 25)
         )
         rollup = queue_counts_rollup("month", 5, self.now)
         march = next(p for p in rollup if p["label"] == "2026-03")
@@ -421,10 +421,10 @@ class QueueCountsRollupTests(TestCase):
     def test_missing_ref_closes_on_slug_upgrade_not_only_delete(self):
         # 1g not-received refs are resolved by changing the row to refqueue in
         # place (no delete row); the interval must still close at the upgrade.
-        rfc = self._doc(_dt(2026, 6, 3))
-        _missing_ref_upgraded(rfc, _dt(2026, 6, 3), _dt(2026, 6, 10))
+        rfc = self._doc(dt(2026, 6, 3))
+        missing_ref_upgraded(rfc, dt(2026, 6, 3), dt(2026, 6, 10))
         intervals = _missing_ref_intervals_by_doc([rfc.pk])[rfc.pk]
-        assert intervals == [(_dt(2026, 6, 3), _dt(2026, 6, 10))]  # closed, not open
+        assert intervals == [(dt(2026, 6, 3), dt(2026, 6, 10))]  # closed, not open
         # It is therefore NOT blocked the whole of June, and it went to edit.
         june = queue_counts_rollup("month", 2, self.now)[0]
         assert june["docs_blocked_entire"] == 0
@@ -432,8 +432,8 @@ class QueueCountsRollupTests(TestCase):
     def test_missing_ref_whole_period_is_blocked_entire(self):
         # A doc missing a reference the entire period counts as blocked-entire,
         # even without a blocked assignment.
-        rfc = self._doc(_dt(2026, 5, 1))
-        _missing_ref_over(rfc, _dt(2026, 5, 1), _dt(2026, 7, 20))
+        rfc = self._doc(dt(2026, 5, 1))
+        missing_ref_over(rfc, dt(2026, 5, 1), dt(2026, 7, 20))
         june = queue_counts_rollup("month", 2, self.now)[0]
         assert june["docs_blocked_entire"] == 1
 
@@ -441,11 +441,11 @@ class QueueCountsRollupTests(TestCase):
         # The bulk reconstruction must exactly match RfcToBe.time_intervals_with_
         # label (its subtlest invariant: interval boundaries are label-set
         # change-points, so an overlapping second label matters).
-        rfc = self._doc(_dt(2026, 1, 1))
+        rfc = self._doc(dt(2026, 1, 1))
         a = LabelFactory(slug="MISSREF")
         b = LabelFactory(slug="AUTH48")
-        _apply_label_over(rfc, a, _dt(2026, 2, 1), _dt(2026, 4, 1))
-        _apply_label_over(rfc, b, _dt(2026, 3, 1), _dt(2026, 5, 1))  # overlaps a
+        apply_label_over(rfc, a, dt(2026, 2, 1), dt(2026, 4, 1))
+        apply_label_over(rfc, b, dt(2026, 3, 1), dt(2026, 5, 1))  # overlaps a
         bulk = _label_intervals_by_doc([rfc.pk], {a.pk, b.pk}).get(rfc.pk, {})
         for label in (a, b):
             want = [(iv.start, iv.end) for iv in rfc.time_intervals_with_label(label)]
@@ -454,7 +454,7 @@ class QueueCountsRollupTests(TestCase):
     def test_pages_use_historical_page_count(self):
         # Pages are read from the history record in effect when the doc entered,
         # not the current value.
-        rfc = self._doc(_dt(2026, 6, 5), pages=12)
+        rfc = self._doc(dt(2026, 6, 5), pages=12)
         rfc.pages = 99  # later change must NOT affect the June "pages entered"
         rfc.save()
         june = queue_counts_rollup("month", 2, self.now)[0]
@@ -464,7 +464,7 @@ class QueueCountsRollupTests(TestCase):
 
 class QueuePublishedRollupTests(TestCase):
     def setUp(self):
-        self.now = _dt(2026, 7, 1)
+        self.now = dt(2026, 7, 1)
 
     def _pub(self, when, stream="ietf", level="ps", group=""):
         return RfcToBeFactory(
@@ -476,11 +476,11 @@ class QueuePublishedRollupTests(TestCase):
         )
 
     def test_published_rollup_groups_buckets_and_suppresses(self):
-        self._pub(_dt(2026, 6, 5), "ietf", "ps", group="mpls")  # WG
-        self._pub(_dt(2026, 6, 6), "ietf", "std", group="idr")  # WG, Std Track
-        self._pub(_dt(2026, 6, 7), "ietf", "inf", group="")  # no group -> AD-sponsored
-        self._pub(_dt(2026, 6, 8), "irtf", "exp")
-        self._pub(_dt(2026, 6, 9), "legacy", "inf")  # legacy stream is dropped
+        self._pub(dt(2026, 6, 5), "ietf", "ps", group="mpls")  # WG
+        self._pub(dt(2026, 6, 6), "ietf", "std", group="idr")  # WG, Std Track
+        self._pub(dt(2026, 6, 7), "ietf", "inf", group="")  # no group -> AD-sponsored
+        self._pub(dt(2026, 6, 8), "irtf", "exp")
+        self._pub(dt(2026, 6, 9), "legacy", "inf")  # legacy stream is dropped
         r = queue_published_rollup("month", 2, self.now)
         june = r["periods"][0]
         assert june["label"] == "2026-06"
@@ -496,8 +496,8 @@ class QueuePublishedRollupTests(TestCase):
 
     def test_published_rollup_uses_publication_values_and_range(self):
         # Published before the range is excluded.
-        self._pub(_dt(2026, 3, 1), "ietf", "ps")
-        self._pub(_dt(2026, 6, 15), "ietf", "bcp")
+        self._pub(dt(2026, 3, 1), "ietf", "ps")
+        self._pub(dt(2026, 6, 15), "ietf", "bcp")
         r = queue_published_rollup("month", 2, self.now)  # May-July window start
         total = sum(c["count"] for p in r["periods"] for c in p["counts"])
         assert total == 1  # only the June publication is in range
