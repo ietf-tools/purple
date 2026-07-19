@@ -1,4 +1,3 @@
-import { clamp } from 'lodash-es'
 import type { StatsQueuePeriodEnum } from '~/purple_client'
 
 const MIN_COUNT = 1
@@ -6,7 +5,7 @@ const MAX_COUNT = 52
 
 /** Count coerced to an integer in [1, 52]; empty / NaN / 0 become 1. */
 export function clampCount(n: number): number {
-  return clamp(Math.trunc(n || 1), MIN_COUNT, MAX_COUNT)
+  return Math.min(MAX_COUNT, Math.max(MIN_COUNT, Math.trunc(n || 1)))
 }
 
 /**
