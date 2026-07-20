@@ -50,7 +50,6 @@
     "@types/node": "22.15.30",
     "@types/sortablejs": "1.15.9",
     "@vue/test-utils": "2.4.6",
-    "commander": "13.1.0",
     "globals": "17.4.0",
     "happy-dom": "20.9.0",
     "nuxt": "4.4.7",
@@ -65,6 +64,7 @@
     "vue-tsc": "3.2.6"
   },
   "peerDependencies": {
+    "commander": "13.1.0",
     "typescript": "6.0.2"
   },
   "allowScripts": {
