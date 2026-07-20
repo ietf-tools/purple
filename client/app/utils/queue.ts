@@ -1,5 +1,5 @@
 import { h } from 'vue'
-import type { Assignment, Cluster, Label, QueueItem, RfcToBe, SimpleCluster } from '~/purple_client'
+import type { Assignment, Cluster, Label, QueueItem, SimpleCluster } from '~/purple_client'
 import type { Tab } from './tab'
 import { DateTime } from 'luxon'
 

@@ -182,9 +182,9 @@ const labels3 = computed(() => labels.value.filter((label) => label.used && !lab
 watch(
   selectedLabelIds,
   async () => {
-    // spreading to ensure ref proxy objects provide primitive number values and not a wrapped proxy thing that would confuse difference()
-    const initialValues = new Set([...initialSelectedLabelIds.value])
-    const selectedValues = new Set([...selectedLabelIds.value])
+    // number arrays, so Set receives primitive number values directly (not wrapped ref proxies that would confuse difference())
+    const initialValues = new Set(initialSelectedLabelIds.value)
+    const selectedValues = new Set(selectedLabelIds.value)
 
     const areSetsSame = (a: Set<number>, b: Set<number>): boolean =>
       a.size === b.size && [...a].every((x) => b.has(x))

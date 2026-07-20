@@ -23,7 +23,7 @@ export const getApiErrorMessage = async (error: unknown): Promise<string> => {
 
 export const snackbarForErrors = async ({ snackbar, error, defaultTitle }: Props) => {
   let title = defaultTitle ?? 'Error.'
-  let text = `${error}`
+  let text = String(error)
 
   console.error('Snackbar error', defaultTitle, error)
 
@@ -110,7 +110,7 @@ const getErrorTextFromFetchResponse = async (response: Response, text: string): 
         const domParser = new DOMParser()
         const dom = domParser.parseFromString(html, 'text/html')
         text = `${dom.title}. See console for more.`
-      } catch (e) {
+      } catch {
         text = html
       }
       break
@@ -126,7 +126,7 @@ const getErrorTextFromNuxtError = async (error: NuxtError, _text: string): Promi
     const keys = Object.keys(error.data)
     if (keys.length === 1) {
       const value = (error.data as Record<string, unknown>)[keys[0]!]
-      return Array.isArray(value) ? value.join(', ') : `${value}`
+      return Array.isArray(value) ? value.join(', ') : String(value)
     }
   }
   return `HTTP ${error.statusCode}: ${error.message}`

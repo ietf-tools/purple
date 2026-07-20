@@ -53,9 +53,7 @@ function textRadius(lines: Line[]) {
 
 export type DrawGraphParameters = Parameters<typeof drawGraph>
 
-export type SetTooltip = (
-  props?: undefined | { text: string[]; position: [number, number] }
-) => void
+export type SetTooltip = (props?: { text: string[]; position: [number, number] }) => void
 
 type Props = {
   data: DataParam
@@ -64,7 +62,7 @@ type Props = {
   setTooltip: SetTooltip
 }
 
-export function drawGraph({ data: _data, pushRouter, colorMode, setTooltip }: Props) {
+export function drawGraph({ data: _data, pushRouter, colorMode: _colorMode, setTooltip }: Props) {
   const data = normalizeData(_data)
 
   const width = 1000
