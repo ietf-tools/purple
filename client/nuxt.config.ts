@@ -38,7 +38,8 @@ export default defineNuxtConfig({
     public: {
       cspScriptSrcHashes: '', // comma-separated list
       datatrackerBase: 'https://datatracker.ietf.org', // NUXT_PUBLIC_DATATRACKER_BASE
-      queueBase: 'https://queue.rfc-editor.org' // NUXT_PUBLIC_QUEUE_BASE
+      queueBase: 'https://queue.rfc-editor.org', // NUXT_PUBLIC_QUEUE_BASE
+      workingHoursPerYear: 2000 // NUXT_PUBLIC_WORKING_HOURS_PER_YEAR (queue-stats "Working days")
     }
   },
   security: {

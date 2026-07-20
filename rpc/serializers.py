@@ -21,6 +21,8 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.metadata import MetadataComparator
+from rpc.stats.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
+from rpc.stats.timeline import KIND_CHOICES
 
 from .dt_v1_api_utils import datatracker_group_name
 from .models import (
@@ -336,6 +338,137 @@ class DocumentAssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = ["id", "person_name", "role", "state", "comment", "history"]
+
+
+class TimelineSegmentSerializer(serializers.Serializer):
+    """One span of time in a single state (see rpc.stats.timeline)."""
+
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField(allow_null=True)
+    kind = serializers.ChoiceField(choices=KIND_CHOICES)
+    role = serializers.CharField(allow_null=True, required=False)
+    label = serializers.CharField(allow_null=True, required=False)
+    person_id = serializers.IntegerField(allow_null=True, required=False)
+    person_name = serializers.CharField(allow_null=True, required=False)
+    state = serializers.CharField(allow_null=True, required=False)
+
+
+class TimelineTrackSerializer(serializers.Serializer):
+    """All active spans of a single assignment (one Gantt row)."""
+
+    assignment_id = serializers.IntegerField()
+    role = serializers.CharField()
+    person_id = serializers.IntegerField(allow_null=True)
+    person_name = serializers.CharField(allow_null=True)
+    is_blocked = serializers.BooleanField()
+    segments = TimelineSegmentSerializer(many=True)
+
+
+class TimelineBandSerializer(serializers.Serializer):
+    """An aggregate lane: blocked/working summary or one legacy label."""
+
+    kind = serializers.ChoiceField(choices=KIND_CHOICES)
+    label = serializers.CharField(allow_null=True, required=False)
+    segments = TimelineSegmentSerializer(many=True)
+
+
+class AssignmentTimelineSerializer(serializers.Serializer):
+    """Per-document assignment timeline payload."""
+
+    transition_date = serializers.DateTimeField()
+    tracks = TimelineTrackSerializer(many=True)
+    summary = TimelineBandSerializer(many=True)
+    blocked_reasons = TimelineBandSerializer(many=True)
+    legacy = TimelineBandSerializer(many=True)
+
+
+class QueueRoleTimeSerializer(serializers.Serializer):
+    """Time spent in one assignment role (or legacy state) within a period."""
+
+    role = serializers.CharField()
+    is_blocked = serializers.BooleanField()
+    seconds = serializers.FloatField()
+
+
+class QueuePeriodStatSerializer(serializers.Serializer):
+    """Per-role assignment-time breakdown and blocked/not-blocked totals for
+    one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    doc_count = serializers.IntegerField()
+    total_blocked_seconds = serializers.FloatField()
+    total_working_seconds = serializers.FloatField()
+    by_role = QueueRoleTimeSerializer(many=True)
+    legacy_included = serializers.BooleanField()
+
+
+class QueueStatsSerializer(serializers.Serializer):
+    """Queue time-in-assignment summary across selectable past periods."""
+
+    periods = QueuePeriodStatSerializer(many=True)
+
+
+class QueueCountStatPeriodSerializer(serializers.Serializer):
+    """Document/page counts for one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    docs_at_start = serializers.IntegerField()
+    docs_entered = serializers.IntegerField()
+    pages_at_start = serializers.IntegerField()
+    pages_entered = serializers.IntegerField()
+    rfcs_published = serializers.IntegerField()
+    pages_published = serializers.IntegerField()
+    pages_to_edit = serializers.IntegerField()
+    pages_blocked_end = serializers.IntegerField()
+    pages_in_progress_end = serializers.IntegerField()
+    docs_blocked_entire = serializers.IntegerField()
+    docs_entered_missing_ref = serializers.IntegerField()
+    avg_pct_blocked = serializers.FloatField()
+    avg_pct_blocked_all = serializers.FloatField()
+    legacy_included = serializers.BooleanField()
+
+
+class QueueCountStatsSerializer(serializers.Serializer):
+    """Queue document/page counts across selectable past periods."""
+
+    periods = QueueCountStatPeriodSerializer(many=True)
+
+
+class PublishedStreamStatusCountSerializer(serializers.Serializer):
+    """Count of RFCs published for one (stream, status) cell of a period."""
+
+    stream = serializers.ChoiceField(choices=PUBLISHED_STREAMS)
+    status = serializers.ChoiceField(choices=PUBLISHED_STATUS_ORDER)
+    count = serializers.IntegerField()
+
+
+class QueuePublishedStatPeriodSerializer(serializers.Serializer):
+    """Published-RFC counts by stream and status for one period (bin)."""
+
+    label = serializers.CharField()
+    start = serializers.DateTimeField()
+    end = serializers.DateTimeField()
+    counts = PublishedStreamStatusCountSerializer(many=True)
+
+
+class QueuePublishedStatsSerializer(serializers.Serializer):
+    """RFCs published by stream and status across selectable past periods.
+
+    ``streams`` and ``statuses`` are the non-empty ones in display order (the
+    axes to render); each period's ``counts`` holds only its non-zero cells.
+    """
+
+    streams = serializers.ListField(
+        child=serializers.ChoiceField(choices=PUBLISHED_STREAMS)
+    )
+    statuses = serializers.ListField(
+        child=serializers.ChoiceField(choices=PUBLISHED_STATUS_ORDER)
+    )
+    periods = QueuePublishedStatPeriodSerializer(many=True)
 
 
 class LabelSerializer(serializers.ModelSerializer):

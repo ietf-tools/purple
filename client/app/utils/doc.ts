@@ -28,6 +28,12 @@ export const docTabsFactory = (draftName: string) => {
       icon: 'material-symbols:difference-outline' // was 'fluent:checkmark-circle-hint-16-filled'
     },
     {
+      id: 'timeline',
+      name: 'Timeline',
+      to: `/docs/${sanitisedDraftName}/timeline`,
+      icon: 'fluent:data-bar-horizontal-20-regular'
+    },
+    {
       id: 'history',
       name: 'History',
       to: `/docs/${sanitisedDraftName}/history`,
