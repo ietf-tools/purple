@@ -1,0 +1,46 @@
+*****IMPORTANT*****
+
+RFC Author(s):
+
+Your document is now ready for Final Review (previously AUTH48).
+
+The document was edited in kramdown-rfc as part of the RPC pilot test (see
+https://www.rfc-editor.org/rpc/wiki/doku.php?id=pilot_test_kramdown_rfc).
+
+Please review the procedures for your review using kramdown-rfc:
+
+https://www.rfc-editor.org/rpc/wiki/doku.php?id=pilot_test_instructions_completing_auth48_using_kramdown
+
+Once the review is complete, it will be published as an RFC.
+
+
+Files
+-----
+
+The files are available here:
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.md
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.pdf
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}.txt
+
+Diff file of the text:
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-diff.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-rfcdiff.html (side by side)
+
+Diff of the kramdown:
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-md-diff.html
+  https://www.rfc-editor.org/authors/rfc{{ rfc_number }}-md-rfcdiff.html (side by side)
+
+
+Tracking progress
+-----------------
+
+The details about Final Review are here:
+ https://queue.rfc-editor.org/final-review/rfc{{ rfc_number }}/
+
+
+Please let us know if you have any questions.
+
+Thank you for your cooperation,
+
+RFC Production Center

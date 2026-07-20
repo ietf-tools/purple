@@ -2604,10 +2604,39 @@ class RfcMailTemplatesList(views.APIView):
         except RfcToBe.DoesNotExist:
             raise NotFound("Unknown rfctobe_id") from None
 
+        draft_name = rfc_to_be.name
+        rfc_number = rfc_to_be.rfc_number or "XXXX"
+
+        # Pick the final review template and subject based on the draft's labels.
+        label_slugs = set(rfc_to_be.labels.values_list("slug", flat=True))
+        has_markdown = "markdown" in label_slugs
+        has_github = "github" in label_slugs
+        if has_markdown and has_github:
+            finalreview_template = "rpc/mail/finalreview-markdown-github.txt"
+            finalreview_subject = (
+                f"Final Review: RFC-to-be {rfc_number} ({draft_name}) "
+                "in markdown/GitHub"
+            )
+        elif has_github:
+            finalreview_template = "rpc/mail/finalreview-github.txt"
+            finalreview_subject = (
+                f"Final Review: RFC-to-be {rfc_number} ({draft_name}) in XML/GitHub"
+            )
+        elif has_markdown:
+            finalreview_template = "rpc/mail/finalreview-markdown.txt"
+            finalreview_subject = (
+                f"Final Review: RFC-to-be {rfc_number} ({draft_name}) in markdown"
+            )
+        else:
+            finalreview_template = "rpc/mail/finalreview.txt"
+            finalreview_subject = (
+                f"Final Review: RFC-to-be {rfc_number} ({draft_name}) in XML"
+            )
+
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
             ("enqueuing", "rpc/mail/enqueuing.txt", "Enqueuing Notice"),
-            ("finalreview", "rpc/mail/finalreview.txt", "Final Review"),
+            ("finalreview", finalreview_template, "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
 
@@ -2616,8 +2645,6 @@ class RfcMailTemplatesList(views.APIView):
             for author in rfc_to_be.authors.select_related("datatracker_person").all()
             if author.datatracker_person is not None
         ]
-        draft_name = rfc_to_be.name
-        rfc_number = rfc_to_be.rfc_number or "XXXX"
 
         interested_parties = {"rfc-editor@rfc-editor.org"}
         if rfc_to_be.shepherd is not None:
@@ -2672,8 +2699,7 @@ class RfcMailTemplatesList(views.APIView):
                 "cc": list(interested_parties),
             },
             "finalreview": {
-                "subject": f"Final Review: RFC-to-be {rfc_number} ({draft_name}) "
-                "in XML",
+                "subject": finalreview_subject,
                 "to": author_emails,
                 "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
             },
@@ -2695,6 +2721,8 @@ class RfcMailTemplatesList(views.APIView):
                             template_filename,
                             context={
                                 "rfc_to_be": rfc_to_be,
+                                "rfc_number": rfc_number,
+                                "draft_name": draft_name,
                                 "group_name": datatracker_group_name(rfc_to_be.group)
                                 if rfc_to_be.group
                                 else None,
