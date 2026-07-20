@@ -49,9 +49,7 @@ const queueListWithFilters = computed(() => {
   if (!props.name) {
     return queueList.value
   }
-  return queueList.value.filter((queueItem) => {
-    queueItem.name == props.name
-  })
+  return queueList.value.filter((queueItem) => queueItem.name === props.name)
 })
 
 const ASSIGNMENT_SET_ROLE_PUBLISHER = 'publisher'

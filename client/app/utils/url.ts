@@ -1,4 +1,3 @@
-import type { RpcPerson } from '~/purple_client'
 import type { ResolvedQueueItem } from '../components/AssignmentsTypes'
 
 export const AUTH_PATH = '/auth'

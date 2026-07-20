@@ -40,7 +40,7 @@ export const ref_type: Record<Relationship, string> = {
   'not-received-3g': 'not received 3g'
 } as const
 
-export const getHumanReadableRelationshipName = (relationship: Relationship | string) => {
+export const getHumanReadableRelationshipName = (relationship: string) => {
   return relationship in ref_type ? ref_type[relationship as keyof typeof ref_type] : relationship
 }
 
