@@ -18,9 +18,7 @@
   // Features to add to the dev container. More info: https://containers.dev/features.
   // "features": {},
   // Use 'forwardPorts' to make a list of ports inside the container available locally.
-  "forwardPorts": [
-    8088
-  ],
+  "forwardPorts": [8088],
   "portsAttributes": {
     "8001": {
       "label": "Django",
@@ -63,9 +61,7 @@
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
         "python.pythonPath": "/usr/local/bin/python",
-        "python.analysis.extraPaths": [
-          "/home/dev/.local/lib/python3.12/site-packages/"
-        ],
+        "python.analysis.extraPaths": ["/home/dev/.local/lib/python3.12/site-packages/"],
         "python.languageServer": "Default"
       }
     }

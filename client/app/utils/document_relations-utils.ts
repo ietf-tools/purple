@@ -1,6 +1,6 @@
 import { startCase } from 'es-toolkit/string'
 import { uniqBy } from 'es-toolkit/array'
-import type { Cluster, RfcToBe } from "~/purple_client";
+import type { Cluster, RfcToBe } from '~/purple_client'
 
 /**
  * These constants were calculated from DOM Bootstrap CSS variables
@@ -9,74 +9,81 @@ import type { Cluster, RfcToBe } from "~/purple_client";
  */
 export const font_size = 14
 export const line_height = font_size + 2
-export const font_family = 'Arial,sans-serif';
+export const font_family = 'Arial,sans-serif'
 export const font = `${font_size}px ${font_family}`
 
-export const green = "#198754"
-export const blue = "#4d9efd"
+export const green = '#198754'
+export const blue = '#4d9efd'
 export const purple = '#bb44bb'
-export const orange = "#fd7e14"
-export const cyan = "#0dcaf0"
-export const yellow = "#ffc107"
-export const red = "#ee828d"
+export const orange = '#fd7e14'
+export const cyan = '#0dcaf0'
+export const yellow = '#ffc107'
+export const red = '#ee828d'
 export const pink = '#bb44bb'
-export const teal = "#20c997"
-export const white = "#fff"
-export const black = "#212529"
-export const gray200 = "#E5E7EB"
-export const gray400 = "#ced4da"
-export const gray800 = "#4e444a"
+export const teal = '#20c997'
+export const white = '#fff'
+export const black = '#212529'
+export const gray200 = '#E5E7EB'
+export const gray400 = '#ced4da'
+export const gray800 = '#4e444a'
 
-export type Relationship = 'refqueue' |
-  'not-received' | // implicit 1g
-  'not-received-2g' |
-  'not-received-3g'
+export type Relationship =
+  | 'refqueue'
+  | 'not-received' // implicit 1g
+  | 'not-received-2g'
+  | 'not-received-3g'
 
 export const ref_type: Record<Relationship, string> = {
   refqueue: 'ref queue',
   'not-received': 'not received',
   'not-received-2g': 'not received 2g',
-  'not-received-3g': 'not received 3g',
-} as const;
+  'not-received-3g': 'not received 3g'
+} as const
 
 export const getHumanReadableRelationshipName = (relationship: Relationship | string) => {
   return relationship in ref_type ? ref_type[relationship as keyof typeof ref_type] : relationship
 }
 
-export type Group = "" | "none" | "this group" | "other group"
+export type Group = '' | 'none' | 'this group' | 'other group'
 export type Level =
-  | ""
-  | "Informational"
-  | "Experimental"
-  | "Proposed Standard"
-  | "Best Current Practice"
-  | "Draft Standard"
+  | ''
+  | 'Informational'
+  | 'Experimental'
+  | 'Proposed Standard'
+  | 'Best Current Practice'
+  | 'Draft Standard'
 
 export const parseLevel = (maybeLevel: string): Level => {
   switch (maybeLevel) {
-    case "":
-      return ""
-    case "inf":
-    case "Informational":
-      return "Informational"
-    case "bcp":
-    case "Best Current Practice":
-      return "Best Current Practice"
-    case "draft":
-    case "Draft Standard":
-      return "Draft Standard"
-    case "exp":
-    case "Experimental":
-      return "Experimental"
-    case "ps":
-    case "Proposed Standard":
-      return "Proposed Standard"
+    case '':
+      return ''
+    case 'inf':
+    case 'Informational':
+      return 'Informational'
+    case 'bcp':
+    case 'Best Current Practice':
+      return 'Best Current Practice'
+    case 'draft':
+    case 'Draft Standard':
+      return 'Draft Standard'
+    case 'exp':
+    case 'Experimental':
+      return 'Experimental'
+    case 'ps':
+    case 'Proposed Standard':
+      return 'Proposed Standard'
   }
-  console.warn("Unable to parse level: ", maybeLevel)
-  return ""
+  console.warn('Unable to parse level: ', maybeLevel)
+  return ''
 }
 
-export const dispositionValues = [undefined, 'created', 'in_progress', 'published', 'withdrawn'] as const
+export const dispositionValues = [
+  undefined,
+  'created',
+  'in_progress',
+  'published',
+  'withdrawn'
+] as const
 
 type Disposition = (typeof dispositionValues)[number]
 
@@ -90,7 +97,7 @@ export const parseDisposition = (maybeDisposition: string | undefined | null): D
     case 'withdrawn':
       return maybeDisposition
   }
-  console.warn("Unable to parse disposition: ", maybeDisposition)
+  console.warn('Unable to parse disposition: ', maybeDisposition)
   return undefined
 }
 
@@ -102,16 +109,16 @@ export const parseRelationship = (maybeRelationship: string): Relationship => {
     case 'not-received-3g' satisfies Relationship:
       return maybeRelationship
   }
-  console.warn("Unable to parse relationship: ", maybeRelationship)
+  console.warn('Unable to parse relationship: ', maybeRelationship)
   return 'not-received'
 }
 
 type CircleTheme = {
   fill: string
-  textColor: string,
+  textColor: string
   strokeWidth: number
-  strokeStyle: 'solid' | 'dotted',
-  text: Line[],
+  strokeStyle: 'solid' | 'dotted'
+  text: Line[]
   tooltip?: string[]
 }
 
@@ -130,12 +137,12 @@ const wordsToLines = (words: string[]): Line[] => {
 
   let line: Line = {
     text: firstWord,
-    width: line_width_0,
+    width: line_width_0
   }
 
   const target_width = Math.sqrt(measureWidth(words.join('').trim()) * line_height)
   for (let i = 0, n = words.length; i < n; ++i) {
-    let line_text = `${(line.text ? `${line.text}` : '')}${words[i]}`
+    let line_text = `${line.text ? `${line.text}` : ''}${words[i]}`
     let line_width = measureWidth(line_text) * 1.2
     if ((line_width_0 + line_width) / 2 < target_width) {
       line.width = line_width_0 = line_width
@@ -150,11 +157,11 @@ const wordsToLines = (words: string[]): Line[] => {
 }
 
 function measureWidth(text: string): number {
-  const context = document.createElement("canvas").getContext("2d")
+  const context = document.createElement('canvas').getContext('2d')
 
   if (!context) {
     console.error({ context })
-    throw Error("Unable to get canvas context. See console for more")
+    throw Error('Unable to get canvas context. See console for more')
   }
   context.font = font
   return context.measureText(text).width
@@ -165,10 +172,10 @@ function measureWidth(text: string): number {
  */
 export const normalizeData = (data: DataParam) => {
   return {
-    nodes: data.nodes.map(node => {
+    nodes: data.nodes.map((node) => {
       return {
         ...node,
-        isBlocked: !node.isReceived ? undefined : node.isBlocked,
+        isBlocked: !node.isReceived ? undefined : node.isBlocked
       }
     }),
     links: data.links
@@ -202,7 +209,12 @@ const makeTooltip = (node: NodeParam): string[] | undefined => {
  * based on https://docs.google.com/spreadsheets/d/1WoPNZiFf9Hx4Qc6N5UE1-RKhYYNybBeCYZM72wL5TSM/edit?gid=0#gid=0
  */
 export const getCircleTheme = (node: NodeParam): CircleTheme => {
-  if (Boolean(node.isReceived) && !node.hasNormRef && !node.isBlocked && node.disposition === 'in_progress') {
+  if (
+    Boolean(node.isReceived) &&
+    !node.hasNormRef &&
+    !node.isBlocked &&
+    node.disposition === 'in_progress'
+  ) {
     return {
       fill: blue,
       textColor: black,
@@ -212,7 +224,13 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (Boolean(node.isReceived) && Boolean(node.hasNormRef) && Boolean(node.hasNormRefInQueue) && !node.isBlocked && node.disposition === 'in_progress') {
+  if (
+    Boolean(node.isReceived) &&
+    Boolean(node.hasNormRef) &&
+    Boolean(node.hasNormRefInQueue) &&
+    !node.isBlocked &&
+    node.disposition === 'in_progress'
+  ) {
     return {
       fill: green,
       textColor: black,
@@ -222,9 +240,7 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
       tooltip: makeTooltip(node)
     }
   }
-  if (
-    Boolean(node.isReceived) && Boolean(node.isBlocked)
-  ) {
+  if (Boolean(node.isReceived) && Boolean(node.isBlocked)) {
     return {
       fill: pink,
       textColor: black,
@@ -245,7 +261,12 @@ export const getCircleTheme = (node: NodeParam): CircleTheme => {
     }
   }
 
-  if (Boolean(node.isReceived) && !node.hasNormRefInQueue && (!node.hasNormRefBlocked || !node.isBlocked) && node.disposition === 'published') {
+  if (
+    Boolean(node.isReceived) &&
+    !node.hasNormRefInQueue &&
+    (!node.hasNormRefBlocked || !node.isBlocked) &&
+    node.disposition === 'published'
+  ) {
     return {
       fill: gray200,
       textColor: black,
@@ -270,7 +291,7 @@ export type Line = {
   text: string
   width: number
   style?: string
-};
+}
 
 export type Node = NodeParam & {
   x: number
@@ -278,18 +299,18 @@ export type Node = NodeParam & {
   r: number
   lines?: Line[]
   stroke?: number
-};
+}
 
 export type Link = Omit<LinkParam, 'source' | 'target'> & {
   source: Node
   target: Node
   rel: Relationship
-};
+}
 
 export type Data = {
   links: Link[]
   nodes: Node[]
-};
+}
 
 export type NodeParam = {
   id: string
@@ -301,15 +322,15 @@ export type NodeParam = {
   hasNormRefBlocked?: boolean
   hasNormRefInQueue?: boolean
   disposition?: Disposition
-  rfcNumber?: number | undefined,
+  rfcNumber?: number | undefined
   rfcToBe?: RfcToBe
-};
+}
 
 export type LinkParam = {
-  source: string;
-  target: string;
-  rel: Relationship;
-};
+  source: string
+  target: string
+  rel: Relationship
+}
 
 export type DataParam = {
   links: LinkParam[]
@@ -318,21 +339,58 @@ export type DataParam = {
 
 export const legendData: DataParam = {
   links: [
-    { source: "draft-has-normrefs-inqueue", target: 'draft-no-normref', rel: 'refqueue' },
-    { source: "draft-has-normrefs-inqueue", target: 'draft-has-unreceived-normrefs-blocked', rel: 'refqueue' },
-    { source: "draft-has-unreceived-normrefs-blocked", target: 'draft-not-received-2g', rel: 'not-received-2g' },
-    { source: "draft-has-unreceived-normrefs-blocked", target: 'draft-not-received-3g', rel: 'not-received-3g' },
-    { source: "draft-has-normrefs-inqueue", target: "draft-not-received-normref", rel: 'not-received' },
+    { source: 'draft-has-normrefs-inqueue', target: 'draft-no-normref', rel: 'refqueue' },
+    {
+      source: 'draft-has-normrefs-inqueue',
+      target: 'draft-has-unreceived-normrefs-blocked',
+      rel: 'refqueue'
+    },
+    {
+      source: 'draft-has-unreceived-normrefs-blocked',
+      target: 'draft-not-received-2g',
+      rel: 'not-received-2g'
+    },
+    {
+      source: 'draft-has-unreceived-normrefs-blocked',
+      target: 'draft-not-received-3g',
+      rel: 'not-received-3g'
+    },
+    {
+      source: 'draft-has-normrefs-inqueue',
+      target: 'draft-not-received-normref',
+      rel: 'not-received'
+    }
   ],
   nodes: [
-    { id: 'draft-no-normref', isReceived: true, isNormRef: true, hasNormRef: false, isBlocked: false, disposition: 'in_progress' }, // Normative reference, in progress
-    { id: 'draft-has-normrefs-inqueue', isReceived: true, hasNormRef: true, hasNormRefInQueue: true, hasNormRefBlocked: false, isBlocked: false, disposition: "in_progress" }, // Has normative ref in queue
-    { id: 'draft-has-unreceived-normrefs-blocked', isReceived: true, isBlocked: true, isNormRef: true, hasNormRef: false }, // Blocked normative reference
+    {
+      id: 'draft-no-normref',
+      isReceived: true,
+      isNormRef: true,
+      hasNormRef: false,
+      isBlocked: false,
+      disposition: 'in_progress'
+    }, // Normative reference, in progress
+    {
+      id: 'draft-has-normrefs-inqueue',
+      isReceived: true,
+      hasNormRef: true,
+      hasNormRefInQueue: true,
+      hasNormRefBlocked: false,
+      isBlocked: false,
+      disposition: 'in_progress'
+    }, // Has normative ref in queue
+    {
+      id: 'draft-has-unreceived-normrefs-blocked',
+      isReceived: true,
+      isBlocked: true,
+      isNormRef: true,
+      hasNormRef: false
+    }, // Blocked normative reference
     { id: 'draft-not-received-normref', isReceived: false, isNormRef: true }, // Not received, normative reference
     { id: 'draft-not-received-2g', isReceived: false, isNormRef: true }, // Not received, 2g
-    { id: 'draft-not-received-3g', isReceived: false, isNormRef: true }, // Not received, 3g
-  ],
-};
+    { id: 'draft-not-received-3g', isReceived: false, isNormRef: true } // Not received, 3g
+  ]
+}
 
 export const getClusterGraphData = (cluster: Cluster) => {
   const newClusterGraphData: DataParam = {
@@ -341,86 +399,110 @@ export const getClusterGraphData = (cluster: Cluster) => {
   }
 
   const isNodeParam = (data: unknown): data is NodeParam => {
-    const isANode = Boolean((data && typeof data === 'object' && 'id' in data))
+    const isANode = Boolean(data && typeof data === 'object' && 'id' in data)
     if (!isANode) {
-      console.log("!IS A NODE", isANode, data)
+      console.log('!IS A NODE', isANode, data)
     }
     return isANode
   }
 
   const isLinkParam = (data: unknown): data is LinkParam => {
-    return Boolean((data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data))
+    return Boolean(
+      data && typeof data === 'object' && 'source' in data && 'target' in data && 'rel' in data
+    )
   }
 
   let referenceNodes: NodeParam[] = []
 
   newClusterGraphData.nodes.push(
-    ...(cluster.documents ?? []).flatMap((clusterMember): NodeParam[] | null => {
-      const { name, rfcNumber, disposition, references, isReceived, isBlocked, isNormref } = clusterMember
+    ...(cluster.documents ?? [])
+      .flatMap((clusterMember): NodeParam[] | null => {
+        const { name, rfcNumber, disposition, references, isReceived, isBlocked, isNormref } =
+          clusterMember
 
-      const hasNormRef = references ? references.length > 0 : undefined
-      const hasNormRefInQueue = references ? references.every(reference => reference.relationship === 'refqueue') : undefined
-      const hasNormRefBlocked = references ? references.some(reference => reference.targetIsBlocked || !reference.targetIsReceived) : undefined
+        const hasNormRef = references ? references.length > 0 : undefined
+        const hasNormRefInQueue = references
+          ? references.every((reference) => reference.relationship === 'refqueue')
+          : undefined
+        const hasNormRefBlocked = references
+          ? references.some((reference) => reference.targetIsBlocked || !reference.targetIsReceived)
+          : undefined
 
-      referenceNodes.push(...(references ?? []).flatMap((reference): NodeParam[] => {
-        const { targetDraftName, targetIsReceived, targetRfcNumber, targetDisposition } = reference
-        // source node is always a cluster member already in the graph; only create target nodes
-        if (!targetDraftName) return []
-        return [{
-          id: targetDraftName,
-          url: `/docs/${targetDraftName}`,
-          isNormRef: true,
-          isReceived: targetIsReceived ?? false,
-          rfcNumber: targetRfcNumber ?? undefined,
-          disposition: parseDisposition(targetDisposition),
-        }]
-      }))
+        referenceNodes.push(
+          ...(references ?? []).flatMap((reference): NodeParam[] => {
+            const { targetDraftName, targetIsReceived, targetRfcNumber, targetDisposition } =
+              reference
+            // source node is always a cluster member already in the graph; only create target nodes
+            if (!targetDraftName) return []
+            return [
+              {
+                id: targetDraftName,
+                url: `/docs/${targetDraftName}`,
+                isNormRef: true,
+                isReceived: targetIsReceived ?? false,
+                rfcNumber: targetRfcNumber ?? undefined,
+                disposition: parseDisposition(targetDisposition)
+              }
+            ]
+          })
+        )
 
-      return [{
-        id: name,
-        url: `/docs/${name}`,
-        rfcNumber: rfcNumber ?? undefined,
-        isReceived: isReceived ?? undefined,
-        disposition: parseDisposition(disposition),
-        isBlocked,
-        isNormRef: isNormref ?? false,
-        hasNormRef,
-        hasNormRefInQueue,
-        hasNormRefBlocked
-      }]
-    }).filter(isNodeParam)
+        return [
+          {
+            id: name,
+            url: `/docs/${name}`,
+            rfcNumber: rfcNumber ?? undefined,
+            isReceived: isReceived ?? undefined,
+            disposition: parseDisposition(disposition),
+            isBlocked,
+            isNormRef: isNormref ?? false,
+            hasNormRef,
+            hasNormRefInQueue,
+            hasNormRefBlocked
+          }
+        ]
+      })
+      .filter(isNodeParam)
   )
 
   referenceNodes = referenceNodes.filter(
     // only include reference nodes if they weren't already mentioned
-    referenceNode => !newClusterGraphData.nodes.some(graphDataNode => graphDataNode.id === referenceNode.id)
+    (referenceNode) =>
+      !newClusterGraphData.nodes.some((graphDataNode) => graphDataNode.id === referenceNode.id)
   )
   newClusterGraphData.nodes.push(...referenceNodes)
 
   newClusterGraphData.links.push(
-    ...(cluster.documents ?? []).flatMap((clusterMember): LinkParam[] | null => {
-      const { references } = clusterMember
+    ...(cluster.documents ?? [])
+      .flatMap((clusterMember): LinkParam[] | null => {
+        const { references } = clusterMember
 
-      return references ? references.map((reference): LinkParam | null => {
-        const { draftName, targetDraftName, relationship } = reference
+        return references
+          ? references
+              .map((reference): LinkParam | null => {
+                const { draftName, targetDraftName, relationship } = reference
 
-        if (draftName === undefined || targetDraftName === undefined) {
-          console.warn("Graph: cluster reference", reference, " has undefined name(s)")
-          return null
-        }
+                if (draftName === undefined || targetDraftName === undefined) {
+                  console.warn('Graph: cluster reference', reference, ' has undefined name(s)')
+                  return null
+                }
 
-        return {
-          source: draftName,
-          target: targetDraftName,
-          rel: parseRelationship(relationship),
-        }
-      }).filter(isLinkParam) : null
-    }).filter(isLinkParam)
+                return {
+                  source: draftName,
+                  target: targetDraftName,
+                  rel: parseRelationship(relationship)
+                }
+              })
+              .filter(isLinkParam)
+          : null
+      })
+      .filter(isLinkParam)
   )
 
-
   newClusterGraphData.nodes = uniqBy(newClusterGraphData.nodes, (node) => node.id)
-  newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) => JSON.stringify([link.source, link.target, link.rel]))
+  newClusterGraphData.links = uniqBy(newClusterGraphData.links, (link) =>
+    JSON.stringify([link.source, link.target, link.rel])
+  )
 
   return newClusterGraphData
 }

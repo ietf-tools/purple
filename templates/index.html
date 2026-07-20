@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>RPC Tool</title>
-</head>
-<body>
-<h1>RPC Tool</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>RPC Tool</title>
+  </head>
+  <body>
+    <h1>RPC Tool</h1>
 
-{% if user.is_authenticated %}
-  <p>Current user: {% firstof user.datatracker_person.plain_name user.username %}</p>
-  <form action="{% url 'oidc_logout' %}" method="post">
-    {% csrf_token %}
-    <input type="submit" value="logout">
-  </form>
-{% else %}
-  <a href="{% url 'oidc_authentication_init' %}">Login</a>
-{% endif %}
-</body>
+    {% if user.is_authenticated %}
+    <p>Current user: {% firstof user.datatracker_person.plain_name user.username %}</p>
+    <form action="{% url 'oidc_logout' %}" method="post">
+      {% csrf_token %}
+      <input type="submit" value="logout" />
+    </form>
+    {% else %}
+    <a href="{% url 'oidc_authentication_init' %}">Login</a>
+    {% endif %}
+  </body>
 </html>

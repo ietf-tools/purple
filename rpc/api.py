@@ -11,7 +11,7 @@ import rpcapi_client
 from django import forms
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Exists, Max, OuterRef, Prefetch, Q
+from django.db.models import Exists, Max, OuterRef, Prefetch, Q, Subquery
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
@@ -37,6 +37,7 @@ from rest_framework.exceptions import (
     NotAuthenticated,
     NotFound,
     PermissionDenied,
+    ValidationError,
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
@@ -47,7 +48,11 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, get_rpcapi_client, with_rpcapi
 from utils.rest_framework.permissions import HasApiKey
 
-from .dt_v1_api_utils import datatracker_group_list_email, datatracker_group_name
+from .dt_v1_api_utils import (
+    DatatrackerFetchFailure,
+    datatracker_group_list_email,
+    datatracker_group_name,
+)
 from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
@@ -96,6 +101,7 @@ from .serializers import (
     AdditionalEmailSerializer,
     ApprovalLogMessageSerializer,
     AssignmentSerializer,
+    AssignmentTimelineSerializer,
     AuthorOrderSerializer,
     BaseDatatrackerPersonSerializer,
     CapabilitySerializer,
@@ -125,7 +131,10 @@ from .serializers import (
     PublishRfcSerializer,
     PublishRfcStatusSerializer,
     QueueCountsSerializer,
+    QueueCountStatsSerializer,
     QueueItemSerializer,
+    QueuePublishedStatsSerializer,
+    QueueStatsSerializer,
     RfcAuthorSerializer,
     RfcToBeSerializer,
     RpcPersonSerializer,
@@ -142,6 +151,12 @@ from .serializers import (
     VersionInfoSerializer,
     collect_rfctobe_history,
 )
+from .stats.rollups import (
+    queue_counts_rollup,
+    queue_published_rollup,
+    queue_rollup,
+)
+from .stats.timeline import build_document_timeline
 from .tasks import (
     RPC_PERSON_NAME_MAP_CACHE_KEY,
     RPC_PERSON_NAME_MAP_CACHE_TTL,
@@ -368,6 +383,22 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
     def get_queryset(self):
         req_person_id = int(self.kwargs["person_id"])
 
+        HistoricalRfcToBe = RfcToBe.history.model
+        enqueued_at_subquery = Subquery(
+            HistoricalRfcToBe.objects.filter(
+                id=OuterRef("rfc_to_be_id"), history_type="+"
+            )
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+
+        HistoricalAssignment = Assignment.history.model
+        assigned_at_subquery = Subquery(
+            HistoricalAssignment.objects.filter(id=OuterRef("id"), history_type="+")
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+
         queryset = (
             super()
             .get_queryset()
@@ -381,6 +412,10 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
                     ).select_related("reason"),
                     to_attr="blocking_reasons",
                 )
+            )
+            .annotate(
+                enqueued_at=enqueued_at_subquery,
+                assigned_at=assigned_at_subquery,
             )
         )
 
@@ -1916,6 +1951,141 @@ class StatsLabels(views.APIView):
                         }
                     )
         return Response({"label_stats": results})
+
+
+class DocumentAssignmentTimeline(views.APIView):
+    """Assignment/blocked timeline for a single document over time.
+
+    Combines post-transition Assignment/Blocked history with pre-transition
+    label-derived states (see rpc.stats.timeline).
+    """
+
+    @extend_schema(
+        operation_id="document_assignment_timeline",
+        responses=AssignmentTimelineSerializer,
+        parameters=[
+            OpenApiParameter("draft_name", OpenApiTypes.STR, OpenApiParameter.PATH),
+        ],
+    )
+    def get(self, request, draft_name):
+        rfc_to_be = resolve_rfctobe(draft_name)
+        payload = build_document_timeline(rfc_to_be)
+        return Response(AssignmentTimelineSerializer(payload).data)
+
+
+_STATS_PERIODS = ("week", "month", "quarter", "year", "ietf")
+_STATS_PERIOD_PARAMS = [
+    OpenApiParameter(
+        "period",
+        OpenApiTypes.STR,
+        OpenApiParameter.QUERY,
+        enum=_STATS_PERIODS,
+        description="Length of each past segment.",
+    ),
+    OpenApiParameter(
+        "count",
+        OpenApiTypes.INT,
+        OpenApiParameter.QUERY,
+        description="How many past segments to report (1-52).",
+    ),
+]
+
+
+class _StatsPeriodView(views.APIView):
+    """Shared period/count parsing and brief caching for the stats endpoints.
+
+    The rollups scan document history and can be expensive, so results are
+    cached per (period, count, current UTC date) — the date keeps the "up to
+    now" windows rolling over daily. ``period=ietf`` needs the datatracker; an
+    outage surfaces as a retryable 503 rather than a 500.
+    """
+
+    PERIODS = _STATS_PERIODS
+    MAX_COUNT = 52
+    CACHE_TTL = 300  # seconds; read-only and tolerant of staleness
+
+    def _period_count(self, request):
+        period = request.query_params.get("period", "month")
+        if period not in self.PERIODS:
+            raise ValidationError(
+                {"period": f"Must be one of {', '.join(self.PERIODS)}"}
+            )
+        try:
+            count = int(request.query_params.get("count", 6))
+        except (TypeError, ValueError):
+            raise ValidationError({"count": "Must be an integer"}) from None
+        return period, max(1, min(count, self.MAX_COUNT))
+
+    def _cached_rollup(self, prefix, period, count, rollup):
+        cache_key = f"{prefix}:{period}:{count}:{timezone.now().date().isoformat()}"
+        data = cache.get(cache_key)
+        if data is None:
+            data = rollup(period, count)  # may raise DatatrackerFetchFailure
+            cache.set(cache_key, data, self.CACHE_TTL)
+        return data
+
+    @staticmethod
+    def _datatracker_503():
+        return Response(
+            {"detail": "Could not reach the datatracker for IETF meetings."},
+            status=status.HTTP_503_SERVICE_UNAVAILABLE,
+        )
+
+
+class StatsQueue(_StatsPeriodView):
+    """Queue-wide time-in-assignment summary, split blocked vs not-blocked,
+    grouped into selectable past periods."""
+
+    @extend_schema(
+        operation_id="stats_queue",
+        responses=QueueStatsSerializer,
+        parameters=_STATS_PERIOD_PARAMS,
+    )
+    def get(self, request):
+        period, count = self._period_count(request)
+        try:
+            periods = self._cached_rollup("stats_queue", period, count, queue_rollup)
+        except DatatrackerFetchFailure:
+            return self._datatracker_503()
+        return Response(QueueStatsSerializer({"periods": periods}).data)
+
+
+class StatsQueueCounts(_StatsPeriodView):
+    """Queue-wide document/page counts, grouped into selectable past periods."""
+
+    @extend_schema(
+        operation_id="stats_queue_counts",
+        responses=QueueCountStatsSerializer,
+        parameters=_STATS_PERIOD_PARAMS,
+    )
+    def get(self, request):
+        period, count = self._period_count(request)
+        try:
+            periods = self._cached_rollup(
+                "stats_queue_counts", period, count, queue_counts_rollup
+            )
+        except DatatrackerFetchFailure:
+            return self._datatracker_503()
+        return Response(QueueCountStatsSerializer({"periods": periods}).data)
+
+
+class StatsQueuePublished(_StatsPeriodView):
+    """RFCs published by stream and status, grouped into selectable periods."""
+
+    @extend_schema(
+        operation_id="stats_queue_published",
+        responses=QueuePublishedStatsSerializer,
+        parameters=_STATS_PERIOD_PARAMS,
+    )
+    def get(self, request):
+        period, count = self._period_count(request)
+        try:
+            data = self._cached_rollup(
+                "stats_queue_published", period, count, queue_published_rollup
+            )
+        except DatatrackerFetchFailure:
+            return self._datatracker_503()
+        return Response(QueuePublishedStatsSerializer(data).data)
 
 
 class UnusableRfcNumberViewSet(viewsets.ModelViewSet):

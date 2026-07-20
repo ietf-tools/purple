@@ -1,7 +1,7 @@
 <template>
   <AuthWallSpinner v-if="userStore.authenticated !== true" />
   <DefaultLayoutAfterAuthWall v-else>
-    <slot  />
+    <slot />
   </DefaultLayoutAfterAuthWall>
 </template>
 

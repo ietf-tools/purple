@@ -1,13 +1,15 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/ietf-tools/common/main/assets/logos/purple.svg" alt="Purple" height="125" />
+<img src="https://static.ietf.org/logos/icon-purple.svg" alt="Purple" height="125" />
 
-<!-- [![Release](https://img.shields.io/github/release/ietf-tools/purple.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/purple/releases) -->
+# Purple
+
+[![Release](https://img.shields.io/github/release/ietf-tools/purple.svg?style=flat&maxAge=300)](https://github.com/ietf-tools/purple/releases)
 [![License](https://img.shields.io/github/license/ietf-tools/purple)](https://github.com/ietf-tools/purple/blob/main/LICENSE)
-![Python Version](https://img.shields.io/badge/python-3.12-blue?logo=python&logoColor=white)
+![Python Version](https://img.shields.io/badge/python-3.13-blue?logo=python&logoColor=white)
 ![Django Version](https://img.shields.io/badge/django-5.0-teal?logo=django&logoColor=white)
-![Node Version](https://img.shields.io/badge/node.js-22-green?logo=node.js&logoColor=white)
-![Nuxt Version](https://img.shields.io/badge/nuxt-3-green?logo=nuxt.js&logoColor=white)
+![Node Version](https://img.shields.io/badge/node.js-26-green?logo=node.js&logoColor=white)
+![Nuxt Version](https://img.shields.io/badge/nuxt-4-green?logo=nuxt.js&logoColor=white)
 ![Vue Version](https://img.shields.io/badge/vue-3-green?logo=vue.js&logoColor=white)
 
 ##### Web tool for the RFC Production Center
@@ -31,19 +33,20 @@
 ## Prerequisites
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-- [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) *(Windows only)*
+- [WSL2](https://learn.microsoft.com/en-us/windows/wsl/install) _(Windows only)_
 
 ## Getting Started
 
 1. Clone this repository locally.
 2. Clone the [ietf-tools/datatracker](https://github.com/ietf-tools/datatracker) repository into another directory. Check out the `main` branch, start the Docker environment, and start the dev server.
-3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) *(optional, and not generally available)*
+3. [Obtain an xfer database dump](#obtain-an-xfer-database-dump) _(optional, and not generally available)_
 4. Continue using the steps for your preferred IDE:
    - [Visual Studio Code](#using-vs-code)
    - [Generic](#using-generic)
 5. [Create demo data](#create-demo-data) if you have not already
 
 ## Obtain an xfer Database Dump
+
 This step is required if you need a populated database to work with. In addition to the steps here, the datatracker's database needs to be populated with a compatible dataset. Instructions for that are TBD.
 
 1. Open a shell _on the host_ (not in the docker container) and navigate to the project root directory.
@@ -55,7 +58,7 @@ To return to an empty DB as a starting point, remove the `purple.dump` and rebui
 
 1. Open the project in VS Code
 2. When prompted, in the lower right corner, click <kbd>Reopen in container</kbd>
-3. Wait for the devcontainer to initialize. *(This can take a few seconds/minutes the first time)*
+3. Wait for the devcontainer to initialize. _(This can take a few seconds/minutes the first time)_
 4. The editor will automatically open 2 side-by-side terminals, running both the backend API server and the client dev server.
 5. Open http://localhost:8088 in your browser and login using some Datatracker user.
 6. If there are login problems try configuring VSCode's 'Remote: Local Port Host' to 'allInterfaces' and then reopen VSCode's devcontainers.
@@ -63,10 +66,10 @@ To return to an empty DB as a starting point, remove the `purple.dump` and rebui
 ## Using Generic
 
 1. In a terminal, from the project root folder, run the command:
-    ```sh
-    docker/run
-    ```
-2. Wait for the containers to initialize. *(This can take a few seconds/minutes the first time)*
+   ```sh
+   docker/run
+   ```
+2. Wait for the containers to initialize. _(This can take a few seconds/minutes the first time)_
 3. A tmux session will automatically be started with the backend API server running on the left and the client dev server running on the right.
 4. Open http://localhost:8088 in your browser and login using some Datatracker user.
 
@@ -103,22 +106,27 @@ Access Mailpit from http://localhost:8025/
 ### Obtaining or updating a database dump
 
 To obtain or update your rfced-xfer database dump, on the host (i.e., _outside_ the docker container) run
+
 ```sh
 ./refresh_xfer_dump.sh
 ```
+
 This will prompt you to log in to Azure if necessary, then download the latest xfer dump.
 
 ### Loading a new database dump
 
 After obtaining the new database dump, on the host (i.e., _outside_ the docker container), run
+
 ```sh
 ./rebuild_db_container.sh
 ```
+
 This will destroy your db container and its data, then build a new one using the dump found in `purple.dump`. If there is no such file, an empty database will be created.
 
 ### Returning to an empty database
 
 To start over with an empty database after using an rfced-xfer dump
+
 1. Remove the file `purple.dump`
 2. Follow the steps to [load a new database dump](#loading-a-new-database-dump)
 3. Restart your docker environment or run `./manage.py migrate` in your app container.
@@ -126,15 +134,19 @@ To start over with an empty database after using an rfced-xfer dump
 ## Create demo data
 
 To create demo data, open an app container shell and run the management command
+
 ```sh
 ./manage.py create_rpc_demo
 ```
+
 This requires that the Datatracker dev server be running.
 
 To remove all data and start afresh, you can run
+
 ```sh
 ./manage.py purge --yes-im-sure
 ```
+
 and all data in the RPC tool's database will be reset. The Datatracker _will not_ be reset, but running `create_rpc_demo` again will work as intended.
 
 ## APIs
@@ -152,15 +164,19 @@ This API is used by the Django back end to communicate with the Datatracker. It 
 ### Updating the API clients
 
 If changes are made to the APIs, you will need to update the clients. If this includes changes to the Datatracker's `rpcapi.yaml` file you must first copy the new version of that file into this project's root. Then, from inside this project's Docker shell, run
+
 ```sh
 ./update-rpcapi
 ```
+
 This uses [OpenAPI Generator](https://openapi-generator.tech/) to regenerate `purple_api.yaml` and builds both the API clients. It may take a minute or two. When it is done, restart the Django dev server. The Nuxt server normally picks up the changes automatically.
 
 ## Cleanup
 
 To fully tear down the containers created in either of the VS Code or Generic steps, run the following command from the project root folder:
+
 ```sh
 docker/cleanall
 ```
+
 Press <kbd>Y</kbd> to confirm.

@@ -23,31 +23,19 @@
                 "type": {
                   "description": "Type of file, only one of each type permitted",
                   "type": "string",
-                  "enum": [
-                    "xml",
-                    "txt",
-                    "html",
-                    "pdf",
-                    "json",
-                    "notprepped"
-                  ]
+                  "enum": ["xml", "txt", "html", "pdf", "json", "notprepped"]
                 },
                 "path": {
                   "description": "Filename with path relative to repository root",
                   "type": "string"
                 }
               },
-              "required": [
-                "type",
-                "path"
-              ],
+              "required": ["type", "path"],
               "additionalProperties": false
             }
           }
         },
-        "required": [
-          "files"
-        ],
+        "required": ["files"],
         "additionalProperties": false
       }
     }

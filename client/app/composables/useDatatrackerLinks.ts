@@ -2,6 +2,7 @@
 const runtimeConfig = useRuntimeConfig()
 
 export const useDatatrackerLinks = () => ({
-  personByEmail: (email: string) => `${ runtimeConfig.public.datatrackerBase }/person/${ encodeURIComponent(email) }`,
-  profile: `${ runtimeConfig.public.datatrackerBase }/accounts/profile/`
+  personByEmail: (email: string) =>
+    `${runtimeConfig.public.datatrackerBase}/person/${encodeURIComponent(email)}`,
+  profile: `${runtimeConfig.public.datatrackerBase}/accounts/profile/`
 })

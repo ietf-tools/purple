@@ -16,7 +16,9 @@ export type ProfileData = {
 
 const getCurrentRelativePath = (): string => {
   const locationStr = location.toString() // stringify the whole URL including path, query params, hash
-  const relativePath = locationStr.substring(locationStr.indexOf(location.host) + location.host.length)
+  const relativePath = locationStr.substring(
+    locationStr.indexOf(location.host) + location.host.length
+  )
   return relativePath
 }
 
@@ -26,9 +28,9 @@ const stopPageReloadSoon = () => reloadTimer && clearTimeout(reloadTimer)
 const reloadPageSoon = (profileData?: ProfileData | void): void => {
   stopPageReloadSoon()
   if (profileData) {
-    console.log("Reloading page soon due to profileData", profileData)
+    console.log('Reloading page soon due to profileData', profileData)
   } else {
-    console.log("Reloading page soon due to missing profileData", profileData)
+    console.log('Reloading page soon due to missing profileData', profileData)
   }
   reloadTimer = setTimeout(() => window.location.reload(), 10_000)
 }
@@ -48,10 +50,8 @@ export const useUserStore = defineStore('user', {
   },
   getters: {},
   actions: {
-    async refreshAuth () {
-      const profileData = await $fetch<ProfileData>(
-        '/api/rpc/profile/'
-      ).catch(e => {
+    async refreshAuth() {
+      const profileData = await $fetch<ProfileData>('/api/rpc/profile/').catch((e) => {
         console.error('Error loading profile', e)
       })
 
@@ -60,8 +60,8 @@ export const useUserStore = defineStore('user', {
 
       if (!profileData) {
         stopPageReloadSoon()
-        if(!isAuthRoute) {
-          console.log("No session so redirecting to", authRedirectPath)
+        if (!isAuthRoute) {
+          console.log('No session so redirecting to', authRedirectPath)
           window.location.assign(authRedirectPath)
         }
         return
@@ -69,7 +69,7 @@ export const useUserStore = defineStore('user', {
 
       if (profileData.authenticated === true) {
         stopPageReloadSoon()
-        console.log("User authenticated so displaying app", profileData.name, `#${profileData.id}`, )
+        console.log('User authenticated so displaying app', profileData.name, `#${profileData.id}`)
         this.authenticated = profileData.authenticated
         this.id = profileData.id
         this.name = profileData.name

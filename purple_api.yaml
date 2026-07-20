@@ -1367,6 +1367,31 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/rpc/documents/{draft_name}/assignment-timeline/:
+    get:
+      operationId: document_assignment_timeline
+      description: |-
+        Assignment/blocked timeline for a single document over time.
+
+        Combines post-transition Assignment/Blocked history with pre-transition
+        label-derived states (see rpc.stats.timeline).
+      parameters:
+      - in: path
+        name: draft_name
+        schema:
+          type: string
+        required: true
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssignmentTimeline'
+          description: ''
   /api/rpc/documents/{draft_name}/assignments/:
     get:
       operationId: documents_assignments_list
@@ -2901,6 +2926,104 @@ paths:
               schema:
                 $ref: '#/components/schemas/LabelStats'
           description: ''
+  /api/rpc/stats/queue/:
+    get:
+      operationId: stats_queue
+      description: |-
+        Queue-wide time-in-assignment summary, split blocked vs not-blocked,
+        grouped into selectable past periods.
+      parameters:
+      - in: query
+        name: count
+        schema:
+          type: integer
+        description: How many past segments to report (1-52).
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - ietf
+          - month
+          - quarter
+          - week
+          - year
+        description: Length of each past segment.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueStats'
+          description: ''
+  /api/rpc/stats/queue-counts/:
+    get:
+      operationId: stats_queue_counts
+      description: Queue-wide document/page counts, grouped into selectable past periods.
+      parameters:
+      - in: query
+        name: count
+        schema:
+          type: integer
+        description: How many past segments to report (1-52).
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - ietf
+          - month
+          - quarter
+          - week
+          - year
+        description: Length of each past segment.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueCountStats'
+          description: ''
+  /api/rpc/stats/queue-published/:
+    get:
+      operationId: stats_queue_published
+      description: RFCs published by stream and status, grouped into selectable periods.
+      parameters:
+      - in: query
+        name: count
+        schema:
+          type: integer
+        description: How many past segments to report (1-52).
+      - in: query
+        name: period
+        schema:
+          type: string
+          enum:
+          - ietf
+          - month
+          - quarter
+          - week
+          - year
+        description: Length of each past segment.
+      tags:
+      - purple
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuePublishedStats'
+          description: ''
   /api/rpc/std_level_names/:
     get:
       operationId: std_level_names_list
@@ -3607,6 +3730,35 @@ components:
       required:
       - rfc_to_be
       - role
+    AssignmentTimeline:
+      type: object
+      description: Per-document assignment timeline payload.
+      properties:
+        transition_date:
+          type: string
+          format: date-time
+        tracks:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineTrack'
+        summary:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineBand'
+        blocked_reasons:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineBand'
+        legacy:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineBand'
+      required:
+      - blocked_reasons
+      - legacy
+      - summary
+      - tracks
+      - transition_date
     AuthorOrderRequest:
       type: object
       properties:
@@ -4450,6 +4602,18 @@ components:
         * `completed` - IANA has completed actions in draft
         * `changes_required` - Changes to registries are required due to RFC edits
         * `reconciled` - IANA has reconciled changes between draft and RFC
+    KindEnum:
+      enum:
+      - blocked
+      - working
+      - legacy_label
+      - awaiting_ref
+      type: string
+      description: |-
+        * `blocked` - blocked
+        * `working` - working
+        * `legacy_label` - legacy_label
+        * `awaiting_ref` - awaiting_ref
     Label:
       type: object
       properties:
@@ -4732,6 +4896,16 @@ components:
           type: string
         time_spent:
           type: string
+        enqueued_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        assigned_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
       required:
       - role
     PaginatedBaseDatatrackerPersonList:
@@ -5364,13 +5538,25 @@ components:
       type: object
       properties:
         status:
-          $ref: '#/components/schemas/StatusEnum'
+          $ref: '#/components/schemas/PublishRfcStatusStatusEnum'
         detail:
           type: string
           maxLength: 1000
       required:
       - detail
       - status
+    PublishRfcStatusStatusEnum:
+      enum:
+      - none
+      - pending
+      - published
+      - failed
+      type: string
+      description: |-
+        * `none` - none
+        * `pending` - pending
+        * `published` - published
+        * `failed` - failed
     PublishValidationError:
       type: object
       properties:
@@ -5382,6 +5568,122 @@ components:
           type: string
         repository:
           type: string
+    PublishedStatusEnum:
+      enum:
+      - Standards Track
+      - Best Current Practice
+      - Experimental
+      - Informational
+      - Historic
+      - Unknown
+      type: string
+      description: |-
+        * `Standards Track` - Standards Track
+        * `Best Current Practice` - Best Current Practice
+        * `Experimental` - Experimental
+        * `Informational` - Informational
+        * `Historic` - Historic
+        * `Unknown` - Unknown
+    PublishedStreamEnum:
+      enum:
+      - ietf-wg
+      - ietf-ad
+      - ise
+      - irtf
+      - iab
+      - editorial
+      type: string
+      description: |-
+        * `ietf-wg` - ietf-wg
+        * `ietf-ad` - ietf-ad
+        * `ise` - ise
+        * `irtf` - irtf
+        * `iab` - iab
+        * `editorial` - editorial
+    PublishedStreamStatusCount:
+      type: object
+      description: Count of RFCs published for one (stream, status) cell of a period.
+      properties:
+        stream:
+          $ref: '#/components/schemas/PublishedStreamEnum'
+        status:
+          $ref: '#/components/schemas/PublishedStatusEnum'
+        count:
+          type: integer
+      required:
+      - count
+      - status
+      - stream
+    QueueCountStatPeriod:
+      type: object
+      description: Document/page counts for one period (bin).
+      properties:
+        label:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        docs_at_start:
+          type: integer
+        docs_entered:
+          type: integer
+        pages_at_start:
+          type: integer
+        pages_entered:
+          type: integer
+        rfcs_published:
+          type: integer
+        pages_published:
+          type: integer
+        pages_to_edit:
+          type: integer
+        pages_blocked_end:
+          type: integer
+        pages_in_progress_end:
+          type: integer
+        docs_blocked_entire:
+          type: integer
+        docs_entered_missing_ref:
+          type: integer
+        avg_pct_blocked:
+          type: number
+          format: double
+        avg_pct_blocked_all:
+          type: number
+          format: double
+        legacy_included:
+          type: boolean
+      required:
+      - avg_pct_blocked
+      - avg_pct_blocked_all
+      - docs_at_start
+      - docs_blocked_entire
+      - docs_entered
+      - docs_entered_missing_ref
+      - end
+      - label
+      - legacy_included
+      - pages_at_start
+      - pages_blocked_end
+      - pages_entered
+      - pages_in_progress_end
+      - pages_published
+      - pages_to_edit
+      - rfcs_published
+      - start
+    QueueCountStats:
+      type: object
+      description: Queue document/page counts across selectable past periods.
+      properties:
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueCountStatPeriod'
+      required:
+      - periods
     QueueCounts:
       type: object
       description: Counts of items for each queue tab
@@ -5490,6 +5792,113 @@ components:
       - disposition
       - draft_url
       - title
+    QueuePeriodStat:
+      type: object
+      description: |-
+        Per-role assignment-time breakdown and blocked/not-blocked totals for
+        one period (bin).
+      properties:
+        label:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        doc_count:
+          type: integer
+        total_blocked_seconds:
+          type: number
+          format: double
+        total_working_seconds:
+          type: number
+          format: double
+        by_role:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueueRoleTime'
+        legacy_included:
+          type: boolean
+      required:
+      - by_role
+      - doc_count
+      - end
+      - label
+      - legacy_included
+      - start
+      - total_blocked_seconds
+      - total_working_seconds
+    QueuePublishedStatPeriod:
+      type: object
+      description: Published-RFC counts by stream and status for one period (bin).
+      properties:
+        label:
+          type: string
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+        counts:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublishedStreamStatusCount'
+      required:
+      - counts
+      - end
+      - label
+      - start
+    QueuePublishedStats:
+      type: object
+      description: |-
+        RFCs published by stream and status across selectable past periods.
+
+        ``streams`` and ``statuses`` are the non-empty ones in display order (the
+        axes to render); each period's ``counts`` holds only its non-zero cells.
+      properties:
+        streams:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublishedStreamEnum'
+        statuses:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublishedStatusEnum'
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueuePublishedStatPeriod'
+      required:
+      - periods
+      - statuses
+      - streams
+    QueueRoleTime:
+      type: object
+      description: Time spent in one assignment role (or legacy state) within a period.
+      properties:
+        role:
+          type: string
+        is_blocked:
+          type: boolean
+        seconds:
+          type: number
+          format: double
+      required:
+      - is_blocked
+      - role
+      - seconds
+    QueueStats:
+      type: object
+      description: Queue time-in-assignment summary across selectable past periods.
+      properties:
+        periods:
+          type: array
+          items:
+            $ref: '#/components/schemas/QueuePeriodStat'
+      required:
+      - periods
     RfcAuthor:
       type: object
       properties:
@@ -6005,18 +6414,6 @@ components:
         * `done` - Done
         * `withdrawn` - Withdrawn
         * `closed_for_hold` - Closed For Hold
-    StatusEnum:
-      enum:
-      - none
-      - pending
-      - published
-      - failed
-      type: string
-      description: |-
-        * `none` - none
-        * `pending` - pending
-        * `published` - published
-        * `failed` - failed
     Submission:
       type: object
       description: Serialize a submission
@@ -6197,6 +6594,81 @@ components:
           description: Git commit SHA identifying the metadata result
       required:
       - head_sha
+    TimelineBand:
+      type: object
+      description: 'An aggregate lane: blocked/working summary or one legacy label.'
+      properties:
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        label:
+          type: string
+          nullable: true
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineSegment'
+      required:
+      - kind
+      - segments
+    TimelineSegment:
+      type: object
+      description: One span of time in a single state (see rpc.stats.timeline).
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+          nullable: true
+        kind:
+          $ref: '#/components/schemas/KindEnum'
+        role:
+          type: string
+          nullable: true
+        label:
+          type: string
+          nullable: true
+        person_id:
+          type: integer
+          nullable: true
+        person_name:
+          type: string
+          nullable: true
+        state:
+          type: string
+          nullable: true
+      required:
+      - end
+      - kind
+      - start
+    TimelineTrack:
+      type: object
+      description: All active spans of a single assignment (one Gantt row).
+      properties:
+        assignment_id:
+          type: integer
+        role:
+          type: string
+        person_id:
+          type: integer
+          nullable: true
+        person_name:
+          type: string
+          nullable: true
+        is_blocked:
+          type: boolean
+        segments:
+          type: array
+          items:
+            $ref: '#/components/schemas/TimelineSegment'
+      required:
+      - assignment_id
+      - is_blocked
+      - person_id
+      - person_name
+      - role
+      - segments
     TypeEnum:
       enum:
       - success

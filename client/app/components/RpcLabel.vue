@@ -1,6 +1,6 @@
 <template>
   <BaseBadge :color="label?.color">
-    <Icon v-if="label?.isException" class="mr-2" name="pajamas:warning"/>
+    <Icon v-if="label?.isException" class="mr-2" name="pajamas:warning" />
     {{ label?.slug }}
   </BaseBadge>
 </template>
@@ -13,5 +13,4 @@ type Props = {
 }
 
 const props = defineProps<Props>()
-
 </script>

@@ -1,8 +1,6 @@
 <template>
   <div>
-    <TitleBlock
-      title="Final Review"
-      summary="formerly AUTH48"/>
+    <TitleBlock title="Final Review" summary="formerly AUTH48" />
     <FinalReviews />
   </div>
 </template>

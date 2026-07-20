@@ -6,11 +6,10 @@
 
     <div class="mx-auto max-w-7xl py-8">
       <template v-if="step.type === 'cancelled'">
-        <div class="text-center font-bold mr-1">
-          Cancelled
-        </div>
+        <div class="text-center font-bold mr-1">Cancelled</div>
         <div class="text-center">
-          <BaseButton btn-type="default"
+          <BaseButton
+            btn-type="default"
             @click="deleteMetadataValidationAndRetry(step.headSha!)"
             class="ml-2">
             Try again
@@ -41,53 +40,76 @@
       </template>
       <template v-else-if="step.type === 'error'">
         <div class="text-center mb-3 max-w-sm m-auto">
-          <span class="font-bold mr-1">Error:</span> <span class="font-mono">{{ step.errorText }}</span>
+          <span class="font-bold mr-1">Error:</span>
+          <span class="font-mono">{{ step.errorText }}</span>
         </div>
         <div :class="step.showDeleteAndRetryButton ? 'flex justify-between' : 'text-center'">
-          <BaseButton v-if="step.showDeleteAndRetryButton" btn-type="outline"
+          <BaseButton
+            v-if="step.showDeleteAndRetryButton"
+            btn-type="outline"
             @click="deleteMetadataValidationAndRetry(step.showDeleteAndRetryButton.headSha)">
             Re-fetch and validate again
           </BaseButton>
-          <BaseButton v-if="step.showResyncButton" btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
+          <BaseButton
+            v-if="step.showResyncButton"
+            btn-type="default"
+            @click="fetchAndVerifyMetadata"
+            class="ml-2">
             Try again
           </BaseButton>
         </div>
       </template>
       <template v-else-if="step.type === 'diff'">
-        <Heading v-if="step.status !== 'failed'" :heading-level="2"
-          :class="['px-8 py-4', step.status === 'success' ? 'text-gray-700 dark:text-gray-300' : 'text-red-800 dark:text-red-300']">
-          <span v-if="step.status === 'success'" class="font-bold">Metadata validation completed</span>
+        <Heading
+          v-if="step.status !== 'failed'"
+          :heading-level="2"
+          :class="[
+            'px-8 py-4',
+            step.status === 'success'
+              ? 'text-gray-700 dark:text-gray-300'
+              : 'text-red-800 dark:text-red-300'
+          ]">
+          <span v-if="step.status === 'success'" class="font-bold"
+            >Metadata validation completed</span
+          >
           <template v-else>
             <span class="font-bold">Metadata validation failed</span>
           </template>
         </Heading>
         <template v-if="step.status === 'failed'">
           <!-- Simplified failure view: just the error message and a retry button -->
-          <p v-if="step.detail && step.detail.length > 0"
+          <p
+            v-if="step.detail && step.detail.length > 0"
             class="bg-yellow-200 text-yellow-900 dark:bg-yellow-700 text-sm dark:text-white p-2 mx-6 my-2">
             <Icon name="uil:info-circle" size="1rem" class="mr-2" />
             {{ step.detail }}
           </p>
           <div class="flex justify-center mt-8 pt-4 border-t border-gray-300 dark:border-gray-300">
-            <BaseButton btn-type="default"
-              @click="() => step.type === 'diff' ? deleteMetadataValidationAndRetry(step.headSha!) : undefined">
+            <BaseButton
+              btn-type="default"
+              @click="
+                () =>
+                  step.type === 'diff' ? deleteMetadataValidationAndRetry(step.headSha!) : undefined
+              ">
               Try again
             </BaseButton>
           </div>
         </template>
         <template v-else>
           <!-- Full success/mismatch view -->
-          <p v-if="step.isError" class="ml-8 mb-4 text-red-800 dark:text-red-300 font-bold">Validation error</p>
-          <p v-if="step.metadataCompare" class="ml-8 mb-4 text-sm text-sm text-black dark:text-white">
+          <p v-if="step.isError" class="ml-8 mb-4 text-red-800 dark:text-red-300 font-bold">
+            Validation error
+          </p>
+          <p
+            v-if="step.metadataCompare"
+            class="ml-8 mb-4 text-sm text-sm text-black dark:text-white">
             Metadata
             {{ SPACE }}
             <span v-if="!step.isMatch" class="text-red-800 dark:text-red-300">does not match</span>
             {{ SPACE }}
             <span v-if="step.isMatch" class="text-green-800 dark:text-green-300">matches</span>
             {{ SPACE }}
-            <span v-if="!step.isError">
-              but it can be published.
-            </span>
+            <span v-if="!step.isError"> but it can be published. </span>
             {{ SPACE }}
             <span v-if="step.isError">
               and it <span class="font-bold">cannot be published</span>.
@@ -98,15 +120,24 @@
             {{ SPACE }}
             <button
               class="inline-block rounded-md w-[9em] bg-gray-200 hover:bg-gray-300 focus:bg-gray-300 dark:bg-gray-700 dark:focus:bg-gray-600 dark:hover:bg-gray-600 font-mono p-0.5 truncate"
-              @click="() => step.type === 'diff' && step.headSha ? copyGitHashToClipboard(step.headSha) : undefined">
-              <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" /><code>{{ step.headSha }}</code>
+              @click="
+                () =>
+                  step.type === 'diff' && step.headSha
+                    ? copyGitHashToClipboard(step.headSha)
+                    : undefined
+              ">
+              <Icon name="uil:clipboard-notes" size="1rem" class="align-middle mx-0.5" /><code>{{
+                step.headSha
+              }}</code>
             </button>
             {{ SPACE }}
             from
             {{ SPACE }}
-            <a :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined" :class="ANCHOR_STYLE">{{
-              step.repository
-            }}</a>
+            <a
+              :href="step.repository ? gitHubUrlBuilder(step.repository) : undefined"
+              :class="ANCHOR_STYLE"
+              >{{ step.repository }}</a
+            >
             {{ SPACE }}
             <TooltipProvider v-if="step.receivedAt">
               <TooltipRoot>
@@ -116,7 +147,8 @@
                   </time>
                 </TooltipTrigger>
                 <TooltipPortal>
-                  <TooltipContent class="shadow-md bg-white text-black dark:bg-black dark:text-white rounded px-2 py-1">
+                  <TooltipContent
+                    class="shadow-md bg-white text-black dark:bg-black dark:text-white rounded px-2 py-1">
                     {{ DateTime.fromJSDate(step.receivedAt).toISO()?.replace(/T/gi, ' ') }}
                   </TooltipContent>
                 </TooltipPortal>
@@ -128,24 +160,29 @@
           </p>
           <BaseCard>
             <div class="w-full">
-              <DiffTable v-if="step.metadataCompare" :columns="diffColumns" :rows="step.metadataCompare" />
+              <DiffTable
+                v-if="step.metadataCompare"
+                :columns="diffColumns"
+                :rows="step.metadataCompare" />
               <p v-else class="text-center">(no diff available)</p>
             </div>
           </BaseCard>
           <div v-if="step.headSha" class="flex justify-between mx-6 mt-10 mb-10">
             <div>
-              <BaseButton btn-type="cancel" @click="cancel">
-                Cancel
-              </BaseButton>
+              <BaseButton btn-type="cancel" @click="cancel"> Cancel </BaseButton>
             </div>
             <div>
-              <BaseButton btn-type="secondary"
+              <BaseButton
+                btn-type="secondary"
                 @click="deleteMetadataValidationAndRetry(step.headSha!)">
                 Redo metadata validation
               </BaseButton>
             </div>
             <div class="flex gap-2 justify-end">
-              <BaseButton v-if="step.canAutofix" btn-type="default" @click="metadataValidationResultsSyncHandler">
+              <BaseButton
+                v-if="step.canAutofix"
+                btn-type="default"
+                @click="metadataValidationResultsSyncHandler">
                 Update database to match document
               </BaseButton>
               <BaseButton v-if="!step.isError" btn-type="default" @click="publishRfc">
@@ -161,7 +198,9 @@
             <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
               Unable to update database
             </Heading>
-            <div class="mt-4 mb-8 text-sm"><span :class="[badgeColors.red, 'p-2']">Error: {{ step.error }}</span></div>
+            <div class="mt-4 mb-8 text-sm">
+              <span :class="[badgeColors.red, 'p-2']">Error: {{ step.error }}</span>
+            </div>
             <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
               Fetch and verify metadata
             </BaseButton>
@@ -180,11 +219,11 @@
       </template>
       <template v-else-if="step.type === 'publicationFailed'">
         <div class="text-center mb-3 max-w-sm m-auto">
-          <span class="font-bold mr-1">Publication failed:</span> <span class="font-mono">{{ step.errorText }}</span>
+          <span class="font-bold mr-1">Publication failed:</span>
+          <span class="font-mono">{{ step.errorText }}</span>
         </div>
         <div class="text-center">
-          <BaseButton btn-type="outline"
-            @click="resetAfterFailedPublication()">
+          <BaseButton btn-type="outline" @click="resetAfterFailedPublication()">
             Acknowledge
           </BaseButton>
         </div>
@@ -195,7 +234,9 @@
             <Heading :heading-level="3" class="px-8 py-4 text-gray-700 dark:text-gray-300">
               Unable to post RFC
             </Heading>
-            <div class="mt-4 mb-8 text-sm"><span :class="[badgeColors.red, 'p-2']">Error: {{ step.error }}</span></div>
+            <div class="mt-4 mb-8 text-sm">
+              <span :class="[badgeColors.red, 'p-2']">Error: {{ step.error }}</span>
+            </div>
             <BaseButton btn-type="default" @click="fetchAndVerifyMetadata" class="ml-2">
               Fetch and verify metadata
             </BaseButton>
@@ -216,9 +257,7 @@
               RFC is already published, push changes to update Datatracker
             </Heading>
           </div>
-          <BaseButton btn-type="default" @click="syncCurrentMetadata">
-            Sync changes
-          </BaseButton>
+          <BaseButton btn-type="default" @click="syncCurrentMetadata"> Sync changes </BaseButton>
         </div>
       </template>
     </div>
@@ -226,7 +265,13 @@
 </template>
 
 <script setup lang="ts">
-import { TooltipContent, TooltipPortal, TooltipProvider, TooltipRoot, TooltipTrigger } from 'reka-ui'
+import {
+  TooltipContent,
+  TooltipPortal,
+  TooltipProvider,
+  TooltipRoot,
+  TooltipTrigger
+} from 'reka-ui'
 import { useAsyncData } from '#app'
 import { DateTime } from 'luxon'
 import BaseButton from '~/components/BaseButton.vue'
@@ -240,7 +285,7 @@ const currentTab: DocTabId = 'publication-preparation'
 
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-const diffColumns = { nameColumn: "Name", leftColumn: "Database", rightColumn: "Document" }
+const diffColumns = { nameColumn: 'Name', leftColumn: 'Database', rightColumn: 'Document' }
 
 const PUBLICATION_STATUS_POLL_INTERVAL_MS = 2000
 
@@ -248,53 +293,81 @@ type Step =
   | { type: 'getMetadataValidationResults' }
   | { type: 'fetchAndVerifyAndMetadataButton' }
   | { type: 'loading' }
-  | { type: 'error', errorText: string, showResyncButton?: boolean, showDeleteAndRetryButton?: { headSha: string } }
   | {
-    type: 'diff'
-    error?: string
-  } & MetadataValidationResults
-  | { type: 'cancelled', headSha?: string }
-  | { type: 'databaseUpdated', error?: string }
-  | { type: 'rfcPosted', error?: string }
+      type: 'error'
+      errorText: string
+      showResyncButton?: boolean
+      showDeleteAndRetryButton?: { headSha: string }
+    }
+  | ({
+      type: 'diff'
+      error?: string
+    } & MetadataValidationResults)
+  | { type: 'cancelled'; headSha?: string }
+  | { type: 'databaseUpdated'; error?: string }
+  | { type: 'rfcPosted'; error?: string }
   | { type: 'alreadyPublished' }
   | { type: 'publicationPending' }
-  | { type: 'publicationFailed', errorText: string }
+  | { type: 'publicationFailed'; errorText: string }
 
 const step = ref<Step>({ type: 'loading' })
 
-const { data: rfcToBe, error: rfcToBeError, status: rfcToBeStatus, refresh: rfcToBeRefresh } = await useAsyncData(
+const {
+  data: rfcToBe,
+  error: rfcToBeError,
+  status: rfcToBeStatus,
+  refresh: rfcToBeRefresh
+} = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   {
     server: false,
-    lazy: true,
+    lazy: true
   }
 )
 
-const { data: metadataValidationResults, error: metadataValidationResultsError, status: metadataValidationResultsStatus, refresh: metadataValidationResultsRefresh } = await useAsyncData(
+const {
+  data: metadataValidationResults,
+  error: metadataValidationResultsError,
+  status: metadataValidationResultsStatus,
+  refresh: metadataValidationResultsRefresh
+} = await useAsyncData(
   () => `draft-${draftName.value}-metadata-validation-results`,
-  () => api.documentsMetadataValidationResultsList({
-    draftName: draftName.value,
-  }),
+  () =>
+    api.documentsMetadataValidationResultsList({
+      draftName: draftName.value
+    }),
   {
     server: false,
-    lazy: true,
+    lazy: true
   }
 )
 
-const { data: publicationStatus, error: publicationStatusError, status: publicationStatusStatus, refresh: publicationStatusRefresh } = await useAsyncData(
+const {
+  data: publicationStatus,
+  error: publicationStatusError,
+  status: publicationStatusStatus,
+  refresh: publicationStatusRefresh
+} = await useAsyncData(
   () => `draft-${draftName.value}-publication-status`,
-  () => api.documentsPubStatusRetrieve({
-    draftName: draftName.value,
-  }),
+  () =>
+    api.documentsPubStatusRetrieve({
+      draftName: draftName.value
+    }),
   {
     server: false,
-    lazy: true,
+    lazy: true
   }
 )
 
 const isMetadataValidationResults = (data: unknown): data is MetadataValidationResults => {
-  return !!data && !Array.isArray(data) && typeof data === 'object' && 'isError' in data && 'isMatch' in data
+  return (
+    !!data &&
+    !Array.isArray(data) &&
+    typeof data === 'object' &&
+    'isError' in data &&
+    'isMatch' in data
+  )
 }
 
 watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatusStatus], () => {
@@ -313,14 +386,14 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     step.value = { type: 'alreadyPublished' }
     return
   }
-  if (
-    rfcToBeStatus.value === 'error'
-  ) {
+  if (rfcToBeStatus.value === 'error') {
     const precomputedResult = metadataValidationResults.value?.[0]
     step.value = {
       type: 'error',
       errorText: `Unable to load RFC ${draftName.value}. Server error: ${rfcToBeError.value?.message ?? ''} ${metadataValidationResultsError.value ?? ''}`,
-      showDeleteAndRetryButton: precomputedResult?.headSha ? { headSha: precomputedResult.headSha } : undefined,
+      showDeleteAndRetryButton: precomputedResult?.headSha
+        ? { headSha: precomputedResult.headSha }
+        : undefined,
       showResyncButton: true
     }
     return
@@ -329,7 +402,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     snackbar.add({
       type: 'warning',
       title: 'Error retrieving publication status',
-      text: '',
+      text: ''
     })
   }
   if (publicationStatus.value) {
@@ -340,10 +413,14 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
         setTimeout(publicationStatusRefresh, PUBLICATION_STATUS_POLL_INTERVAL_MS)
         return
       case 'failed':
-        snackbar.add({ type: 'error', title: 'Publication failed', text: publicationStatus.value.detail })
+        snackbar.add({
+          type: 'error',
+          title: 'Publication failed',
+          text: publicationStatus.value.detail
+        })
         step.value = {
           type: 'publicationFailed',
-          errorText: publicationStatus.value.detail,
+          errorText: publicationStatus.value.detail
         }
         return
       case 'published':
@@ -390,7 +467,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     step.value = {
       type: 'error',
       errorText: `Unhandled error. See dev console`,
-      showResyncButton: true,
+      showResyncButton: true
     }
     return
   }
@@ -401,7 +478,11 @@ const WAIT_BETWEEN_REQUESTS_MS = 1000
 
 const fetchAndVerifyMetadata = async () => {
   if (!rfcToBe.value?.repository) {
-    snackbar.add({ type: 'warning', title: 'No repository set', text: 'Set a repository URL on this document before validating metadata.' })
+    snackbar.add({
+      type: 'warning',
+      title: 'No repository set',
+      text: 'Set a repository URL on this document before validating metadata.'
+    })
     return
   }
 
@@ -419,7 +500,7 @@ const fetchAndVerifyMetadata = async () => {
       attemptCount++
       resultsCreate = await api.metadataValidationResultsCreate({ draftName: draftName.value })
       if (!isMetadataValidationResults(resultsCreate)) {
-        break;
+        break
       }
       hasTimedOut = Date.now() > endTimeMs
       console.log({ hasTimedOut, attemptCount, resultsCreate })
@@ -430,7 +511,9 @@ const fetchAndVerifyMetadata = async () => {
     step.value = {
       type: 'error',
       errorText: `Couldn't start/poll for metadata sync results. Error: ${error}`,
-      showDeleteAndRetryButton: resultsCreate?.headSha ? { headSha: resultsCreate.headSha } : undefined,
+      showDeleteAndRetryButton: resultsCreate?.headSha
+        ? { headSha: resultsCreate.headSha }
+        : undefined,
       showResyncButton: true
     }
     if (!resultsCreate) {
@@ -438,7 +521,7 @@ const fetchAndVerifyMetadata = async () => {
     }
   }
 
-  console.log("Finished", { hasTimedOut, resultsCreate })
+  console.log('Finished', { hasTimedOut, resultsCreate })
 
   if (resultsCreate.status !== 'success' && resultsCreate.status !== 'failed') {
     step.value = {
@@ -465,7 +548,7 @@ const deleteMetadataValidationAndRetry = async (headSha: string) => {
   try {
     await api.metadataValidationResultsDelete({
       draftName: draftName.value,
-      headSha: currentHeadSha,
+      headSha: currentHeadSha
     })
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Couldn't delete validation results" })
@@ -488,7 +571,11 @@ const publishRfc = async () => {
   const { headSha } = currentStep
   if (!headSha) {
     console.error("Can't publish without git hash (head sha)", currentStep)
-    snackbar.add({ type: 'error', title: "Can't publish without git hash (head sha) but none were provided", text: '' })
+    snackbar.add({
+      type: 'error',
+      title: "Can't publish without git hash (head sha) but none were provided",
+      text: ''
+    })
     return
   }
   step.value = { type: 'loading' }
@@ -496,12 +583,12 @@ const publishRfc = async () => {
     // API will not return anything when successful
     // when it's unsuccessful it will return HTTP 500
     // which the js api client THROWs an error on
-    void await api.documentsPublish({
+    void (await api.documentsPublish({
       draftName: draftName.value,
       publishRfcRequest: {
-        headSha,
+        headSha
       }
-    })
+    }))
     // if it got this far it was successful
     step.value = {
       type: 'publicationPending'
@@ -514,7 +601,9 @@ const publishRfc = async () => {
         const body = await e.response.json()
         const msg = body.detail ?? Object.values(body)[0]
         if (msg) errorText = String(msg)
-      } catch { /* keep default */ }
+      } catch {
+        /* keep default */
+      }
     }
     snackbar.add({ type: 'error', title: 'Cannot publish', text: errorText })
     step.value = { type: 'rfcPosted', error: errorText }
@@ -536,7 +625,11 @@ const metadataValidationResultsSyncHandler = async () => {
   const { headSha } = currentStep
   if (!headSha) {
     console.error("Can't publish without git hash (head sha) but none were in 'step'", currentStep)
-    snackbar.add({ type: 'error', title: "Can't publish without git hash (head sha) but none were provided", text: 'See dev console for more' })
+    snackbar.add({
+      type: 'error',
+      title: "Can't publish without git hash (head sha) but none were provided",
+      text: 'See dev console for more'
+    })
     return
   }
   step.value = { type: 'loading' }
@@ -545,12 +638,12 @@ const metadataValidationResultsSyncHandler = async () => {
     const metadataValidationResults = await api.metadataValidationResultsSync({
       draftName: draftName.value,
       syncMetadataRequestRequest: {
-        headSha,
+        headSha
       }
     })
     step.value = {
       type: 'diff',
-      ...metadataValidationResults,
+      ...metadataValidationResults
     }
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, defaultTitle: 'Metadata sync failed', error })
@@ -559,7 +652,7 @@ const metadataValidationResultsSyncHandler = async () => {
 }
 
 const cancel = () => {
-  const headSha = step.value.type === 'diff' ? step.value.headSha ?? undefined : undefined
+  const headSha = step.value.type === 'diff' ? (step.value.headSha ?? undefined) : undefined
   step.value = { type: 'cancelled', headSha }
 }
 

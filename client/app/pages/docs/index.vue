@@ -2,7 +2,7 @@
   <div>
     <TitleBlock title="My Documents" summary="Documents assigned to me">
       <template #right>
-        <RefreshButton class="mr-3"/>
+        <RefreshButton class="mr-3" />
         <NuxtLink
           v-if="userStore.isManager"
           class="max-w-l items-center rounded-md bg-violet-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-violet-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
@@ -14,10 +14,9 @@
     <div class="mt-8 flow-root">
       <DocumentTable
         :columns="columns"
-        :data="myAssignments.map(a => ({ ...a.rfcToBe })).filter(row => !!row)"
+        :data="myAssignments.map((a) => ({ ...a.rfcToBe })).filter((row) => !!row)"
         row-key="id"
-        :loading="pending"
-      />
+        :loading="pending" />
     </div>
   </div>
 </template>
@@ -37,14 +36,14 @@ const columns: Column[] = [
     label: 'Document',
     field: 'name',
     classes: 'text-sm font-medium',
-    link: row => `/docs/${ row.name }`
+    link: (row) => `/docs/${row.name}`
   },
   {
     key: 'labels',
     label: 'Labels',
-    labels: row => {
+    labels: (row) => {
       // @ts-ignore
-      return row.labels.map(lblId => labels.value.find(lbl => lbl.id === lblId)) || []
+      return row.labels.map((lblId) => labels.value.find((lbl) => lbl.id === lblId)) || []
     }
   }
 ]
@@ -52,23 +51,23 @@ const columns: Column[] = [
 const rpcPersonId = computed(() => userStore.rpcPersonId)
 
 const { data: myAssignments, status: assignmentStatus } = await useAsyncData(
-  () => `myAssignments-${ rpcPersonId.value }`,
+  () => `myAssignments-${rpcPersonId.value}`,
   async () => {
     if (rpcPersonId.value === null) {
       return []
     }
     return api.rpcPersonAssignmentsList({ personId: rpcPersonId.value })
   },
-  { server: false, lazy: true, default: () => ([]) }
+  { server: false, lazy: true, default: () => [] }
 )
 
 const pending = computed(() => assignmentStatus.value === 'pending')
 
-const { data: labels } = await useAsyncData(
-  'labels',
-  () => api.labelsList(),
-  { server: false, lazy: true, default: () => ([]) }
-)
+const { data: labels } = await useAsyncData('labels', () => api.labelsList(), {
+  server: false,
+  lazy: true,
+  default: () => []
+})
 
 useHead({
   title: 'My Documents'

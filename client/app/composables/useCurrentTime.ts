@@ -10,13 +10,15 @@ export const useCurrentTime = () => {
   onBeforeMount(() => {
     instanceCount++
     if (interval === null) {
-      interval = setInterval(() => { currentTime.value = getNowUtc() }, 1000)
+      interval = setInterval(() => {
+        currentTime.value = getNowUtc()
+      }, 1000)
     }
   })
   onUnmounted(() => {
     instanceCount--
     // only clear interval after last component using us is unmounted
-    if ((instanceCount <= 0) && (interval !== null)) {
+    if (instanceCount <= 0 && interval !== null) {
       clearInterval(interval)
       interval = null
     }

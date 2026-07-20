@@ -5,15 +5,16 @@
         <a
           :href="person.email ? datatrackerLinks.personByEmail(person.email) : undefined"
           :class="ANCHOR_STYLE"
-        >{{ person.name }}<span v-if="person.email" :class="PERSON_ID_STYLE">({{ person.email }})</span></a>
+          >{{ person.name
+          }}<span v-if="person.email" :class="PERSON_ID_STYLE">({{ person.email }})</span></a
+        >
       </span>
       <span v-else class="flex-1">(none)</span>
       <div v-if="!isReadOnly" class="flex gap-1">
         <button
           v-if="person"
           @click="handleRemove"
-          class="text-red-600 hover:text-red-800 px-2 py-1"
-        >
+          class="text-red-600 hover:text-red-800 px-2 py-1">
           <Icon name="uil:times" />
         </button>
         <button @click="startEditing" :class="[classForBtnType.outline, 'px-2 py-1']">
@@ -25,19 +26,18 @@
       <div class="w-full flex flex-col gap-1">
         <ComboboxRoot v-model="selected" class="relative">
           <ComboboxAnchor
-            class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 text-xs leading-none gap-[5px] bg-white hover:bg-stone-50 shadow-sm outline-none"
-          >
+            class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 text-xs leading-none gap-[5px] bg-white hover:bg-stone-50 shadow-sm outline-none">
             <ComboboxInput
               v-model="searchInput"
               class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
               placeholder="Search for person…"
-              ref="inputRef"
-            />
+              ref="inputRef" />
           </ComboboxAnchor>
           <ComboboxContent
-            class="absolute z-10 w-full mt-1 min-w-[160px] bg-white overflow-hidden rounded-lg shadow-sm border shadow-xl"
-          >
-            <div v-if="searchResults" class="px-3 py-1 text-xs text-gray-400 border-b border-gray-100">
+            class="absolute z-10 w-full mt-1 min-w-[160px] bg-white overflow-hidden rounded-lg shadow-sm border shadow-xl">
+            <div
+              v-if="searchResults"
+              class="px-3 py-1 text-xs text-gray-400 border-b border-gray-100">
               up to 10 results — type to narrow
             </div>
             <ComboboxViewport class="p-[5px]">
@@ -49,8 +49,7 @@
                 v-for="result in searchResults.results"
                 :key="result.personId"
                 :value="result"
-                class="text-xs rounded-[3px] flex flex-col px-3 py-1.5 relative select-none cursor-default data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
-              >
+                class="text-xs rounded-[3px] flex flex-col px-3 py-1.5 relative select-none cursor-default data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black">
                 <span class="font-semibold">{{ result.name }}</span>
                 <a
                   v-if="result.email"
@@ -58,7 +57,8 @@
                   target="_blank"
                   class="text-gray-400 hover:underline mt-0.5"
                   @click.stop
-                >{{ result.email }}</a>
+                  >{{ result.email }}</a
+                >
               </ComboboxItem>
             </ComboboxViewport>
           </ComboboxContent>
@@ -66,8 +66,7 @@
         <div class="flex justify-end">
           <button
             @click="isEditing = false"
-            class="text-xs text-gray-500 hover:text-gray-700 underline"
-          >
+            class="text-xs text-gray-500 hover:text-gray-700 underline">
             Cancel
           </button>
         </div>
@@ -77,7 +76,7 @@
 </template>
 
 <script setup lang="ts">
-import { refDebounced } from "@vueuse/core"
+import { refDebounced } from '@vueuse/core'
 import {
   ComboboxAnchor,
   ComboboxContent,
@@ -85,8 +84,8 @@ import {
   ComboboxInput,
   ComboboxItem,
   ComboboxRoot,
-  ComboboxViewport,
-} from "reka-ui"
+  ComboboxViewport
+} from 'reka-ui'
 import type { BaseDatatrackerPerson } from '~/purple_client'
 import { ANCHOR_STYLE, PERSON_ID_STYLE } from '~/utils/html'
 import { classForBtnType } from '~/utils/button'
@@ -99,7 +98,7 @@ type Props = {
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  isReadOnly: false,
+  isReadOnly: false
 })
 
 const api = useApi()

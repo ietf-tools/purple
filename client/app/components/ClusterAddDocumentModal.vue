@@ -10,7 +10,10 @@
     </div>
     <div class="px-3 mb-3 text-sm text-gray-600 dark:text-gray-400">
       <p>Use this interface to add documents <strong>without</strong> setting a reference.</p>
-      <p>Use the Publishing Dependencies dialog on the document's individual info page to add a document to the cluster that is a normative reference.</p>
+      <p>
+        Use the Publishing Dependencies dialog on the document's individual info page to add a
+        document to the cluster that is a normative reference.
+      </p>
     </div>
     <div class="px-3 flex flex-row items-center gap-2">
       <DocumentsSearch id="clusterDocument" label="Add received draft" v-model="selectedRfcToBe" />
@@ -18,7 +21,9 @@
     </div>
     <div class="px-3 mt-3 pt-3 border-t border-gray-300">
       <div class="flex flex-row items-center gap-2">
-        <label class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-1 shrink-0" for="notReceivedDraft">
+        <label
+          class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-1 shrink-0"
+          for="notReceivedDraft">
           Add not-received draft:
         </label>
         <input
@@ -27,9 +32,10 @@
           type="text"
           placeholder="draft-ietf-example-document"
           class="flex-1 rounded-lg border border-gray-500 px-2 py-1 text-sm bg-white dark:bg-gray-700 text-black dark:text-white outline-none focus:ring-2 focus:ring-blue-500"
-          @keydown.enter="handleAddNotReceived"
-        />
-        <BaseButton @click="handleAddNotReceived" :disabled="!notReceivedDraftName.trim()">Add</BaseButton>
+          @keydown.enter="handleAddNotReceived" />
+        <BaseButton @click="handleAddNotReceived" :disabled="!notReceivedDraftName.trim()"
+          >Add</BaseButton
+        >
       </div>
     </div>
   </div>
@@ -83,17 +89,20 @@ const handleAdd = async () => {
       }
     })
 
-    if (serverCluster.documents?.some(rfcToBe => rfcToBe.name === draftName)) {
+    if (serverCluster.documents?.some((rfcToBe) => rfcToBe.name === draftName)) {
       snackbar.add({ type: 'success', title: 'Cluster document added', text: '' })
       props.onSuccess()
       closeOverlayModal()
     } else {
-      snackbar.add({ type: 'error', title: "Couldn't add cluster document", text: "The server didn't say why" })
+      snackbar.add({
+        type: 'error',
+        title: "Couldn't add cluster document",
+        text: "The server didn't say why"
+      })
     }
   } catch (error) {
     snackbarForErrors({ snackbar, defaultTitle: "Couldn't add cluster document", error })
   }
-
 }
 
 const handleAddNotReceived = async () => {

@@ -1,6 +1,8 @@
 <template>
   <div>
-    <TitleBlock class="pb-3" :title="`Prep for Queue: ${rfcToBe?.name || '&hellip;'}`"
+    <TitleBlock
+      class="pb-3"
+      :title="`Prep for Queue: ${rfcToBe?.name || '&hellip;'}`"
       summary="Ready the incoming document for the editing queue." />
 
     <div class="space-y-4">
@@ -10,14 +12,19 @@
 
       <div class="flex flex-row">
         <DocInfoCard :rfc-to-be="rfcToBe" :draft-name="draftName" />
-        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe"/>
+        <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
       </div>
 
       <div class="flex w-full space-x-4">
         <div class="flex flex-col">
-          <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">Complexities</h2>
+          <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">
+            Complexities
+          </h2>
           <div class="flex flex-row">
-            <DocLabelsCard title="Other complexities" v-model="selectedLabelIds" :labels="labels1" />
+            <DocLabelsCard
+              title="Other complexities"
+              v-model="selectedLabelIds"
+              :labels="labels1" />
             <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
           </div>
         </div>
@@ -26,10 +33,11 @@
         </div>
       </div>
       <div v-if="rfcToBe?.id">
-        <DocumentDependencies v-model="relatedDocuments"
-                              :id="rfcToBe.id"
-                              :draft-name="draftName"
-                              :cluster-number="rfcToBe.cluster?.number">
+        <DocumentDependencies
+          v-model="relatedDocuments"
+          :id="rfcToBe.id"
+          :draft-name="draftName"
+          :cluster-number="rfcToBe.cluster?.number">
         </DocumentDependencies>
       </div>
       <BaseCard>
@@ -37,9 +45,18 @@
           <CardHeader title="Comments" />
         </template>
         <div v-if="rfcToBe && rfcToBe.id" class="flex flex-col items-center space-y-4">
-          <RpcCommentTextarea v-if="rfcToBe" :draft-name="draftName" :reload-comments="commentsReload" class="w-4/5 min-w-100" />
-          <DocumentComments :draft-name="draftName" :rfc-to-be-id="rfcToBe.id" :is-loading="commentsPending"
-            :error="commentsError" :comment-list="commentList" :reload-comments="commentsReload"
+          <RpcCommentTextarea
+            v-if="rfcToBe"
+            :draft-name="draftName"
+            :reload-comments="commentsReload"
+            class="w-4/5 min-w-100" />
+          <DocumentComments
+            :draft-name="draftName"
+            :rfc-to-be-id="rfcToBe.id"
+            :is-loading="commentsPending"
+            :error="commentsError"
+            :comment-list="commentList"
+            :reload-comments="commentsReload"
             class="w-3/5 min-w-100" />
         </div>
       </BaseCard>
@@ -47,17 +64,11 @@
       <div class="justify-end flex space-x-4">
         <BaseButton btn-type="default">Document has exceptions&mdash;escalate</BaseButton>
         <BaseButton btn-type="default" @click="addToQueue">
-          <Icon
-            v-if="isAddingToQueue"
-            name="ei:spinner-3"
-            size="1em"
-            class="ml-1 animate-spin"
-          />
+          <Icon v-if="isAddingToQueue" name="ei:spinner-3" size="1em" class="ml-1 animate-spin" />
           Add to queue
         </BaseButton>
       </div>
     </div>
-
   </div>
 </template>
 
@@ -99,20 +110,19 @@ const labels2 = computed(() =>
   labels.value.filter((label) => label.used && label.isComplexity && label.isException)
 )
 
-const labels3 = computed(
-  () => labels.value.filter((label) => label.used && !label.isComplexity)
-)
+const labels3 = computed(() => labels.value.filter((label) => label.used && !label.isComplexity))
 
 const selectedLabelIds = ref(rfcToBe.value?.labels ?? [])
 
 watch(
   selectedLabelIds,
-  async () => api.documentsPartialUpdate({
-    draftName: draftName.value,
-    patchedRfcToBeRequest: {
-      labels: selectedLabelIds.value,
-    }
-  }),
+  async () =>
+    api.documentsPartialUpdate({
+      draftName: draftName.value,
+      patchedRfcToBeRequest: {
+        labels: selectedLabelIds.value
+      }
+    }),
   { deep: true }
 )
 
@@ -134,10 +144,9 @@ const addToQueue = async () => {
   try {
     await api.documentsEnqueue({ draftName: draftName.value })
     await navigateTo(QUEUE_QUEUE_PATH)
-  } catch(e) {
-    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Unable to add to queue'})
+  } catch (e) {
+    snackbarForErrors({ snackbar, error: e, defaultTitle: 'Unable to add to queue' })
   }
   isAddingToQueue.value = false
 }
-
 </script>

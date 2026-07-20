@@ -14,8 +14,7 @@
       <div class="flex-1">
         <select
           v-model="selectedSlug"
-          class="px-2 py-1 w-[6em] min-w-[2em] max-w-[6em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
-        >
+          class="px-2 py-1 w-[6em] min-w-[2em] max-w-[6em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white">
           <option v-for="sub in subseriesOptions" :key="sub.slug" :value="sub.slug">
             {{ sub.slug.toUpperCase() }}
           </option>
@@ -25,15 +24,23 @@
           type="number"
           min="0"
           class="input-number-no-spinners px-2 py-1 w-[5em] text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-black dark:bg-black dark:text-white"
-          placeholder="#"
-        />
+          placeholder="#" />
       </div>
       <div class="flex flex-col gap-1 h-full justify-between">
-        <BaseButton @click="isEditing = false" size="xs" btn-type="cancel" aria-label="Cancel editting">Cancel
+        <BaseButton
+          @click="isEditing = false"
+          size="xs"
+          btn-type="cancel"
+          aria-label="Cancel editting"
+          >Cancel
         </BaseButton>
-        <button v-if="props.initialSubseries && props.initialSubseries.id" @click="deleteSubseries"
+        <button
+          v-if="props.initialSubseries && props.initialSubseries.id"
+          @click="deleteSubseries"
           class="w-5 h-5 flex items-center justify-center text-[10px] border border-red-400 rounded text-red-400 bg-white dark:bg-black hover:bg-red-50 dark:hover:bg-red-900"
-          title="Delete subseries">&#10006;</button>
+          title="Delete subseries">
+          &#10006;
+        </button>
         <BaseButton @click="updateSubseries" btn-type="default" size="xs">Save</BaseButton>
       </div>
     </div>
@@ -52,11 +59,16 @@ const deleteSubseries = async () => {
   }
 }
 import { ref, onMounted, watch } from 'vue'
-import type { RfcToBe, SubseriesMember, SubseriesMemberRequest, PatchedSubseriesMemberRequest } from '~/purple_client'
+import type {
+  RfcToBe,
+  SubseriesMember,
+  SubseriesMemberRequest,
+  PatchedSubseriesMemberRequest
+} from '~/purple_client'
 import { snackbarForErrors } from '~/utils/snackbar'
 
 const props = defineProps<{
-  id: RfcToBe["id"]
+  id: RfcToBe['id']
   initialSubseries: SubseriesMember | null
   onSuccess: () => void
 }>()
@@ -64,7 +76,7 @@ const props = defineProps<{
 const api = useApi()
 const snackbar = useSnackbar()
 
-const subseriesOptions = ref<Array<{ slug: string, name: string }>>([])
+const subseriesOptions = ref<Array<{ slug: string; name: string }>>([])
 const selectedSlug = ref('')
 const subseriesNumber = ref('')
 const isEditing = ref(false)
@@ -79,7 +91,7 @@ onMounted(async () => {
     const response = await api.subseriesTypesList()
     subseriesOptions.value = response.map((item: any) => ({ slug: item.slug, name: item.name }))
     if (props.initialSubseries && props.initialSubseries.slug) {
-      const found = subseriesOptions.value.find(opt => opt.slug === props.initialSubseries!.type)
+      const found = subseriesOptions.value.find((opt) => opt.slug === props.initialSubseries!.type)
       if (found) selectedSlug.value = found.slug
     }
   } catch (e) {
@@ -87,20 +99,26 @@ onMounted(async () => {
   }
 })
 
-watch(() => props.initialSubseries, () => {
-  if (props.initialSubseries) {
-    if (props.initialSubseries.slug) {
-      const found = subseriesOptions.value.find(opt => opt.slug === props.initialSubseries!.type)
-      selectedSlug.value = found ? found.slug : props.initialSubseries.slug
+watch(
+  () => props.initialSubseries,
+  () => {
+    if (props.initialSubseries) {
+      if (props.initialSubseries.slug) {
+        const found = subseriesOptions.value.find(
+          (opt) => opt.slug === props.initialSubseries!.type
+        )
+        selectedSlug.value = found ? found.slug : props.initialSubseries.slug
+      } else {
+        selectedSlug.value = ''
+      }
+      subseriesNumber.value = props.initialSubseries.number?.toString() ?? ''
     } else {
       selectedSlug.value = ''
+      subseriesNumber.value = ''
     }
-    subseriesNumber.value = props.initialSubseries.number?.toString() ?? ''
-  } else {
-    selectedSlug.value = ''
-    subseriesNumber.value = ''
-  }
-}, { immediate: true })
+  },
+  { immediate: true }
+)
 
 const updateSubseries = async () => {
   try {

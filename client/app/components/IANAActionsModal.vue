@@ -1,6 +1,7 @@
 <template>
   <form class="py-2 px-4 bg-white text-black dark:bg-black dark:text-white">
-    <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3 pt-5">
+    <div
+      class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 pb-3 pt-5">
       <Heading :heading-level="2">IANA Actions</Heading>
       <BaseButton btnType="outline" @click="closeOverlayModal">
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
@@ -17,13 +18,13 @@
 </template>
 
 <script setup lang="ts">
-import { overlayModalKey } from '~/providers/providerKeys';
+import { overlayModalKey } from '~/providers/providerKeys'
 import { IANAActionsEntries, parseIanaStatusSlug, type IANAActionsEnum } from '../utils/iana'
-import type { RfcToBe } from '~/purple_client';
+import type { RfcToBe } from '~/purple_client'
 
 type Props = {
   name: string
-  rfcToBe: RfcToBe,
+  rfcToBe: RfcToBe
   onSuccess: () => Promise<void>
 }
 
@@ -34,7 +35,9 @@ if (!defaultOption) {
   throw Error('Expected default IANA option')
 }
 
-const selectedIANAStatus = ref<IANAActionsEnum | undefined>(parseIanaStatusSlug(props.rfcToBe.ianaStatus?.slug))
+const selectedIANAStatus = ref<IANAActionsEnum | undefined>(
+  parseIanaStatusSlug(props.rfcToBe.ianaStatus?.slug)
+)
 
 const overlayModalKeyInjection = inject(overlayModalKey)
 
@@ -56,20 +59,28 @@ const handleSave = async () => {
     const serverRfcToBe = await api.documentsPartialUpdate({
       draftName: props.name,
       patchedRfcToBeRequest: {
-        ianaStatusSlug: selectedIANAStatus.value,
+        ianaStatusSlug: selectedIANAStatus.value
       }
     })
     if (serverRfcToBe.ianaStatus?.slug === selectedIANAStatus.value) {
-      snackbar.add({ type: 'success', title: "New IANA Action saved", text: "Please wait while reloading" })
+      snackbar.add({
+        type: 'success',
+        title: 'New IANA Action saved',
+        text: 'Please wait while reloading'
+      })
       await props.onSuccess() // trigger data reload
-      snackbar.add({ type: 'success', title: "Reloaded", text: "" })
+      snackbar.add({ type: 'success', title: 'Reloaded', text: '' })
       isSaving.value = false
       closeOverlayModal()
     } else {
-      snackbar.add({ type: 'error', title: "Unable to save IANA status", text: "Server didn't say why" })
+      snackbar.add({
+        type: 'error',
+        title: 'Unable to save IANA status',
+        text: "Server didn't say why"
+      })
     }
   } catch (error) {
-    snackbarForErrors({ snackbar, error, defaultTitle: "Unable to save IANA status" })
+    snackbarForErrors({ snackbar, error, defaultTitle: 'Unable to save IANA status' })
   }
   isSaving.value = false
 }

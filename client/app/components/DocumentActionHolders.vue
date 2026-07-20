@@ -15,18 +15,27 @@
     <RpcTable>
       <RpcThead>
         <tr v-for="headerGroup in table.getHeaderGroups()" :key="headerGroup.id">
-          <RpcTh v-for="header in headerGroup.headers" :key="header.id" :colSpan="header.colSpan"
-            :is-sortable="header.column.getCanSort()" :sort-direction="header.column.getIsSorted()"
-            :column-name="getVNodeText(header.column.columnDef.header)" @click="header.column.getToggleSortingHandler()?.($event)">
+          <RpcTh
+            v-for="header in headerGroup.headers"
+            :key="header.id"
+            :colSpan="header.colSpan"
+            :is-sortable="header.column.getCanSort()"
+            :sort-direction="header.column.getIsSorted()"
+            :column-name="getVNodeText(header.column.columnDef.header)"
+            @click="header.column.getToggleSortingHandler()?.($event)">
             <div class="flex items-center gap-2">
-              <FlexRender v-if="!header.isPlaceholder" :render="header.column.columnDef.header"
+              <FlexRender
+                v-if="!header.isPlaceholder"
+                :render="header.column.columnDef.header"
                 :props="header.getContext()" />
             </div>
           </RpcTh>
         </tr>
       </RpcThead>
       <RpcTbody>
-        <RpcRowMessage :status="status" :column-count="table.getAllColumns().length"
+        <RpcRowMessage
+          :status="status"
+          :column-count="table.getAllColumns().length"
           :row-count="table.getRowModel().rows.length" />
         <tr v-for="row in table.getRowModel().rows" :key="row.id">
           <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
@@ -46,7 +55,7 @@ import {
   getFilteredRowModel,
   getSortedRowModel,
   useVueTable,
-  FlexRender,
+  FlexRender
 } from '@tanstack/vue-table'
 import { DateTime } from 'luxon'
 import type { SortingState } from '@tanstack/vue-table'
@@ -72,24 +81,35 @@ const {
   data: actionHoldersList,
   status,
   refresh,
-  error,
+  error
 } = await useAsyncData(
   `action-holders-for-${props.name}`,
   () => api.documentsActionHoldersList({ draftName: props.name }),
   {
     server: false,
     lazy: true,
-    default: () => [] as ActionHolder[],
+    default: () => [] as ActionHolder[]
   }
 )
 
 const formatAuthor = (person: BaseDatatrackerPerson | undefined): VNode => {
   if (!person) return h('i', '(unknown)')
   return h('span', [
-    h('a', { href: person.email ? datatrackerLinks.personByEmail(person.email) : undefined, class: ANCHOR_STYLE }, [
-      person.name ?? '(unknown)',
-      h('span', { class: 'font-normal text-gray-700 dark:text-gray-200' }, person.email ? ` #${person.email}` : ''),
-    ]),
+    h(
+      'a',
+      {
+        href: person.email ? datatrackerLinks.personByEmail(person.email) : undefined,
+        class: ANCHOR_STYLE
+      },
+      [
+        person.name ?? '(unknown)',
+        h(
+          'span',
+          { class: 'font-normal text-gray-700 dark:text-gray-200' },
+          person.email ? ` #${person.email}` : ''
+        )
+      ]
+    )
   ])
 }
 
@@ -103,84 +123,88 @@ const columnHelper = createColumnHelper<ActionHolder>()
 const columns = [
   columnHelper.accessor('displayName', {
     header: 'Action Holder Name',
-    cell: data => {
+    cell: (data) => {
       const body = data.row.original.body
       if (body) return h('span', { class: 'text-sm italic text-gray-700 dark:text-gray-300' }, body)
       const person = data.row.original.person
       if (person) return formatAuthor(person)
       return h('i', '(unknown)')
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.accessor('comment', {
     header: 'Comment',
-    cell: data => {
+    cell: (data) => {
       const comment = data.getValue()
       if (!comment) return ''
       const truncated = comment.length > 40 ? comment.substring(0, 40) + '...' : comment
       return h('span', { class: 'text-sm', title: comment }, truncated)
-    },
+    }
   }),
-  columnHelper.accessor(
-    'sinceWhen', {
+  columnHelper.accessor('sinceWhen', {
     header: 'Date Requested',
-    cell: data => {
+    cell: (data) => {
       const date = data.getValue()
       if (!date) {
         return '(N/A)'
       }
       const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
-      return h('time', { datetime: dateTime.toString() }, dateTime.toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      ))
+      return h(
+        'time',
+        { datetime: dateTime.toString() },
+        dateTime.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+      )
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.display({
     id: 'status',
     header: 'Date Completed',
-    cell: data => {
+    cell: (data) => {
       const completed = data.row.original.completed
       if (completed) {
         const dateTime = DateTime.fromJSDate(completed, { zone: 'utc' })
         return h('div', { class: 'flex flex-row items-center gap-1' }, [
           h(Icon, { name: 'duo-icons:approved', size: '1.25em', class: 'text-green-500' }),
-          h('time', { datetime: dateTime.toISO(), class: 'text-green-700 text-sm' },
-            dateTime.toLocaleString(DateTime.DATE_MED)),
+          h(
+            'time',
+            { datetime: dateTime.toISO(), class: 'text-green-700 text-sm' },
+            dateTime.toLocaleString(DateTime.DATE_MED)
+          )
         ])
       }
       return h('div', { class: 'flex flex-row items-center gap-1' }, [
         h(Icon, { name: 'emojione:hourglass-not-done', size: '1.25em', class: 'text-gray-400' }),
-        h('span', { class: 'text-gray-600 text-sm' }, 'Pending'),
+        h('span', { class: 'text-gray-600 text-sm' }, 'Pending')
       ])
-    },
+    }
   }),
   columnHelper.accessor('deadline', {
     header: 'Deadline',
-    cell: data => {
+    cell: (data) => {
       const date = data.getValue()
       if (!date) return h('span', { class: 'text-gray-400' }, '(none)')
       const dateTime = DateTime.fromJSDate(date, { zone: 'utc' })
       return h('time', { datetime: dateTime.toISO() }, dateTime.toLocaleString(DateTime.DATE_MED))
     },
-    sortingFn: 'alphanumeric',
+    sortingFn: 'alphanumeric'
   }),
   columnHelper.display({
     id: 'action',
     header: 'Action',
-    cell: data => {
+    cell: (data) => {
       return h(
         BaseButton,
         {
           btnType: 'default',
           size: 'xs',
           title: 'Edit action holder',
-          onClick: () => openEditModal(data.row.original),
+          onClick: () => openEditModal(data.row.original)
         },
         () => 'Edit'
       )
-    },
-  }),
+    }
+  })
 ]
 
 const sorting = ref<SortingState>([])
@@ -196,14 +220,12 @@ const table = useVueTable({
   state: {
     get sorting() {
       return sorting.value
-    },
+    }
   },
-  onSortingChange: updaterOrValue => {
+  onSortingChange: (updaterOrValue) => {
     sorting.value =
-      typeof updaterOrValue === 'function'
-        ? updaterOrValue(sorting.value)
-        : updaterOrValue
-  },
+      typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
+  }
 })
 
 const overlayModal = inject(overlayModalKey)
@@ -218,9 +240,9 @@ const openAddModal = () => {
     component: DocumentActionHolderAddModal,
     componentProps: {
       draftName: props.name,
-      onSuccess: reloadEverything,
-    },
-  }).catch(e => {
+      onSuccess: reloadEverything
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // modal closed normally
     } else {
@@ -241,9 +263,9 @@ const openEditModal = (actionHolder: ActionHolder) => {
     componentProps: {
       actionHolder,
       draftName: props.name,
-      onSuccess: reloadEverything,
-    },
-  }).catch(e => {
+      onSuccess: reloadEverything
+    }
+  }).catch((e) => {
     if (e === undefined) {
       // modal closed normally
     } else {

@@ -1,9 +1,10 @@
 <template>
-  <div :class="[
-    'w-full border-b border-gray-100 dark:border-gray-800',
-    props.spacing === 'large' && 'px-4 py-3 sm:gap-4 sm:px-0',
-    props.spacing === 'small' && 'px-1 py-0.5 sm:gap-0.5 sm:px-0',
-  ]">
+  <div
+    :class="[
+      'w-full border-b border-gray-100 dark:border-gray-800',
+      props.spacing === 'large' && 'px-4 py-3 sm:gap-4 sm:px-0',
+      props.spacing === 'small' && 'px-1 py-0.5 sm:gap-0.5 sm:px-0'
+    ]">
     <DescriptionListTerm v-if="term">
       {{ term }}
     </DescriptionListTerm>
@@ -16,10 +17,10 @@
 
 <script setup lang="ts">
 type Props = {
-  term?: string,
+  term?: string
   details?: string
   spacing?: 'large' | 'small'
 }
 
-const props = withDefaults(defineProps<Props>(), { spacing: "large" })
+const props = withDefaults(defineProps<Props>(), { spacing: 'large' })
 </script>

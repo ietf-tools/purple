@@ -1,0 +1,593 @@
+# Copyright The IETF Trust 2026, All Rights Reserved
+"""Tests for rpc.stats.rollups (queue period rollups), the queue-stats
+endpoints, and the IETF-meeting cache."""
+
+import datetime
+import time
+from unittest import mock
+
+from django.contrib.auth import get_user_model
+from django.test import SimpleTestCase, TestCase
+from django.urls import reverse
+
+from ..factories import (
+    DispositionNameFactory,
+    LabelFactory,
+    RfcToBeFactory,
+    StdLevelNameFactory,
+    StreamNameFactory,
+)
+from ..models import (
+    BlockingReason,
+    RfcToBeBlockingReason,
+)
+from . import rollups
+from .rollups import (
+    _candidate_docs,
+    _label_intervals_by_doc,
+    _missing_ref_intervals_by_doc,
+    period_windows,
+    queue_counts_rollup,
+    queue_published_rollup,
+    queue_rollup,
+)
+from .test_helpers import (
+    apply_label_over,
+    backdate_creation,
+    dt,
+    make_assignment,
+    missing_ref_over,
+    missing_ref_upgraded,
+)
+
+
+class PeriodWindowTests(SimpleTestCase):
+    def test_month_windows_oldest_first(self):
+        windows = period_windows("month", 3, dt(2026, 7, 15))
+        assert [w["label"] for w in windows] == ["2026-05", "2026-06", "2026-07"]
+        assert windows[0]["start"] == dt(2026, 5, 1)
+        assert windows[-1]["end"] == dt(2026, 8, 1)
+
+    def test_quarter_windows(self):
+        windows = period_windows("quarter", 2, dt(2026, 5, 10))
+        assert [w["label"] for w in windows] == ["2026 Q1", "2026 Q2"]
+        assert windows[0]["start"] == dt(2026, 1, 1)
+        assert windows[1]["end"] == dt(2026, 7, 1)
+
+    def test_year_windows(self):
+        windows = period_windows("year", 2, dt(2026, 5, 10))
+        assert [w["label"] for w in windows] == ["2025", "2026"]
+        assert windows[0]["start"] == dt(2025, 1, 1)
+        assert windows[1]["end"] == dt(2027, 1, 1)
+
+    def test_week_windows_align_to_monday(self):
+        # 2026-07-15 is a Wednesday; its ISO week starts Monday 2026-07-13.
+        windows = period_windows("week", 2, dt(2026, 7, 15))
+        assert windows[-1]["start"] == dt(2026, 7, 13)
+        assert windows[-1]["end"] == dt(2026, 7, 20)
+
+    # IETF meetings, date ascending; two of these are in the future relative to
+    # the 2026-07-10 "now" used below (IETF 126 on 07-18 and IETF 127 in Nov).
+    IETF_MEETINGS = [
+        ("122", datetime.date(2025, 3, 15)),
+        ("123", datetime.date(2025, 7, 19)),
+        ("124", datetime.date(2025, 11, 1)),
+        ("125", datetime.date(2026, 3, 14)),
+        ("126", datetime.date(2026, 7, 18)),
+        ("127", datetime.date(2026, 11, 14)),
+    ]
+
+    def test_ietf_windows_end_at_nearest_future_meeting(self):
+        with mock.patch.object(
+            rollups, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
+        ):
+            windows = period_windows("ietf", 3, dt(2026, 7, 10))
+        # Current period ends at IETF 126 (nearest future), IETF 127 excluded.
+        assert [w["label"] for w in windows] == ["IETF 124", "IETF 125", "IETF 126"]
+        assert windows[-1]["start"] == dt(2026, 3, 14)
+        assert windows[-1]["end"] == dt(2026, 7, 18)
+
+    def test_ietf_windows_no_future_meeting(self):
+        with mock.patch.object(
+            rollups, "datatracker_ietf_meetings", return_value=self.IETF_MEETINGS
+        ):
+            windows = period_windows("ietf", 2, dt(2027, 1, 1))
+        # No future meeting: current period ends at the most recent past one.
+        assert [w["label"] for w in windows] == ["IETF 126", "IETF 127"]
+        assert windows[-1]["end"] == dt(2026, 11, 14)
+
+    def test_ietf_windows_too_few_meetings(self):
+        one_meeting = [("127", datetime.date(2026, 11, 14))]
+        with mock.patch.object(
+            rollups, "datatracker_ietf_meetings", return_value=one_meeting
+        ):
+            assert period_windows("ietf", 3, dt(2026, 7, 10)) == []
+
+    def test_zero_count_is_empty(self):
+        assert period_windows("month", 0, dt(2026, 7, 15)) == []
+
+    def test_unknown_period_raises(self):
+        with self.assertRaises(ValueError):
+            period_windows("decade", 1, dt(2026, 7, 15))
+
+
+class QueueRollupTests(TestCase):
+    def setUp(self):
+        self.now = dt(2026, 7, 1)
+
+    def _doc_with_work(self, disposition_slug="in_progress", published_at=None):
+        rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug=disposition_slug),
+            published_at=published_at,
+        )
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
+            rfc,
+            "first_editor",
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 11), "done")],
+        )
+        make_assignment(
+            rfc,
+            "blocked",
+            [(dt(2026, 6, 15), "in_progress"), (dt(2026, 6, 18), "done")],
+        )
+        return rfc
+
+    def test_per_role_breakdown_and_totals(self):
+        self._doc_with_work()
+        june = queue_rollup("month", 2, self.now)[0]
+        assert june["label"] == "2026-06"
+        assert june["doc_count"] == 1
+        # Time spent within the period, broken out per role.
+        assert june["total_working_seconds"] == 10 * 24 * 3600
+        assert june["total_blocked_seconds"] == 3 * 24 * 3600
+        by_role = {r["role"]: r for r in june["by_role"]}
+        assert by_role["first_editor"]["is_blocked"] is False
+        assert by_role["first_editor"]["seconds"] == 10 * 24 * 3600
+        assert by_role["blocked"]["is_blocked"] is True
+        assert by_role["blocked"]["seconds"] == 3 * 24 * 3600
+        assert june["legacy_included"] is False
+
+    def test_time_is_per_period_not_cumulative(self):
+        # A single long-running interval spanning two months must be split
+        # across the bins (per-period flow), not counted in full in each. Uses
+        # fully post-transition dates so the TRANSITION_DATE clip doesn't apply.
+        now = dt(2026, 9, 1)
+        rfc = RfcToBeFactory(disposition=DispositionNameFactory(slug="in_progress"))
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
+            rfc,
+            "first_editor",
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 8, 1), "done")],
+        )
+        periods = {p["label"]: p for p in queue_rollup("month", 4, now)}
+        # June [06-01, 07-01] = 30 days; July [07-01, 08-01] = 31 days; the
+        # interval ends 08-01 so August contributes nothing.
+        assert periods["2026-06"]["total_working_seconds"] == 30 * 24 * 3600
+        assert periods["2026-07"]["total_working_seconds"] == 31 * 24 * 3600
+        assert periods["2026-08"]["total_working_seconds"] == 0
+
+    def test_awaiting_ref_counts_as_blocked_in_stats(self):
+        rfc = RfcToBeFactory()
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
+            rfc,
+            "final_review_editor",
+            [(dt(2026, 6, 1), "assigned"), (dt(2026, 6, 30), "done")],
+        )
+        apply_label_over(
+            rfc,
+            LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
+            dt(2026, 6, 10),
+            dt(2026, 6, 20),
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        assert june["label"] == "2026-06"
+        by_role = {r["role"]: r for r in june["by_role"]}
+        # 10 days of awaiting-ref time counts as blocked under its own category.
+        assert by_role["awaiting_ref"]["is_blocked"] is True
+        assert by_role["awaiting_ref"]["seconds"] == 10 * 24 * 3600
+        # ...and is carved out of the final_review_editor (working) time.
+        assert by_role["final_review_editor"]["is_blocked"] is False
+        assert by_role["final_review_editor"]["seconds"] == 19 * 24 * 3600
+        assert june["total_blocked_seconds"] == 10 * 24 * 3600
+        assert june["total_working_seconds"] == 19 * 24 * 3600
+
+    def test_blocked_time_itemised_by_reason_in_stats(self):
+        rfc = RfcToBeFactory()
+        backdate_creation(rfc, dt(2026, 1, 1))
+        # A blocked assignment whose time is itemised by reason below.
+        make_assignment(
+            rfc,
+            "blocked",
+            [(dt(2026, 6, 1), "in_progress"), (dt(2026, 6, 30), "done")],
+        )
+        author, _ = BlockingReason.objects.get_or_create(
+            slug="label_author_input_required",
+            defaults={"name": "Author Input Required"},
+        )
+        holder, _ = BlockingReason.objects.get_or_create(
+            slug="actionholder_active",
+            defaults={"name": "Waiting for Action Holder"},
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc,
+            reason=author,
+            since_when=dt(2026, 6, 5),
+            resolved=dt(2026, 6, 15),
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc,
+            reason=holder,
+            since_when=dt(2026, 6, 20),
+            resolved=dt(2026, 6, 25),
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        by_role = {r["role"]: r for r in june["by_role"]}
+        # The single "blocked" category is replaced by per-reason categories,
+        # and the blocked time no reason explains becomes "blocked (other)".
+        assert "blocked" not in by_role
+        assert by_role[author.name]["is_blocked"] is True
+        assert by_role[author.name]["seconds"] == 10 * 24 * 3600
+        assert by_role[holder.name]["seconds"] == 5 * 24 * 3600
+        # Blocked assignment spans June 1-30 (29d); reasons explain 15d, so the
+        # remaining 14d is "blocked (other)" and the total is the full 29d.
+        assert by_role["blocked (other)"]["is_blocked"] is True
+        assert by_role["blocked (other)"]["seconds"] == 14 * 24 * 3600
+        assert june["total_blocked_seconds"] == 29 * 24 * 3600
+
+    def test_blocking_reason_clipped_to_blocked_assignment(self):
+        # A reason record that overruns the blocked assignment is clipped to it,
+        # so it can't credit blocked time the doc wasn't actually blocked for.
+        rfc = RfcToBeFactory()
+        backdate_creation(rfc, dt(2026, 1, 1))
+        make_assignment(
+            rfc,
+            "blocked",
+            [(dt(2026, 6, 1), "in_progress"), (dt(2026, 6, 15), "done")],  # 14 days
+        )
+        reason, _ = BlockingReason.objects.get_or_create(
+            slug="label_author_input_required",
+            defaults={"name": "Author Input Required"},
+        )
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=rfc,
+            reason=reason,
+            since_when=dt(2026, 6, 1),
+            resolved=dt(2026, 6, 30),  # overruns to 30
+        )
+        june = queue_rollup("month", 2, self.now)[0]
+        by_role = {r["role"]: r for r in june["by_role"]}
+        assert by_role[reason.name]["seconds"] == 14 * 24 * 3600  # clipped, not 29
+        assert june["total_blocked_seconds"] == 14 * 24 * 3600
+
+    def test_withdrawn_docs_excluded(self):
+        self._doc_with_work(disposition_slug="withdrawn")
+        periods = queue_rollup("month", 2, self.now)
+        assert periods[0]["doc_count"] == 0
+        assert periods[0]["total_working_seconds"] == 0
+
+    def test_published_in_range_included(self):
+        self._doc_with_work(disposition_slug="published", published_at=dt(2026, 6, 20))
+        june = queue_rollup("month", 2, self.now)[0]
+        assert june["doc_count"] == 1
+        assert june["total_working_seconds"] == 10 * 24 * 3600
+
+    def test_membership_snapshot_by_period_end(self):
+        # A doc created after a period's end is not a member of that period.
+        rfc = RfcToBeFactory()
+        backdate_creation(rfc, dt(2026, 6, 15))  # created mid-June
+        make_assignment(
+            rfc,
+            "first_editor",
+            [(dt(2026, 6, 16), "assigned"), (dt(2026, 6, 20), "done")],
+        )
+        # month x3 ending 2026-07-01 -> May, June, July windows.
+        periods = {p["label"]: p for p in queue_rollup("month", 3, self.now)}
+        # Not created until mid-June, so absent from the May bin (ends June 1).
+        assert periods["2026-05"]["doc_count"] == 0
+        assert periods["2026-06"]["doc_count"] == 1
+
+    def test_legacy_included_flag_for_old_period(self):
+        periods = queue_rollup("month", 6, dt(2026, 7, 1))
+        by_label = {p["label"]: p for p in periods}
+        assert by_label["2026-03"]["legacy_included"] is True
+        assert by_label["2026-06"]["legacy_included"] is False
+
+    def test_legacy_only_doc_contributes_to_old_period(self):
+        # No assignment, just a pre-transition state label. It must still be
+        # picked up as a candidate and contribute to the March window.
+        rfc = RfcToBeFactory()
+        apply_label_over(
+            rfc, LabelFactory(slug="IANA"), dt(2026, 3, 1), dt(2026, 3, 15)
+        )
+        periods = queue_rollup("month", 6, self.now)
+        by_label = {p["label"]: p for p in periods}
+        assert by_label["2026-03"]["total_blocked_seconds"] == 14 * 24 * 3600
+
+    def test_candidate_docs_filtering(self):
+        earliest = dt(2026, 6, 1)
+        # Included: has an assignment.
+        with_assignment = self._doc_with_work()
+        # Included: legacy state label, published within range.
+        legacy_only = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="published"),
+            published_at=dt(2026, 6, 10),
+        )
+        apply_label_over(
+            legacy_only, LabelFactory(slug="TI"), dt(2026, 3, 1), dt(2026, 3, 5)
+        )
+        # Excluded: published before the range.
+        old_published = self._doc_with_work(disposition_slug="published")
+        old_published.published_at = dt(2026, 1, 1)
+        old_published.save()
+        # Excluded: no assignment, only a non-state (complexity) label.
+        RfcToBeFactory().labels.add(LabelFactory(slug="refs: hard"))
+
+        ids = set(
+            _candidate_docs(earliest, include_legacy=True).values_list("pk", flat=True)
+        )
+        assert with_assignment.pk in ids
+        assert legacy_only.pk in ids
+        assert old_published.pk not in ids
+
+
+class QueueCountsRollupTests(TestCase):
+    def setUp(self):
+        self.now = dt(2026, 7, 1)  # June window = [06-01, 07-01)
+
+    def _doc(self, enq, *, pages=0, published_at=None, slug="in_progress"):
+        rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug=slug),
+            published_at=published_at,
+            pages=pages,
+        )
+        backdate_creation(rfc, enq)
+        return rfc
+
+    def test_counts_rollup(self):
+        # A: in queue since May, missing a reference until June 10 -> goes to
+        # edit June 10 (10 pages). not-received is not "blocked" time.
+        a = self._doc(dt(2026, 5, 1), pages=10)
+        missing_ref_over(a, dt(2026, 5, 1), dt(2026, 6, 10))
+        # B: enters in June with no missing refs -> goes to edit at entry.
+        self._doc(dt(2026, 6, 5), pages=20)
+        # C: in queue since January, published in June (no missing refs).
+        self._doc(
+            dt(2026, 1, 1), pages=5, published_at=dt(2026, 6, 20), slug="published"
+        )
+        # D: in queue since May, blocked the entire month (went to edit at entry).
+        d = self._doc(dt(2026, 5, 1), pages=8)
+        make_assignment(
+            d,
+            "blocked",
+            [(dt(2026, 5, 25), "in_progress"), (dt(2026, 7, 5), "done")],
+        )
+
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["label"] == "2026-06"
+        assert june["docs_at_start"] == 3  # A, C, D (B enters mid-month)
+        assert june["docs_entered"] == 1  # B
+        assert june["docs_entered_missing_ref"] == 0  # B enters with no missing refs
+        assert june["pages_at_start"] == 23  # A(10) + C(5) + D(8)
+        assert june["pages_entered"] == 20
+        assert june["rfcs_published"] == 1  # C
+        assert june["pages_published"] == 5  # C
+        # A clears its missing ref in June (10); B enters clear in June (20).
+        assert june["pages_to_edit"] == 30
+        # At end of June (self.now): A(10) went to edit, so workable/in progress;
+        # B(20) in progress; C(5) published (gone); D(8) still blocked.
+        assert june["pages_blocked_end"] == 8  # D
+        assert june["pages_in_progress_end"] == 30  # A(10) + B(20)
+        assert june["docs_blocked_entire"] == 1  # D
+        # Rest = A, B, C. A is blocked (missing ref) 9 of 30 June days = 30%.
+        assert june["avg_pct_blocked"] == 10.0  # (30 + 0 + 0) / 3
+        # All 4 members: D 100%, A 30%, B/C 0% -> mean 32.5%.
+        assert june["avg_pct_blocked_all"] == 32.5
+
+    def test_docs_entering_with_missing_references(self):
+        # E enters in June already missing a reference; F enters clean.
+        e = self._doc(dt(2026, 6, 3), pages=7)
+        missing_ref_over(e, dt(2026, 6, 3), dt(2026, 6, 25))
+        self._doc(dt(2026, 6, 4), pages=9)
+        # G's not-received relationship is stamped seconds after enqueue (the
+        # non-atomic intake) — still "entering with missing references".
+        g_enq = dt(2026, 6, 6)
+        g = self._doc(g_enq, pages=5)
+        missing_ref_over(g, g_enq + datetime.timedelta(seconds=30), dt(2026, 6, 20))
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_entered"] == 3
+        assert june["docs_entered_missing_ref"] == 2  # E and G
+
+    def test_missref_label_within_a_week_counts_as_entered_missing_ref(self):
+        # Pre-transition, the MISSREF label is often applied a few days after
+        # enqueue but reflects entry state: within a week counts, beyond doesn't.
+        missref = LabelFactory(slug="MISSREF")
+        h_enq = dt(2026, 3, 5)
+        h = self._doc(h_enq)
+        apply_label_over(
+            h, missref, h_enq + datetime.timedelta(days=3), dt(2026, 3, 20)
+        )
+        i_enq = dt(2026, 3, 5)
+        i = self._doc(i_enq)
+        apply_label_over(
+            i, missref, i_enq + datetime.timedelta(days=10), dt(2026, 3, 25)
+        )
+        rollup = queue_counts_rollup("month", 5, self.now)
+        march = next(p for p in rollup if p["label"] == "2026-03")
+        assert march["docs_entered"] == 2
+        assert march["docs_entered_missing_ref"] == 1  # H only (3 days, not 10)
+
+    def test_missing_ref_closes_on_slug_upgrade_not_only_delete(self):
+        # 1g not-received refs are resolved by changing the row to refqueue in
+        # place (no delete row); the interval must still close at the upgrade.
+        rfc = self._doc(dt(2026, 6, 3))
+        missing_ref_upgraded(rfc, dt(2026, 6, 3), dt(2026, 6, 10))
+        intervals = _missing_ref_intervals_by_doc([rfc.pk])[rfc.pk]
+        assert intervals == [(dt(2026, 6, 3), dt(2026, 6, 10))]  # closed, not open
+        # It is therefore NOT blocked the whole of June, and it went to edit.
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_blocked_entire"] == 0
+
+    def test_missing_ref_whole_period_is_blocked_entire(self):
+        # A doc missing a reference the entire period counts as blocked-entire,
+        # even without a blocked assignment.
+        rfc = self._doc(dt(2026, 5, 1))
+        missing_ref_over(rfc, dt(2026, 5, 1), dt(2026, 7, 20))
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_blocked_entire"] == 1
+
+    def test_label_intervals_by_doc_matches_per_doc_method(self):
+        # The bulk reconstruction must exactly match RfcToBe.time_intervals_with_
+        # label (its subtlest invariant: interval boundaries are label-set
+        # change-points, so an overlapping second label matters).
+        rfc = self._doc(dt(2026, 1, 1))
+        a = LabelFactory(slug="MISSREF")
+        b = LabelFactory(slug="AUTH48")
+        apply_label_over(rfc, a, dt(2026, 2, 1), dt(2026, 4, 1))
+        apply_label_over(rfc, b, dt(2026, 3, 1), dt(2026, 5, 1))  # overlaps a
+        bulk = _label_intervals_by_doc([rfc.pk], {a.pk, b.pk}).get(rfc.pk, {})
+        for label in (a, b):
+            want = [(iv.start, iv.end) for iv in rfc.time_intervals_with_label(label)]
+            assert bulk.get(label.pk, []) == want, label.slug
+
+    def test_pages_use_historical_page_count(self):
+        # Pages are read from the history record in effect when the doc entered,
+        # not the current value.
+        rfc = self._doc(dt(2026, 6, 5), pages=12)
+        rfc.pages = 99  # later change must NOT affect the June "pages entered"
+        rfc.save()
+        june = queue_counts_rollup("month", 2, self.now)[0]
+        assert june["docs_entered"] == 1
+        assert june["pages_entered"] == 12
+
+
+class QueuePublishedRollupTests(TestCase):
+    def setUp(self):
+        self.now = dt(2026, 7, 1)
+
+    def _pub(self, when, stream="ietf", level="ps", group=""):
+        return RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="published"),
+            published_at=when,
+            stream=StreamNameFactory(slug=stream),
+            std_level=StdLevelNameFactory(slug=level),
+            group=group,
+        )
+
+    def test_published_rollup_groups_buckets_and_suppresses(self):
+        self._pub(dt(2026, 6, 5), "ietf", "ps", group="mpls")  # WG
+        self._pub(dt(2026, 6, 6), "ietf", "std", group="idr")  # WG, Std Track
+        self._pub(dt(2026, 6, 7), "ietf", "inf", group="")  # no group -> AD-sponsored
+        self._pub(dt(2026, 6, 8), "irtf", "exp")
+        self._pub(dt(2026, 6, 9), "legacy", "inf")  # legacy stream is dropped
+        r = queue_published_rollup("month", 2, self.now)
+        june = r["periods"][0]
+        assert june["label"] == "2026-06"
+        # IETF splits into WG/AD-sponsored; ise/iab/editorial (zero) and legacy
+        # (excluded) don't appear; BCP/Historic/Unknown statuses are suppressed.
+        assert r["streams"] == ["ietf-wg", "ietf-ad", "irtf"]
+        assert r["statuses"] == ["Standards Track", "Experimental", "Informational"]
+        cells = {(c["stream"], c["status"]): c["count"] for c in june["counts"]}
+        assert cells[("ietf-wg", "Standards Track")] == 2  # ps + std, both WG
+        assert cells[("ietf-ad", "Informational")] == 1  # no group
+        assert cells[("irtf", "Experimental")] == 1
+        assert ("legacy", "Informational") not in cells
+
+    def test_published_rollup_uses_publication_values_and_range(self):
+        # Published before the range is excluded.
+        self._pub(dt(2026, 3, 1), "ietf", "ps")
+        self._pub(dt(2026, 6, 15), "ietf", "bcp")
+        r = queue_published_rollup("month", 2, self.now)  # May-July window start
+        total = sum(c["count"] for p in r["periods"] for c in p["counts"])
+        assert total == 1  # only the June publication is in range
+        assert r["statuses"] == ["Best Current Practice"]
+
+
+class IetfMeetingsCacheTests(SimpleTestCase):
+    def setUp(self):
+        from rpc import dt_v1_api_utils as dt
+
+        self.dt = dt
+        dt._ietf_meetings_cache.update(at=None, data=None)
+
+    def tearDown(self):
+        self.dt._ietf_meetings_cache.update(at=None, data=None)
+
+    def test_serves_last_known_good_past_ttl_on_failure(self):
+        good = {"objects": [{"number": "125", "date": "2027-11-01"}]}
+        with mock.patch.object(self.dt, "datatracker_api_get", return_value=good):
+            first = self.dt.datatracker_ietf_meetings()
+        assert first == [("125", datetime.date(2027, 11, 1))]
+        # Expire the TTL, then make the fetch fail: the stale list is served.
+        self.dt._ietf_meetings_cache["at"] = time.monotonic() - 10_000
+        with mock.patch.object(
+            self.dt, "datatracker_api_get", side_effect=self.dt.DatatrackerFetchFailure
+        ):
+            again = self.dt.datatracker_ietf_meetings()
+        assert again == first
+
+    def test_raises_when_never_fetched(self):
+        with mock.patch.object(
+            self.dt, "datatracker_api_get", side_effect=self.dt.DatatrackerFetchFailure
+        ):
+            with self.assertRaises(self.dt.DatatrackerFetchFailure):
+                self.dt.datatracker_ietf_meetings()
+
+
+class StatsEndpointTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="timeline-user", password="pw", name="Timeline User"
+        )
+
+    def test_queue_stats_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue"), {"period": "month"})
+        assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_counts_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue-counts"), {"period": "month"})
+        assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_published_requires_auth(self):
+        resp = self.client.get(reverse("stats-queue-published"), {"period": "year"})
+        assert resp.status_code in (401, 403), resp.content
+
+    def test_queue_published_ok(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(
+            reverse("stats-queue-published"), {"period": "year", "count": 2}
+        )
+        assert resp.status_code == 200, resp.content
+        body = resp.json()
+        assert set(body) == {"streams", "statuses", "periods"}
+        assert len(body["periods"]) == 2
+
+    def test_queue_stats_ok(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("stats-queue"), {"period": "month", "count": 3})
+        assert resp.status_code == 200, resp.content
+        assert len(resp.json()["periods"]) == 3
+
+    def test_queue_stats_rejects_bad_period(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("stats-queue"), {"period": "decade"})
+        assert resp.status_code == 400, resp.content
+
+    def test_queue_stats_clamps_count(self):
+        self.client.force_login(self.user)
+        resp = self.client.get(reverse("stats-queue"), {"period": "week", "count": 999})
+        assert resp.status_code == 200, resp.content
+        assert len(resp.json()["periods"]) == 52
+
+    def test_queue_stats_ietf_outage_returns_503(self):
+        # period=ietf needs the datatracker; a cold outage should be 503, not 500.
+        from rpc import dt_v1_api_utils as dt
+
+        dt._ietf_meetings_cache.update(at=None, data=None)  # no last-known-good
+        self.client.force_login(self.user)
+        with mock.patch.object(
+            dt, "datatracker_api_get", side_effect=dt.DatatrackerFetchFailure
+        ):
+            resp = self.client.get(reverse("stats-queue"), {"period": "ietf"})
+        assert resp.status_code == 503, resp.content

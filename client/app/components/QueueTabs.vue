@@ -19,25 +19,21 @@ const props = defineProps<Props>()
 const api = useApi()
 const route = useRoute()
 
-const { data: counts } = await useAsyncData(
-  'queue-tab-counts',
-  () => api.queueCounts(),
-  {
-    server: false,
-    lazy: true,
-    watch: [route],
-    default: (): Partial<QueueCounts> => ({}),
-  }
-)
+const { data: counts } = await useAsyncData('queue-tab-counts', () => api.queueCounts(), {
+  server: false,
+  lazy: true,
+  watch: [route],
+  default: (): Partial<QueueCounts> => ({})
+})
 
 const tabs = computed<Tab[]>(() =>
-  queueTabs.map(tab => {
+  queueTabs.map((tab) => {
     // map tab id to the corresponding count key
     // e.g. "pending-announcement" → "pendingAnnouncement"
     const countKey = tab.id.replace(/-([a-z])/g, (_, c) => c.toUpperCase()) as keyof QueueCounts
     return {
       ...tab,
-      count: counts.value[countKey] ?? null,
+      count: counts.value[countKey] ?? null
     }
   })
 )

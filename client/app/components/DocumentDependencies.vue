@@ -4,7 +4,9 @@
       <template #header>
         <CardHeader title="Publishing Dependencies">
           <template #actions>
-            <BaseButton btn-type="default" @click="isOpenDependencyModal = true">Add Dependency</BaseButton>
+            <BaseButton btn-type="default" @click="isOpenDependencyModal = true"
+              >Add Dependency</BaseButton
+            >
           </template>
         </CardHeader>
       </template>
@@ -12,27 +14,32 @@
         <span class="font-medium">Cluster: </span>
         <span class="mr-2">
           <span v-if="clusterNumber">
-            <Anchor :href="`/clusters/${clusterNumber}`" class="inline-flex items-center gap-1 text-blue-600">
+            <Anchor
+              :href="`/clusters/${clusterNumber}`"
+              class="inline-flex items-center gap-1 text-blue-600">
               <Icon name="pajamas:group" class="h-5 w-5" />{{ clusterNumber }}
             </Anchor>
           </span>
-        <span v-else>-</span>
+          <span v-else>-</span>
         </span>
       </div>
-      <DocumentTable v-if="relatedDocuments" :columns="columns" :data="relatedDocuments" row-key="id" />
+      <DocumentTable
+        v-if="relatedDocuments"
+        :columns="columns"
+        :data="relatedDocuments"
+        row-key="id" />
     </BaseCard>
     <DocumentDependenciesAdd
       v-model:is-open-dependency-modal="isOpenDependencyModal"
       v-model:related-documents="relatedDocuments"
       :draft-name="props.draftName"
-      :id="props.id"
-    />
-</div>
+      :id="props.id" />
+  </div>
 </template>
 
 <script setup lang="ts">
-import type { RpcRelatedDocument, RpcPerson } from '~/purple_client';
-import type { Column } from './DocumentTableTypes';
+import type { RpcRelatedDocument, RpcPerson } from '~/purple_client'
+import type { Column } from './DocumentTableTypes'
 import { h } from 'vue'
 import { Anchor, Icon } from '#components'
 import BaseBadge from './BaseBadge.vue'
@@ -42,7 +49,9 @@ type RpcRelatedDocumentAsObject = {
   [K in keyof RpcRelatedDocument]: RpcRelatedDocument[K]
 }
 
-const relatedDocuments = defineModel<RpcRelatedDocumentAsObject[]>({ default: [] as RpcRelatedDocumentAsObject[] })
+const relatedDocuments = defineModel<RpcRelatedDocumentAsObject[]>({
+  default: [] as RpcRelatedDocumentAsObject[]
+})
 
 const columns: Column[] = [
   {
@@ -57,12 +66,16 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (name: any) => {
-      const doc = relatedDocuments.value?.find(d => d.targetDraftName === name)
+      const doc = relatedDocuments.value?.find((d) => d.targetDraftName === name)
       if (doc?.relationship === 'refqueue') {
-        return h(Anchor, {
-          href: `/docs/${name}`,
-          class: 'inline-flex items-center gap-1 text-blue-600'
-        }, name)
+        return h(
+          Anchor,
+          {
+            href: `/docs/${name}`,
+            class: 'inline-flex items-center gap-1 text-blue-600'
+          },
+          name
+        )
       }
       return name ?? '—'
     }
@@ -97,7 +110,7 @@ const columns: Column[] = [
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium',
     format: (row: any) => {
-    const info = relatedDocsInfo.value?.[row] || {}
+      const info = relatedDocsInfo.value?.[row] || {}
       const pending = info.pending_activities
       if (!pending || !Array.isArray(pending) || pending.length === 0) return '—'
       const nodes: (string | VNode)[] = []
@@ -118,7 +131,7 @@ const columns: Column[] = [
       return info.not_received_count || 0
     }
   },
-    {
+  {
     key: 'refqueueCount',
     label: 'refqueue #',
     field: 'targetDraftName' satisfies keyof RpcRelatedDocument,
@@ -136,11 +149,15 @@ const columns: Column[] = [
     sortable: false,
     format: (id: RpcRelatedDocument['id'] | unknown) => {
       if (typeof id !== 'number') return '—'
-      return h('button', {
-        type: 'button',
-        class: 'text-red-500 hover:text-red-700 border-none bg-transparent p-0.5',
-        onClick: () => handleDeleteDependency(id)
-      }, [h(Icon, { name: 'uil:trash' })])
+      return h(
+        'button',
+        {
+          type: 'button',
+          class: 'text-red-500 hover:text-red-700 border-none bg-transparent p-0.5',
+          onClick: () => handleDeleteDependency(id)
+        },
+        [h(Icon, { name: 'uil:trash' })]
+      )
     }
   }
 ]
@@ -149,8 +166,8 @@ const isOpenDependencyModal = ref(false)
 
 type Props = {
   draftName: string
-  id: number,
-  people?: RpcPerson[],
+  id: number
+  people?: RpcPerson[]
 }
 
 const clusterNumber = defineModel<number | undefined>('clusterNumber')
@@ -177,7 +194,7 @@ watch(
 )
 
 const { data: fetchedPeople } = await useAsyncData(
-  async () => (props.people === undefined) ? await api.rpcPersonList() : [],
+  async () => (props.people === undefined ? await api.rpcPersonList() : []),
   { server: false, lazy: true, default: () => [] }
 )
 
@@ -188,8 +205,8 @@ watch(
   async (docs) => {
     if (!docs) return
     const names = docs
-      .filter(doc => doc.relationship !== 'not-received')
-      .map(doc => doc.targetDraftName)
+      .filter((doc) => doc.relationship !== 'not-received')
+      .map((doc) => doc.targetDraftName)
       .filter(Boolean)
     const uniqueNames = Array.from(new Set(names))
     for (const name of uniqueNames) {
@@ -199,8 +216,8 @@ watch(
           api.documentsRetrieve({ draftName: name }),
           api.documentsReferencesList({ draftName: name })
         ])
-        const refqueueCount = relDocs.filter(doc => doc.relationship === 'refqueue').length
-        const notReceivedCount = relDocs.filter(doc => doc.relationship === 'not-received').length
+        const refqueueCount = relDocs.filter((doc) => doc.relationship === 'refqueue').length
+        const notReceivedCount = relDocs.filter((doc) => doc.relationship === 'not-received').length
         relatedDocsInfo.value[name] = {
           assignment_set: info.assignmentSet,
           pending_activities: info.pendingActivities,
@@ -222,7 +239,7 @@ const handleDeleteDependency = async (id: number) => {
       draftName: props.draftName,
       id
     })
-    relatedDocuments.value = relatedDocuments.value.filter(doc => doc.id !== id)
+    relatedDocuments.value = relatedDocuments.value.filter((doc) => doc.id !== id)
     snackbar.add({ type: 'success', title: 'Dependency removed', text: '' })
   } catch (e) {
     snackbarForErrors({ snackbar, error: e, defaultTitle: 'Failed to delete dependency' })

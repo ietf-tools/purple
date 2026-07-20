@@ -12,7 +12,11 @@ export const useSaveStatusErrorRef = () => ref<SaveStatusError>(undefined)
  * Optional helper function to handle updating save status refs.
  * Expects async function that will complete, or throw for errors.
  */
-export const wrapSaveUpdateFn = async (fn: () => Promise<unknown>, saveStatusRef: Ref<SaveStatus>, saveStatusErrorRef: Ref<SaveStatusError>) => {
+export const wrapSaveUpdateFn = async (
+  fn: () => Promise<unknown>,
+  saveStatusRef: Ref<SaveStatus>,
+  saveStatusErrorRef: Ref<SaveStatusError>
+) => {
   saveStatusRef.value = 'pending'
   try {
     await fn()

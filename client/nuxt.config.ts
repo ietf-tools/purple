@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     'nuxt-snackbar',
     'nuxt-svgo',
     'nuxt-security',
-    'reka-ui/nuxt',
+    'reka-ui/nuxt'
   ],
   robots: {
     credits: false,
@@ -38,7 +38,8 @@ export default defineNuxtConfig({
     public: {
       cspScriptSrcHashes: '', // comma-separated list
       datatrackerBase: 'https://datatracker.ietf.org', // NUXT_PUBLIC_DATATRACKER_BASE
-      queueBase: 'https://queue.rfc-editor.org' // NUXT_PUBLIC_QUEUE_BASE
+      queueBase: 'https://queue.rfc-editor.org', // NUXT_PUBLIC_QUEUE_BASE
+      workingHoursPerYear: 2000 // NUXT_PUBLIC_WORKING_HOURS_PER_YEAR (queue-stats "Working days")
     }
   },
   security: {
@@ -46,15 +47,8 @@ export default defineNuxtConfig({
     // https://nuxt-security.vercel.app/getting-started/configuration#defaults
     headers: {
       contentSecurityPolicy: {
-        'img-src': [
-          "'self'",
-          'data:',
-          '*.ietf.org'
-        ],
-        'script-src': [
-          "'strict-dynamic'",
-          "'nonce-{{nonce}}'"
-        ]
+        'img-src': ["'self'", 'data:', '*.ietf.org'],
+        'script-src': ["'strict-dynamic'", "'nonce-{{nonce}}'"]
       }
     }
   },
@@ -86,16 +80,16 @@ export default defineNuxtConfig({
         '@vue/devtools-kit',
         '@tanstack/vue-table',
         'canvas-confetti',
-        '@vueuse/core',
+        '@vueuse/core'
         // 'vue3-snackbar'
       ]
     },
     plugins: [
       {
         name: 'vue-docs',
-        transform (_code, id) {
+        transform(_code, id) {
           if (!/vue&type=docs/.test(id)) return
-          return 'export default \'\''
+          return "export default ''"
         }
       }
     ]

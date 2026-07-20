@@ -1,17 +1,36 @@
 <template>
   <div class="flex flex-row items-center">
-    <label class="text-gray-900 w-[160px] text-right text-sm font-bold mr-1" :for="props.id"> {{ props.label }}:</label>
+    <label class="text-gray-900 w-[160px] text-right text-sm font-bold mr-1" :for="props.id">
+      {{ props.label }}:</label
+    >
     <ComboboxRoot v-model="selectedAuthor" class="relative">
       <ComboboxAnchor
-        class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 leading-none gap-[5px] bg-white focus:shadow-[0_0_0_2px] focus:shadow-black outline-none"
-      >
-        <span v-if="selectedAuthor" class="flex flex-row bg-gray-100 text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
+        class="inline-flex items-center justify-between rounded-lg border border-gray-500 px-1 py-1 leading-none gap-[5px] bg-white focus:shadow-[0_0_0_2px] focus:shadow-black outline-none">
+        <span
+          v-if="selectedAuthor"
+          class="flex flex-row bg-gray-100 text-xs rounded-lg px-2 py-0.5 shadow-md border-1 border-gray-500 items-center gap-1 px-1">
           <b>{{ selectedAuthor.name }}</b>
           <span v-if="selectedAuthor.email">{{ ` #${selectedAuthor.email}` }}</span>
-          <button type="button" :disabled="props.disabled" class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none" @click="handleClearSelectedAuthor" :label="`Unselect author ${selectedAuthor.name} ${selectedAuthor.email ?? ''}`">&times;</button>
+          <button
+            type="button"
+            :disabled="props.disabled"
+            class="rounded-lg bg-gray-200 focus:bg-gray-300 hover:bg-gray-300 p-0.5 text-black border-none"
+            @click="handleClearSelectedAuthor"
+            :label="`Unselect author ${selectedAuthor.name} ${selectedAuthor.email ?? ''}`">
+            &times;
+          </button>
         </span>
-        <ComboboxInput v-model="inputRef" :id="props.id" :disabled="props.disabled" class="outline-none text-sm py-1 border-none h-full placeholder-gray-400" :placeholder=" selectedAuthor?.personId ? `Change ${personTerm}...` : `Search ${personTerm}`" />
-        <span class="text-xs text-gray-400 whitespace-nowrap ml-1">up to 20 results — type to narrow</span>
+        <ComboboxInput
+          v-model="inputRef"
+          :id="props.id"
+          :disabled="props.disabled"
+          class="outline-none text-sm py-1 border-none h-full placeholder-gray-400"
+          :placeholder="
+            selectedAuthor?.personId ? `Change ${personTerm}...` : `Search ${personTerm}`
+          " />
+        <span class="text-xs text-gray-400 whitespace-nowrap ml-1"
+          >up to 20 results — type to narrow</span
+        >
       </ComboboxAnchor>
 
       <ComboboxContent
@@ -25,8 +44,7 @@
             v-for="searchResult in searchResults.results"
             :key="searchResult.personId"
             :value="searchResult"
-            class="text-xs leading-none rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black"
-          >
+            class="text-xs leading-none rounded-[3px] flex items-center h-[25px] pr-[35px] pl-[25px] relative select-none data-[highlighted]:outline-none data-[highlighted]:bg-gray-100 data-[highlighted]:text-black">
             <span class="font-bold">
               {{ searchResult.name }}
             </span>
@@ -41,16 +59,16 @@
 </template>
 
 <script setup lang="ts">
-import { refDebounced } from "@vueuse/core"
+import { refDebounced } from '@vueuse/core'
 import {
   ComboboxAnchor,
   ComboboxContent,
   ComboboxInput,
   ComboboxItem,
   ComboboxRoot,
-  ComboboxViewport,
-} from "reka-ui"
-import type { BaseDatatrackerPerson } from "~/purple_client"
+  ComboboxViewport
+} from 'reka-ui'
+import type { BaseDatatrackerPerson } from '~/purple_client'
 import { SPACE } from '../utils/strings'
 
 type Props = {
@@ -60,7 +78,7 @@ type Props = {
   personTerm?: string
 }
 
-const props = withDefaults(defineProps<Props>(), { personTerm: 'author'})
+const props = withDefaults(defineProps<Props>(), { personTerm: 'author' })
 
 const selectedAuthor = defineModel<BaseDatatrackerPerson | undefined>()
 
@@ -80,21 +98,20 @@ const debouncedInputRef = refDebounced(inputRef, 100)
 
 let previousAbortController: AbortController | undefined
 
-watch(
-  debouncedInputRef,
-  async () => {
-    if (previousAbortController) {
-      // abort any fetches in flight to prevent race conditions
-      previousAbortController.abort();
-    }
+watch(debouncedInputRef, async () => {
+  if (previousAbortController) {
+    // abort any fetches in flight to prevent race conditions
+    previousAbortController.abort()
+  }
 
-    previousAbortController = new AbortController();
+  previousAbortController = new AbortController()
 
-    searchResults.value = await api.searchDatatrackerpersons({
+  searchResults.value = await api.searchDatatrackerpersons(
+    {
       search: debouncedInputRef.value,
-      limit: 20,
+      limit: 20
     },
-      { signal: previousAbortController.signal }
-    )
-  })
+    { signal: previousAbortController.signal }
+  )
+})
 </script>

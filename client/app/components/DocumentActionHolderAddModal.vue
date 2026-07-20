@@ -1,6 +1,7 @@
 <template>
   <form novalidate class="text-black dark:text-white" @submit.prevent>
-    <div class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div
+      class="flex items-center justify-between border-b border-gray-200 dark:border-gray-700 px-6 py-4">
       <Heading :heading-level="3">Add Action Holder</Heading>
       <BaseButton btnType="outline" @click="closeOverlayModal">
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
@@ -9,43 +10,98 @@
 
     <div class="flex flex-col gap-4 px-6 py-5">
       <div class="flex flex-row items-start">
-        <span class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Holder type:</span>
+        <span
+          class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1"
+          >Holder type:</span
+        >
         <div class="flex flex-col gap-2 flex-1">
-          <div class="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-sm self-start">
-            <button type="button"
-              :class="['px-4 py-1 transition-colors', mode === 'person' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+          <div
+            class="flex rounded-md border border-gray-300 dark:border-gray-600 overflow-hidden text-sm self-start">
+            <button
+              type="button"
+              :class="[
+                'px-4 py-1 transition-colors',
+                mode === 'person'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700'
+              ]"
               :disabled="isSuccess"
-              @click="mode = 'person'">Person</button>
-            <button type="button"
-              :class="['px-4 py-1 border-l border-gray-300 dark:border-gray-600 transition-colors', mode === 'body' ? 'bg-indigo-600 text-white' : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700']"
+              @click="mode = 'person'">
+              Person
+            </button>
+            <button
+              type="button"
+              :class="[
+                'px-4 py-1 border-l border-gray-300 dark:border-gray-600 transition-colors',
+                mode === 'body'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-white dark:bg-neutral-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-neutral-700'
+              ]"
               :disabled="isSuccess"
-              @click="mode = 'body'">Organization/Body</button>
+              @click="mode = 'body'">
+              Organization/Body
+            </button>
           </div>
           <p class="text-xs text-gray-500 dark:text-neutral-400">
-            <template v-if="mode === 'person'">Use when the action is attributed to a specific individual.</template>
-            <template v-else>Use when the action is attributed to a organization or body, not a single person.</template>
+            <template v-if="mode === 'person'"
+              >Use when the action is attributed to a specific individual.</template
+            >
+            <template v-else
+              >Use when the action is attributed to a organization or body, not a single
+              person.</template
+            >
           </p>
-          <input v-if="mode === 'body'" v-model="body" id="body" type="text" maxlength="64" :disabled="isSuccess"
+          <input
+            v-if="mode === 'body'"
+            v-model="body"
+            id="body"
+            type="text"
+            maxlength="64"
+            :disabled="isSuccess"
             class="w-full text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white disabled:opacity-50"
             placeholder="e.g. 'IANA'" />
         </div>
       </div>
 
-      <DialogFieldPickAuthor v-if="mode === 'person'" v-model="person" id="person" label="Person" :disabled="isSuccess"
+      <DialogFieldPickAuthor
+        v-if="mode === 'person'"
+        v-model="person"
+        id="person"
+        label="Person"
+        :disabled="isSuccess"
         person-term="action holder" />
 
-      <DialogFieldDate v-model="deadlineDateString" id="deadline" label="Deadline" :disabled="isSuccess" />
+      <DialogFieldDate
+        v-model="deadlineDateString"
+        id="deadline"
+        label="Deadline"
+        :disabled="isSuccess" />
 
       <div class="flex flex-row items-start">
-        <label for="comment" class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1">Comment:</label>
-        <textarea v-model="comment" id="comment" rows="3" :disabled="isSuccess"
+        <label
+          for="comment"
+          class="text-gray-900 dark:text-gray-200 w-[160px] text-right text-sm font-bold mr-3 pt-1"
+          >Comment:</label
+        >
+        <textarea
+          v-model="comment"
+          id="comment"
+          rows="3"
+          :disabled="isSuccess"
           class="flex-1 text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 dark:text-white resize-y disabled:opacity-50"
           placeholder="Optional comment" />
       </div>
     </div>
 
-    <div class="flex flex-row items-center justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl gap-3">
-      <b v-if="isSuccess" class="text-green-700 dark:text-green-400 font-bold" aria-atomic aria-live="polite">Action Holder Added</b>
+    <div
+      class="flex flex-row items-center justify-end px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl gap-3">
+      <b
+        v-if="isSuccess"
+        class="text-green-700 dark:text-green-400 font-bold"
+        aria-atomic
+        aria-live="polite"
+        >Action Holder Added</b
+      >
       <BaseButton btn-type="default" @click="add" :hidden="isSuccess">Add Action Holder</BaseButton>
     </div>
   </form>
@@ -105,8 +161,8 @@ const add = async () => {
         ...(personId !== undefined && { personId }),
         deadline,
         comment: comment.value,
-        body: mode.value === 'body' ? body.value : '',
-      },
+        body: mode.value === 'body' ? body.value : ''
+      }
     })
     isSuccess.value = true
     snackbar.add({ type: 'success', title: 'Action holder added', text: '' })

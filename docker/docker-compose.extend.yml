@@ -1,13 +1,13 @@
 services:
-    app:
-        ports:
-            - 'CUSTOM_PORT:8088'
-        volumes:
-            - .:/workspace
-            - /workspace/__pycache__
-    db:
-        ports:
-            - '5432'
-    pgadmin:
-        ports:
-            - '5433'
+  app:
+    ports:
+      - "CUSTOM_PORT:8088"
+    volumes:
+      - .:/workspace
+      - /workspace/__pycache__
+  db:
+    ports:
+      - "5432"
+  pgadmin:
+    ports:
+      - "5433"
