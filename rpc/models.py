@@ -78,6 +78,7 @@ class RpcPerson(models.Model):
         related_name="managed_people",
     )
     is_active = models.BooleanField(default=True)
+    history = HistoricalRecords(m2m_fields=[can_hold_role, capable_of])
 
     def __str__(self):
         return str(self.datatracker_person)
@@ -1000,6 +1001,7 @@ class ActionHolder(models.Model):
     completed = models.DateTimeField(null=True, blank=True)
     deadline = models.DateTimeField(null=True, blank=True)
     comment = models.TextField(blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         constraints = [
@@ -1199,6 +1201,7 @@ class RpcAuthorComment(models.Model):
         related_name="rpcauthorcomments_by",
     )
     time = models.DateTimeField(default=timezone.now)
+    history = HistoricalRecords()
 
     def __str__(self):
         return "RpcAuthorComment about {} by {} on {}".format(

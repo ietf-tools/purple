@@ -1275,6 +1275,26 @@ def collect_rfctobe_history(rfc_to_be: RfcToBe) -> list[HistoryRecord]:
         )
     )
 
+    def _action_holder_prefix(h):
+        try:
+            name = DatatrackerPerson.objects.get(pk=h.datatracker_person_id).plain_name
+        except DatatrackerPerson.DoesNotExist:
+            name = f"#{h.datatracker_person_id}"
+        return f"Action holder ({name})"
+
+    # An ActionHolder targets the RfcToBe directly, or (before an RfcToBe exists)
+    # the underlying draft Document; include both for a complete timeline.
+    action_holder_filter = Q(target_rfctobe=rfc_to_be.pk)
+    if rfc_to_be.draft_id:
+        action_holder_filter |= Q(target_document=rfc_to_be.draft_id)
+    records.extend(
+        _related_history(
+            ActionHolder.history.filter(action_holder_filter),
+            _action_holder_prefix,
+            model="action_holder",
+        )
+    )
+
     return sorted(records, key=lambda r: r.date, reverse=True)
 
 

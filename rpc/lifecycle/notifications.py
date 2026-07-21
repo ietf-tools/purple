@@ -10,6 +10,7 @@ from django.utils import timezone
 from datatracker.models import DatatrackerPerson
 from datatracker.rpcapi import with_rpcapi
 from rpc.models import (
+    ActionHolder,
     AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
@@ -125,6 +126,27 @@ def get_updated_rfcs_since(current_check_time):
         .exclude(rfc_to_be=None)
         .values_list("rfc_to_be", flat=True)
     )
+    action_holder_history = ActionHolder.history.filter(
+        history_date__gt=current_check_time
+    )
+    candidate_ids.update(
+        action_holder_history.exclude(target_rfctobe=None).values_list(
+            "target_rfctobe", flat=True
+        )
+    )
+    # ActionHolders can target the draft Document (before an RfcToBe exists); map
+    # those back to RfcToBes via the draft, mirroring the ClusterMember handling.
+    action_holder_doc_ids = set(
+        action_holder_history.exclude(target_document=None).values_list(
+            "target_document", flat=True
+        )
+    )
+    if action_holder_doc_ids:
+        candidate_ids.update(
+            RfcToBe.objects.filter(draft__in=action_holder_doc_ids).values_list(
+                "id", flat=True
+            )
+        )
 
     return RfcToBe.objects.filter(pk__in=candidate_ids)
 
