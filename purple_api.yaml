@@ -5188,11 +5188,6 @@ components:
           type: string
           minLength: 1
           description: Current stream
-        publication_stream:
-          type: string
-          minLength: 1
-          nullable: true
-          description: Stream at publication (blank until published)
         authors:
           type: array
           items:
@@ -6017,10 +6012,6 @@ components:
         stream:
           type: string
           description: Current stream
-        publication_stream:
-          type: string
-          nullable: true
-          description: Stream at publication (blank until published)
         authors:
           type: array
           items:
@@ -6198,11 +6189,6 @@ components:
           type: string
           minLength: 1
           description: Current stream
-        publication_stream:
-          type: string
-          minLength: 1
-          nullable: true
-          description: Stream at publication (blank until published)
         authors:
           type: array
           items:

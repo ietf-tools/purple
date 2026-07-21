@@ -271,14 +271,6 @@ class RfcToBe(models.Model):
         related_name="+",
         help_text="Current stream",
     )
-    publication_stream = models.ForeignKey(
-        "StreamName",
-        on_delete=models.PROTECT,
-        blank=True,
-        null=True,
-        related_name="+",
-        help_text="Stream at publication (blank until published)",
-    )
 
     shepherd = models.ForeignKey(
         "datatracker.DatatrackerPerson",
