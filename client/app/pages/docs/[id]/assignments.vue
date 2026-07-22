@@ -98,7 +98,7 @@ import { useAsyncData } from '#app'
 import { snackbarForErrors } from '~/utils/snackbar'
 import { type DocTabId } from '~/utils/doc'
 import { teamMemberLink } from '~/utils/url'
-import type { Assignment } from '~/purple_client'
+import type { Assignment, RpcPerson } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { ManualHoldModal } from '#components'
 import { sortAssignmentsByRole } from '~/utils/sort'
@@ -255,9 +255,10 @@ watch(
   { deep: true }
 )
 
-const { data: people } = await useAsyncData(() => api.rpcPersonList(), {
+const { data: people } = await useAsyncData('rpc-people', () => api.rpcPersonList(), {
   server: false,
-  lazy: true
+  lazy: true,
+  default: () => [] as RpcPerson[]
 })
 
 useHeadSafe({ title: draftName.value })

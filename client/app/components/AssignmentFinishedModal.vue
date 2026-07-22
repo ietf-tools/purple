@@ -7,9 +7,17 @@
           {{ props.rfcToBe.name }}
         </span>
       </h1>
-      <BaseButton btnType="cancel" class="m-2 flex items-center" @click="closeOverlayModal">
-        <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
-      </BaseButton>
+      <div class="m-2 flex items-center gap-2">
+        <BaseButton btnType="default" class="flex items-center" @click="openAddAssignmentModal">
+          <span>Add assignment</span>
+          <span v-if="isLoadingAdd" class="w-3">
+            <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
+          </span>
+        </BaseButton>
+        <BaseButton btnType="cancel" class="flex items-center" @click="closeOverlayModal">
+          <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
+        </BaseButton>
+      </div>
     </div>
     <div class="flex-1 overflow-y-scroll px-4 pt-4 pb-7">
       <ul class="flex flex-col gap-4">
@@ -36,11 +44,12 @@
 </template>
 
 <script setup lang="ts">
-import { BaseButton } from '#components'
-import type { Assignment, RpcPerson } from '~/purple_client'
+import { BaseButton, AssignmentModal } from '#components'
+import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { groupBy } from 'es-toolkit/array'
 import { assignmentRoleOrder } from '~/utils/sort'
+import { calculatePeopleWorkload, type AssignmentMessageProps } from '~/utils/queue'
 
 type Props = {
   rfcToBe: CookedDraft
@@ -49,6 +58,8 @@ type Props = {
   onSuccess: () => void
 }
 const props = defineProps<Props>()
+
+const api = useApi()
 
 const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
 
@@ -72,5 +83,59 @@ if (!overlayModalKeyInjection) {
   throw Error('Expected injection of overlayModalKey')
 }
 
-const { closeOverlayModal } = overlayModalKeyInjection
+const { openOverlayModal, closeOverlayModal } = overlayModalKeyInjection
+
+// "Add assignment" — folds the standalone add-assignment flow into this modal.
+// Loads the data the add picker needs, then opens AssignmentModal in 'add' mode
+// (which replaces this modal in the single overlay slot).
+const isLoadingAdd = ref(false)
+
+const roleOrderIndex = (slug: string) =>
+  assignmentRoleOrder.indexOf(slug as (typeof assignmentRoleOrder)[number])
+
+const openAddAssignmentModal = async () => {
+  const rfcToBeId = props.rfcToBe.id
+  if (rfcToBeId === undefined) return
+
+  isLoadingAdd.value = true
+  try {
+    const [roles, clusters, queueItems] = await Promise.all([
+      api.rpcRolesList(),
+      api.clustersList(),
+      api.queueList()
+    ])
+
+    // Only assignment-pipeline roles are selectable (excludes `manager` and the
+    // synthetic `blocked`), ordered by the canonical pipeline order.
+    const roleOptions = roles
+      .filter((r) => (assignmentRoleOrder as readonly string[]).includes(r.slug))
+      .sort((a, b) => roleOrderIndex(a.slug) - roleOrderIndex(b.slug))
+
+    // Default to the draft's next pending activity (earliest in pipeline order),
+    // falling back to the first selectable role.
+    const pending = [...(props.rfcToBe.pendingActivities ?? [])].sort(
+      (a, b) => roleOrderIndex(a.slug) - roleOrderIndex(b.slug)
+    )
+    const defaultRole = pending[0]?.slug ?? roleOptions[0]?.slug ?? ''
+
+    const peopleWorkload = calculatePeopleWorkload(clusters, queueItems)
+
+    openOverlayModal({
+      component: AssignmentModal,
+      componentProps: {
+        message: { type: 'add', rfcToBeId } satisfies AssignmentMessageProps,
+        people: props.people,
+        peopleWorkload,
+        clusters,
+        roles: roleOptions,
+        defaultRole,
+        onSuccess: props.onSuccess
+      }
+    }).catch(() => {})
+  } catch (e) {
+    console.error(e)
+  } finally {
+    isLoadingAdd.value = false
+  }
+}
 </script>
