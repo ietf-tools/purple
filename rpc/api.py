@@ -2645,6 +2645,9 @@ class RfcMailTemplatesList(views.APIView):
             for author in rfc_to_be.authors.select_related("datatracker_person").all()
             if author.datatracker_person is not None
         ]
+        additional_emails = list(
+            rfc_to_be.additionalemail_set.values_list("email", flat=True)
+        )
 
         interested_parties = {"rfc-editor@rfc-editor.org"}
         if rfc_to_be.shepherd is not None:
@@ -2709,6 +2712,10 @@ class RfcMailTemplatesList(views.APIView):
                 "cc": list(publication_cc),
             },
         }
+
+        # Every template also sends to the document's additional emails.
+        for override in template_overrides.values():
+            override["to"] = list(dict.fromkeys([*override["to"], *additional_emails]))
 
         serializer = MailTemplateSerializer(
             [
