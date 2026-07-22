@@ -22,8 +22,8 @@ on:
           - Staging + Demo
           - Staging + Prod
       deployStrategy:
-        description: 'Deploy Strategy'
-        default: 'Recreate'
+        description: "Deploy Strategy"
+        default: "Recreate"
         required: true
         type: choice
         options:
