@@ -17,10 +17,10 @@
         row-key="id" />
       <div
         v-if="clusterNumber"
-        class="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-700 text-xs">
+        class="mt-3 pt-3 -mb-2 sm:-mb-3 border-t border-gray-200 dark:border-neutral-700 text-xs">
         <Anchor
           :href="`/clusters/${clusterNumber}`"
-          class="inline-flex items-center gap-1 text-blue-600">
+          class="inline-flex items-center gap-1 text-blue-600 pl-3">
           <Icon name="pajamas:group" class="h-4 w-4" />see full cluster {{ clusterNumber }}
         </Anchor>
       </div>
