@@ -65,7 +65,7 @@
                   v-if="doc.disposition"
                   :class="dispositionClass(doc.disposition)"
                   class="ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                  >{{ doc.disposition }}</span
+                  >{{ doc.dispositionName ?? doc.disposition }}</span
                 >
               </button>
             </li>
