@@ -15,7 +15,9 @@
         :columns="columns"
         :data="relatedDocuments"
         row-key="id" />
-      <div v-if="clusterNumber" class="mt-3 text-xs">
+      <div
+        v-if="clusterNumber"
+        class="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-700 text-xs">
         <Anchor
           :href="`/clusters/${clusterNumber}`"
           class="inline-flex items-center gap-1 text-blue-600">
