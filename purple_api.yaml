@@ -5486,6 +5486,12 @@ components:
         stream_name:
           type: string
           readOnly: true
+        std_level_name:
+          type: string
+          readOnly: true
+        disposition_name:
+          type: string
+          readOnly: true
         group:
           type: string
           description: Acronym of datatracker group where this document originated,

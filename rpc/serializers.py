@@ -2545,6 +2545,12 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     stream_name = serializers.SlugRelatedField(
         source="stream", slug_field="name", read_only=True
     )
+    std_level_name = serializers.SlugRelatedField(
+        source="std_level", slug_field="name", read_only=True
+    )
+    disposition_name = serializers.SlugRelatedField(
+        source="disposition", slug_field="name", read_only=True
+    )
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):
@@ -2585,6 +2591,8 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "approval_log_message",
             "stream",
             "stream_name",
+            "std_level_name",
+            "disposition_name",
             "group",
             "group_name",
             "std_level",
