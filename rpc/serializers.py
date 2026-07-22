@@ -899,6 +899,29 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="additionalemail_set", many=True, read_only=True
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
+    # Human-readable names for the slug-valued FK fields, for display. The plain
+    # slug fields stay writable for editing.
+    disposition_name = serializers.SlugRelatedField(
+        source="disposition", slug_field="name", read_only=True
+    )
+    stream_name = serializers.SlugRelatedField(
+        source="stream", slug_field="name", read_only=True
+    )
+    publication_stream_name = serializers.SlugRelatedField(
+        source="publication_stream", slug_field="name", read_only=True
+    )
+    std_level_name = serializers.SlugRelatedField(
+        source="std_level", slug_field="name", read_only=True
+    )
+    publication_std_level_name = serializers.SlugRelatedField(
+        source="publication_std_level", slug_field="name", read_only=True
+    )
+    boilerplate_name = serializers.SlugRelatedField(
+        source="boilerplate", slug_field="name", read_only=True
+    )
+    submitted_format_name = serializers.SlugRelatedField(
+        source="submitted_format", slug_field="name", read_only=True
+    )
     pub_owner = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.CharField(allow_null=True))
@@ -925,18 +948,25 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "group",
             "draft",
             "disposition",
+            "disposition_name",
             "external_deadline",
             "internal_goal",
             "labels",
             "cluster",
             "submitted_format",
+            "submitted_format_name",
             "pages",
             "keywords",
             "boilerplate",
+            "boilerplate_name",
             "std_level",
+            "std_level_name",
             "publication_std_level",
+            "publication_std_level_name",
             "stream",
+            "stream_name",
             "publication_stream",
+            "publication_stream_name",
             "authors",
             "shepherd",
             "shepherd_id",
@@ -2510,6 +2540,9 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     references = serializers.SerializerMethodField()
     group_name = serializers.SerializerMethodField()
     rev = serializers.CharField(source="draft.rev", read_only=True, allow_null=True)
+    stream_name = serializers.SlugRelatedField(
+        source="stream", slug_field="name", read_only=True
+    )
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):
@@ -2549,6 +2582,7 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "authors",
             "approval_log_message",
             "stream",
+            "stream_name",
             "group",
             "group_name",
             "std_level",
