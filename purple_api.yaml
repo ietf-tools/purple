@@ -5483,6 +5483,9 @@ components:
         stream:
           type: string
           description: Current stream
+        stream_name:
+          type: string
+          readOnly: true
         group:
           type: string
           description: Acronym of datatracker group where this document originated,
@@ -5976,6 +5979,9 @@ components:
           readOnly: true
         disposition:
           type: string
+        disposition_name:
+          type: string
+          readOnly: true
         external_deadline:
           type: string
           format: date-time
@@ -5994,6 +6000,9 @@ components:
           readOnly: true
         submitted_format:
           type: string
+        submitted_format_name:
+          type: string
+          readOnly: true
         pages:
           type: integer
           maximum: 2147483647
@@ -6007,20 +6016,35 @@ components:
         boilerplate:
           type: string
           description: TLP IPR boilerplate option
+        boilerplate_name:
+          type: string
+          readOnly: true
         std_level:
           type: string
           description: Current StdLevel
+        std_level_name:
+          type: string
+          readOnly: true
         publication_std_level:
           type: string
           nullable: true
           description: StdLevel at publication (blank until published)
+        publication_std_level_name:
+          type: string
+          readOnly: true
         stream:
           type: string
           description: Current stream
+        stream_name:
+          type: string
+          readOnly: true
         publication_stream:
           type: string
           nullable: true
           description: Stream at publication (blank until published)
+        publication_stream_name:
+          type: string
+          readOnly: true
         authors:
           type: array
           items:
