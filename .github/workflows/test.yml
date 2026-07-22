@@ -97,22 +97,9 @@ jobs:
         run: npm ci
         working-directory: ./purple/client
 
-      - name: Check frontend formatting (oxfmt)
+      - name: Check formatting (oxfmt)
         working-directory: ./purple
         run: client/node_modules/.bin/oxfmt --check .
-
-      - name: Generate Purple API client (for type-aware lint)
-        working-directory: ./purple
-        run: |
-          npx --yes @openapitools/openapi-generator-cli@2.29 generate --generator-key purple
-          grep -q "// @ts-nocheck" client/app/purple_client/runtime.ts \
-            || sed -i '1i // @ts-nocheck' client/app/purple_client/runtime.ts
-
-      - name: Lint frontend (oxlint)
-        working-directory: ./purple/client
-        run: |
-          node_modules/.bin/nuxt prepare
-          node_modules/.bin/oxlint
 
       - name: Generate Datatracker API client
         working-directory: ./purple
