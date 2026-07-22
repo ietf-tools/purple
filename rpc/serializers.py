@@ -915,8 +915,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="additionalemail_set", many=True, read_only=True
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
-    # Human-readable names for the slug-valued FK fields, for display. The plain
-    # slug fields stay writable for editing.
     disposition_name = serializers.SlugRelatedField(
         source="disposition", slug_field="name", read_only=True
     )
@@ -1423,12 +1421,16 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     target_disposition = serializers.SerializerMethodField()
     target_is_received = serializers.SerializerMethodField()
     target_is_blocked = serializers.SerializerMethodField()
+    relationship_name = serializers.SlugRelatedField(
+        source="relationship", slug_field="name", read_only=True
+    )
 
     class Meta:
         model = RpcRelatedDocument
         fields = [
             "id",
             "relationship",
+            "relationship_name",
             "draft_name",
             "target_draft_name",
             "target_rfc_number",
