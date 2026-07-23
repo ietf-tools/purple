@@ -1200,6 +1200,7 @@ class Label(models.Model):
         choices=zip(TAILWIND_COLORS, TAILWIND_COLORS, strict=False),
     )
     used = models.BooleanField(default=True)
+    is_public = models.BooleanField(default=False)
     history = HistoricalRecords()
 
     def __str__(self):

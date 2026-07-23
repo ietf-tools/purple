@@ -483,6 +483,7 @@ class LabelSerializer(serializers.ModelSerializer):
             "is_complexity",
             "color",
             "used",
+            "is_public",
         ]
 
 
@@ -2601,6 +2602,13 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     disposition_name = serializers.SlugRelatedField(
         source="disposition", slug_field="name", read_only=True
     )
+    # only expose labels flagged public.
+    labels = serializers.SerializerMethodField()
+
+    @extend_schema_field(LabelSerializer(many=True))
+    def get_labels(self, obj):
+        public = [label for label in obj.labels.all() if label.is_public]
+        return LabelSerializer(public, many=True).data
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):

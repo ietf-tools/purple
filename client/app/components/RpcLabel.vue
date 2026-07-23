@@ -1,6 +1,8 @@
 <template>
   <BaseBadge :color="label?.color">
-    <Icon v-if="label?.isException" class="mr-2" name="pajamas:warning" />
+    <Icon v-if="label?.isException" class="mr-1" name="pajamas:warning" title="Exception" />
+    <Icon v-if="label?.isComplexity" class="mr-1" name="uil:layer-group" title="Complexity" />
+    <Icon v-if="label?.isPublic" class="mr-1" name="uil:globe" title="Public" />
     {{ label?.slug }}
   </BaseBadge>
 </template>
