@@ -936,7 +936,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "std_level",
             "publication_std_level",
             "stream",
-            "publication_stream",
             "authors",
             "shepherd",
             "shepherd_id",

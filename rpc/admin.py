@@ -63,7 +63,6 @@ class RfcToBeAdmin(SimpleHistoryAdmin, admin.ModelAdmin):
         "std_level",
         "publication_std_level",
         "stream",
-        "publication_stream",
     ]
     search_fields = ["draft__name", "rfc_number", "title", "group", "keywords"]
 

@@ -859,8 +859,9 @@ def queue_published_rollup(
 ) -> dict:
     """Per-period counts of RFCs published, grouped by stream and status.
 
-    "Stream" and "status" are the values *at publication* (``publication_stream``
-    / ``publication_std_level``, falling back to the current fields when blank).
+    "Stream" is the document's current ``stream``; "status" is the value *at
+    publication* (``publication_std_level``, falling back to ``std_level`` when
+    blank).
     Std levels fold into named buckets (Standards Track = ps/std/ds, etc.); any
     other slug is "Unknown". Only the IETF/ISE/IRTF/IAB/Editorial streams are
     counted, and the IETF stream is split into ``ietf-wg`` / ``ietf-ad`` (no
@@ -877,7 +878,6 @@ def queue_published_rollup(
 
     docs = RfcToBe.objects.filter(published_at__gte=earliest).values_list(
         "published_at",
-        "publication_stream_id",
         "stream_id",
         "publication_std_level_id",
         "std_level_id",
@@ -886,8 +886,7 @@ def queue_published_rollup(
     # per-period {(stream, status): count}
     per_counts: list[dict[tuple[str, str], int]] = [{} for _ in windows]
     bounds = [(w["start"], min(w["end"], now)) for w in windows]
-    for pub, pub_stream, stream, pub_level, level, group in docs:
-        stream = pub_stream or stream
+    for pub, stream, pub_level, level, group in docs:
         if stream == "ietf":
             stream = "ietf-wg" if (group or "").strip() else "ietf-ad"
         if stream not in PUBLISHED_STREAM_LABELS:
