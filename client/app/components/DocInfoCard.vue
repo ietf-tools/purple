@@ -214,7 +214,7 @@
               :ui-mode="{
                 type: 'select',
                 options: loadBoilerplates,
-                initialValue: rfcToBe.submittedFormat
+                initialValue: rfcToBe.boilerplate
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
