@@ -4631,6 +4631,8 @@ components:
           $ref: "#/components/schemas/ColorEnum"
         used:
           type: boolean
+        is_public:
+          type: boolean
       required:
         - slug
     LabelRequest:
@@ -4647,6 +4649,8 @@ components:
         color:
           $ref: "#/components/schemas/ColorEnum"
         used:
+          type: boolean
+        is_public:
           type: boolean
       required:
         - slug
@@ -5110,6 +5114,8 @@ components:
         color:
           $ref: "#/components/schemas/ColorEnum"
         used:
+          type: boolean
+        is_public:
           type: boolean
     PatchedRfcAuthorRequest:
       type: object
