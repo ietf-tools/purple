@@ -20,6 +20,7 @@ from simple_history.utils import update_change_reason
 from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
+from rpc.lifecycle.activities import pending_activities
 from rpc.lifecycle.metadata import MetadataComparator
 from rpc.stats.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
 from rpc.stats.timeline import KIND_CHOICES
@@ -688,7 +689,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     actionholder_set = ActionHolderSerializer(
         source="active_actionholders", many=True, read_only=True
     )
-    pending_activities = RpcRoleSerializer(many=True, read_only=True)
+    pending_activities = serializers.SerializerMethodField()
     enqueued_at = serializers.SerializerMethodField()
     final_review_started_at = serializers.DateTimeField(read_only=True, allow_null=True)
     final_approval = FinalApprovalSerializer(
@@ -720,6 +721,21 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "iana_status",
             "blocking_reasons",
         ]
+
+    @extend_schema_field(RpcRoleSerializer(many=True))
+    def get_pending_activities(self, obj):
+        """Serialize the RpcRoles with pending activities for this RfcToBe
+
+        Batches the RpcRole lookup across the whole queue instead of querying
+        per item (the serializer instance is shared when many=True).
+        """
+        roles = getattr(self, "_rpc_roles", None)
+        if roles is None:
+            roles = self._rpc_roles = list(RpcRole.objects.all())
+        pending_slugs = {activity.role_slug for activity in pending_activities(obj)}
+        return RpcRoleSerializer(
+            [role for role in roles if role.slug in pending_slugs], many=True
+        ).data
 
     @extend_schema_field(serializers.DateField())
     def get_enqueued_at(self, obj):

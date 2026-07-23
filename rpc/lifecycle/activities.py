@@ -70,14 +70,21 @@ def pending_activities(rfctobe):
     created.
     """
     role_map = {ca.role_slug: ca for ca in ACTIVITIES}
-    # Get map from role slug to state
-    state_map = dict(
-        rfctobe.assignment_set.filter(role__slug__in=role_map)
-        .exclude(
-            state__in=[Assignment.State.WITHDRAWN, Assignment.State.CLOSED_FOR_HOLD]
+    # Get map from role slug to state. Use assignments prefetched by
+    # RfcToBeQuerySet.with_activity_assignments() if present to avoid a
+    # per-instance query. (Assignment.role_id is the RpcRole slug and the
+    # prefetch already excludes withdrawn / closed-for-hold assignments.)
+    prefetched = getattr(rfctobe, "activity_assignments", None)
+    if prefetched is not None:
+        state_map = {a.role_id: a.state for a in prefetched if a.role_id in role_map}
+    else:
+        state_map = dict(
+            rfctobe.assignment_set.filter(role__slug__in=role_map)
+            .exclude(
+                state__in=[Assignment.State.WITHDRAWN, Assignment.State.CLOSED_FOR_HOLD]
+            )
+            .values_list("role__slug", "state")
         )
-        .values_list("role__slug", "state")
-    )
     # need an assignment for any without a non-withdrawn Assignment
     need_assignment = ACTIVITIES - {role_map[slug] for slug in state_map}
     completed = {
