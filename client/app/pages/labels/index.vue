@@ -15,6 +15,23 @@
         </button>
       </div>
     </div>
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <span class="text-sm text-gray-500 dark:text-neutral-400">Filter:</span>
+      <button
+        v-for="t in filterToggles"
+        :key="t.key"
+        type="button"
+        :aria-pressed="filters[t.key]"
+        :class="[
+          'inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-sm transition-colors',
+          filters[t.key]
+            ? 'bg-violet-100 border-violet-400 text-violet-900 dark:bg-violet-900/30 dark:border-violet-500 dark:text-violet-200'
+            : 'border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700'
+        ]"
+        @click="filters[t.key] = !filters[t.key]">
+        <Icon :name="t.icon" />{{ t.label }}
+      </button>
+    </div>
     <ErrorAlert v-if="labelsError" title="API Error">
       API error while requesting labels: {{ labelsError }}
     </ErrorAlert>
@@ -36,8 +53,28 @@ const snackbar = useSnackbar()
 const sortedLabels = computed(
   () => labels.value?.toSorted((a, b) => a.slug.localeCompare(b.slug, 'en')) ?? []
 )
-const labelsInUse = computed(() => sortedLabels.value.filter((l) => l.used))
-const labelsNotInUse = computed(() => sortedLabels.value.filter((l) => !l.used))
+const filterToggles = [
+  { key: 'isException', label: 'Exception', icon: 'pajamas:warning' },
+  { key: 'isComplexity', label: 'Complexity', icon: 'uil:layer-group' },
+  { key: 'isPublic', label: 'Public', icon: 'uil:globe' }
+] as const
+
+const filters = reactive({ isException: false, isComplexity: false, isPublic: false })
+
+// No toggle active → show all; otherwise show labels matching any active flag.
+const filteredLabels = computed(() => {
+  if (!filters.isException && !filters.isComplexity && !filters.isPublic) {
+    return sortedLabels.value
+  }
+  return sortedLabels.value.filter(
+    (l) =>
+      (filters.isException && l.isException) ||
+      (filters.isComplexity && l.isComplexity) ||
+      (filters.isPublic && l.isPublic)
+  )
+})
+const labelsInUse = computed(() => filteredLabels.value.filter((l) => l.used))
+const labelsNotInUse = computed(() => filteredLabels.value.filter((l) => !l.used))
 
 const {
   data: labels,

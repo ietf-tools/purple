@@ -150,6 +150,23 @@
             <p class="text-gray-500">This label is assignable and actively in use.</p>
           </div>
         </div>
+
+        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+          <label
+            for="is-public"
+            class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            Is Public
+          </label>
+          <div class="mt-2 sm:col-span-2 sm:mt-0">
+            <input
+              id="is-public"
+              v-model="label.isPublic"
+              name="is-public"
+              type="checkbox"
+              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
+            <p class="text-gray-500">This label is exposed on the public queue.</p>
+          </div>
+        </div>
       </div>
     </div>
   </form>
@@ -177,7 +194,8 @@ const NEW_LABEL_DEFAULTS: Label = {
   slug: '',
   isException: false,
   color: 'slate',
-  used: true
+  used: true,
+  isPublic: false
 }
 
 const label = reactive<Label>(props.label ? { ...props.label } : NEW_LABEL_DEFAULTS)
