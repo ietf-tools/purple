@@ -19,7 +19,7 @@
               :on-success="props.refresh">
               <div class="flex items-center gap-2">
                 <BaseBadge
-                  :label="rfcToBe.disposition"
+                  :label="rfcToBe.dispositionName ?? rfcToBe.disposition"
                   :color="dispositionColor(rfcToBe.disposition)" />
                 <template
                   v-if="
@@ -173,10 +173,10 @@
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
               <span class="flex-1">
-                {{ rfcToBe.stream }}
+                {{ rfcToBe.streamName ?? rfcToBe.stream }}
                 <span
                   v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
-                  (published as {{ rfcToBe.publicationStream }})
+                  (published as {{ rfcToBe.publicationStreamName ?? rfcToBe.publicationStream }})
                 </span>
               </span>
             </PatchRfcToBeField>
@@ -202,7 +202,7 @@
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.submittedFormat }}
+              {{ rfcToBe.submittedFormatName ?? rfcToBe.submittedFormat }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -218,7 +218,7 @@
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.boilerplate }}
+              {{ rfcToBe.boilerplateName ?? rfcToBe.boilerplate }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
@@ -234,12 +234,12 @@
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.stdLevel }}
+              {{ rfcToBe.stdLevelName ?? rfcToBe.stdLevel }}
               <span
                 v-if="
                   rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel
                 ">
-                (published as {{ rfcToBe.publicationStdLevel }})
+                (published as {{ rfcToBe.publicationStdLevelName ?? rfcToBe.publicationStdLevel }})
               </span>
               <span
                 v-if="

@@ -53,7 +53,7 @@ const columns: Column[] = [
   {
     key: 'relationship',
     label: 'Relationship',
-    field: 'relationship' satisfies keyof RpcRelatedDocument,
+    field: 'relationshipName' satisfies keyof RpcRelatedDocument,
     classes: 'text-sm font-medium'
   },
   {
