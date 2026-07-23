@@ -10,24 +10,20 @@
           </template>
         </CardHeader>
       </template>
-      <div class="flex items-center gap-2 mb-4">
-        <span class="font-medium">Cluster: </span>
-        <span class="mr-2">
-          <span v-if="clusterNumber">
-            <Anchor
-              :href="`/clusters/${clusterNumber}`"
-              class="inline-flex items-center gap-1 text-blue-600">
-              <Icon name="pajamas:group" class="h-5 w-5" />{{ clusterNumber }}
-            </Anchor>
-          </span>
-          <span v-else>-</span>
-        </span>
-      </div>
       <DocumentTable
         v-if="relatedDocuments"
         :columns="columns"
         :data="relatedDocuments"
         row-key="id" />
+      <div
+        v-if="clusterNumber"
+        class="mt-3 pt-3 -mb-2 sm:-mb-3 border-t border-gray-200 dark:border-neutral-700 text-xs">
+        <Anchor
+          :href="`/clusters/${clusterNumber}`"
+          class="inline-flex items-center gap-1 text-blue-600 pl-3">
+          <Icon name="pajamas:group" class="h-4 w-4" />see full cluster {{ clusterNumber }}
+        </Anchor>
+      </div>
     </BaseCard>
     <DocumentDependenciesAdd
       v-model:is-open-dependency-modal="isOpenDependencyModal"
