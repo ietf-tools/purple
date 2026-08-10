@@ -155,6 +155,38 @@ class RfcToBeQuerySet(models.QuerySet):
             )
         )
 
+    def with_activity_assignments(self):
+        """Prefetch the Assignments used to compute lifecycle activity state
+
+        Populates the `activity_assignments` attribute used by
+        rpc.lifecycle.activities to avoid per-instance queries.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "assignment_set",
+                queryset=Assignment.objects.exclude(
+                    state__in=[
+                        Assignment.State.WITHDRAWN,
+                        Assignment.State.CLOSED_FOR_HOLD,
+                    ]
+                ).order_by("pk"),
+                to_attr="activity_assignments",
+            )
+        )
+
+    def with_cluster(self):
+        """Prefetch the draft's clusters so RfcToBe.cluster avoids a query
+
+        The prefetch queryset is ordered so that cluster_set.first() can be
+        served from the prefetch cache.
+        """
+        return self.prefetch_related(
+            Prefetch(
+                "draft__cluster_set",
+                queryset=Cluster.objects.order_by("pk"),
+            )
+        )
+
     def with_active_actionholders(self):
         return self.prefetch_related(
             Prefetch(
