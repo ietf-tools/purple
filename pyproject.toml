@@ -7,7 +7,7 @@ indent-style = "space" # Use spaces for indentation
 quote-style = "double"
 
 [tool.ruff.lint]
-extend-select = [
+select = [
   "E", # pycodestyle
   "F", # Pyflakes
   "UP", # pyupgrade
@@ -15,7 +15,7 @@ extend-select = [
   "I", # isort
   "RUF100", # unused-noqa
 ]
-extend-ignore = [
+ignore = [
   "F405", # variable may be undefined, or defined from star imports
   "F403", # unable to detect undefined names
 ]
