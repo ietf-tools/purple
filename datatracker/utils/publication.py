@@ -75,7 +75,8 @@ def publish_rfc_metadata(rfctobe, *, rpcapi: rpcapi_client.PurpleApi):
     )
     if rfctobe.draft is not None:
         rfc_pub_req.draft_name = rfctobe.draft.name
-        rfc_pub_req.draft_rev = rfctobe.draft.rev
+        # Publish the current revision, which may have been changed since import
+        rfc_pub_req.draft_rev = rfctobe.rev
     rpcapi.notify_rfc_published(rfc_pub_req)
 
 
