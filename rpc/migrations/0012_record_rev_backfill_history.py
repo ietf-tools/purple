@@ -43,7 +43,5 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(
-            record_rev_backfill_history, migrations.RunPython.noop
-        ),
+        migrations.RunPython(record_rev_backfill_history, migrations.RunPython.noop),
     ]
