@@ -47,7 +47,7 @@
         </div>
 
         <div
-          v-if="rawRfcToBe?.id && rawRfcToBe.disposition !== 'published'"
+          v-if="rawRfcToBe?.id && rawRfcToBe.disposition?.slug !== 'published'"
           class="lg:col-span-full grid place-items-stretch">
           <DocumentDependencies
             v-model="relatedDocuments"

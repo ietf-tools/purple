@@ -150,7 +150,7 @@ type Props = {
   draftName: NonNullable<RfcToBe['name']>
   isReadOnly: boolean
   uiMode: UIMode
-  fieldName: keyof PatchedRfcToBeRequest
+  fieldName?: keyof PatchedRfcToBeRequest
   onSuccess?: () => Promise<void>
 }
 

@@ -63,9 +63,9 @@
                 >
                 <span
                   v-if="doc.disposition"
-                  :class="dispositionClass(doc.disposition)"
+                  :class="dispositionClass(doc.disposition?.slug)"
                   class="ml-auto shrink-0 rounded-full px-2 py-0.5 text-xs font-medium"
-                  >{{ doc.dispositionName ?? doc.disposition }}</span
+                  >{{ doc.disposition?.name ?? doc.disposition?.slug }}</span
                 >
               </button>
             </li>
@@ -296,12 +296,12 @@ const onSearchBlur = () => {
 }
 
 const selectDoc = (doc: NonNullable<DocumentsSearchResponse['results']>[number]) => {
-  navigateTo(`/docs/${doc.disposition === 'withdrawn' ? doc.id : doc.name}`)
+  navigateTo(`/docs/${doc.disposition?.slug === 'withdrawn' ? doc.id : doc.name}`)
   navSearch.value = ''
   showResults.value = false
 }
 
-const dispositionClass = (disposition: string) => {
+const dispositionClass = (disposition: string | undefined) => {
   switch (disposition) {
     case 'created':
       return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300'

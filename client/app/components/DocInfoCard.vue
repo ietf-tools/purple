@@ -8,22 +8,21 @@
         <DescriptionListItem term="Disposition" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField
-              fieldName="disposition"
               :is-read-only="true"
               :ui-mode="{
                 type: 'select',
                 options: dispositionOptions,
-                initialValue: rfcToBe.disposition
+                initialValue: rfcToBe.disposition?.slug
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
               <div class="flex items-center gap-2">
                 <BaseBadge
-                  :label="rfcToBe.dispositionName ?? rfcToBe.disposition"
-                  :color="dispositionColor(rfcToBe.disposition)" />
+                  :label="rfcToBe.disposition?.name ?? rfcToBe.disposition?.slug"
+                  :color="dispositionColor(rfcToBe.disposition?.slug)" />
                 <template
                   v-if="
-                    rfcToBe.disposition === 'in_progress' &&
+                    rfcToBe.disposition?.slug === 'in_progress' &&
                     rfcToBe.blockingReasons?.some((r) => r.resolved == null)
                   ">
                   <BaseBadge label="blocked" color="red" />
@@ -36,7 +35,7 @@
                   </ul>
                 </template>
                 <span
-                  v-if="rfcToBe.disposition === 'published' && rfcToBe.publishedAt"
+                  v-if="rfcToBe.disposition?.slug === 'published' && rfcToBe.publishedAt"
                   class="text-sm text-gray-600">
                   {{ DateTime.fromJSDate(rfcToBe.publishedAt).toLocaleString(DateTime.DATE_FULL) }}
                 </span>
@@ -167,16 +166,24 @@
         <DescriptionListItem term="Stream" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField
-              fieldName="stream"
+              fieldName="streamSlug"
               :is-read-only="false"
-              :ui-mode="{ type: 'select', options: loadStreams, initialValue: rfcToBe.stream }"
+              :ui-mode="{
+                type: 'select',
+                options: loadStreams,
+                initialValue: rfcToBe.stream?.slug
+              }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
               <span class="flex-1">
-                {{ rfcToBe.streamName ?? rfcToBe.stream }}
+                {{ rfcToBe.stream?.name ?? rfcToBe.stream?.slug }}
                 <span
-                  v-if="rfcToBe.publicationStream && rfcToBe.publicationStream !== rfcToBe.stream">
-                  (published as {{ rfcToBe.publicationStreamName ?? rfcToBe.publicationStream }})
+                  v-if="
+                    rfcToBe.publicationStream &&
+                    rfcToBe.publicationStream.slug !== rfcToBe.stream?.slug
+                  ">
+                  (published as
+                  {{ rfcToBe.publicationStream.name ?? rfcToBe.publicationStream.slug }})
                 </span>
               </span>
             </PatchRfcToBeField>
@@ -193,60 +200,62 @@
         <DescriptionListItem term="Submitted Format" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField
-              fieldName="submittedFormat"
+              fieldName="submittedFormatSlug"
               :is-read-only="props.isReadOnly"
               :ui-mode="{
                 type: 'select',
                 options: loadFormats,
-                initialValue: rfcToBe.submittedFormat
+                initialValue: rfcToBe.submittedFormat?.slug
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.submittedFormatName ?? rfcToBe.submittedFormat }}
+              {{ rfcToBe.submittedFormat?.name ?? rfcToBe.submittedFormat?.slug }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Boilerplate" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField
-              fieldName="boilerplate"
+              fieldName="boilerplateSlug"
               :is-read-only="props.isReadOnly"
               :ui-mode="{
                 type: 'select',
                 options: loadBoilerplates,
-                initialValue: rfcToBe.boilerplate
+                initialValue: rfcToBe.boilerplate?.slug
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.boilerplateName ?? rfcToBe.boilerplate }}
+              {{ rfcToBe.boilerplate?.name ?? rfcToBe.boilerplate?.slug }}
             </PatchRfcToBeField>
           </DescriptionListDetails>
         </DescriptionListItem>
         <DescriptionListItem term="Status" :spacing="spacing">
           <DescriptionListDetails>
             <PatchRfcToBeField
-              fieldName="stdLevel"
+              fieldName="stdLevelSlug"
               :is-read-only="false"
               :ui-mode="{
                 type: 'select',
                 options: loadStandardLevels,
-                initialValue: rfcToBe.stdLevel
+                initialValue: rfcToBe.stdLevel?.slug
               }"
               :draft-name="rfcToBe.name ?? ''"
               :on-success="props.refresh">
-              {{ rfcToBe.stdLevelName ?? rfcToBe.stdLevel }}
+              {{ rfcToBe.stdLevel?.name ?? rfcToBe.stdLevel?.slug }}
               <span
                 v-if="
-                  rfcToBe.publicationStdLevel && rfcToBe.publicationStdLevel !== rfcToBe.stdLevel
+                  rfcToBe.publicationStdLevel &&
+                  rfcToBe.publicationStdLevel.slug !== rfcToBe.stdLevel?.slug
                 ">
-                (published as {{ rfcToBe.publicationStdLevelName ?? rfcToBe.publicationStdLevel }})
+                (published as
+                {{ rfcToBe.publicationStdLevel.name ?? rfcToBe.publicationStdLevel.slug }})
               </span>
               <span
                 v-if="
                   rfcToBe.draft?.intendedStdLevel &&
-                  rfcToBe.draft?.intendedStdLevel !== rfcToBe.stdLevel
+                  rfcToBe.draft?.intendedStdLevel.slug !== rfcToBe.stdLevel?.slug
                 ">
-                (draft intended as {{ rfcToBe.draft?.intendedStdLevel }})
+                (draft intended as {{ rfcToBe.draft?.intendedStdLevel.name }})
               </span>
             </PatchRfcToBeField>
           </DescriptionListDetails>
