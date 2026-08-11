@@ -8,6 +8,7 @@ from .models import (
     AdditionalEmail,
     ApprovalLogMessage,
     Assignment,
+    BlockingReason,
     Capability,
     Cluster,
     ClusterMember,
@@ -95,6 +96,11 @@ class StreamNameAdmin(admin.ModelAdmin):
 
 @admin.register(DocRelationshipName)
 class DocRelationshipNameAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(BlockingReason)
+class BlockingReasonAdmin(admin.ModelAdmin):
     pass
 
 
