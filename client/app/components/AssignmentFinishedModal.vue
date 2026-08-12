@@ -74,9 +74,7 @@ const api = useApi()
 // A blocked doc's work assignments are closed and held by an active (in_progress)
 // 'blocked' assignment, so adding a new one would create an inconsistent state.
 const isBlocked = computed(() =>
-  props.assignments.some(
-    (a) => a.role === 'blocked' && a.state === StateEnum.InProgress
-  )
+  props.assignments.some((a) => a.role === 'blocked' && a.state === StateEnum.InProgress)
 )
 
 const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
