@@ -113,9 +113,6 @@ class RfcToBeFactory(factory.django.DjangoModelFactory):
     publication_std_level = factory.LazyAttribute(
         lambda o: o.std_level if o.disposition.slug == "published" else None
     )
-    publication_stream = factory.LazyAttribute(
-        lambda o: o.stream if o.disposition.slug == "published" else None
-    )
     external_deadline = factory.Faker(
         "date_time_between",
         start_date="+1d",

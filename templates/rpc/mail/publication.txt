@@ -24,7 +24,7 @@
 
 {{ rfc_to_be.abstract }}
 
-{% with group=rfc_to_be.group stream=rfc_to_be.publication_stream|default:rfc_to_be.stream %}{% with display_group=group_name|default:group %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ display_group }} Research Group of the IRTF.
+{% with group=rfc_to_be.group stream=rfc_to_be.stream %}{% with display_group=group_name|default:group %}{% if stream.slug == "irtf" and group %}This document is a product of the {{ display_group }} Research Group of the IRTF.
 {% elif stream.slug == "irtf" %}This document is a product of the IRTF.
 {% elif stream.slug == "iab" %}This document is a product of the Internet Architecture Board.
 {% elif stream.slug == "ietf" and group %}This document is a product of the {{ display_group }} Working Group of the IETF.

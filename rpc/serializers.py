@@ -931,9 +931,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
     disposition = NameSerializer(read_only=True)
     stream = NameSerializer(read_only=True, help_text="Current stream")
-    publication_stream = NameSerializer(
-        read_only=True, help_text="Stream at publication (blank until published)"
-    )
     std_level = NameSerializer(read_only=True, help_text="Current StdLevel")
     publication_std_level = NameSerializer(
         read_only=True, help_text="StdLevel at publication (blank until published)"
@@ -1018,7 +1015,6 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "publication_std_level",
             "stream",
             "stream_slug",
-            "publication_stream",
             "authors",
             "shepherd",
             "shepherd_id",

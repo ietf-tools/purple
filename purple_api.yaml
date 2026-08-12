@@ -6052,11 +6052,6 @@ components:
             - $ref: "#/components/schemas/Name"
           readOnly: true
           description: Current stream
-        publication_stream:
-          allOf:
-            - $ref: "#/components/schemas/Name"
-          readOnly: true
-          description: Stream at publication (blank until published)
         authors:
           type: array
           items:
