@@ -489,6 +489,16 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     if draft is None:
         raise NotFound(f"No draft found with id {document_id}")
     subm = Submission.from_rpcapi_draft(draft)
+    # draft.shepherd is a datatracker person id; resolve it to a display name.
+    if draft.shepherd is not None:
+        with datatracker_api():
+            # Catch exception inside datatracker_api(), a missing shepherd must not
+            # block the import preview; display a error message instead.
+            try:
+                shepherd = rpcapi.get_person_by_id(draft.shepherd)
+                subm.shepherd = shepherd.plain_name if shepherd is not None else ""
+            except rpcapi_client.exceptions.ApiException:
+                subm.shepherd = f"#{draft.shepherd} (name unavailable)"
     return Response(SubmissionSerializer(subm).data)
 
 
