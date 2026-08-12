@@ -4452,7 +4452,9 @@ components:
           readOnly: true
           description: Number of pages
         intended_std_level:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          nullable: true
           readOnly: true
     FinalApproval:
       type: object
@@ -4872,6 +4874,27 @@ components:
         - desc
         - name
         - slug
+    NameRequest:
+      type: object
+      description: Serialize any Name subclass
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        desc:
+          type: string
+        used:
+          type: boolean
+          default: true
+      required:
+        - desc
+        - name
+        - slug
     NestedAssignment:
       type: object
       description: Assignment serializer with nested RfcToBe details
@@ -5143,9 +5166,10 @@ components:
           description: Acronym of datatracker group where this document originated,
             if any
           maxLength: 40
-        disposition:
+        disposition_slug:
           type: string
           minLength: 1
+          writeOnly: true
         external_deadline:
           type: string
           format: date-time
@@ -5158,9 +5182,10 @@ components:
           type: array
           items:
             type: integer
-        submitted_format:
+        submitted_format_slug:
           type: string
           minLength: 1
+          writeOnly: true
         pages:
           type: integer
           maximum: 2147483647
@@ -5171,28 +5196,18 @@ components:
           type: string
           description: Comma-separated list of keywords
           maxLength: 1000
-        boilerplate:
+        boilerplate_slug:
           type: string
           minLength: 1
-          description: TLP IPR boilerplate option
-        std_level:
+          writeOnly: true
+        std_level_slug:
           type: string
           minLength: 1
-          description: Current StdLevel
-        publication_std_level:
+          writeOnly: true
+        stream_slug:
           type: string
           minLength: 1
-          nullable: true
-          description: StdLevel at publication (blank until published)
-        stream:
-          type: string
-          minLength: 1
-          description: Current stream
-        publication_stream:
-          type: string
-          minLength: 1
-          nullable: true
-          description: Stream at publication (blank until published)
+          writeOnly: true
         authors:
           type: array
           items:
@@ -5483,6 +5498,15 @@ components:
         stream:
           type: string
           description: Current stream
+        stream_name:
+          type: string
+          readOnly: true
+        std_level_name:
+          type: string
+          readOnly: true
+        disposition_name:
+          type: string
+          readOnly: true
         group:
           type: string
           description: Acronym of datatracker group where this document originated,
@@ -5975,7 +5999,9 @@ components:
             - $ref: "#/components/schemas/Draft"
           readOnly: true
         disposition:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
         external_deadline:
           type: string
           format: date-time
@@ -5993,7 +6019,9 @@ components:
             - $ref: "#/components/schemas/SimpleCluster"
           readOnly: true
         submitted_format:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
         pages:
           type: integer
           maximum: 2147483647
@@ -6005,21 +6033,29 @@ components:
           description: Comma-separated list of keywords
           maxLength: 1000
         boilerplate:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
           description: TLP IPR boilerplate option
         std_level:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
           description: Current StdLevel
         publication_std_level:
-          type: string
-          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
           description: StdLevel at publication (blank until published)
         stream:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
           description: Current stream
         publication_stream:
-          type: string
-          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/Name"
+          readOnly: true
           description: Stream at publication (blank until published)
         authors:
           type: array
@@ -6101,12 +6137,7 @@ components:
           maxLength: 16
       required:
         - authors
-        - boilerplate
-        - disposition
         - labels
-        - std_level
-        - stream
-        - submitted_format
         - title
     RfcToBeBlockingReason:
       type: object
@@ -6153,9 +6184,10 @@ components:
           description: Acronym of datatracker group where this document originated,
             if any
           maxLength: 40
-        disposition:
+        disposition_slug:
           type: string
           minLength: 1
+          writeOnly: true
         external_deadline:
           type: string
           format: date-time
@@ -6168,9 +6200,10 @@ components:
           type: array
           items:
             type: integer
-        submitted_format:
+        submitted_format_slug:
           type: string
           minLength: 1
+          writeOnly: true
         pages:
           type: integer
           maximum: 2147483647
@@ -6181,28 +6214,18 @@ components:
           type: string
           description: Comma-separated list of keywords
           maxLength: 1000
-        boilerplate:
+        boilerplate_slug:
           type: string
           minLength: 1
-          description: TLP IPR boilerplate option
-        std_level:
+          writeOnly: true
+        std_level_slug:
           type: string
           minLength: 1
-          description: Current StdLevel
-        publication_std_level:
+          writeOnly: true
+        stream_slug:
           type: string
           minLength: 1
-          nullable: true
-          description: StdLevel at publication (blank until published)
-        stream:
-          type: string
-          minLength: 1
-          description: Current stream
-        publication_stream:
-          type: string
-          minLength: 1
-          nullable: true
-          description: Stream at publication (blank until published)
+          writeOnly: true
         authors:
           type: array
           items:
@@ -6258,12 +6281,7 @@ components:
           maxLength: 16
       required:
         - authors
-        - boilerplate
-        - disposition
         - labels
-        - std_level
-        - stream
-        - submitted_format
         - title
     RpcPerson:
       type: object
@@ -6318,6 +6336,9 @@ components:
           readOnly: true
         relationship:
           type: string
+        relationship_name:
+          type: string
+          readOnly: true
         draft_name:
           type: string
           readOnly: true

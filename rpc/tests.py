@@ -439,4 +439,4 @@ class DocumentSearchTests(TestCase):
         self.assertEqual(payload["count"], 1)
         self.assertEqual(len(payload["results"]), 1)
         self.assertEqual(payload["results"][0]["id"], in_progress.id)
-        self.assertEqual(payload["results"][0]["disposition"], "in_progress")
+        self.assertEqual(payload["results"][0]["disposition"]["slug"], "in_progress")

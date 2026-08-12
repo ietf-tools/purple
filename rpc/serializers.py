@@ -54,6 +54,7 @@ from .models import (
     StreamName,
     SubseriesMember,
     SubseriesTypeName,
+    TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
 from .tasks import compute_deep_references_task
@@ -558,6 +559,8 @@ class RpcRoleSerializer(serializers.ModelSerializer):
 
 
 class DraftSerializer(serializers.ModelSerializer):
+    intended_std_level = serializers.SerializerMethodField()
+
     class Meta:
         model = Document
         fields = [
@@ -567,7 +570,18 @@ class DraftSerializer(serializers.ModelSerializer):
             "pages",
             "intended_std_level",
         ]
-        read_only_fields = fields
+        read_only_fields = ["name", "rev", "title", "pages"]
+
+    @extend_schema_field(NameSerializer(allow_null=True))
+    def get_intended_std_level(self, obj):
+        slug = obj.intended_std_level
+        if not slug:
+            return None
+        # Fall back to a transient name if the slug isn't a known StdLevelName.
+        std_level = StdLevelName.objects.filter(slug=slug).first() or StdLevelName(
+            slug=slug, name=slug
+        )
+        return NameSerializer(std_level).data
 
 
 class SimpleClusterSerializer(serializers.ModelSerializer):
@@ -915,6 +929,53 @@ class RfcToBeSerializer(serializers.ModelSerializer):
         source="additionalemail_set", many=True, read_only=True
     )
     blocking_reasons = RfcToBeBlockingReasonSerializer(many=True, read_only=True)
+    disposition = NameSerializer(read_only=True)
+    stream = NameSerializer(read_only=True, help_text="Current stream")
+    publication_stream = NameSerializer(
+        read_only=True, help_text="Stream at publication (blank until published)"
+    )
+    std_level = NameSerializer(read_only=True, help_text="Current StdLevel")
+    publication_std_level = NameSerializer(
+        read_only=True, help_text="StdLevel at publication (blank until published)"
+    )
+    boilerplate = NameSerializer(read_only=True, help_text="TLP IPR boilerplate option")
+    submitted_format = NameSerializer(read_only=True)
+
+    disposition_slug = serializers.SlugRelatedField(
+        source="disposition",
+        slug_field="slug",
+        queryset=DispositionName.objects.all(),
+        write_only=True,
+        required=False,
+    )
+    stream_slug = serializers.SlugRelatedField(
+        source="stream",
+        slug_field="slug",
+        queryset=StreamName.objects.all(),
+        write_only=True,
+        required=False,
+    )
+    std_level_slug = serializers.SlugRelatedField(
+        source="std_level",
+        slug_field="slug",
+        queryset=StdLevelName.objects.all(),
+        write_only=True,
+        required=False,
+    )
+    boilerplate_slug = serializers.SlugRelatedField(
+        source="boilerplate",
+        slug_field="slug",
+        queryset=TlpBoilerplateChoiceName.objects.all(),
+        write_only=True,
+        required=False,
+    )
+    submitted_format_slug = serializers.SlugRelatedField(
+        source="submitted_format",
+        slug_field="slug",
+        queryset=SourceFormatName.objects.all(),
+        write_only=True,
+        required=False,
+    )
     pub_owner = serializers.SerializerMethodField()
 
     @extend_schema_field(serializers.CharField(allow_null=True))
@@ -941,17 +1002,22 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "group",
             "draft",
             "disposition",
+            "disposition_slug",
             "external_deadline",
             "internal_goal",
             "labels",
             "cluster",
             "submitted_format",
+            "submitted_format_slug",
             "pages",
             "keywords",
             "boilerplate",
+            "boilerplate_slug",
             "std_level",
+            "std_level_slug",
             "publication_std_level",
             "stream",
+            "stream_slug",
             "publication_stream",
             "authors",
             "shepherd",
@@ -1393,12 +1459,16 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     target_disposition = serializers.SerializerMethodField()
     target_is_received = serializers.SerializerMethodField()
     target_is_blocked = serializers.SerializerMethodField()
+    relationship_name = serializers.SlugRelatedField(
+        source="relationship", slug_field="name", read_only=True
+    )
 
     class Meta:
         model = RpcRelatedDocument
         fields = [
             "id",
             "relationship",
+            "relationship_name",
             "draft_name",
             "target_draft_name",
             "target_rfc_number",
@@ -2526,6 +2596,15 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     references = serializers.SerializerMethodField()
     group_name = serializers.SerializerMethodField()
     rev = serializers.CharField(source="draft.rev", read_only=True, allow_null=True)
+    stream_name = serializers.SlugRelatedField(
+        source="stream", slug_field="name", read_only=True
+    )
+    std_level_name = serializers.SlugRelatedField(
+        source="std_level", slug_field="name", read_only=True
+    )
+    disposition_name = serializers.SlugRelatedField(
+        source="disposition", slug_field="name", read_only=True
+    )
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):
@@ -2565,6 +2644,9 @@ class PublicQueueItemSerializer(QueueItemSerializer):
             "authors",
             "approval_log_message",
             "stream",
+            "stream_name",
+            "std_level_name",
+            "disposition_name",
             "group",
             "group_name",
             "std_level",

@@ -34,7 +34,7 @@
             <Icon name="solar:document-text-line-duotone" class="w-10 h-10" />
             <h1>
               <span class="mt-1 text-xl font-semibold leading-6">
-                <template v-if="props.rfcToBe?.disposition === 'published'">
+                <template v-if="props.rfcToBe?.disposition?.slug === 'published'">
                   <span v-if="props.rfcToBe?.rfcNumber"
                     >RFC {{ props.rfcToBe?.rfcNumber
                     }}<template v-if="isAprilFirst">
@@ -82,7 +82,7 @@
             </span>
           </BaseButton>
           <BaseButton
-            v-if="props.rfcToBe?.disposition === 'in_progress'"
+            v-if="props.rfcToBe?.disposition?.slug === 'in_progress'"
             btn-type="delete"
             @click="isWithdrawDialogShown = true"
             class="flex items-center">

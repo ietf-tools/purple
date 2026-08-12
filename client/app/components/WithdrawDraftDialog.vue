@@ -118,7 +118,7 @@ const handleWithdraw = async () => {
   try {
     await api.documentsPartialUpdate({
       draftName: props.draftName,
-      patchedRfcToBeRequest: { disposition: 'withdrawn' }
+      patchedRfcToBeRequest: { dispositionSlug: 'withdrawn' }
     })
   } catch (error: unknown) {
     snackbarForErrors({ snackbar, defaultTitle: 'Withdrawing draft failed', error })

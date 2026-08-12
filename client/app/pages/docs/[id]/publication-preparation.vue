@@ -382,7 +382,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     return
   }
 
-  if (rfcToBe.value?.disposition === 'published') {
+  if (rfcToBe.value?.disposition?.slug === 'published') {
     step.value = { type: 'alreadyPublished' }
     return
   }
@@ -454,7 +454,7 @@ watch([rfcToBe, rfcToBeStatus, metadataValidationResultsStatus, publicationStatu
     }
   }
 
-  if (rfcToBe.value?.disposition === 'published') {
+  if (rfcToBe.value?.disposition?.slug === 'published') {
     step.value = { type: 'rfcPosted' }
     return
   } else {
