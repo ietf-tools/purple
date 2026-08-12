@@ -8,7 +8,16 @@
         </span>
       </h1>
       <div class="m-2 flex items-center gap-2">
-        <BaseButton btnType="default" class="flex items-center" @click="openAddAssignmentModal">
+        <BaseButton
+          btnType="default"
+          class="flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
+          :disabled="isBlocked"
+          :title="
+            isBlocked
+              ? 'This document is blocked — resolve the block before adding an assignment.'
+              : undefined
+          "
+          @click="openAddAssignmentModal">
           <span>Add assignment</span>
           <span v-if="isLoadingAdd" class="w-3">
             <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
@@ -46,6 +55,7 @@
 <script setup lang="ts">
 import { BaseButton, AssignmentModal } from '#components'
 import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
+import { StateEnum } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { groupBy } from 'es-toolkit/array'
 import { assignmentRoleOrder } from '~/utils/sort'
@@ -60,6 +70,14 @@ type Props = {
 const props = defineProps<Props>()
 
 const api = useApi()
+
+// A blocked doc's work assignments are closed and held by an active (in_progress)
+// 'blocked' assignment, so adding a new one would create an inconsistent state.
+const isBlocked = computed(() =>
+  props.assignments.some(
+    (a) => a.role === 'blocked' && a.state === StateEnum.InProgress
+  )
+)
 
 const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
 
@@ -95,7 +113,7 @@ const roleOrderIndex = (slug: string) =>
 
 const openAddAssignmentModal = async () => {
   const rfcToBeId = props.rfcToBe.id
-  if (rfcToBeId === undefined) return
+  if (rfcToBeId === undefined || isBlocked.value) return
 
   isLoadingAdd.value = true
   try {
