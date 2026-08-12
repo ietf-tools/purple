@@ -6036,22 +6036,27 @@ components:
           allOf:
             - $ref: "#/components/schemas/Name"
           readOnly: true
+          description: TLP IPR boilerplate option
         std_level:
           allOf:
             - $ref: "#/components/schemas/Name"
           readOnly: true
+          description: Current StdLevel
         publication_std_level:
           allOf:
             - $ref: "#/components/schemas/Name"
           readOnly: true
+          description: StdLevel at publication (blank until published)
         stream:
           allOf:
             - $ref: "#/components/schemas/Name"
           readOnly: true
+          description: Current stream
         publication_stream:
           allOf:
             - $ref: "#/components/schemas/Name"
           readOnly: true
+          description: Stream at publication (blank until published)
         authors:
           type: array
           items:
