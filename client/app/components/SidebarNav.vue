@@ -41,10 +41,10 @@
               </div>
             </HeadlessTransitionChild>
             <div class="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 pb-2">
-              <div
-                class="flex h-16 shrink-0 items-center text-violet-500 dark:text-violet-300 font-light">
+              <div :class="['flex h-16 shrink-0 items-center font-light', brandingClass]">
                 <SvgoRpcIcon filled class="mr-2 text-xl" />
                 RFC Production Center
+                <DevModeBadge />
               </div>
               <nav class="flex flex-1 flex-col">
                 <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -124,9 +124,10 @@
     <!-- Sidebar component, swap this element with another sidebar if you like -->
     <div
       class="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 dark:border-violet-600 bg-white dark:bg-violet-900 bg-gradient-to-tr from-violet-50 to-white dark:from-violet-950 dark:to-violet-900 px-6">
-      <div class="flex h-16 shrink-0 items-center text-violet-500 dark:text-violet-300 font-light">
+      <div :class="['flex h-16 shrink-0 items-center font-light', brandingClass]">
         <SvgoRpcIcon filled class="mr-2 text-xl" />
         <span class="font-medium mr-1">RFC</span> Production Center
+        <DevModeBadge />
       </div>
       <nav class="flex flex-1 flex-col">
         <ul role="list" class="flex flex-1 flex-col gap-y-7">
@@ -222,6 +223,13 @@
 import { useSiteStore } from '@/stores/site'
 import { Icon } from '#components'
 import confetti from 'canvas-confetti'
+import { isDevMode } from '~/utils/devMode'
+
+// Bright banner so a local dev server is never mistaken for production.
+// -mx-6/px-6 cancels the sidebar padding so the color spans the full width.
+const brandingClass = isDevMode
+  ? 'relative -mx-6 px-6 bg-amber-400 text-amber-950'
+  : 'text-violet-500 dark:text-violet-300'
 
 // STORES
 
