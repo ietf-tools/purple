@@ -6,9 +6,22 @@ import jsonschema.exceptions
 from django.test import TestCase
 from rest_framework import serializers
 
-from rpc.factories import PublicationAttemptFactory, RfcToBeFactory
-from rpc.models import PublicationAttempt, RfcToBe
+from rpc.factories import (
+    AssignmentFactory,
+    PublicationAttemptFactory,
+    RfcToBeFactory,
+    RpcRoleFactory,
+)
+from rpc.models import Assignment, PublicationAttempt, RfcToBe
 
+from .activities import (
+    ENQUEUER,
+    FIRST_EDITOR,
+    FORMATTING,
+    REF_CHECKER,
+    complete_activities,
+    pending_activities,
+)
 from .publication import (
     AmbiguousFilesError,
     MissingFilesError,
@@ -64,6 +77,74 @@ class RepoTests(TestCase):
                 # no files
                 {"publications": [{"rfcNumber": 10000}]}
             )
+
+
+class ActivitiesTests(TestCase):
+    def assign(self, rfc_to_be, role_slug, state):
+        return AssignmentFactory(
+            rfc_to_be=rfc_to_be,
+            role=RpcRoleFactory(slug=role_slug),
+            state=state,
+        )
+
+    def test_complete_with_single_done_assignment(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        self.assertEqual(complete_activities(rfc_to_be), {ENQUEUER})
+        self.assertEqual(pending_activities(rfc_to_be), {FORMATTING, REF_CHECKER})
+
+    def test_incomplete_until_all_assignments_done(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        unfinished = self.assign(rfc_to_be, "enqueuer", Assignment.State.IN_PROGRESS)
+        self.assertEqual(complete_activities(rfc_to_be), set())
+        # enqueuer has Assignments, so it does not need one either
+        self.assertEqual(pending_activities(rfc_to_be), set())
+
+        unfinished.state = Assignment.State.DONE
+        unfinished.save()
+        self.assertEqual(complete_activities(rfc_to_be), {ENQUEUER})
+        self.assertEqual(pending_activities(rfc_to_be), {FORMATTING, REF_CHECKER})
+
+    def test_incomplete_regardless_of_assignment_order(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.IN_PROGRESS)
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        self.assertEqual(complete_activities(rfc_to_be), set())
+        self.assertEqual(pending_activities(rfc_to_be), set())
+
+    def test_inactive_assignments_do_not_block_completion(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.WITHDRAWN)
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.CLOSED_FOR_HOLD)
+        self.assertEqual(complete_activities(rfc_to_be), {ENQUEUER})
+        self.assertEqual(pending_activities(rfc_to_be), {FORMATTING, REF_CHECKER})
+
+    def test_prefetched_assignments_give_same_result(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        self.assign(rfc_to_be, "formatting", Assignment.State.DONE)
+        self.assign(rfc_to_be, "formatting", Assignment.State.ASSIGNED)
+        prefetched = RfcToBe.objects.with_activity_assignments().get(pk=rfc_to_be.pk)
+        with self.assertNumQueries(0):
+            self.assertEqual(complete_activities(prefetched), {ENQUEUER})
+            self.assertEqual(pending_activities(prefetched), {REF_CHECKER})
+
+    def test_ref_checker_runs_beside_formatting(self):
+        rfc_to_be = RfcToBeFactory()
+        self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+        # both branches open as soon as enqueuing is done
+        self.assertEqual(pending_activities(rfc_to_be), {FORMATTING, REF_CHECKER})
+
+        # formatting alone does not open first edit - ref checking must finish too
+        self.assign(rfc_to_be, "formatting", Assignment.State.DONE)
+        ref_check = self.assign(rfc_to_be, "ref_checker", Assignment.State.IN_PROGRESS)
+        self.assertEqual(pending_activities(rfc_to_be), set())
+
+        ref_check.state = Assignment.State.DONE
+        ref_check.save()
+        self.assertEqual(pending_activities(rfc_to_be), {FIRST_EDITOR})
 
 
 class PublicationTests(TestCase):
