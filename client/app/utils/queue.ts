@@ -97,6 +97,14 @@ export type AssignmentMessageProps =
       role: Assignment['role']
       rfcToBeId: number
     }
+  | {
+      // Add an assignment of any role to a draft. Unlike 'assign' (role fixed by
+      // the pending-activity button that opened it), the assigner picks the role
+      // in the modal — allowing out-of-pipeline roles or re-adding a role whose
+      // earlier assignment was closed too early.
+      type: 'add'
+      rfcToBeId: number
+    }
 
 export type RpcPersonWorkload = {
   personId: number
