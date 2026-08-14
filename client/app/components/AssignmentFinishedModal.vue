@@ -148,7 +148,13 @@ const openAddAssignmentModal = async () => {
         defaultRole,
         onSuccess: props.onSuccess
       }
-    }).catch(() => {})
+    }).catch((e) => {
+      if (e === undefined) {
+        // ignore... it's just signalling that the modal has closed
+      } else {
+        console.error(e)
+      }
+    })
   } catch (e) {
     console.error(e)
   } finally {
