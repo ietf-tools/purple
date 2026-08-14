@@ -122,25 +122,20 @@ type Props = {
   peopleWorkload: Record<number, RpcPersonWorkload>
   clusters: ResolvedCluster[]
   onSuccess: () => void
-  // When allowRoleSelect is set, the modal shows a role picker instead of using
-  // the role fixed by the message. `roles` are the choices (caller should exclude
-  // the synthetic 'blocked' role) and `defaultRole` is pre-selected.
+  // Role-picker props (add flow): offer `roles`, pre-selecting `defaultRole`.
   allowRoleSelect?: boolean
   roles?: RpcRole[]
   defaultRole?: Assignment['role']
 }
 const props = defineProps<Props>()
 
-// Role picker options; defensively drop the synthetic 'blocked' role even if the
-// caller forgot to.
+// Exclude the synthetic 'blocked' role from the picker.
 const roleOptions = computed(() => (props.roles ?? []).filter((role) => role.slug !== 'blocked'))
 
 const selectedRole = ref<Assignment['role']>(
   props.allowRoleSelect ? (props.defaultRole ?? roleOptions.value[0]?.slug ?? '') : ''
 )
 
-// The role an 'assign' action uses: picked in the modal when allowRoleSelect,
-// otherwise the fixed role carried by the message.
 const effectiveRole = computed<Assignment['role']>(() =>
   props.allowRoleSelect || !('role' in props.message) ? selectedRole.value : props.message.role
 )
@@ -268,7 +263,7 @@ watch(
       // withdrawals
       // there are no withdrawals when initially assigning or adding
 
-      // new assignments — effectiveRole is the fixed or picked role
+      // new assignments
       newActions.push(
         ...Object.entries(isPersonSelected.value)
           .filter(([personIdString, isSelected]) => {
@@ -287,12 +282,11 @@ watch(
     }
 
     actions.value = newActions
-    // Changing the picked role must rebuild the pending actions with the new
-    // role, so watch selectedRole alongside the person selection.
   },
   { deep: true }
 )
 
+// Re-picking the role must update actions already built by the watch above.
 watch(selectedRole, () => {
   actions.value = actions.value.map((action) =>
     action.type === 'assign' ? { ...action, role: selectedRole.value } : action
