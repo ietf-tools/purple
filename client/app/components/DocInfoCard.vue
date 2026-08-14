@@ -177,14 +177,6 @@
               :on-success="props.refresh">
               <span class="flex-1">
                 {{ rfcToBe.stream?.name ?? rfcToBe.stream?.slug }}
-                <span
-                  v-if="
-                    rfcToBe.publicationStream &&
-                    rfcToBe.publicationStream.slug !== rfcToBe.stream?.slug
-                  ">
-                  (published as
-                  {{ rfcToBe.publicationStream.name ?? rfcToBe.publicationStream.slug }})
-                </span>
               </span>
             </PatchRfcToBeField>
           </DescriptionListDetails>

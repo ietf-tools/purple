@@ -116,7 +116,7 @@ def _generate_crossref_xml(rfc_number):
     # body → report-paper
     report_paper = ElementTree.SubElement(body, "report-paper")
     report_paper.append(
-        ElementTree.Comment(f"Translation of {doc_id} {rfc.publication_stream.name}")
+        ElementTree.Comment(f"Translation of {doc_id} {rfc.stream.name}")
     )
 
     # body → report-paper → report-paper_metadata

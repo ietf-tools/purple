@@ -155,7 +155,7 @@ def create_rfc_index_json(rfctobe: RfcToBe, chosen_files: dict, tmpdir: Path) ->
     std_level = rfctobe.publication_std_level or rfctobe.std_level
     pub_status = std_level.name.upper() if std_level else ""
 
-    stream = rfctobe.publication_stream or rfctobe.stream
+    stream = rfctobe.stream
 
     keywords_raw = rfctobe.keywords.strip() if rfctobe.keywords else ""
     keywords = (
@@ -312,7 +312,6 @@ def _do_publish_rfctobe(
     # accepts the metadata update
     rfctobe.published_at = timezone.now()
     rfctobe.publication_std_level = rfctobe.std_level
-    rfctobe.publication_stream = rfctobe.stream
 
     try:
         manifest = repo.get_manifest()
