@@ -14,6 +14,7 @@
         <span v-else-if="props.message.type === 'add'" class="flex items-center gap-2">
           Add
           <select
+            v-if="props.allowRoleSelect"
             v-model="selectedRole"
             class="text-base font-normal border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 min-w-[14rem]">
             <option v-for="role in roleOptions" :key="role.slug" :value="role.slug">
@@ -121,26 +122,27 @@ type Props = {
   peopleWorkload: Record<number, RpcPersonWorkload>
   clusters: ResolvedCluster[]
   onSuccess: () => void
-  // Only used by the 'add' message type: the roles the assigner can choose from
-  // (caller should exclude the synthetic 'blocked' role) and the role to
-  // pre-select (typically the draft's next pending activity).
+  // When allowRoleSelect is set, the modal shows a role picker instead of using
+  // the role fixed by the message. `roles` are the choices (caller should exclude
+  // the synthetic 'blocked' role) and `defaultRole` is pre-selected.
+  allowRoleSelect?: boolean
   roles?: RpcRole[]
   defaultRole?: Assignment['role']
 }
 const props = defineProps<Props>()
 
-// Role options for the 'add' picker; defensively drop the synthetic 'blocked'
-// role even if the caller forgot to.
+// Role picker options; defensively drop the synthetic 'blocked' role even if the
+// caller forgot to.
 const roleOptions = computed(() => (props.roles ?? []).filter((role) => role.slug !== 'blocked'))
 
 const selectedRole = ref<Assignment['role']>(
-  props.message.type === 'add' ? (props.defaultRole ?? roleOptions.value[0]?.slug ?? '') : ''
+  props.allowRoleSelect ? (props.defaultRole ?? roleOptions.value[0]?.slug ?? '') : ''
 )
 
-// The role an 'assign' action should use: chosen in the modal for 'add', or
-// fixed by the trigger for 'assign'/'change'.
+// The role an 'assign' action uses: picked in the modal when allowRoleSelect,
+// otherwise the fixed role carried by the message.
 const effectiveRole = computed<Assignment['role']>(() =>
-  props.message.type === 'add' ? selectedRole.value : props.message.role
+  props.allowRoleSelect || !('role' in props.message) ? selectedRole.value : props.message.role
 )
 
 const generateId = (personId: number | undefined, personIndex: number): string =>
@@ -266,7 +268,7 @@ watch(
       // withdrawals
       // there are no withdrawals when initially assigning or adding
 
-      // new assignments — role is fixed for 'assign', chosen for 'add'
+      // new assignments — effectiveRole is the fixed or picked role
       newActions.push(
         ...Object.entries(isPersonSelected.value)
           .filter(([personIdString, isSelected]) => {
@@ -285,8 +287,8 @@ watch(
     }
 
     actions.value = newActions
-    // Changing the role in 'add' mode must rebuild the pending actions with the
-    // new role, so watch selectedRole alongside the person selection.
+    // Changing the picked role must rebuild the pending actions with the new
+    // role, so watch selectedRole alongside the person selection.
   },
   { deep: true }
 )

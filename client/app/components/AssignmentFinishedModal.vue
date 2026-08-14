@@ -143,6 +143,7 @@ const openAddAssignmentModal = async () => {
         people: props.people,
         peopleWorkload,
         clusters,
+        allowRoleSelect: true,
         roles: roleOptions,
         defaultRole,
         onSuccess: props.onSuccess
