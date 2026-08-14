@@ -11,7 +11,10 @@ export const useDefaultHead = () => {
       class: 'h-full'
     },
     titleTemplate: (titleChunk) => {
-      return titleChunk ? `${titleChunk} - RFC Production Center` : 'RFC Production Center'
+      const prefix = import.meta.dev ? '[DEV] ' : ''
+      return titleChunk
+        ? `${prefix}${titleChunk} - RFC Production Center`
+        : `${prefix}RFC Production Center`
     }
   })
 }
