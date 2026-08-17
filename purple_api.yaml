@@ -5331,6 +5331,9 @@ components:
           type: integer
         role:
           type: string
+        role_name:
+          type: string
+          readOnly: true
         state:
           $ref: "#/components/schemas/StateEnum"
       required:

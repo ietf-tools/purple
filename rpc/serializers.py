@@ -799,12 +799,17 @@ class PublicQueueAuthorSerializer(RfcAuthorSerializer):
 class PublicAssignmentSerializer(AssignmentSerializer):
     """Assignment serializer for the public queue view"""
 
+    role_name = serializers.SlugRelatedField(
+        source="role", slug_field="name", read_only=True
+    )
+
     class Meta:
         model = AssignmentSerializer.Meta.model
         fields = [
             "id",
             "rfc_to_be",
             "role",
+            "role_name",
             "state",
         ]
 
