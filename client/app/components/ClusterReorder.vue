@@ -24,8 +24,8 @@
           <th class="pb-2">Document</th>
           <th class="pb-2 w-48">Labels</th>
           <th class="pb-2 w-40">Enqueue Date</th>
-          <th class="pb-2 w-56">Status</th>
           <th class="pb-2 w-56">Assignees</th>
+          <th class="pb-2 w-56">Pending Activities</th>
           <th class="pb-2 w-36 text-center">Approvals Received</th>
           <th class="pb-2 w-28"></th>
         </tr>
@@ -55,34 +55,6 @@
               :is="enqueuedAtByDraftName[clusterDocument.name]" />
           </td>
           <td class="py-2 pr-3">
-            <template v-if="queueItemByDraftName[clusterDocument.name]?.assignmentSet?.length">
-              <span
-                v-for="role in [
-                  ...new Set(
-                    queueItemByDraftName[clusterDocument.name]?.assignmentSet?.map((a) => a.role)
-                  )
-                ]"
-                :key="role"
-                class="mr-1">
-                <BaseBadge :label="role" />
-              </span>
-              <span
-                v-if="
-                  queueItemByDraftName[clusterDocument.name]?.assignmentSet?.some(
-                    (a) => a.role === 'blocked'
-                  )
-                "
-                class="text-xs text-gray-500 dark:text-gray-400">
-                {{
-                  queueItemByDraftName[clusterDocument.name]?.blockingReasons
-                    ?.map((br) => br.reason?.name)
-                    .filter(Boolean)
-                    .join(', ')
-                }}
-              </span>
-            </template>
-          </td>
-          <td class="py-2 pr-3">
             <ul class="space-y-0.5">
               <li
                 v-for="assignment in queueItemByDraftName[clusterDocument.name]?.assignmentSet"
@@ -94,6 +66,28 @@
                 </span>
               </li>
             </ul>
+          </td>
+          <td class="py-2 pr-3">
+            <span
+              v-for="activity in queueItemByDraftName[clusterDocument.name]?.pendingActivities"
+              :key="activity.slug"
+              class="mr-1">
+              <BaseBadge :label="activity.slug" />
+            </span>
+            <span
+              v-if="
+                queueItemByDraftName[clusterDocument.name]?.assignmentSet?.some(
+                  (a) => a.role === 'blocked'
+                )
+              "
+              class="text-xs text-gray-500 dark:text-gray-400">
+              {{
+                queueItemByDraftName[clusterDocument.name]?.blockingReasons
+                  ?.map((br) => br.reason?.name)
+                  .filter(Boolean)
+                  .join(', ')
+              }}
+            </span>
           </td>
           <td class="py-2 pr-3 text-center">
             <Anchor
