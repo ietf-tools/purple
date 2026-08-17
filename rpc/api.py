@@ -2667,6 +2667,12 @@ class RfcMailTemplatesList(views.APIView):
             if shepherd_email:
                 interested_parties.add(shepherd_email)
         stream_slug = rfc_to_be.stream_id
+
+        individual_ietf_contacts: set[str] = set()
+        if stream_slug == "ietf" and not rfc_to_be.group:
+            for person in (rfc_to_be.iesg_contact, rfc_to_be.stream_manager):
+                if person is not None and person.email:
+                    individual_ietf_contacts.add(person.email)
         if stream_slug == "iab":
             interested_parties.add("iab@iab.org")
         elif stream_slug == "ise":
@@ -2679,6 +2685,8 @@ class RfcMailTemplatesList(views.APIView):
                 interested_parties.add(f"{rfc_to_be.area}-ads@ietf.org")
             if rfc_to_be.group:
                 interested_parties.add(f"{rfc_to_be.group}-chairs@ietf.org")
+            else:
+                interested_parties |= individual_ietf_contacts
         elif stream_slug == "irtf":
             for chair in rfc_to_be.wg_chairs:
                 if chair.email:
@@ -2696,11 +2704,18 @@ class RfcMailTemplatesList(views.APIView):
                 ietf_list_email = datatracker_group_list_email(rfc_to_be.group)
                 if ietf_list_email:
                     publication_cc.add(ietf_list_email)
+            else:
+                publication_cc |= individual_ietf_contacts
         elif stream_slug == "irtf":
             if rfc_to_be.group:
                 irtf_list_email = datatracker_group_list_email(rfc_to_be.group)
                 if irtf_list_email:
                     publication_cc.add(irtf_list_email)
+
+        subseries_prefix = "".join(
+            f"{m.type.slug.upper()} {m.number}, "
+            for m in rfc_to_be.subseriesmember_set.select_related("type").all()
+        )
 
         template_overrides = {
             "blank": {
@@ -2719,7 +2734,7 @@ class RfcMailTemplatesList(views.APIView):
                 "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
             },
             "publication": {
-                "subject": f"RFC {rfc_number} on {rfc_to_be.title}",
+                "subject": f"{subseries_prefix}RFC {rfc_number} on {rfc_to_be.title}",
                 "to": ["ietf-announce@ietf.org", "rfc-dist@rfc-editor.org"],
                 "cc": list(publication_cc),
             },
