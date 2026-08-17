@@ -520,9 +520,26 @@ class MetadataComparator:
             item: dict[str, Any] = {"position": position}
 
             if xml_author is None or db_author is None:
-                # Mismatched lengths - cannot fix
+                # Length mismatch: surface whichever author name exists so the UI
+                # shows the missing one. Not fixable.
                 item["is_match"] = False
                 item["can_fix"] = False
+                item["is_error"] = True
+                if xml_author is not None:
+                    name = Metadata.extract_name_from_author_dict(xml_author)
+                    if xml_author.get("role", "").lower() == "editor":
+                        name += " , Ed."
+                    org = xml_author.get("organization", "").strip()
+                    if org:
+                        name += f" ({org})"
+                    item["xml_value"] = name
+                if db_author is not None:
+                    name = db_author.titlepage_name
+                    if db_author.is_editor:
+                        name += " , Ed."
+                    if db_author.affiliation:
+                        name += f" ({db_author.affiliation.strip()})"
+                    item["db_value"] = name
                 overall_match = False
                 overall_can_fix = False
                 items.append(item)
