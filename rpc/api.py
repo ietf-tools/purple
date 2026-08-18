@@ -2662,55 +2662,46 @@ class RfcMailTemplatesList(views.APIView):
         )
 
         interested_parties = {"rfc-editor@rfc-editor.org"}
-        if rfc_to_be.shepherd is not None:
-            shepherd_email = rfc_to_be.shepherd.email
-            if shepherd_email:
-                interested_parties.add(shepherd_email)
-        stream_slug = rfc_to_be.stream_id
+        publication_cc = {"rfc-editor@rfc-editor.org", "drafts-update-ref@iana.org"}
 
-        individual_ietf_contacts: set[str] = set()
-        if stream_slug == "ietf" and not rfc_to_be.group:
-            for person in (rfc_to_be.iesg_contact, rfc_to_be.stream_manager):
-                if person is not None and person.email:
-                    individual_ietf_contacts.add(person.email)
+        if rfc_to_be.shepherd and rfc_to_be.shepherd.email:
+            interested_parties.add(rfc_to_be.shepherd.email)
+
+        stream_slug = rfc_to_be.stream_id
         if stream_slug == "iab":
             interested_parties.add("iab@iab.org")
         elif stream_slug == "ise":
             interested_parties.add("rfc-ise@rfc-editor.org")
         elif stream_slug == "editorial":
-            interested_parties.add("rswg-chairs@rfc-editor.org")
-            interested_parties.add("rsab@rfc-editor.org")
+            interested_parties |= {"rswg-chairs@rfc-editor.org", "rsab@rfc-editor.org"}
+            publication_cc.add("rswg@rfc-editor.org")
         elif stream_slug == "ietf":
             if rfc_to_be.area:
                 interested_parties.add(f"{rfc_to_be.area}-ads@ietf.org")
             if rfc_to_be.group:
                 interested_parties.add(f"{rfc_to_be.group}-chairs@ietf.org")
+                if list_email := datatracker_group_list_email(rfc_to_be.group):
+                    publication_cc.add(list_email)
             else:
-                interested_parties |= individual_ietf_contacts
+                contacts = {
+                    p.email
+                    for p in (rfc_to_be.iesg_contact, rfc_to_be.stream_manager)
+                    if p is not None and p.email
+                }
+                interested_parties |= contacts
+                publication_cc |= contacts
         elif stream_slug == "irtf":
             for chair in rfc_to_be.wg_chairs:
                 if chair.email:
                     interested_parties.add(chair.email)
             interested_parties.add("irsg@irtf.org")
+            if rfc_to_be.group:
+                if list_email := datatracker_group_list_email(rfc_to_be.group):
+                    publication_cc.add(list_email)
+
         for ad in rfc_to_be.area_directors:
             if ad.email:
                 interested_parties.add(ad.email)
-
-        publication_cc = {"rfc-editor@rfc-editor.org", "drafts-update-ref@iana.org"}
-        if stream_slug == "editorial":
-            publication_cc.add("rswg@rfc-editor.org")
-        elif stream_slug == "ietf":
-            if rfc_to_be.group:
-                ietf_list_email = datatracker_group_list_email(rfc_to_be.group)
-                if ietf_list_email:
-                    publication_cc.add(ietf_list_email)
-            else:
-                publication_cc |= individual_ietf_contacts
-        elif stream_slug == "irtf":
-            if rfc_to_be.group:
-                irtf_list_email = datatracker_group_list_email(rfc_to_be.group)
-                if irtf_list_email:
-                    publication_cc.add(irtf_list_email)
 
         subseries_prefix = "".join(
             f"{m.type.slug.upper()} {m.number}, "
