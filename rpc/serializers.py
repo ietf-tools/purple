@@ -22,6 +22,7 @@ from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.activities import pending_activities
 from rpc.lifecycle.metadata import MetadataComparator
+from rpc.lifecycle.repo import normalize_github_repo
 from rpc.stats.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
 from rpc.stats.timeline import KIND_CHOICES
 
@@ -1045,6 +1046,12 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "rev",
         ]
         read_only_fields = ["id", "draft", "published_at"]
+
+    def validate_repository(self, value):
+        try:
+            return normalize_github_repo(value)
+        except ValueError as err:
+            raise serializers.ValidationError(str(err)) from err
 
     def update(self, instance, validated_data):
         _UNSET = object()

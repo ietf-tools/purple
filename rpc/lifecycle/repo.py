@@ -3,6 +3,7 @@
 
 import json
 import logging
+import re
 from pathlib import PurePath
 
 import jsonschema
@@ -17,6 +18,32 @@ from requests import HTTPError
 logger = logging.getLogger(__name__)
 
 REQUEST_TIMEOUT = 30  # seconds
+
+_GITHUB_URL_RE = re.compile(
+    r"^(?:https?://)?(?:www\.)?github\.com/"
+    r"(?P<owner>[\w.-]+)/(?P<repo>[\w.-]+?)(?:\.git)?/?$",
+    re.IGNORECASE,
+)
+_REPO_SHORTHAND_RE = re.compile(r"^(?P<owner>[\w.-]+)/(?P<repo>[\w.-]+)$")
+
+
+def normalize_github_repo(value: str) -> str:
+    """Canonicalize a repository value to 'owner/repo'.
+
+    Accepts the 'owner/repo' shorthand or a full github.com URL
+    ('https://github.com/owner/repo[.git]'). Empty input passes through (the
+    field is optional). Raises ValueError for anything else.
+    """
+    value = (value or "").strip()
+    if not value:
+        return ""
+    match = _GITHUB_URL_RE.match(value) or _REPO_SHORTHAND_RE.match(value)
+    if match is None:
+        raise ValueError(
+            "Enter a repository as 'owner/repo' or a github.com URL "
+            "(e.g. https://github.com/owner/repo)."
+        )
+    return f"{match['owner']}/{match['repo']}"
 
 
 class RepositoryFile(File):
