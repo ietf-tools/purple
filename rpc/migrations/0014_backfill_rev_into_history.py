@@ -13,9 +13,9 @@ def backfill_rev_into_history(apps, schema_editor):
     record; genuine rev values are left untouched.
     """
     RfcToBe = apps.get_model("rpc", "RfcToBe")
-    Historical = apps.get_model("rpc", "HistoricalRfcToBe")
+    HistoricalRfcToBe = apps.get_model("rpc", "HistoricalRfcToBe")
     for rfctobe in RfcToBe.objects.exclude(rev=""):
-        snaps = Historical.objects.filter(id=rfctobe.id)
+        snaps = HistoricalRfcToBe.objects.filter(id=rfctobe.id)
         first_real = (
             snaps.exclude(rev="")
             .order_by("history_date", "history_id")
