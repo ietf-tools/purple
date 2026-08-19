@@ -364,7 +364,6 @@ class PublishRfcToBeTests(TestCase):
                 "rpc.lifecycle.publication.upload_rfc_contents",
                 side_effect=RuntimeError("upload failed"),
             ),
-            patch("rpc.lifecycle.publication.create_rfc_index_json"),
             self.assertRaises(PublicationError) as ctx,
         ):
             _do_publish_rfctobe(rfctobe, self.EXPECTED_HEAD, rpcapi=MagicMock())
