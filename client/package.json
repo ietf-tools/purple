@@ -35,7 +35,7 @@
     "vue": "3.5.35"
   },
   "devDependencies": {
-    "@nuxt/devtools": "3.2.4",
+    "@nuxt/devtools": "3.4.1",
     "@nuxt/icon": "2.1.0",
     "@nuxt/test-utils": "4.0.3",
     "@nuxtjs/color-mode": "4.0.0",
@@ -52,7 +52,7 @@
     "@vue/test-utils": "2.4.6",
     "globals": "17.4.0",
     "happy-dom": "20.9.0",
-    "nuxt": "4.4.7",
+    "nuxt": "4.5.2",
     "nuxt-headlessui": "1.2.2",
     "nuxt-security": "2.5.1",
     "nuxt-svgo": "5.3.0",
