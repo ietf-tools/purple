@@ -35,7 +35,7 @@
     "vue": "3.5.35"
   },
   "devDependencies": {
-    "@nuxt/devtools": "3.2.4",
+    "@nuxt/devtools": "3.4.1",
     "@nuxt/icon": "2.1.0",
     "@nuxt/test-utils": "4.0.3",
     "@nuxtjs/color-mode": "4.0.0",
