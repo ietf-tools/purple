@@ -85,6 +85,23 @@ body {
 .dark body {
   background-color: #0a0a0a;
 }
+/* Dark-mode fallback for form controls that don't set their own colors.
+   :where() keeps specificity minimal so components with explicit dark: classes win. */
+.dark textarea,
+.dark select,
+.dark input:where(:not([type='checkbox']):not([type='radio'])) {
+  color: #f3f4f6;
+}
+/* Field background only for standalone controls; textareas keep a transparent
+   background so they blend with their own container (e.g. the comment box). */
+.dark select,
+.dark input:where(:not([type='checkbox']):not([type='radio'])) {
+  background-color: #262626;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #9ca3af;
+}
 #__nuxt {
   min-height: 100vh;
 }
