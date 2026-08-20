@@ -1470,3 +1470,80 @@ class DirtyBits(models.Model):
 
     class Meta:
         verbose_name_plural = "dirty bits"
+
+
+class Notification(models.Model):
+    """An in-app notification about a document event.
+
+    A null recipient is a broadcast seen by everyone; a set recipient targets a
+    single RpcPerson. We only ever broadcast today, but the recipient field keeps
+    per-person targeting available. Read state is per-person (NotificationReadMarker).
+    """
+
+    class EventType(models.TextChoices):
+        BLOCKED = "blocked", "document blocked"
+        UNBLOCKED = "unblocked", "document unblocked"
+
+    recipient = models.ForeignKey(
+        "RpcPerson",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        help_text="Person to notify; null broadcasts to everyone",
+    )
+    event_type = models.CharField(max_length=32, choices=EventType.choices)
+    rfc_to_be = models.ForeignKey(
+        "RfcToBe",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text="Document this notification is about",
+    )
+    # Denormalized event detail (draft name, blocking reason names) so a
+    # notification renders without re-deriving state that may since have changed.
+    data = models.JSONField(default=dict, blank=True)
+    created = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [models.Index(fields=["recipient", "-created"])]
+
+    def __str__(self):
+        who = self.recipient if self.recipient_id else "everyone"
+        return f"{self.get_event_type_display()} for {who}"
+
+    @classmethod
+    def notify_block_change(cls, rfc_to_be, *, blocked, recipient=None):
+        """Record that a document was blocked/unblocked. recipient=None broadcasts."""
+        data = {"draft_name": rfc_to_be.name}
+        if blocked:
+            data["reasons"] = sorted(
+                RfcToBeBlockingReason.objects.filter(
+                    rfc_to_be=rfc_to_be, resolved__isnull=True
+                ).values_list("reason__name", flat=True)
+            )
+        return cls.objects.create(
+            recipient=recipient,
+            event_type=cls.EventType.BLOCKED if blocked else cls.EventType.UNBLOCKED,
+            rfc_to_be=rfc_to_be,
+            data=data,
+        )
+
+
+class NotificationReadMarker(models.Model):
+    """Per-user watermark: notifications created at or before seen_at are read.
+
+    Keyed on the login user (not RpcPerson) so broadcasts work for any
+    authenticated user, and kept off those models to avoid churning their history.
+    """
+
+    user = models.OneToOneField(
+        "rpcauth.User",
+        on_delete=models.CASCADE,
+        related_name="notification_read_marker",
+    )
+    seen_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user} read up to {self.seen_at}"
