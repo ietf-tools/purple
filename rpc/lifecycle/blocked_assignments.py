@@ -8,6 +8,7 @@ from ..models import (
     Assignment,
     BlockingReason,
     DocRelationshipName,
+    Notification,
     RfcToBe,
     RfcToBeBlockingReason,
     RpcRole,
@@ -263,6 +264,8 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
         reason.resolved = now
         reason.save(update_fields=["resolved"])
 
+    # We notify only on unblock: an unblocked doc is ready for someone to pick up.
+    Notification.notify_block_change(rfc, blocked=False)
     return True
 
 

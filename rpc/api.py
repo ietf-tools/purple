@@ -78,6 +78,8 @@ from .models import (
     FinalApproval,
     Label,
     MetadataValidationResults,
+    Notification,
+    NotificationReadMarker,
     RfcAuthor,
     RfcToBe,
     RfcToBeBlockingReason,
@@ -126,6 +128,7 @@ from .serializers import (
     MetadataValidationResultsSerializer,
     NameSerializer,
     NestedAssignmentSerializer,
+    NotificationSerializer,
     PublicClusterSerializer,
     PublicQueueItemSerializer,
     PublishRfcSerializer,
@@ -1230,6 +1233,72 @@ class AssignmentViewSet(viewsets.ModelViewSet):
     filter_backends = (filters.DjangoFilterBackend, drf_filters.OrderingFilter)
     ordering_fields = ["id"]
     ordering = ["-id"]
+
+
+class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Current user's in-app notifications: broadcasts plus any addressed to them.
+
+    Broadcasts (recipient is null) are visible to every authenticated user;
+    targeted notifications only to their RpcPerson. Read state is per login user.
+    """
+
+    serializer_class = NotificationSerializer
+    pagination_class = DefaultLimitOffsetPagination
+
+    # Broadcasts keep the bell lit for this long after they're sent, even once
+    # read, so an announcement to everyone can't be silently dismissed at a glance.
+    BROADCAST_DOT_TTL = datetime.timedelta(days=1)
+
+    def _seen_at(self):
+        marker = NotificationReadMarker.objects.filter(user=self.request.user).first()
+        return marker.seen_at if marker else None
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Notification.objects.none()
+        visible = Q(recipient__isnull=True)
+        # rpcperson() reaches the datatracker by subject id, so skip it for users
+        # without one (they still see broadcasts).
+        rpcperson = user.rpcperson() if user.datatracker_subject_id else None
+        if rpcperson is not None:
+            visible |= Q(recipient=rpcperson)
+        return Notification.objects.filter(visible).select_related("rfc_to_be")
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["seen_at"] = self._seen_at()
+        return context
+
+    @extend_schema(
+        operation_id="notifications_unread_count",
+        responses=inline_serializer(
+            "NotificationUnreadCount", fields={"count": serializers.IntegerField()}
+        ),
+    )
+    @action(detail=False, methods=["get"], url_path="unread_count")
+    def unread_count(self, request):
+        if not request.user.is_authenticated:
+            return Response({"count": 0})
+        seen_at = self._seen_at()
+        unread = Q() if seen_at is None else Q(created__gt=seen_at)
+        recent_broadcast = Q(
+            recipient__isnull=True,
+            created__gte=timezone.now() - self.BROADCAST_DOT_TTL,
+        )
+        count = self.get_queryset().filter(unread | recent_broadcast).count()
+        return Response({"count": count})
+
+    @extend_schema(
+        operation_id="notifications_mark_read", request=None, responses={204: None}
+    )
+    @action(detail=False, methods=["post"], url_path="mark_read")
+    def mark_read(self, request):
+        if request.user.is_authenticated:
+            NotificationReadMarker.objects.update_or_create(
+                user=request.user, defaults={"seen_at": timezone.now()}
+            )
+        return Response(status=204)
 
 
 class RfcToBeQueryParamsForm(forms.Form):
