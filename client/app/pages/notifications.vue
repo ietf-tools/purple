@@ -63,20 +63,18 @@ import { DateTime } from 'luxon'
 const api = useApi()
 const { markAllRead } = useNotifications()
 
-const {
-  data,
-  pending,
-  error,
-  refresh
-} = await useAsyncData('notifications', () => api.notificationsList(), {
-  server: false,
-  lazy: true
-})
+const { data, pending, error, refresh } = await useAsyncData(
+  'notifications',
+  () => api.notificationsList(),
+  {
+    server: false,
+    lazy: true
+  }
+)
 
 const items = computed(() => data.value?.results ?? [])
 
-const relativeTime = (d?: Date) =>
-  d ? (DateTime.fromJSDate(d).toRelative() ?? '') : ''
+const relativeTime = (d?: Date) => (d ? (DateTime.fromJSDate(d).toRelative() ?? '') : '')
 
 // Visiting the page clears the bell dot; the unread highlights above stay for
 // this render (they came from the list fetched before the watermark advanced).
