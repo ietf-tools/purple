@@ -7,60 +7,60 @@ paths:
   /api/rpc/notifications/:
     get:
       operationId: notifications_list
-      description: 'Current user''s in-app notifications: broadcasts plus any addressed
-        to them.'
+      description: "Current user's in-app notifications: broadcasts plus any addressed
+        to them."
       parameters:
-      - name: limit
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - name: offset
-        required: false
-        in: query
-        description: The initial index from which to return the results.
-        schema:
-          type: integer
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
       tags:
-      - purple
+        - purple
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedNotificationList'
-          description: ''
+                $ref: "#/components/schemas/PaginatedNotificationList"
+          description: ""
   /api/rpc/notifications/mark_read/:
     post:
       operationId: notifications_mark_read
-      description: 'Current user''s in-app notifications: broadcasts plus any addressed
-        to them.'
+      description: "Current user's in-app notifications: broadcasts plus any addressed
+        to them."
       tags:
-      - purple
+        - purple
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
-        '204':
+        "204":
           description: No response body
   /api/rpc/notifications/unread_count/:
     get:
       operationId: notifications_unread_count
-      description: 'Current user''s in-app notifications: broadcasts plus any addressed
-        to them.'
+      description: "Current user's in-app notifications: broadcasts plus any addressed
+        to them."
       tags:
-      - purple
+        - purple
       security:
-      - cookieAuth: []
+        - cookieAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/NotificationUnreadCount'
-          description: ''
+                $ref: "#/components/schemas/NotificationUnreadCount"
+          description: ""
   /api/pubq/clusters/:
     get:
       operationId: api_pubq_clusters_list
@@ -3608,8 +3608,8 @@ components:
   schemas:
     EventTypeEnum:
       enum:
-      - blocked
-      - unblocked
+        - blocked
+        - unblocked
       type: string
       description: |-
         * `blocked` - document blocked
@@ -3623,7 +3623,7 @@ components:
           type: integer
           readOnly: true
         event_type:
-          $ref: '#/components/schemas/EventTypeEnum'
+          $ref: "#/components/schemas/EventTypeEnum"
         rfc_to_be:
           type: integer
           nullable: true
@@ -3643,19 +3643,19 @@ components:
           type: boolean
           readOnly: true
       required:
-      - event_type
+        - event_type
     NotificationUnreadCount:
       type: object
       properties:
         count:
           type: integer
       required:
-      - count
+        - count
     PaginatedNotificationList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -3673,7 +3673,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Notification'
+            $ref: "#/components/schemas/Notification"
     ActionHolder:
       type: object
       description: Serialize an ActionHolder with person name
