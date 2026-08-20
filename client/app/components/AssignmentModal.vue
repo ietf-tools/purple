@@ -4,11 +4,11 @@
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
         <span v-if="props.message.type === 'assign'">
           Assign
-          <BaseBadge :label="props.message.role" size="xl"></BaseBadge>
+          <BaseBadge :label="roleName(props.message.role)" size="xl"></BaseBadge>
         </span>
         <span v-else-if="props.message.type === 'change'">
           Change
-          <BaseBadge :label="props.message.role" size="xl"></BaseBadge>
+          <BaseBadge :label="roleName(props.message.role)" size="xl"></BaseBadge>
           assignment
         </span>
         <span v-else-if="props.message.type === 'add'" class="flex items-center gap-2">
@@ -128,6 +128,8 @@ type Props = {
   defaultRole?: Assignment['role']
 }
 const props = defineProps<Props>()
+
+const { roleName } = useRoleName()
 
 // Exclude the synthetic 'blocked' role from the picker.
 const roleOptions = computed(() => (props.roles ?? []).filter((role) => role.slug !== 'blocked'))
