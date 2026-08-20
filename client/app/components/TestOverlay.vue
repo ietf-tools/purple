@@ -42,7 +42,6 @@ const { ok, cancel } = overlayModalMethods
 function save() {
   ok(
     // { beep: true, boop: 1 }
-
   )
 }
 </script>
