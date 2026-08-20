@@ -26,7 +26,7 @@ export const useNotifications = () => {
 
   onBeforeMount(() => {
     instanceCount++
-    if (userStore.authenticated) poll()
+    if (userStore.authenticated) void poll()
     if (interval === null) {
       interval = setInterval(poll, POLL_MS)
     }
