@@ -8,6 +8,7 @@ from ..models import (
     Assignment,
     BlockingReason,
     DocRelationshipName,
+    Notification,
     RfcToBe,
     RfcToBeBlockingReason,
     RpcRole,
@@ -200,6 +201,7 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
         )
         raise NotFound("Failed to create blocked assignment for rfc") from err
 
+    Notification.notify_block_change(rfc, blocked=True)
     return True
 
 
@@ -263,6 +265,7 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
         reason.resolved = now
         reason.save(update_fields=["resolved"])
 
+    Notification.notify_block_change(rfc, blocked=False)
     return True
 
 

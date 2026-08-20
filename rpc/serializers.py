@@ -43,6 +43,7 @@ from .models import (
     Label,
     MailMessage,
     MetadataValidationResults,
+    Notification,
     RfcAuthor,
     RfcToBe,
     RfcToBeBlockingReason,
@@ -320,6 +321,36 @@ class AssignmentSerializer(serializers.ModelSerializer):
                 data["state"] = self.instance.state
 
         return super().to_internal_value(data)
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    """In-app notification, with a per-request unread flag from the read watermark."""
+
+    draft_name = serializers.SerializerMethodField()
+    reasons = serializers.SerializerMethodField()
+    unread = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "event_type",
+            "rfc_to_be",
+            "draft_name",
+            "reasons",
+            "created",
+            "unread",
+        ]
+
+    def get_draft_name(self, obj) -> str:
+        return obj.data.get("draft_name", "")
+
+    def get_reasons(self, obj) -> list[str]:
+        return obj.data.get("reasons", [])
+
+    def get_unread(self, obj) -> bool:
+        seen_at = self.context.get("seen_at")
+        return seen_at is None or obj.created > seen_at
 
 
 class AssignmentHistorySerializer(HistorySerializer):

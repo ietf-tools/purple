@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
 from datatracker.factories import DocumentFactory
@@ -20,12 +21,15 @@ from .factories import (
     ClusterFactory,
     DispositionNameFactory,
     RfcToBeFactory,
+    RpcRoleFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
     StreamNameFactory,
     TlpBoilerplateChoiceNameFactory,
     UnusableRfcNumberFactory,
 )
+from .lifecycle.blocked_assignments import apply_manual_block, apply_manual_unblock
+from .models import Notification, NotificationReadMarker
 from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts
@@ -440,3 +444,52 @@ class DocumentSearchTests(TestCase):
         self.assertEqual(len(payload["results"]), 1)
         self.assertEqual(payload["results"][0]["id"], in_progress.id)
         self.assertEqual(payload["results"][0]["disposition"]["slug"], "in_progress")
+
+
+class NotificationTests(TestCase):
+    def test_block_unblock_emit_broadcast_notifications(self):
+        RpcRoleFactory(slug="blocked")
+        rfc = RfcToBeFactory()
+
+        apply_manual_block(rfc, comment="hold it")
+        blocked = Notification.objects.filter(event_type="blocked", rfc_to_be=rfc)
+        self.assertEqual(blocked.count(), 1)
+        n = blocked.get()
+        self.assertIsNone(n.recipient)  # broadcast: everyone sees it
+        self.assertEqual(n.data["draft_name"], rfc.name)
+        self.assertIn("Manual Hold", n.data["reasons"])
+
+        apply_manual_unblock(rfc)
+        unblocked = Notification.objects.filter(event_type="unblocked", rfc_to_be=rfc)
+        self.assertEqual(unblocked.count(), 1)
+        self.assertIsNone(unblocked.get().recipient)
+
+
+class NotificationDotTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="notif-user", password="test-password", name="Notif User"
+        )
+        self.client.force_login(self.user)
+
+    def _count(self):
+        resp = self.client.get("/api/rpc/notifications/unread_count/")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return resp.json()["count"]
+
+    def test_broadcast_keeps_dot_for_a_day_even_after_read(self):
+        rfc = RfcToBeFactory()
+        broadcast = Notification.objects.create(
+            recipient=None, event_type="blocked", rfc_to_be=rfc, data={}
+        )
+        # User reads everything.
+        NotificationReadMarker.objects.create(user=self.user, seen_at=timezone.now())
+
+        # A recent broadcast still lights the bell despite being read.
+        self.assertEqual(self._count(), 1)
+
+        # Once older than the TTL, a read broadcast no longer counts.
+        Notification.objects.filter(pk=broadcast.pk).update(
+            created=timezone.now() - timedelta(days=2)
+        )
+        self.assertEqual(self._count(), 0)
