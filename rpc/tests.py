@@ -447,22 +447,21 @@ class DocumentSearchTests(TestCase):
 
 
 class NotificationTests(TestCase):
-    def test_block_unblock_emit_broadcast_notifications(self):
+    def test_only_unblock_emits_broadcast_notification(self):
         RpcRoleFactory(slug="blocked")
         rfc = RfcToBeFactory()
 
         apply_manual_block(rfc, comment="hold it")
-        blocked = Notification.objects.filter(event_type="blocked", rfc_to_be=rfc)
-        self.assertEqual(blocked.count(), 1)
-        n = blocked.get()
-        self.assertIsNone(n.recipient)  # broadcast: everyone sees it
-        self.assertEqual(n.data["draft_name"], rfc.name)
-        self.assertIn("Manual Hold", n.data["reasons"])
+        self.assertFalse(  # blocking a doc does not notify
+            Notification.objects.filter(rfc_to_be=rfc).exists()
+        )
 
         apply_manual_unblock(rfc)
         unblocked = Notification.objects.filter(event_type="unblocked", rfc_to_be=rfc)
         self.assertEqual(unblocked.count(), 1)
-        self.assertIsNone(unblocked.get().recipient)
+        n = unblocked.get()
+        self.assertIsNone(n.recipient)  # broadcast: everyone sees it
+        self.assertEqual(n.data["draft_name"], rfc.name)
 
 
 class NotificationDotTests(TestCase):
@@ -480,7 +479,7 @@ class NotificationDotTests(TestCase):
     def test_broadcast_keeps_dot_for_a_day_even_after_read(self):
         rfc = RfcToBeFactory()
         broadcast = Notification.objects.create(
-            recipient=None, event_type="blocked", rfc_to_be=rfc, data={}
+            recipient=None, event_type="unblocked", rfc_to_be=rfc, data={}
         )
         # User reads everything.
         NotificationReadMarker.objects.create(user=self.user, seen_at=timezone.now())
