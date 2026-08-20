@@ -60,7 +60,7 @@
                 v-for="assignment in queueItemByDraftName[clusterDocument.name]?.assignmentSet"
                 :key="assignment.id"
                 class="flex items-center gap-1.5 text-sm">
-                <BaseBadge :label="assignment.role" class="shrink-0" />
+                <BaseBadge :label="roleName(assignment.role)" class="shrink-0" />
                 <span class="text-gray-700 dark:text-gray-300 truncate">
                   {{ personById[assignment.person ?? -1]?.name ?? '—' }}
                 </span>
@@ -72,7 +72,7 @@
               v-for="activity in queueItemByDraftName[clusterDocument.name]?.pendingActivities"
               :key="activity.slug"
               class="mr-1">
-              <BaseBadge :label="activity.slug" />
+              <BaseBadge :label="activity.name" />
             </span>
             <span
               v-if="
@@ -152,6 +152,8 @@ const { data: people } = await useAsyncData('rpc-people-for-cluster', () => api.
 })
 
 const personById = computed(() => Object.fromEntries(people.value.map((p) => [p.id, p])))
+
+const { roleName } = useRoleName()
 
 const snackbar = useSnackbar()
 

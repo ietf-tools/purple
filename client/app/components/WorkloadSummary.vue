@@ -6,7 +6,7 @@
   </component>
   <component :is="elementName" v-for="([role, pageCount], index) in orderedRoles">
     {{ pageCount }}
-    <BaseBadge :label="role" />
+    <BaseBadge :label="roleName(role)" />
     <template v-if="pageCount === 1">page</template>
     <template v-else>pages</template>
     <template v-if="index === orderedRoles.length - 1">.</template>
@@ -26,6 +26,8 @@ type Props = {
 }
 
 const props = withDefaults(defineProps<Props>(), { mode: 'inline' })
+
+const { roleName } = useRoleName()
 
 const elementName = computed(() => (props.mode === 'inline' ? 'span' : 'div'))
 
