@@ -40,7 +40,7 @@
                     /></Anchor>
                   </dt>
                   <dd class="relative">
-                    <BaseBadge :label="assignment.role" />
+                    <BaseBadge :label="roleName(assignment.role)" />
                     <AssignmentState :state="assignment.state" />
                     <template
                       v-if="
@@ -76,7 +76,7 @@
                   :key="pendingAct.slug"
                   class="py-1 grid grid-cols-2">
                   <dd class="relative">
-                    <BaseBadge :label="pendingAct.slug" />
+                    <BaseBadge :label="pendingAct.name" />
                   </dd>
                 </div>
               </dl>
@@ -107,6 +107,7 @@ const route = useRoute()
 const api = useApi()
 const snackbar = useSnackbar()
 const { openOverlayModal } = inject(overlayModalKey)!
+const { roleName } = useRoleName()
 
 // COMPUTED
 

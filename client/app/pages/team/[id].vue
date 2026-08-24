@@ -263,18 +263,19 @@ const { data: allLabels } = await useAsyncData('labels', () => api.labelsList(),
   default: () => [] as Label[]
 })
 
-const ROLES = [
-  { slug: 'enqueuer', label: 'Enqueuer' },
-  { slug: 'ref_checker', label: 'Ref Checker' },
-  { slug: 'formatting', label: 'Formatting' },
-  { slug: 'first_editor', label: 'First Edit' },
-  { slug: 'second_editor', label: 'Second Edit' },
-  { slug: 'final_review_editor', label: 'Final Review' },
-  { slug: 'publisher', label: 'Publisher' }
+// Canonical role order for sorting
+const ROLE_ORDER = [
+  'enqueuer',
+  'ref_checker',
+  'formatting',
+  'first_editor',
+  'second_editor',
+  'final_review_editor',
+  'publisher'
 ]
 
-const roleLabel = (slug: string) => ROLES.find((r) => r.slug === slug)?.label ?? slug
-const roleOrder = (slug: string) => ROLES.findIndex((r) => r.slug === slug)
+const { roleName } = useRoleName()
+const roleOrder = (slug: string) => ROLE_ORDER.indexOf(slug)
 
 // For a blocked assignment, find its current workflow stage from the document's
 // pending activities
@@ -295,10 +296,10 @@ const sortedAssignments = computed(() => {
     if (a.role === 'blocked') {
       // Sort immediately after the inferred stage, or to the very end if unknown.
       const stage = blockedStage(a)
-      return stage ? stage.index + 0.5 : ROLES.length + 1
+      return stage ? stage.index + 0.5 : ROLE_ORDER.length + 1
     }
     const idx = roleOrder(a.role)
-    return idx === -1 ? ROLES.length : idx
+    return idx === -1 ? ROLE_ORDER.length : idx
   }
 
   return [...assignments.value].sort((a, b) => {
@@ -384,7 +385,7 @@ const assignmentColumns = [
     cell: ({ row }) => {
       const a = row.original
       const displayRole = assignmentDisplayRole(a)
-      const label = roleLabel(displayRole)
+      const label = roleName(displayRole)
       const isBlocked = a.role === 'blocked'
       return h(
         'span',

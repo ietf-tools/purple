@@ -49,6 +49,8 @@ const relatedDocuments = defineModel<RpcRelatedDocumentAsObject[]>({
   default: [] as RpcRelatedDocumentAsObject[]
 })
 
+const { roleName } = useRoleName()
+
 const columns: Column[] = [
   {
     key: 'relationship',
@@ -90,7 +92,7 @@ const columns: Column[] = [
         const person = (people.value || []).find((p: any) => p.id === assignment.person)
         nodes.push(
           h('span', [
-            h(BaseBadge, { label: assignment.role }),
+            h(BaseBadge, { label: roleName(assignment.role) }),
             ' ',
             person ? `(${person.name})` : ''
           ])

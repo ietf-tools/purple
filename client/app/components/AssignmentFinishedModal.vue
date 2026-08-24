@@ -36,7 +36,7 @@
           :key="role"
           class="w-full flex mx-1 flex-row gap-4 items-start">
           <div class="w-[15em] shrink-0 flex items-start">
-            <BaseBadge :label="role" size="xl"></BaseBadge>
+            <BaseBadge :label="roleName(role)" size="xl"></BaseBadge>
           </div>
           <ul class="flex-1 min-w-0">
             <AssignmentFinishedModalPerson
@@ -70,6 +70,7 @@ type Props = {
 const props = defineProps<Props>()
 
 const api = useApi()
+const { roleName } = useRoleName()
 
 // A blocked doc's work assignments are closed and held by an active (in_progress)
 // 'blocked' assignment, so adding a new one would create an inconsistent state.

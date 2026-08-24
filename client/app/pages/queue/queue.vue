@@ -40,7 +40,7 @@
             <select v-model="selectedRoleFilter" :class="SELECT_STYLE">
               <option :value="null">All Roles</option>
               <option v-for="role in allRoles" :key="role" :value="role">
-                {{ role }}
+                {{ roleName(role) }}
               </option>
             </select>
           </div>
@@ -54,7 +54,7 @@
             <select v-model="selectedPendingRoleFilter" :class="SELECT_STYLE">
               <option :value="null">All Roles</option>
               <option v-for="role in allPendingRoles" :key="role" :value="role">
-                {{ role }}
+                {{ roleName(role) }}
               </option>
             </select>
           </div>
@@ -193,6 +193,8 @@ const { data: ianaStatuses } = await useAsyncData('iana-statuses', () => api.ian
   lazy: true,
   default: () => [] as IanaStatus[]
 })
+
+const { roleName } = useRoleName()
 
 const needsAssignmentTristate = ref<TristateValue>(TRISTATE_MIXED)
 const hasExceptionTristate = ref<TristateValue>(TRISTATE_MIXED)
@@ -346,7 +348,7 @@ const columns = [
 
         listItems.push(
           h('li', { class: 'flex gap-3' }, [
-            h('span', h(BaseBadge, { label: role, class: 'mr-1' })),
+            h('span', h(BaseBadge, { label: roleName(role), class: 'mr-1' })),
             h(
               'ul',
               { class: 'flex flex-col gap-2' },
@@ -464,7 +466,7 @@ const columns = [
         { class: 'flex flex-col gap-3' },
         value.map((rpcRole) =>
           h('li', { class: 'flex flex-row gap-2' }, [
-            h('div', h(BaseBadge, { label: rpcRole.slug })),
+            h('div', h(BaseBadge, { label: rpcRole.name })),
             !isBlocked &&
               h(
                 'div',

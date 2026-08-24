@@ -67,7 +67,7 @@
           <tbody class="divide-y divide-gray-200 dark:divide-neutral-800">
             <tr v-for="row in trackRows" :key="row.key">
               <td class="py-2 pl-4 pr-3">
-                <BaseBadge :label="row.role" />
+                <BaseBadge :label="roleName(row.role)" />
                 <span v-if="row.awaiting" class="ml-2 text-xs opacity-60">awaiting ref</span>
               </td>
               <td class="px-3 py-2">{{ row.person ?? '—' }}</td>
@@ -134,6 +134,7 @@ import {
 
 const route = useRoute()
 const api = useApi()
+const { roleName } = useRoleName()
 
 const currentTab: DocTabId = 'timeline'
 const draftName = computed(() => route.params.id?.toString() ?? '')
