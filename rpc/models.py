@@ -12,10 +12,15 @@ from django.contrib.postgres.forms import SimpleArrayField
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import (
-    Exists,
+    BooleanField,
+    Case,
+    Count,
     OuterRef,
     Prefetch,
+    Q,
     Subquery,
+    Value,
+    When,
 )
 from django.utils import timezone
 from rules import always_deny
@@ -751,15 +756,27 @@ class ClusterQuerySet(models.QuerySet):
         )
 
     def with_is_active_annotated(self):
-        """Annotate clusters with is_active status
-        A cluster is considered active if at least one of its documents is in_progress.
+        """Annotate clusters with is_active status.
+
+        Active only while more than one document is still unpublished (not in a
+        terminal published/withdrawn state) — a lone remaining doc has nothing
+        left to coordinate with.
         """
         return self.annotate(
-            is_active_annotated=Exists(
-                RfcToBe.objects.filter(
-                    draft__clustermember__cluster=OuterRef("pk"),
-                    disposition__slug="in_progress",
-                )
+            _unpublished_count=Count(
+                "clustermember__doc__rfctobe",
+                filter=Q(
+                    clustermember__doc__rfctobe__disposition__slug__in=(
+                        DispositionName.ACTIVE_SLUGS
+                    )
+                ),
+                distinct=True,
+            ),
+        ).annotate(
+            is_active_annotated=Case(
+                When(_unpublished_count__gt=1, then=Value(True)),
+                default=Value(False),
+                output_field=BooleanField(),
             )
         )
 

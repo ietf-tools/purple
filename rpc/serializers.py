@@ -2052,17 +2052,19 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """A cluster is considered active if at least one of its documents is
-        in_progress."""
+        """Active only while more than one document is still unpublished."""
 
         # Use annotated value if available
         if hasattr(cluster, "is_active_annotated"):
             return cluster.is_active_annotated
 
-        return RfcToBe.objects.filter(
-            draft__clustermember__cluster=cluster,
-            disposition__slug="in_progress",
-        ).exists()
+        return (
+            RfcToBe.objects.filter(
+                draft__clustermember__cluster=cluster,
+                disposition__slug__in=DispositionName.ACTIVE_SLUGS,
+            ).count()
+            > 1
+        )
 
     def create(self, validated_data):
         draft_names = validated_data.pop("draft_names", [])
