@@ -23,7 +23,6 @@ from rpc.models import (
 )
 
 from .api import apply_submission_cluster_membership, resolve_rfctobe
-from .lifecycle.blocked_assignments import get_block_reasons
 from .factories import (
     AssignmentFactory,
     ClusterFactory,
@@ -35,6 +34,7 @@ from .factories import (
     TlpBoilerplateChoiceNameFactory,
     UnusableRfcNumberFactory,
 )
+from .lifecycle.blocked_assignments import get_block_reasons
 from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts
