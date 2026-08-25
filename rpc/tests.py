@@ -14,9 +14,18 @@ from rest_framework.exceptions import NotFound
 from datatracker.factories import DocumentFactory
 from datatracker.models import Document
 from rpc.models import Cluster, ClusterMember, DocRelationshipName, RpcRelatedDocument
+from rpc.models import (
+    Assignment,
+    BlockingReason,
+    DocRelationshipName,
+    RpcRelatedDocument,
+    RpcRole,
+)
 
 from .api import apply_submission_cluster_membership, resolve_rfctobe
+from .lifecycle.blocked_assignments import get_block_reasons
 from .factories import (
+    AssignmentFactory,
     ClusterFactory,
     DispositionNameFactory,
     RfcToBeFactory,
@@ -440,6 +449,163 @@ class DocumentSearchTests(TestCase):
         self.assertEqual(len(payload["results"]), 1)
         self.assertEqual(payload["results"][0]["id"], in_progress.id)
         self.assertEqual(payload["results"][0]["disposition"]["slug"], "in_progress")
+
+
+class RefqueueBlockingTests(TestCase):
+    """Refqueue references: how they block the citing doc, and how import links them.
+
+    A refqueue ref that doesn't resolve to a queued RfcToBe (target_rfctobe is null)
+    blocks the citing doc; import links not-received refs to the new RfcToBe.
+    """
+
+    def _role(self, slug):
+        role, _ = RpcRole.objects.get_or_create(slug=slug, defaults={"name": slug})
+        return role
+
+    def _done(self, rfc, slug):
+        AssignmentFactory(
+            rfc_to_be=rfc, role=self._role(slug), state=Assignment.State.DONE
+        )
+
+    def _source_at_second_edit(self):
+        """An RfcToBe whose first edit is finished and second edit is pending."""
+        source = RfcToBeFactory()
+        for slug in ("enqueuer", "formatting", "ref_checker", "first_editor"):
+            self._done(source, slug)
+        return source
+
+    def _refqueue(self):
+        rel, _ = DocRelationshipName.objects.get_or_create(
+            slug="refqueue", defaults={"name": "refqueue"}
+        )
+        return rel
+
+    def test_blocks_when_normref_first_edit_incomplete(self):
+        source = self._source_at_second_edit()
+        target = RfcToBeFactory()
+        AssignmentFactory(
+            rfc_to_be=target,
+            role=self._role("first_editor"),
+            state=Assignment.State.IN_PROGRESS,
+        )
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=self._refqueue(), target_rfctobe=target
+        )
+
+        reasons = get_block_reasons(source)
+
+        self.assertIn(BlockingReason.REFQUEUE_FIRST_EDIT_INCOMPLETE, reasons)
+
+    def test_no_block_when_normref_first_edit_done(self):
+        source = self._source_at_second_edit()
+        target = RfcToBeFactory()
+        self._done(target, "first_editor")
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=self._refqueue(), target_rfctobe=target
+        )
+
+        reasons = get_block_reasons(source)
+
+        self.assertNotIn(BlockingReason.REFQUEUE_FIRST_EDIT_INCOMPLETE, reasons)
+
+    def test_unqueued_ref_blocks_second_edit(self):
+        source = self._source_at_second_edit()
+        unqueued = DocumentFactory(  # a normref not in the queue (no RfcToBe)
+            name="draft-unqueued-normref", pages=10
+        )
+        RpcRelatedDocument.objects.create(
+            source=source,
+            relationship=self._refqueue(),
+            target_document=unqueued,
+        )
+
+        reasons = get_block_reasons(source)
+
+        self.assertIn(BlockingReason.REFQUEUE_FIRST_EDIT_INCOMPLETE, reasons)
+
+    def test_unqueued_ref_blocks_publish(self):
+        source = RfcToBeFactory()
+        for slug in (
+            "enqueuer",
+            "formatting",
+            "ref_checker",
+            "first_editor",
+            "second_editor",
+            "final_review_editor",
+        ):
+            self._done(source, slug)  # reach the publisher gate
+        unqueued = DocumentFactory(name="draft-unqueued-pubref", pages=10)
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=self._refqueue(), target_document=unqueued
+        )
+
+        reasons = get_block_reasons(source)
+
+        self.assertIn(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE, reasons)
+
+    def _not_received(self):
+        rel, _ = DocRelationshipName.objects.get_or_create(
+            slug="not-received", defaults={"name": "not-received"}
+        )
+        return rel
+
+    def test_upgrade_references_relinks_not_received_to_refqueue(self):
+        from rpc.api import upgrade_references_to_rfctobe
+
+        self._refqueue()  # ensure the refqueue relationship exists
+        source = RfcToBeFactory()
+        target_doc = DocumentFactory(name="draft-becomes-queued", pages=5)
+        ref = RpcRelatedDocument.objects.create(
+            source=source, relationship=self._not_received(), target_document=target_doc
+        )
+        target = RfcToBeFactory(draft=target_doc)  # the draft enters the queue
+
+        upgrade_references_to_rfctobe(target)
+
+        ref.refresh_from_db()
+        self.assertEqual(ref.relationship_id, "refqueue")
+        self.assertEqual(ref.target_rfctobe_id, target.pk)
+        self.assertIsNone(ref.target_document_id)
+
+    def test_upgrade_references_drops_duplicate(self):
+        from rpc.api import upgrade_references_to_rfctobe
+
+        rel = self._refqueue()
+        source = RfcToBeFactory()
+        target_doc = DocumentFactory(name="draft-dup-queued", pages=5)
+        target = RfcToBeFactory(draft=target_doc)
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=rel, target_rfctobe=target
+        )
+        stale = RpcRelatedDocument.objects.create(
+            source=source, relationship=self._not_received(), target_document=target_doc
+        )
+
+        upgrade_references_to_rfctobe(target)
+
+        self.assertFalse(RpcRelatedDocument.objects.filter(pk=stale.pk).exists())
+
+    def test_backfill_migration_writes_history_snapshot(self):
+        """The migration's filler must record its change in simple-history so a
+        later edit's diff can't absorb it and misattribute it (migrations bypass
+        simple-history's signals)."""
+        from importlib import import_module
+
+        mod = import_module("rpc.migrations.0015_backfill_refqueue_target_rfctobe")
+        ref = RpcRelatedDocument.objects.create(
+            source=RfcToBeFactory(),
+            relationship=self._refqueue(),
+            target_rfctobe=RfcToBeFactory(),
+        )
+        historical = RpcRelatedDocument.history.model
+
+        mod._write_history(historical, ref, "~")
+
+        snap = historical.objects.filter(id=ref.pk).order_by("-history_date").first()
+        self.assertEqual(snap.history_type, "~")
+        self.assertEqual(snap.target_rfctobe_id, ref.target_rfctobe_id)
+        self.assertIsNone(snap.history_user_id)
+        self.assertEqual(snap.history_change_reason, mod.CHANGE_REASON)
 
 
 class ClusterIsActiveTests(TestCase):
