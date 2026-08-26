@@ -51,7 +51,7 @@ const api = useApi()
 const snackbar = useSnackbar()
 
 const sortedLabels = computed(
-  () => labels.value?.toSorted((a, b) => a.slug.localeCompare(b.slug, 'en')) ?? []
+  () => labels.value?.toSorted((a, b) => a.name.localeCompare(b.name, 'en')) ?? []
 )
 const filterToggles = [
   { key: 'isException', label: 'Exception', icon: 'pajamas:warning' },

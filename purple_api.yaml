@@ -4622,10 +4622,20 @@ components:
           readOnly: true
         slug:
           type: string
+          description: Stable machine key, auto-generated from name; referenced in
+            code.
           maxLength: 64
+        name:
+          type: string
+          description: Human-readable name
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:
+          type: boolean
+        is_blocking:
           type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"
@@ -4634,6 +4644,7 @@ components:
         is_public:
           type: boolean
       required:
+        - name
         - slug
     LabelRequest:
       type: object
@@ -4641,10 +4652,21 @@ components:
         slug:
           type: string
           minLength: 1
+          description: Stable machine key, auto-generated from name; referenced in
+            code.
           maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          description: Human-readable name
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:
+          type: boolean
+        is_blocking:
           type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"
@@ -4653,6 +4675,7 @@ components:
         is_public:
           type: boolean
       required:
+        - name
         - slug
     LabelStat:
       type: object
@@ -5127,10 +5150,21 @@ components:
         slug:
           type: string
           minLength: 1
+          description: Stable machine key, auto-generated from name; referenced in
+            code.
           maxLength: 64
+        name:
+          type: string
+          minLength: 1
+          description: Human-readable name
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:
+          type: boolean
+        is_blocking:
           type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"

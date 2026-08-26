@@ -480,12 +480,23 @@ class LabelSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "slug",
+            "name",
+            "description",
             "is_exception",
             "is_complexity",
+            "is_blocking",
             "color",
             "used",
             "is_public",
         ]
+        extra_kwargs = {"name": {"required": True}}
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # Slug is the stable machine key: set once at creation, read-only after.
+        if self.instance is not None:
+            fields["slug"].read_only = True
+        return fields
 
 
 class AdditionalEmailSerializer(serializers.ModelSerializer):

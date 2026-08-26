@@ -12,7 +12,7 @@
         v-if="slugGroup === UNGROUPED"
         v-for="label in groupOfLabels"
         :key="label.id"
-        :label="`${label.isException ? '⚠️ ' : ''}${label.slug}`"
+        :label="`${label.isException ? '⚠️ ' : ''}${label.name}`"
         :value="label.id"
         :checked="Boolean(selectedLabelIds?.includes(label.id ?? 0))"
         :class="[
@@ -21,7 +21,7 @@
         ]"
         @change="handleCheckboxChange"
         size="small"
-        :title="label.slug" />
+        :title="label.name" />
       <div v-else class="ml-0.5">
         <DocLabelsGroup
           v-model="selectedLabelIds!"
@@ -79,8 +79,8 @@ const handleCheckboxChange = (e: Event) => {
 const groupsOfLabels = computed(() =>
   sortObject(
     groupBy(props.labels, (label) =>
-      label.slug.includes(SLUG_SEPARATOR)
-        ? label.slug.substring(0, label.slug.indexOf(SLUG_SEPARATOR))
+      label.name.includes(SLUG_SEPARATOR)
+        ? label.name.substring(0, label.name.indexOf(SLUG_SEPARATOR))
         : UNGROUPED
     )
   )

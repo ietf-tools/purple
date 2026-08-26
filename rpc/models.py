@@ -1208,9 +1208,16 @@ class Label(models.Model):
     ### Will have to have LabelHistory on objects that have collections of labels
     ### That is, we need to compute when something had a label and how long
 
-    slug = models.CharField(max_length=64, unique=True)
+    slug = models.CharField(
+        max_length=64,
+        unique=True,
+        help_text="Stable machine key, auto-generated from name; referenced in code.",
+    )
+    name = models.CharField(max_length=255, default="", help_text="Human-readable name")
+    description = models.TextField(blank=True, default="")
     is_exception = models.BooleanField(default=False)
     is_complexity = models.BooleanField(default=False)
+    is_blocking = models.BooleanField(default=False)
     color = models.CharField(
         max_length=7,
         default="purple",
@@ -1221,7 +1228,7 @@ class Label(models.Model):
     history = HistoricalRecords()
 
     def __str__(self):
-        return self.slug
+        return self.name or self.slug
 
 
 class RpcAuthorComment(models.Model):
