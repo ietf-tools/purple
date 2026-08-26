@@ -2647,7 +2647,9 @@ class RfcMailTemplatesList(views.APIView):
         rfc_number = rfc_to_be.rfc_number or "XXXX"
 
         # Pick the final review template and subject based on the draft's labels.
-        label_slugs = set(rfc_to_be.labels.values_list("slug", flat=True))
+        label_slugs = {
+            slug.lower() for slug in rfc_to_be.labels.values_list("slug", flat=True)
+        }
         has_markdown = "markdown" in label_slugs
         has_github = "github" in label_slugs
         if has_markdown and has_github:
