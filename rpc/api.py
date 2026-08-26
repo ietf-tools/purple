@@ -502,6 +502,60 @@ def submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
     return Response(SubmissionSerializer(subm).data)
 
 
+def upgrade_references_to_rfctobe(rfctobe):
+    """Adopt references that were waiting on rfctobe's draft as a bare Document.
+
+    not-received 1G refs become refqueue and are re-linked to the new RfcToBe (so
+    the blocking gates, which key off target_rfctobe, can see them); not-received
+    2G/3G refs are deleted. Returns the upgraded source drafts, their datatracker
+    ids, and the source ids whose 2G references need recomputation.
+    """
+    recompute_source_ids: set[int] = set()
+    upgraded_source_docs: list[Document] = []
+    upgraded_source_datatracker_ids: set[int] = set()
+    refqueue_rel = DocRelationshipName.objects.get(
+        slug=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
+    )
+    existing_references = RpcRelatedDocument.objects.filter(
+        target_document__name=rfctobe.draft.name,
+        relationship__slug__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS,
+    ).select_related("source__draft")
+    for existing_reference in existing_references:
+        if (
+            existing_reference.relationship.slug
+            == DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
+        ):
+            duplicate = (
+                RpcRelatedDocument.objects.filter(
+                    source=existing_reference.source,
+                    target_rfctobe=rfctobe,
+                    relationship=refqueue_rel,
+                )
+                .exclude(pk=existing_reference.pk)
+                .exists()
+            )
+            if duplicate:
+                existing_reference.delete()
+                continue
+            existing_reference.relationship = refqueue_rel
+            existing_reference.target_document = None
+            existing_reference.target_rfctobe = rfctobe
+            existing_reference.save()
+            source_draft = existing_reference.source.draft
+            upgraded_source_docs.append(source_draft)
+            if source_draft.datatracker_id is not None:
+                upgraded_source_datatracker_ids.add(source_draft.datatracker_id)
+        else:
+            if (
+                existing_reference.relationship.slug
+                == DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
+            ):
+                # schedule recomputation to clean up deleted 2G references.
+                recompute_source_ids.add(existing_reference.source_id)
+            existing_reference.delete()
+    return upgraded_source_docs, upgraded_source_datatracker_ids, recompute_source_ids
+
+
 @extend_schema(
     operation_id="submissions_import",
     request=CreateRfcToBeSerializer,
@@ -561,39 +615,12 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
         with transaction.atomic():
             rfctobe = serializer.save()
 
-            # check for existing references where the new draft is the target
-            # if "not-received" references exist, change them to "refqueue"
-            # if "not-received-2/3g" references exist, delete them
-            recompute_source_ids: set[int] = set()
-            upgraded_source_docs: list[Document] = []
-            upgraded_source_datatracker_ids: set[int] = set()
-            existing_references = RpcRelatedDocument.objects.filter(
-                target_document__name=rfctobe.draft.name,
-                relationship__slug__in=(
-                    DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
-                ),
-            ).select_related("source__draft")
-            for existing_reference in existing_references:
-                if (
-                    existing_reference.relationship.slug
-                    == DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
-                ):
-                    existing_reference.relationship = DocRelationshipName.objects.get(
-                        slug=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG
-                    )
-                    existing_reference.save()
-                    source_draft = existing_reference.source.draft
-                    upgraded_source_docs.append(source_draft)
-                    if source_draft.datatracker_id is not None:
-                        upgraded_source_datatracker_ids.add(source_draft.datatracker_id)
-                else:
-                    if (
-                        existing_reference.relationship.slug
-                        == DocRelationshipName.NOT_RECEIVED_2G_RELATIONSHIP_SLUG
-                    ):
-                        # schedule recomputation to clean up deleted 2G references.
-                        recompute_source_ids.add(existing_reference.source_id)
-                    existing_reference.delete()
+            # Adopt references that were waiting on this draft as a bare Document.
+            (
+                upgraded_source_docs,
+                upgraded_source_datatracker_ids,
+                recompute_source_ids,
+            ) = upgrade_references_to_rfctobe(rfctobe)
 
             if upgraded_source_docs:
                 apply_submission_cluster_membership(

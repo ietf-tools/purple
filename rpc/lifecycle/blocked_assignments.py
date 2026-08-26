@@ -95,8 +95,11 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
+                target = ref.target_rfctobe
                 if (
-                    ref.target_rfctobe.incomplete_activities()
+                    # Not in the queue, so not published.
+                    target is None
+                    or target.incomplete_activities()
                     .filter(slug="first_editor")
                     .exists()
                 ):
@@ -119,10 +122,13 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
             for ref in refqueue_qs:
+                target = ref.target_rfctobe
+                if target is None:
+                    # Not in the queue, so not published.
+                    reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
+                    continue
                 # block if publisher has no done or active assignment
-                publisher_qs = ref.target_rfctobe.assignment_set.filter(
-                    role__slug="publisher"
-                )
+                publisher_qs = target.assignment_set.filter(role__slug="publisher")
                 publisher_done_or_active = (
                     publisher_qs.active()
                     | publisher_qs.filter(state=Assignment.State.DONE)
