@@ -88,7 +88,12 @@
     </div>
 
     <div class="flex justify-between items-center mb-2">
-      <div></div>
+      <button
+        type="button"
+        class="text-xs text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:underline"
+        @click="resetFilters">
+        Reset filters
+      </button>
       <div class="text-sm text-gray-500 dark:text-neutral-400">
         {{ table.getRowModel().rows.length }} records
       </div>
@@ -679,6 +684,17 @@ const table = useVueTable({
 })
 
 const searchQuery = ref('')
+
+const resetFilters = () => {
+  needsAssignmentTristate.value = TRISTATE_MIXED
+  hasExceptionTristate.value = TRISTATE_MIXED
+  isBlockedTristate.value = TRISTATE_MIXED
+  selectedRoleFilter.value = null
+  selectedPendingRoleFilter.value = null
+  selectedIanaStatusFilter.value = null
+  selectedLabelFilters.value = {}
+  searchQuery.value = ''
+}
 
 const {
   data: clusters,
