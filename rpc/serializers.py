@@ -484,7 +484,6 @@ class LabelSerializer(serializers.ModelSerializer):
             "description",
             "is_exception",
             "is_complexity",
-            "is_blocking",
             "color",
             "used",
             "is_public",

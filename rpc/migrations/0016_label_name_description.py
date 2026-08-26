@@ -13,7 +13,6 @@ _SNAPSHOT_FIELDS = (
     "description",
     "is_exception",
     "is_complexity",
-    "is_blocking",
     "color",
     "used",
     "is_public",
@@ -68,11 +67,6 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name="historicallabel",
-            name="is_blocking",
-            field=models.BooleanField(default=False),
-        ),
-        migrations.AddField(
-            model_name="historicallabel",
             name="name",
             field=models.CharField(
                 default="", help_text="Human-readable name", max_length=255
@@ -82,11 +76,6 @@ class Migration(migrations.Migration):
             model_name="label",
             name="description",
             field=models.TextField(blank=True, default=""),
-        ),
-        migrations.AddField(
-            model_name="label",
-            name="is_blocking",
-            field=models.BooleanField(default=False),
         ),
         migrations.AddField(
             model_name="label",

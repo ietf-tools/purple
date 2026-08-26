@@ -4635,8 +4635,6 @@ components:
           type: boolean
         is_complexity:
           type: boolean
-        is_blocking:
-          type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"
         used:
@@ -4665,8 +4663,6 @@ components:
         is_exception:
           type: boolean
         is_complexity:
-          type: boolean
-        is_blocking:
           type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"
@@ -5163,8 +5159,6 @@ components:
         is_exception:
           type: boolean
         is_complexity:
-          type: boolean
-        is_blocking:
           type: boolean
         color:
           $ref: "#/components/schemas/ColorEnum"

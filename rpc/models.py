@@ -1217,7 +1217,6 @@ class Label(models.Model):
     description = models.TextField(blank=True, default="")
     is_exception = models.BooleanField(default=False)
     is_complexity = models.BooleanField(default=False)
-    is_blocking = models.BooleanField(default=False)
     color = models.CharField(
         max_length=7,
         default="purple",

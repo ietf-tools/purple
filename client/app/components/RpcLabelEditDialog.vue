@@ -130,6 +130,7 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+<<<<<<< HEAD
           <label
             for="is-blocking"
             class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
@@ -151,6 +152,9 @@
             class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
             >Color</label
           >
+=======
+          <label class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
+>>>>>>> 1de0937 (remove is_blocking)
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <HeadlessListbox v-model="label.color" as="div" class="relative sm:max-w-xs">
               <HeadlessListboxButton
@@ -270,7 +274,6 @@ const NEW_LABEL_DEFAULTS: Label = {
   description: '',
   isException: false,
   isComplexity: false,
-  isBlocking: false,
   color: 'slate',
   used: true,
   isPublic: false
