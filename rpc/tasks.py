@@ -173,8 +173,8 @@ def validate_metadata_task(self, rfc_to_be_id):
         _save_metadata_results(rfc_to_be, head_sha, metadata, status)
 
     except Exception as e:
-        logger.error(f"Error in validate_metadata_task: {e}")
-        detail = str(e)
+        logger.exception("Error in validate_metadata_task")
+        detail = str(e) or repr(e)
         status = MetadataValidationResults.Status.FAILED
         _save_metadata_results(rfc_to_be, head_sha, metadata, status, detail)
 
@@ -214,8 +214,8 @@ def process_rfctobe_changes_for_queue_task():
         change_count = process_rfctobe_changes_for_queue()
         logger.info(f"Detected {change_count} RFC changes for queue")
         return f"Queue changes processed ({change_count} RFCs changed)"
-    except Exception as e:
-        logger.error(f"Error in process_rfctobe_changes_for_queue_task: {e}")
+    except Exception:
+        logger.exception("Error in process_rfctobe_changes_for_queue_task")
 
 
 @shared_task
@@ -223,8 +223,8 @@ def push_queue_to_datatracker_task():
     """Push the full public queue payload to Datatracker unconditionally."""
     try:
         notify_datatracker_queue()
-    except Exception as e:
-        logger.error(f"Error in push_queue_to_datatracker_task: {e}")
+    except Exception:
+        logger.exception("Error in push_queue_to_datatracker_task")
 
 
 @shared_task
