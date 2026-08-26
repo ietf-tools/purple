@@ -13,10 +13,11 @@ from rest_framework.exceptions import NotFound
 
 from datatracker.factories import DocumentFactory
 from datatracker.models import Document
-from rpc.models import Cluster, ClusterMember, DocRelationshipName, RpcRelatedDocument
 from rpc.models import (
     Assignment,
     BlockingReason,
+    Cluster,
+    ClusterMember,
     DocRelationshipName,
     RpcRelatedDocument,
     RpcRole,
