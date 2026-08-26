@@ -13,7 +13,7 @@ from rest_framework.exceptions import NotFound
 
 from datatracker.factories import DocumentFactory
 from datatracker.models import Document
-from rpc.models import DocRelationshipName, RpcRelatedDocument
+from rpc.models import Cluster, ClusterMember, DocRelationshipName, RpcRelatedDocument
 
 from .api import apply_submission_cluster_membership, resolve_rfctobe
 from .factories import (
@@ -440,3 +440,43 @@ class DocumentSearchTests(TestCase):
         self.assertEqual(len(payload["results"]), 1)
         self.assertEqual(payload["results"][0]["id"], in_progress.id)
         self.assertEqual(payload["results"][0]["disposition"]["slug"], "in_progress")
+
+
+class ClusterIsActiveTests(TestCase):
+    """A cluster is active only while more than one document is still unpublished."""
+
+    def _add(self, cluster, disposition_slug, order):
+        rtb = RfcToBeFactory(disposition=DispositionNameFactory(slug=disposition_slug))
+        ClusterMember.objects.create(cluster=cluster, doc=rtb.draft, order=order)
+        return rtb
+
+    def _is_active(self, cluster):
+        annotated = Cluster.objects.with_is_active_annotated().get(pk=cluster.pk)
+        return annotated.is_active_annotated
+
+    def test_two_unpublished_is_active(self):
+        cluster = ClusterFactory()
+        self._add(cluster, "in_progress", 1)
+        self._add(cluster, "in_progress", 2)
+        self.assertTrue(self._is_active(cluster))
+
+    def test_single_unpublished_with_published_is_inactive(self):
+        cluster = ClusterFactory()
+        self._add(cluster, "in_progress", 1)
+        self._add(cluster, "published", 2)
+        self.assertFalse(self._is_active(cluster))
+
+    def test_all_published_is_inactive(self):
+        cluster = ClusterFactory()
+        self._add(cluster, "published", 1)
+        self._add(cluster, "published", 2)
+        self.assertFalse(self._is_active(cluster))
+
+    def test_serializer_fallback_matches_annotation(self):
+        from rpc.serializers import ClusterSerializer
+
+        cluster = ClusterFactory()
+        self._add(cluster, "in_progress", 1)
+        self._add(cluster, "published", 2)
+        # A plain instance has no annotation, exercising the fallback query.
+        self.assertFalse(ClusterSerializer().get_is_active(cluster))
