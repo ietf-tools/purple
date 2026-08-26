@@ -97,6 +97,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
             for ref in refqueue_qs:
                 target = ref.target_rfctobe
                 if (
+                    # Not in the queue, so not published.
                     target is None
                     or target.incomplete_activities()
                     .filter(slug="first_editor")

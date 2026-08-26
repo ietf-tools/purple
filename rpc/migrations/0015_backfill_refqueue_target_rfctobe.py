@@ -37,7 +37,7 @@ def backfill_refqueue_targets(apps, schema_editor):
     duplicate an existing target_rfctobe reference.
     """
     RpcRelatedDocument = apps.get_model("rpc", "RpcRelatedDocument")
-    Historical = apps.get_model("rpc", "HistoricalRpcRelatedDocument")
+    HistoricalRpcRelatedDocument = apps.get_model("rpc", "HistoricalRpcRelatedDocument")
     RfcToBe = apps.get_model("rpc", "RfcToBe")
 
     stale = RpcRelatedDocument.objects.filter(
@@ -63,13 +63,15 @@ def backfill_refqueue_targets(apps, schema_editor):
             .exists()
         )
         if duplicate:
-            _write_history(Historical, ref, "-")  # snapshot pre-delete state
+            _write_history(
+                HistoricalRpcRelatedDocument, ref, "-"
+            )  # snapshot pre-delete state
             ref.delete()
             continue
         ref.target_document = None
         ref.target_rfctobe = rfctobe
         ref.save(update_fields=["target_document", "target_rfctobe"])
-        _write_history(Historical, ref, "~")
+        _write_history(HistoricalRpcRelatedDocument, ref, "~")
 
 
 class Migration(migrations.Migration):
