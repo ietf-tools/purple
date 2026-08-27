@@ -33,8 +33,8 @@ def backfill_label_name_and_slug(apps, schema_editor):
     assigned: set[str] = set()
     for label in Label.objects.all():
         label.name = label.slug
-        # snake_case, matching the dominant slug convention (RpcRole, BlockingReason,
-        # DispositionName). slugify gives kebab-case, so swap hyphens for underscores.
+        # snake_case, matching the dominant internal slug convention.
+        # slugify gives kebab-case, so swap hyphens for underscores.
         base = slugify(label.slug).replace("-", "_") or f"label_{label.id}"
         candidate = base[:64]
         n = 2
