@@ -647,3 +647,67 @@ class ClusterIsActiveTests(TestCase):
         self._add(cluster, "published", 2)
         # A plain instance has no annotation, exercising the fallback query.
         self.assertFalse(ClusterSerializer().get_is_active(cluster))
+
+
+class PublicClusterConsistencyTests(TestCase):
+    """pubq: the cluster list advertises only active clusters, but a cluster the
+    public queue references is always retrievable (no dangling 404)."""
+
+    def _member(self, cluster, disposition_slug, order):
+        rtb = RfcToBeFactory(disposition=DispositionNameFactory(slug=disposition_slug))
+        ClusterMember.objects.create(cluster=cluster, doc=rtb.draft, order=order)
+        return rtb
+
+    def _active_numbers(self):
+        return set(
+            Cluster.objects.with_is_active_annotated()
+            .filter(is_active_annotated=True)
+            .values_list("number", flat=True)
+        )
+
+    def test_list_active_only_but_retrieve_resolves_any(self):
+        from rpc.api import PublicClusterViewSet
+
+        inactive = ClusterFactory()
+        self._member(inactive, "in_progress", 1)  # lone unpublished -> inactive
+        active = ClusterFactory()
+        self._member(active, "in_progress", 1)
+        self._member(active, "in_progress", 2)
+
+        view = PublicClusterViewSet()
+        view.action = "list"
+        listed = set(view.get_queryset().values_list("number", flat=True))
+        self.assertIn(active.number, listed)
+        self.assertNotIn(inactive.number, listed)
+
+        view.action = "retrieve"
+        self.assertIn(
+            inactive.number, set(view.get_queryset().values_list("number", flat=True))
+        )
+
+    def test_queue_nulls_inactive_cluster_but_keeps_active(self):
+        from rpc.serializers import PublicQueueItemSerializer
+
+        inactive = ClusterFactory()
+        lone = self._member(inactive, "in_progress", 1)  # lone unpublished -> inactive
+        ser = PublicQueueItemSerializer(
+            context={"active_cluster_numbers": self._active_numbers()}
+        )
+        self.assertIsNone(ser.get_cluster(lone))
+
+        active = ClusterFactory()
+        member = self._member(active, "in_progress", 1)
+        self._member(active, "in_progress", 2)
+        ser = PublicQueueItemSerializer(
+            context={"active_cluster_numbers": self._active_numbers()}
+        )
+        self.assertEqual(ser.get_cluster(member), {"number": active.number})
+
+    def test_queue_shows_cluster_without_context(self):
+        from rpc.serializers import PublicQueueItemSerializer
+
+        inactive = ClusterFactory()
+        lone = self._member(inactive, "in_progress", 1)
+        self.assertEqual(
+            PublicQueueItemSerializer().get_cluster(lone), {"number": inactive.number}
+        )

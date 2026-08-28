@@ -962,6 +962,15 @@ class PublicQueueList(QueueList):
         ),
     )
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context["active_cluster_numbers"] = set(
+            Cluster.objects.with_is_active_annotated()
+            .filter(is_active_annotated=True)
+            .values_list("number", flat=True)
+        )
+        return context
+
 
 PublicQueueList = extend_schema_view(
     get=extend_schema(
@@ -1002,11 +1011,16 @@ class PublicClusterViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = (
         Cluster.objects.with_data_annotated()
         .with_is_active_annotated()
-        .filter(is_active_annotated=True)
         .order_by("number")
     )
     serializer_class = PublicClusterSerializer
     lookup_field = "number"
+
+    def get_queryset(self):
+        # List advertises only active clusters; retrieve resolves any cluster by
+        # number so a reference from the public queue never 404s.
+        qs = super().get_queryset()
+        return qs.filter(is_active_annotated=True) if self.action == "list" else qs
 
 
 class ClusterViewSet(
