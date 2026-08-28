@@ -1,6 +1,6 @@
 <template>
-  <div class="h-full flex flex-col">
-    <div class="flex flex-row justify-between border-b border-gray-300">
+  <div class="h-full flex flex-col text-gray-900 dark:text-neutral-100">
+    <div class="flex flex-row justify-between border-b border-gray-300 dark:border-neutral-700">
       <h1 class="text-xl font-bold pt-4 px-4 py-3">
         <span v-if="props.message.type === 'assign'">
           Assign
@@ -45,7 +45,9 @@
           <div class="flex flex-col">
             <label :for="generateId(person.id, personIndex)" class="font-bold cursor-pointer">
               {{ person.name }}
-              <span class="font-normal text-gray-700">(#{{ person.id }})</span>
+              <span class="font-normal text-gray-700 dark:text-neutral-400"
+                >(#{{ person.id }})</span
+              >
             </label>
             <div v-if="person.capabilities.length > 0" class="text-sm mb-1">
               Capabilities:
@@ -69,7 +71,7 @@
     </div>
     <div
       v-if="actions.length > 0"
-      class="flex flex-col gap-2 bg-gray-200 py-2 px-4 border-t border-gray-300">
+      class="flex flex-col gap-2 bg-gray-200 dark:bg-neutral-700 py-2 px-4 border-t border-gray-300 dark:border-neutral-700">
       <h2 class="font-bold">Changes to save</h2>
       <div class="flex flex-col gap-y-1 text-sm">
         <div v-for="action in actions">
@@ -83,7 +85,7 @@
                   type="text"
                   value=""
                   @input="(e) => changeReason(action, e)"
-                  class="text-xs px-2 py-1"
+                  class="text-xs px-2 py-1 bg-white dark:bg-neutral-800 text-gray-900 dark:text-neutral-100 border border-gray-300 dark:border-neutral-600 rounded"
               /></span>
             </p>
           </div>
@@ -95,7 +97,7 @@
         </div>
       </div>
     </div>
-    <div class="flex justify-between p-4 border-t border-gray-300">
+    <div class="flex justify-between p-4 border-t border-gray-300 dark:border-neutral-700">
       <BaseButton btnType="cancel" @click="closeOverlayModal">Cancel</BaseButton>
       <BaseButton btnType="default" @click="saveChanges" :disabled="!canSave"
         >Save changes</BaseButton

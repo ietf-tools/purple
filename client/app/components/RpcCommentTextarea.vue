@@ -14,7 +14,7 @@
             rows="3"
             name="comment"
             id="comment"
-            class="block w-full resize-none border-0 bg-transparent py-1.5 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+            class="block w-full resize-none border-0 bg-transparent py-1.5 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
             placeholder="Add your comment..." />
           <!-- Spacer element to match the height of the toolbar -->
           <div class="py-2" aria-hidden="true">

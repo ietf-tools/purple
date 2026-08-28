@@ -20,10 +20,10 @@
           <div class="px-0 pt-6 sm:px-6">
             <div class="flex items-center justify-between mb-4">
               <h3 class="text-base font-semibold leading-7">Assignments</h3>
-              <BaseButton v-if="!hasManualHold" btn-type="cancel" @click="setManualHold"
+              <BaseButton v-if="!hasManualHold" btn-type="cancel" size="xs" @click="setManualHold"
                 >Set Manual Hold</BaseButton
               >
-              <BaseButton v-else btn-type="secondary" @click="clearManualHold"
+              <BaseButton v-else btn-type="secondary" size="xs" @click="clearManualHold"
                 >Clear Manual Hold</BaseButton
               >
             </div>
@@ -40,8 +40,10 @@
                     /></Anchor>
                   </dt>
                   <dd class="relative">
-                    <BaseBadge :label="roleName(assignment.role)" />
-                    <AssignmentState :state="assignment.state" />
+                    <div class="flex flex-wrap items-center gap-1.5">
+                      <BaseBadge :label="roleName(assignment.role)" />
+                      <AssignmentState :state="assignment.state" />
+                    </div>
                     <template
                       v-if="
                         assignment.role === 'blocked' &&

@@ -81,18 +81,18 @@
               <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
             </span>
           </BaseButton>
+          <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
+            <span>Manage Assignments</span>
+            <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
+              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
+            </span>
+          </BaseButton>
           <BaseButton
             v-if="props.rfcToBe?.disposition?.slug === 'in_progress'"
             btn-type="delete"
             @click="isWithdrawDialogShown = true"
             class="flex items-center">
             <span>Withdraw</span>
-          </BaseButton>
-          <BaseButton @click="openAssignmentFinishedModal" class="flex items-center">
-            <span>Manage Assignments</span>
-            <span v-if="isLoadingFinishAssignmentsModal" class="w-3">
-              <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
-            </span>
           </BaseButton>
         </div>
       </div>

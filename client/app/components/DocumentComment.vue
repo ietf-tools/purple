@@ -70,7 +70,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
         v-model="editComment"
         rows="3"
         name="comment"
-        class="block w-full resize-none border-1 bg-transparent text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+        class="block w-full resize-none border-1 bg-transparent text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
         placeholder="Edit comment..." />
       <div class="flex justify-between pt-1">
         <BaseButton btn-type="cancel" @click="isEditing = false" :disabled="isUpdating"
