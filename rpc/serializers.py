@@ -2618,11 +2618,24 @@ class PublicQueueItemSerializer(QueueItemSerializer):
     )
     # only expose labels flagged public.
     labels = serializers.SerializerMethodField()
+    # only reference the cluster while it's active, matching what
+    # /api/pubq/clusters/ lists (active_cluster_numbers comes from the view).
+    cluster = serializers.SerializerMethodField()
 
     @extend_schema_field(LabelSerializer(many=True))
     def get_labels(self, obj):
         public = [label for label in obj.labels.all() if label.is_public]
         return LabelSerializer(public, many=True).data
+
+    @extend_schema_field(SimpleClusterSerializer(allow_null=True))
+    def get_cluster(self, obj):
+        cluster = obj.cluster
+        if cluster is None:
+            return None
+        active = self.context.get("active_cluster_numbers")
+        if active is not None and cluster.number not in active:
+            return None
+        return SimpleClusterSerializer(cluster).data
 
     @extend_schema_field(RpcRelatedDocumentSerializer(many=True))
     def get_references(self, obj):
