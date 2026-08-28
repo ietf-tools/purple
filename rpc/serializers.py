@@ -697,7 +697,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
         allow_null=True,  # might be null for an April 1 RFC
     )
     pages = serializers.IntegerField(read_only=True)
-    cluster = SimpleClusterSerializer(read_only=True)
+    cluster = SimpleClusterSerializer(read_only=True, allow_null=True)
     labels = LabelSerializer(many=True, read_only=True)
     assignment_set = AssignmentSerializer(
         source="active_assignments", many=True, read_only=True
@@ -877,7 +877,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     """RfcToBeSerializer suitable for displaying full details of a single instance"""
 
     draft = DraftSerializer(read_only=True)
-    cluster = SimpleClusterSerializer(read_only=True)
+    cluster = SimpleClusterSerializer(read_only=True, allow_null=True)
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     authors = RfcAuthorSerializer(many=True)

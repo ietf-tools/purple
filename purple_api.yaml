@@ -5772,6 +5772,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/SimpleCluster"
           readOnly: true
+          nullable: true
         assignment_set:
           type: array
           items:
@@ -6024,6 +6025,7 @@ components:
           allOf:
             - $ref: "#/components/schemas/SimpleCluster"
           readOnly: true
+          nullable: true
         submitted_format:
           allOf:
             - $ref: "#/components/schemas/Name"
