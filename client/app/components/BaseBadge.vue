@@ -1,7 +1,7 @@
 <template>
   <span
     :class="[
-      'inline-flex items-center rounded-md px-2 py-0.5 font-medium ring-1 ring-inset',
+      'inline-flex items-center align-middle rounded-md px-2 py-0.5 font-medium ring-1 ring-inset',
       {
         'text-xs': props.size === 'xs',
         'text-lg': props.size === 'lg',

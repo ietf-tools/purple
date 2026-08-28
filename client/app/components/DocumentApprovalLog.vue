@@ -17,7 +17,7 @@ Based on https://tailwindui.com/components/application-ui/lists/feeds#component-
     <div class="flex justify-between gap-x-4">
       <div v-if="approvalLogMessage.by" class="py-0.5 text-xs leading-5 text-gray-500">
         <span
-          class="font-medium text-gray-900"
+          class="font-medium text-gray-900 dark:text-neutral-100"
           :title="
             approvalLogMessage.by.rpcperson
               ? `${approvalLogMessage.by.name} (user #${approvalLogMessage.by.rpcperson})`

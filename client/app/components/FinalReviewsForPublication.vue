@@ -1,10 +1,12 @@
 <template>
   <div>
-    <Heading :heading-level="props.headingLevel" class="mt-5">
+    <Heading
+      :heading-level="props.headingLevel"
+      class="mt-6 mb-2 text-gray-900 dark:text-neutral-200">
       For PUB {{ props.status === 'success' ? `(${props.queueItems.length})` : '' }}
     </Heading>
 
-    <div v-if="availableLabels.length" class="flex flex-wrap gap-1 mb-2">
+    <div v-if="availableLabels.length" class="flex flex-wrap items-center gap-1 mb-2">
       <button
         v-for="label in availableLabels"
         :key="label.slug"
@@ -154,8 +156,9 @@ const columns = [
       const labels = data.getValue()
       if (!labels?.length) return undefined
       return h(
-        'span',
-        labels.map((label: Label) => h(RpcLabel, { label, class: 'mr-1' }))
+        'div',
+        { class: 'flex flex-wrap items-center gap-1' },
+        labels.map((label: Label) => h(RpcLabel, { label }))
       )
     },
     enableSorting: false
