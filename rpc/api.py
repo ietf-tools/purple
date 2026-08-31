@@ -1286,10 +1286,6 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = NotificationSerializer
     pagination_class = DefaultLimitOffsetPagination
 
-    # Broadcasts keep the bell lit for this long after they're sent, even once
-    # read, so an announcement to everyone can't be silently dismissed at a glance.
-    BROADCAST_DOT_TTL = datetime.timedelta(days=1)
-
     def _seen_at(self):
         marker = NotificationReadMarker.objects.filter(user=self.request.user).first()
         return marker.seen_at if marker else None
@@ -1323,11 +1319,11 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             return Response({"count": 0})
         seen_at = self._seen_at()
         unread = Q() if seen_at is None else Q(created__gt=seen_at)
-        recent_broadcast = Q(
-            recipient__isnull=True,
-            created__gte=timezone.now() - self.BROADCAST_DOT_TTL,
+        count = (
+            self.get_queryset()
+            .filter(unread | Notification.recent_broadcast_q())
+            .count()
         )
-        count = self.get_queryset().filter(unread | recent_broadcast).count()
         return Response({"count": count})
 
     @extend_schema(

@@ -767,3 +767,23 @@ class NotificationDotTests(TestCase):
             created=timezone.now() - timedelta(days=2)
         )
         self.assertEqual(self._count(), 0)
+
+    def test_serialized_unread_flag_matches_the_bell_for_broadcasts(self):
+        from rpc.serializers import NotificationSerializer
+
+        broadcast = Notification.objects.create(
+            recipient=None, event_type="blocked", rfc_to_be=RfcToBeFactory(), data={}
+        )
+        seen = timezone.now()  # user read everything after the broadcast arrived
+
+        # Within the TTL a read broadcast still reads as unread (matches the bell).
+        ser = NotificationSerializer(broadcast, context={"seen_at": seen})
+        self.assertTrue(ser.data["unread"])
+
+        # Past the TTL it reads as read.
+        Notification.objects.filter(pk=broadcast.pk).update(
+            created=timezone.now() - timedelta(days=2)
+        )
+        broadcast.refresh_from_db()
+        ser = NotificationSerializer(broadcast, context={"seen_at": seen})
+        self.assertFalse(ser.data["unread"])

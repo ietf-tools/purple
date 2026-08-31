@@ -349,6 +349,9 @@ class NotificationSerializer(serializers.ModelSerializer):
         return obj.data.get("reasons", [])
 
     def get_unread(self, obj) -> bool:
+        # A recent broadcast reads as unread even after the read marker
+        if obj.is_recent_broadcast():
+            return True
         seen_at = self.context.get("seen_at")
         return seen_at is None or obj.created > seen_at
 
