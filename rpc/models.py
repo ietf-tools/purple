@@ -1480,11 +1480,6 @@ class Notification(models.Model):
     per-person targeting available. Read state is per-person (NotificationReadMarker).
     """
 
-    # Broadcasts keep the bell lit (and read as unread) for this long after they're
-    # sent, even once marked read, so an announcement to everyone can't be silently
-    # dismissed at a glance.
-    BROADCAST_DOT_TTL = datetime.timedelta(days=1)
-
     class EventType(models.TextChoices):
         BLOCKED = "blocked", "document blocked"
         UNBLOCKED = "unblocked", "document unblocked"
@@ -1517,21 +1512,6 @@ class Notification(models.Model):
     def __str__(self):
         who = self.recipient if self.recipient_id else "everyone"
         return f"{self.get_event_type_display()} for {who}"
-
-    @classmethod
-    def recent_broadcast_q(cls, *, now=None):
-        """Query filter: broadcasts still within their dot TTL (unread even if read)."""
-        now = now or timezone.now()
-        return models.Q(
-            recipient__isnull=True, created__gte=now - cls.BROADCAST_DOT_TTL
-        )
-
-    def is_recent_broadcast(self, *, now=None) -> bool:
-        """Whether this broadcast should still read as unread despite the read marker."""
-        if self.recipient_id is not None:
-            return False
-        now = now or timezone.now()
-        return self.created >= now - self.BROADCAST_DOT_TTL
 
     @classmethod
     def notify_block_change(cls, rfc_to_be, *, blocked, recipient=None):

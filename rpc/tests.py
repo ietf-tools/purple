@@ -9,7 +9,6 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
-from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
 from datatracker.factories import DocumentFactory
@@ -21,7 +20,6 @@ from rpc.models import (
     ClusterMember,
     DocRelationshipName,
     Notification,
-    NotificationReadMarker,
     RpcRelatedDocument,
     RpcRole,
 )
@@ -751,39 +749,21 @@ class NotificationDotTests(TestCase):
         self.assertEqual(resp.status_code, 200, resp.content)
         return resp.json()["count"]
 
-    def test_broadcast_keeps_dot_for_a_day_even_after_read(self):
-        rfc = RfcToBeFactory()
-        broadcast = Notification.objects.create(
-            recipient=None, event_type="unblocked", rfc_to_be=rfc, data={}
+    def test_mark_read_clears_the_broadcast_dot_per_user(self):
+        Notification.objects.create(
+            recipient=None, event_type="unblocked", rfc_to_be=RfcToBeFactory(), data={}
         )
-        # User reads everything.
-        NotificationReadMarker.objects.create(user=self.user, seen_at=timezone.now())
-
-        # A recent broadcast still lights the bell despite being read.
+        # No read marker yet: the broadcast is unread for this user.
         self.assertEqual(self._count(), 1)
 
-        # Once older than the TTL, a read broadcast no longer counts.
-        Notification.objects.filter(pk=broadcast.pk).update(
-            created=timezone.now() - timedelta(days=2)
-        )
+        # Marking read stamps this user's watermark; the broadcast is now read.
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
         self.assertEqual(self._count(), 0)
 
-    def test_serialized_unread_flag_matches_the_bell_for_broadcasts(self):
-        from rpc.serializers import NotificationSerializer
-
-        broadcast = Notification.objects.create(
-            recipient=None, event_type="blocked", rfc_to_be=RfcToBeFactory(), data={}
+        # A second user, who never read it, still sees it as unread.
+        other = get_user_model().objects.create_user(
+            username="other-user", password="test-password", name="Other User"
         )
-        seen = timezone.now()  # user read everything after the broadcast arrived
-
-        # Within the TTL a read broadcast still reads as unread (matches the bell).
-        ser = NotificationSerializer(broadcast, context={"seen_at": seen})
-        self.assertTrue(ser.data["unread"])
-
-        # Past the TTL it reads as read.
-        Notification.objects.filter(pk=broadcast.pk).update(
-            created=timezone.now() - timedelta(days=2)
-        )
-        broadcast.refresh_from_db()
-        ser = NotificationSerializer(broadcast, context={"seen_at": seen})
-        self.assertFalse(ser.data["unread"])
+        self.client.force_login(other)
+        self.assertEqual(self._count(), 1)

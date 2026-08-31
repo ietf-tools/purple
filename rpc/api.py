@@ -1319,11 +1319,7 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             return Response({"count": 0})
         seen_at = self._seen_at()
         unread = Q() if seen_at is None else Q(created__gt=seen_at)
-        count = (
-            self.get_queryset()
-            .filter(unread | Notification.recent_broadcast_q())
-            .count()
-        )
+        count = self.get_queryset().filter(unread).count()
         return Response({"count": count})
 
     @extend_schema(
