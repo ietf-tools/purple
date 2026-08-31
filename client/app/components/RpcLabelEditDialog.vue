@@ -30,7 +30,9 @@
       <div
         class="mt-10 space-y-8 border-b border-gray-900/10 p-6 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:border-t sm:pb-0">
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label for="slug" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5"
+          <label
+            for="slug"
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
             >Label Name</label
           >
           <div class="mt-2 sm:col-span-2 sm:mt-0">
@@ -41,7 +43,7 @@
                 v-model="label.slug"
                 type="text"
                 name="slug"
-                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
                 placeholder="e.g. 'markdown'" />
             </div>
           </div>
@@ -50,7 +52,7 @@
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
             for="is-exception"
-            class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
             Is Exception
           </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
@@ -60,14 +62,14 @@
               name="is-exception"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-            <p class="text-gray-500">This label indicates an exception.</p>
+            <p class="text-gray-500 dark:text-neutral-400">This label indicates an exception.</p>
           </div>
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
             for="is-complexity"
-            class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
             Is Complexity
           </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
@@ -77,12 +79,15 @@
               name="is-complexity"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-            <p class="text-gray-500">This label indicates a complexity.</p>
+            <p class="text-gray-500 dark:text-neutral-400">This label indicates a complexity.</p>
           </div>
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
+          <label
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
+            >Color</label
+          >
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <HeadlessListbox v-model="label.color" as="div" class="relative sm:max-w-xs">
               <HeadlessListboxButton
@@ -137,7 +142,9 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-          <label for="is-used" class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+          <label
+            for="is-used"
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
             Is Assignable
           </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
@@ -147,14 +154,16 @@
               name="is-used"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-            <p class="text-gray-500">This label is assignable and actively in use.</p>
+            <p class="text-gray-500 dark:text-neutral-400">
+              This label is assignable and actively in use.
+            </p>
           </div>
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
             for="is-public"
-            class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
             Is Public
           </label>
           <div class="mt-2 sm:col-span-2 sm:mt-0">
@@ -164,7 +173,9 @@
               name="is-public"
               type="checkbox"
               class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-            <p class="text-gray-500">This label is exposed on the public queue.</p>
+            <p class="text-gray-500 dark:text-neutral-400">
+              This label is exposed on the public queue.
+            </p>
           </div>
         </div>
       </div>

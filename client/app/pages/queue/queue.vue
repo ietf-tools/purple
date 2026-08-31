@@ -243,8 +243,9 @@ const columns = [
       const labels = data.getValue()
       if (!labels) return undefined
       return h(
-        'span',
-        labels.map((label) => h(RpcLabel, { label, class: 'ml-2' }))
+        'div',
+        { class: 'flex flex-wrap items-center gap-1' },
+        labels.map((label) => h(RpcLabel, { label }))
       )
     },
     enableSorting: false

@@ -2,7 +2,7 @@
   <div
     v-bind="$attrs"
     :class="[
-      'flex gap-1 p-1 text-xs cursor-pointer rounded-sm shadow text-gray-800 dark:text-white bg-white dark:bg-neutral-700 outline outline-1 outline-gray-300 dark:outline-gray-400 focus-within:outline-2 focus-within:outline-purple-600 focus-within:outline-purple-600 dark:focus-within:outline-white ',
+      'flex items-center gap-1 p-1 text-xs cursor-pointer rounded-sm shadow text-gray-800 dark:text-white bg-white dark:bg-neutral-700 outline outline-1 outline-gray-300 dark:outline-gray-400 focus-within:outline-2 focus-within:outline-purple-600 focus-within:outline-purple-600 dark:focus-within:outline-white ',
       props.class
     ]"
     @click="handleChange">
