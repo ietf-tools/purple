@@ -43,10 +43,16 @@
                 v-model="label.name"
                 type="text"
                 name="name"
-                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+                :disabled="!isNew"
+                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 sm:text-sm sm:leading-6"
                 placeholder="e.g. 'IANA Hold'"
                 @input="onNameInput" />
             </div>
+            <p v-if="!isNew" class="mt-1 text-xs text-gray-500">
+              The name can't be edited here. For minor clarifications, please contact the admin to
+              edit it in the admin interface; <br />if the meaning would change substantially,
+              create a new label instead.
+            </p>
           </div>
         </div>
 
@@ -73,7 +79,7 @@
               {{
                 isNew
                   ? 'Auto-generated from the name; adjust before saving if needed.'
-                  : 'The slug is fixed after creation and is what code references.'
+                  : 'The slug is permanent — code references labels by this value.'
               }}
             </p>
           </div>
@@ -130,31 +136,10 @@
         </div>
 
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
-<<<<<<< HEAD
-          <label
-            for="is-blocking"
-            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5">
-            Is Blocking
-          </label>
-          <div class="mt-2 sm:col-span-2 sm:mt-0">
-            <input
-              id="is-blocking"
-              v-model="label.isBlocking"
-              name="is-blocking"
-              type="checkbox"
-              class="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600" />
-            <p class="text-gray-500 dark:text-neutral-400">This label blocks the document.</p>
-          </div>
-        </div>
-
-        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
             class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
             >Color</label
           >
-=======
-          <label class="block text-sm font-medium leading-6 text-gray-900 sm:pt-1.5">Color</label>
->>>>>>> 1de0937 (remove is_blocking)
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <HeadlessListbox v-model="label.color" as="div" class="relative sm:max-w-xs">
               <HeadlessListboxButton

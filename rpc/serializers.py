@@ -492,9 +492,12 @@ class LabelSerializer(serializers.ModelSerializer):
 
     def get_fields(self):
         fields = super().get_fields()
-        # Slug is the stable machine key: set once at creation, read-only after.
+        # slug (the stable machine key) and name (the display label) are set once at
+        # creation and read-only afterward here; the admin interface can still change
+        # them since it doesn't go through this serializer.
         if self.instance is not None:
             fields["slug"].read_only = True
+            fields["name"].read_only = True
         return fields
 
 
