@@ -79,7 +79,7 @@
               {{
                 isNew
                   ? 'Auto-generated from the name; adjust before saving if needed.'
-                  : 'The slug is permanent — code references labels by this value.'
+                  : 'Slugs are immutable once created.'
               }}
             </p>
           </div>
