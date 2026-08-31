@@ -1475,9 +1475,10 @@ class DirtyBits(models.Model):
 class Notification(models.Model):
     """An in-app notification about a document event.
 
-    A null recipient is a broadcast seen by everyone; a set recipient targets a
-    single RpcPerson. We only ever broadcast today, but the recipient field keeps
-    per-person targeting available. Read state is per-person (NotificationReadMarker).
+    A null recipient is a broadcast every authenticated user can see; a set recipient
+    targets a single RpcPerson. Read state is tracked per RpcPerson
+    (NotificationReadMarker); other users can view notifications but their reads are
+    not recorded.
     """
 
     class EventType(models.TextChoices):
@@ -1532,18 +1533,18 @@ class Notification(models.Model):
 
 
 class NotificationReadMarker(models.Model):
-    """Per-user watermark: notifications created at or before seen_at are read.
+    """Per-person watermark: notifications created at or before seen_at are read.
 
-    Keyed on the login user (not RpcPerson) so broadcasts work for any
-    authenticated user, and kept off those models to avoid churning their history.
+    Keyed on RpcPerson to match the recipient dimension, and kept as its own model
+    to avoid churning RpcPerson's history.
     """
 
-    user = models.OneToOneField(
-        "rpcauth.User",
+    person = models.OneToOneField(
+        "RpcPerson",
         on_delete=models.CASCADE,
         related_name="notification_read_marker",
     )
     seen_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"{self.user} read up to {self.seen_at}"
+        return f"{self.person} read up to {self.seen_at}"

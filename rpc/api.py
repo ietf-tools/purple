@@ -1277,34 +1277,48 @@ class AssignmentViewSet(viewsets.ModelViewSet):
 
 
 class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Current user's in-app notifications: broadcasts plus any addressed to them.
+    """In-app notifications: broadcasts everyone sees, plus any addressed to the viewer.
 
-    Broadcasts (recipient is null) are visible to every authenticated user;
-    targeted notifications only to their RpcPerson. Read state is per login user.
+    Broadcasts (recipient is null) are visible to every authenticated user; targeted
+    notifications only to their RpcPerson. Read state is tracked per RpcPerson only —
+    a viewer without one can still see notifications, but their reads aren't recorded
+    and they get no unread count.
     """
 
     serializer_class = NotificationSerializer
     pagination_class = DefaultLimitOffsetPagination
 
-    def _seen_at(self):
-        marker = NotificationReadMarker.objects.filter(user=self.request.user).first()
+    def _rpcperson(self):
+        # rpcperson() reaches the datatracker by subject id, so skip users without one
+        # and memoize per request (get_queryset and unread_count both resolve it).
+        if not hasattr(self, "_rpcperson_cache"):
+            user = self.request.user
+            self._rpcperson_cache = (
+                user.rpcperson()
+                if user.is_authenticated and user.datatracker_subject_id
+                else None
+            )
+        return self._rpcperson_cache
+
+    def _seen_at(self, person):
+        marker = NotificationReadMarker.objects.filter(person=person).first()
         return marker.seen_at if marker else None
 
     def get_queryset(self):
         user = self.request.user
         if not user.is_authenticated:
             return Notification.objects.none()
+        # Broadcasts are visible to everyone; targeted ones only to their RpcPerson.
         visible = Q(recipient__isnull=True)
-        # rpcperson() reaches the datatracker by subject id, so skip it for users
-        # without one (they still see broadcasts).
-        rpcperson = user.rpcperson() if user.datatracker_subject_id else None
-        if rpcperson is not None:
-            visible |= Q(recipient=rpcperson)
+        person = self._rpcperson()
+        if person is not None:
+            visible |= Q(recipient=person)
         return Notification.objects.filter(visible).select_related("rfc_to_be")
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
-        context["seen_at"] = self._seen_at()
+        person = self._rpcperson()
+        context["seen_at"] = self._seen_at(person) if person is not None else None
         return context
 
     @extend_schema(
@@ -1315,9 +1329,10 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["get"], url_path="unread_count")
     def unread_count(self, request):
-        if not request.user.is_authenticated:
+        person = self._rpcperson()
+        if person is None:
             return Response({"count": 0})
-        seen_at = self._seen_at()
+        seen_at = self._seen_at(person)
         unread = Q() if seen_at is None else Q(created__gt=seen_at)
         count = self.get_queryset().filter(unread).count()
         return Response({"count": count})
@@ -1327,9 +1342,10 @@ class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     )
     @action(detail=False, methods=["post"], url_path="mark_read")
     def mark_read(self, request):
-        if request.user.is_authenticated:
+        person = self._rpcperson()
+        if person is not None:
             NotificationReadMarker.objects.update_or_create(
-                user=request.user, defaults={"seen_at": timezone.now()}
+                person=person, defaults={"seen_at": timezone.now()}
             )
         return Response(status=204)
 

@@ -2,14 +2,12 @@
 
 import django.db.models.deletion
 import django.utils.timezone
-from django.conf import settings
 from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
     dependencies = [
         ("rpc", "0015_backfill_refqueue_target_rfctobe"),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -27,11 +25,11 @@ class Migration(migrations.Migration):
                 ),
                 ("seen_at", models.DateTimeField(blank=True, null=True)),
                 (
-                    "user",
+                    "person",
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="notification_read_marker",
-                        to=settings.AUTH_USER_MODEL,
+                        to="rpc.rpcperson",
                     ),
                 ),
             ],

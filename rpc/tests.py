@@ -20,6 +20,7 @@ from rpc.models import (
     ClusterMember,
     DocRelationshipName,
     Notification,
+    NotificationReadMarker,
     RpcRelatedDocument,
     RpcRole,
 )
@@ -30,6 +31,7 @@ from .factories import (
     ClusterFactory,
     DispositionNameFactory,
     RfcToBeFactory,
+    RpcPersonFactory,
     RpcRoleFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
@@ -739,31 +741,66 @@ class NotificationTests(TestCase):
 
 class NotificationDotTests(TestCase):
     def setUp(self):
-        self.user = get_user_model().objects.create_user(
-            username="notif-user", password="test-password", name="Notif User"
-        )
+        # Map each login user to an RpcPerson without the datatracker round-trip.
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        mock = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock.side_effect = lambda user: self.people.get(user.pk)
+
+        self.person = RpcPersonFactory()
+        self.user = self._make_user("notif-user", self.person)
         self.client.force_login(self.user)
+
+    def _make_user(self, username, person):
+        user = get_user_model().objects.create_user(
+            username=username,
+            password="test-password",
+            name=username,
+            datatracker_subject_id=f"subject-{username}",
+        )
+        self.people[user.pk] = person
+        return user
 
     def _count(self):
         resp = self.client.get("/api/rpc/notifications/unread_count/")
         self.assertEqual(resp.status_code, 200, resp.content)
         return resp.json()["count"]
 
-    def test_mark_read_clears_the_broadcast_dot_per_user(self):
+    def test_mark_read_clears_the_broadcast_dot_per_person(self):
         Notification.objects.create(
             recipient=None, event_type="unblocked", rfc_to_be=RfcToBeFactory(), data={}
         )
-        # No read marker yet: the broadcast is unread for this user.
+        # No read marker yet: the broadcast is unread for this person.
         self.assertEqual(self._count(), 1)
 
-        # Marking read stamps this user's watermark; the broadcast is now read.
+        # Marking read stamps this person's watermark; the broadcast is now read.
         resp = self.client.post("/api/rpc/notifications/mark_read/")
         self.assertEqual(resp.status_code, 204, resp.content)
         self.assertEqual(self._count(), 0)
 
-        # A second user, who never read it, still sees it as unread.
-        other = get_user_model().objects.create_user(
-            username="other-user", password="test-password", name="Other User"
-        )
+        # A different RpcPerson who never read it still sees it as unread.
+        other = self._make_user("other-user", RpcPersonFactory())
         self.client.force_login(other)
         self.assertEqual(self._count(), 1)
+
+    def test_viewer_without_rpcperson_sees_list_but_no_read_tracking(self):
+        Notification.objects.create(
+            recipient=None, event_type="unblocked", rfc_to_be=RfcToBeFactory(), data={}
+        )
+        # No datatracker_subject_id -> no RpcPerson, so no read state is tracked.
+        outsider = get_user_model().objects.create_user(
+            username="outsider", password="test-password", name="Outsider"
+        )
+        self.client.force_login(outsider)
+
+        # The broadcast is still visible in the list...
+        list_resp = self.client.get("/api/rpc/notifications/")
+        self.assertEqual(list_resp.status_code, 200, list_resp.content)
+        self.assertEqual(len(list_resp.json()["results"]), 1)
+
+        # ...but there is no bell count and mark_read records nothing.
+        self.assertEqual(self._count(), 0)
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertFalse(NotificationReadMarker.objects.exists())
