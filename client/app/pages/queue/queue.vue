@@ -129,7 +129,7 @@
           <tr
             v-for="row in orderedRows"
             :key="row.id"
-            :class="isExpedited(row.original) ? 'bg-green-50 dark:bg-green-500/10' : ''">
+            :class="isExpedited(row.original) ? 'bg-yellow-50 dark:bg-yellow-500/10' : ''">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
@@ -687,7 +687,8 @@ const table = useVueTable({
   }
 })
 
-const isExpedited = (d: QueueItem) => d.labels?.some((l) => l.slug === 'Expedited') ?? false
+const isExpedited = (d: QueueItem) =>
+  d.labels?.some((l) => l.slug.toLowerCase() === 'expedited') ?? false
 
 // "Expedited" documents pin to the top; the user's column sort is preserved
 // within each group.
