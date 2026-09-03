@@ -126,7 +126,10 @@
             :error="[error, clustersError, peopleError]"
             :column-count="table.getAllColumns().length"
             :row-count="table.getRowModel().rows.length" />
-          <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <tr
+            v-for="row in orderedRows"
+            :key="row.id"
+            :class="isExpedited(row.original) ? 'bg-yellow-50 dark:bg-yellow-500/10' : ''">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
@@ -682,6 +685,21 @@ const table = useVueTable({
     sorting.value =
       typeof updaterOrValue === 'function' ? updaterOrValue(sorting.value) : updaterOrValue
   }
+})
+
+const isExpedited = (d: QueueItem) =>
+  d.labels?.some((l) => l.slug.toLowerCase() === 'expedited') ?? false
+
+// "Expedited" documents pin to the top; the user's column sort is preserved
+// within each group.
+const orderedRows = computed(() => {
+  const rows = table.getRowModel().rows
+  const top: typeof rows = []
+  const rest: typeof rows = []
+  for (const row of rows) {
+    ;(isExpedited(row.original) ? top : rest).push(row)
+  }
+  return [...top, ...rest]
 })
 
 const searchQuery = ref('')
