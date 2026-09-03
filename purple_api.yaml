@@ -2638,6 +2638,72 @@ paths:
                 items:
                   $ref: "#/components/schemas/MailTemplate"
           description: ""
+  /api/rpc/notifications/:
+    get:
+      operationId: notifications_list
+      description: |-
+        Current user's in-app notifications: broadcasts plus any addressed to them.
+
+        Broadcasts (recipient is null) are visible to every authenticated user;
+        targeted notifications only to their RpcPerson. Read state is per login user.
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+      tags:
+        - purple
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedNotificationList"
+          description: ""
+  /api/rpc/notifications/mark_read/:
+    post:
+      operationId: notifications_mark_read
+      description: |-
+        Current user's in-app notifications: broadcasts plus any addressed to them.
+
+        Broadcasts (recipient is null) are visible to every authenticated user;
+        targeted notifications only to their RpcPerson. Read state is per login user.
+      tags:
+        - purple
+      security:
+        - cookieAuth: []
+      responses:
+        "204":
+          description: No response body
+  /api/rpc/notifications/unread_count/:
+    get:
+      operationId: notifications_unread_count
+      description: |-
+        Current user's in-app notifications: broadcasts plus any addressed to them.
+
+        Broadcasts (recipient is null) are visible to every authenticated user;
+        targeted notifications only to their RpcPerson. Read state is per login user.
+      tags:
+        - purple
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationUnreadCount"
+          description: ""
   /api/rpc/profile/:
     get:
       operationId: profile
@@ -4454,6 +4520,14 @@ components:
             - $ref: "#/components/schemas/Name"
           nullable: true
           readOnly: true
+    EventTypeEnum:
+      enum:
+        - blocked
+        - unblocked
+      type: string
+      description: |-
+        * `blocked` - document blocked
+        * `unblocked` - document unblocked
     FinalApproval:
       type: object
       description: Serialize final approval information for an RfcToBe
@@ -4933,6 +5007,43 @@ components:
           nullable: true
       required:
         - role
+    Notification:
+      type: object
+      description: In-app notification, with a per-request unread flag from the read
+        watermark.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        event_type:
+          $ref: "#/components/schemas/EventTypeEnum"
+        rfc_to_be:
+          type: integer
+          nullable: true
+          description: Document this notification is about
+        draft_name:
+          type: string
+          readOnly: true
+        reasons:
+          type: array
+          items:
+            type: string
+          readOnly: true
+        created:
+          type: string
+          format: date-time
+        unread:
+          type: boolean
+          readOnly: true
+      required:
+        - event_type
+    NotificationUnreadCount:
+      type: object
+      properties:
+        count:
+          type: integer
+      required:
+        - count
     PaginatedBaseDatatrackerPersonList:
       type: object
       required:
@@ -5002,6 +5113,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/DocumentComment"
+    PaginatedNotificationList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
     PaginatedRfcToBeList:
       type: object
       required:
