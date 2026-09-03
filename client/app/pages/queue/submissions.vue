@@ -130,12 +130,17 @@ const columns = [
   }),
   columnHelper.accessor('submitted', {
     header: 'Submitted',
-    cell: (data) =>
-      h(
+    cell: (data) => {
+      const submitted = data.getValue()
+      if (!submitted || submitted.getTime() === 0) {
+        return h('span', { class: 'text-xs text-gray-400' }, '—')
+      }
+      return h(
         'span',
         { class: 'text-xs' },
-        DateTime.fromJSDate(data.getValue()).toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
-      ),
+        DateTime.fromJSDate(submitted).toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+      )
+    },
     sortingFn: (rowA, rowB) => sortDate(rowA.original.submitted, rowB.original.submitted)
   })
 ]

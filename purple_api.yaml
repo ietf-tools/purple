@@ -4925,7 +4925,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
         assigned_at:
           type: string
           format: date-time
@@ -6508,11 +6507,11 @@ components:
         submitted:
           type: string
           format: date-time
+          nullable: true
       required:
         - id
         - name
         - stream
-        - submitted
     SubseriesDoc:
       type: object
       properties:

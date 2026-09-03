@@ -1452,7 +1452,7 @@ class NestedAssignmentSerializer(AssignmentSerializer):
     """Assignment serializer with nested RfcToBe details"""
 
     rfc_to_be = RfcToBeSerializer(read_only=True)
-    enqueued_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    enqueued_at = serializers.DateTimeField(read_only=True)
     assigned_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta(AssignmentSerializer.Meta):
@@ -2301,7 +2301,8 @@ class SubmissionListItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     stream = serializers.CharField()
-    submitted = serializers.DateTimeField()
+    # Datatracker might return no submission date for some docs; keep it nullable
+    submitted = serializers.DateTimeField(allow_null=True, required=False)
 
 
 def check_user_has_role(user, role) -> bool:
