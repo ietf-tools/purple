@@ -881,12 +881,8 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     # Need to explicitly specify labels as a PK because it uses a through model
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     authors = RfcAuthorSerializer(many=True)
-    assignment_set = AssignmentSerializer(
-        source="assignment_set.active", many=True, read_only=True
-    )
-    actionholder_set = ActionHolderSerializer(
-        source="actionholder_set.active", many=True, read_only=True
-    )
+    assignment_set = serializers.SerializerMethodField()
+    actionholder_set = serializers.SerializerMethodField()
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
     subseries = SubseriesMemberSerializer(
@@ -995,6 +991,22 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             return None
         person = assignments[0].person
         return person.datatracker_person.plain_name if person else None
+
+    @extend_schema_field(AssignmentSerializer(many=True))
+    def get_assignment_set(self, obj: RfcToBe):
+        # Prefer the prefetched active set (with_active_assignments) to avoid a query
+        # per row in list views; fall back to a query for un-prefetched instances.
+        assignments = getattr(obj, "active_assignments", None)
+        if assignments is None:
+            assignments = obj.assignment_set.active()
+        return AssignmentSerializer(assignments, many=True, context=self.context).data
+
+    @extend_schema_field(ActionHolderSerializer(many=True))
+    def get_actionholder_set(self, obj: RfcToBe):
+        holders = getattr(obj, "active_actionholders", None)
+        if holders is None:
+            holders = obj.actionholder_set.active()
+        return ActionHolderSerializer(holders, many=True, context=self.context).data
 
     class Meta:
         model = RfcToBe

@@ -336,7 +336,9 @@ def extend_schema_with_draft_name(actions=None):
 
 class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     serializer_class = RpcPersonSerializer
-    queryset = RpcPerson.objects.all()
+    queryset = RpcPerson.objects.select_related("datatracker_person").prefetch_related(
+        "capable_of", "can_hold_role"
+    )
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
 
@@ -1278,8 +1280,9 @@ class RfcToBeQueryParamsForm(forms.Form):
 
 
 def _collect_document_person_ids(items) -> list[int]:
-    """Collect all DatatrackerPerson IDs from authors, shepherd, IESG contact, and
-    stream manager."""
+    """Collect all DatatrackerPerson IDs the RfcToBe serializer renders: authors,
+    shepherd, IESG contact, stream manager, active action holders, and the publisher.
+    """
     ids: set[int] = set()
     for item in items:
         for author in item.authors.all():
@@ -1288,6 +1291,12 @@ def _collect_document_person_ids(items) -> list[int]:
         for person in (item.iesg_contact, item.shepherd, item.stream_manager):
             if person is not None:
                 ids.add(person.datatracker_id)
+        for holder in getattr(item, "active_actionholders", ()):
+            if holder.datatracker_person_id is not None:
+                ids.add(holder.datatracker_person.datatracker_id)
+        for assignment in getattr(item, "publisher_assignments", ()):
+            if assignment.person is not None:
+                ids.add(assignment.person.datatracker_person.datatracker_id)
     return list(ids)
 
 
@@ -1325,9 +1334,25 @@ def _rfc_numbers_for_relationship(rfctobe: RfcToBe, relationship_id: str) -> lis
 class RfcToBeViewSet(viewsets.ModelViewSet):
     queryset = (
         RfcToBe.objects.all()
-        .select_related("iesg_contact", "shepherd", "stream_manager")
+        .select_related(
+            "draft",
+            "iesg_contact",
+            "shepherd",
+            "stream_manager",
+            "disposition",
+            "stream",
+            "std_level",
+            "publication_std_level",
+            "boilerplate",
+            "submitted_format",
+        )
         .with_blocking_reasons()
         .with_authors()
+        .with_active_assignments()
+        .with_active_actionholders()
+        .with_activity_assignments()
+        .with_cluster()
+        .prefetch_related("labels", "subseriesmember_set", "additionalemail_set")
         .prefetch_related(
             Prefetch(
                 "assignment_set",
