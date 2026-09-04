@@ -34,32 +34,33 @@ TRANSITION_DATE = datetime.datetime(2026, 5, 20, tzinfo=datetime.UTC)
 # Only these labels are reconstructed on the timeline; every other label
 # (complexity/type/exception classifications) is a persistent attribute, not a
 # time-boxed state.
+# Slugs are lowercase since migration 0016 re-slugged all labels (slugify).
 LEGACY_STATE_LABEL_SLUGS = frozenset(
     {
-        "EDIT",
-        "REF",
-        "RFC-EDITOR",
-        "TI",
-        "AUTH48-DONE",
-        "PENDING",
-        "AUTH",
-        "AUTH48",
-        "IESG",
-        "MISSREF",
-        "IANA",
+        "edit",
+        "ref",
+        "rfc-editor",
+        "ti",
+        "auth48-done",
+        "pending",
+        "auth",
+        "auth48",
+        "iesg",
+        "missref",
+        "iana",
     }
 )
 
 # The subset of old-editor states that count as "blocked". The remaining
-# legacy states (EDIT, REF, RFC-EDITOR, AUTH48-DONE, PENDING) are active work.
+# legacy states (edit, ref, rfc-editor, auth48-done, pending) are active work.
 LEGACY_BLOCKED_LABEL_SLUGS = frozenset(
     {
-        "TI",
-        "AUTH",
-        "AUTH48",
-        "IESG",
-        "MISSREF",
-        "IANA",
+        "ti",
+        "auth",
+        "auth48",
+        "iesg",
+        "missref",
+        "iana",
     }
 )
 
@@ -75,7 +76,9 @@ KIND_CHOICES = (KIND_BLOCKED, KIND_WORKING, KIND_LEGACY, KIND_AWAITING)
 
 # Manually-applied labels flagging a final-review doc that is waiting on a
 # referenced RFC-to-be. Only ever set while in the final_review_editor state.
-AWAITING_REF_LABEL_PREFIX = "awaiting ref:"
+# Slugified from "awaiting ref: <target>" by migration 0016, so the separator is
+# a hyphen, not the original "awaiting ref:".
+AWAITING_REF_LABEL_PREFIX = "awaiting-ref-"
 
 
 @dataclass

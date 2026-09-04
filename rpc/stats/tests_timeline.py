@@ -89,18 +89,18 @@ class AssignmentTimelineTests(TestCase):
     def test_legacy_state_labels_before_transition(self):
         rfc = RfcToBeFactory()
         # IANA is a recognized blocking legacy state; EDIT is active work.
-        blocking_state = LabelFactory(slug="IANA")
-        working_state = LabelFactory(slug="EDIT")
+        blocking_state = LabelFactory(slug="iana")
+        working_state = LabelFactory(slug="edit")
         # A complexity/type label that must be ignored (not a workflow state).
-        noise = LabelFactory(slug="refs: hard")
+        noise = LabelFactory(slug="refs-hard")
         apply_label_over(rfc, blocking_state, dt(2026, 3, 1), dt(2026, 3, 15))
         apply_label_over(rfc, working_state, dt(2026, 4, 1), dt(2026, 4, 8))
         apply_label_over(rfc, noise, dt(2026, 4, 10), dt(2026, 4, 20))
 
         bands = {b.label: b for b in timeline.legacy_bands(rfc)}
-        assert set(bands) == {"IANA", "EDIT"}  # "refs: hard" ignored
-        assert bands["IANA"].kind == KIND_BLOCKED
-        assert bands["EDIT"].kind == KIND_LEGACY
+        assert set(bands) == {"iana", "edit"}  # "refs-hard" ignored
+        assert bands["iana"].kind == KIND_BLOCKED
+        assert bands["edit"].kind == KIND_LEGACY
 
         blocked, working = document_intervals(rfc, self.now)
         assert (dt(2026, 3, 1), dt(2026, 3, 15)) in blocked
@@ -109,7 +109,7 @@ class AssignmentTimelineTests(TestCase):
     def test_include_legacy_false_skips_labels(self):
         rfc = RfcToBeFactory()
         apply_label_over(
-            rfc, LabelFactory(slug="IANA"), dt(2026, 3, 1), dt(2026, 3, 15)
+            rfc, LabelFactory(slug="iana"), dt(2026, 3, 1), dt(2026, 3, 15)
         )
         blocked, working = document_intervals(rfc, self.now, include_legacy=False)
         assert blocked == []
@@ -184,7 +184,7 @@ class AssignmentTimelineTests(TestCase):
         # "awaiting ref:" label applied for part of the final-review window.
         apply_label_over(
             rfc,
-            LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
+            LabelFactory(slug="awaiting-ref-rfc-to-be-1234"),
             dt(2026, 6, 10),
             dt(2026, 6, 20),
         )
