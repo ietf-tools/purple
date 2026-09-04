@@ -303,6 +303,7 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
     ).order_by("slug")
     for label in labels:
         is_blocked = label.slug in LEGACY_BLOCKED_LABEL_SLUGS
+        display = label.text or label.slug
         segments: list[Segment] = []
         for interval in rfc.time_intervals_with_label(label):
             clipped = clip(interval.start, interval.end, hi=TRANSITION_DATE)
@@ -313,14 +314,14 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
                     start=clipped[0],
                     end=clipped[1],
                     kind=KIND_BLOCKED if is_blocked else KIND_LEGACY,
-                    label=label.slug,
+                    label=display,
                 )
             )
         if segments:
             bands.append(
                 Band(
                     kind=KIND_BLOCKED if is_blocked else KIND_LEGACY,
-                    label=label.slug,
+                    label=display,
                     segments=segments,
                 )
             )
