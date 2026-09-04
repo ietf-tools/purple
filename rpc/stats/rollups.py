@@ -264,9 +264,9 @@ def queue_rollup(
         """Per-doc ``{category: (is_blocked, merged_intervals)}`` from bulk data.
 
         ``category`` is an assignment role slug (post-transition) or a legacy
-        state label's display text (pre-transition). ``awaiting ref:`` time is carved out of
-        ``final_review_editor`` into a blocked ``awaiting_ref`` category, and — for
-        docs with blocking reasons — the single ``blocked`` category is itemised
+        state label's display text (pre-transition). ``awaiting ref:`` time is carved
+        out of ``final_review_editor`` into a blocked ``awaiting_ref`` category, and —
+        for docs with blocking reasons — the single ``blocked`` category is itemised
         into one blocked category per reason (mirroring the doc timeline). All
         sourced from the bulk lookups above rather than per-doc queries.
         """
