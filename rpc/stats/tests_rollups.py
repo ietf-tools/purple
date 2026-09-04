@@ -177,7 +177,7 @@ class QueueRollupTests(TestCase):
         )
         apply_label_over(
             rfc,
-            LabelFactory(slug="awaiting ref: RFC-to-be 1234"),
+            LabelFactory(slug="awaiting-ref-rfc-to-be-1234"),
             dt(2026, 6, 10),
             dt(2026, 6, 20),
         )
@@ -299,7 +299,7 @@ class QueueRollupTests(TestCase):
         # picked up as a candidate and contribute to the March window.
         rfc = RfcToBeFactory()
         apply_label_over(
-            rfc, LabelFactory(slug="IANA"), dt(2026, 3, 1), dt(2026, 3, 15)
+            rfc, LabelFactory(slug="iana"), dt(2026, 3, 1), dt(2026, 3, 15)
         )
         periods = queue_rollup("month", 6, self.now)
         by_label = {p["label"]: p for p in periods}
@@ -315,14 +315,14 @@ class QueueRollupTests(TestCase):
             published_at=dt(2026, 6, 10),
         )
         apply_label_over(
-            legacy_only, LabelFactory(slug="TI"), dt(2026, 3, 1), dt(2026, 3, 5)
+            legacy_only, LabelFactory(slug="ti"), dt(2026, 3, 1), dt(2026, 3, 5)
         )
         # Excluded: published before the range.
         old_published = self._doc_with_work(disposition_slug="published")
         old_published.published_at = dt(2026, 1, 1)
         old_published.save()
         # Excluded: no assignment, only a non-state (complexity) label.
-        RfcToBeFactory().labels.add(LabelFactory(slug="refs: hard"))
+        RfcToBeFactory().labels.add(LabelFactory(slug="refs-hard"))
 
         ids = set(
             _candidate_docs(earliest, include_legacy=True).values_list("pk", flat=True)
@@ -443,7 +443,7 @@ class QueueCountsRollupTests(TestCase):
         # change-points, so an overlapping second label matters).
         rfc = self._doc(dt(2026, 1, 1))
         a = LabelFactory(slug="missref")
-        b = LabelFactory(slug="AUTH48")
+        b = LabelFactory(slug="auth48")
         apply_label_over(rfc, a, dt(2026, 2, 1), dt(2026, 4, 1))
         apply_label_over(rfc, b, dt(2026, 3, 1), dt(2026, 5, 1))  # overlaps a
         bulk = _label_intervals_by_doc([rfc.pk], {a.pk, b.pk}).get(rfc.pk, {})

@@ -1,7 +1,9 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 from django.test import TestCase
 
-from .serializers import MetadataComparisonTableSerializer
+from .factories import RfcToBeFactory
+from .models import Label
+from .serializers import MetadataComparisonTableSerializer, _rfctobe_describe_delta
 
 
 class SerializerTests(TestCase):
@@ -172,4 +174,34 @@ class SerializerTests(TestCase):
         }
         self.assertEqual(
             dict(MetadataComparisonTableSerializer(INPUT_DATA).data), EXPECTED_OUTPUT
+        )
+
+
+class LabelHistoryDescriptionTests(TestCase):
+    """Label add/remove in a doc's history renders the label's current text."""
+
+    def _label_delta(self, rfc):
+        latest, previous = rfc.history.all()[:2]
+        return latest.diff_against(previous)
+
+    def test_shows_current_text_after_rename(self):
+        rfc = RfcToBeFactory()
+        label = Label.objects.create(slug="demo-hist", text="Old Name")
+        rfc.labels.add(label)
+        delta = self._label_delta(rfc)
+        label.text = "New Name"
+        label.save()
+        self.assertEqual(
+            list(_rfctobe_describe_delta(delta)), ["Label (New Name): Added"]
+        )
+
+    def test_falls_back_to_snapshot_for_deleted_label(self):
+        rfc = RfcToBeFactory()
+        label = Label.objects.create(slug="gone", text="Was Here")
+        rfc.labels.add(label)
+        delta = self._label_delta(rfc)
+        rfc.labels.remove(label)  # release the PROTECT FK before deleting
+        label.delete()
+        self.assertEqual(
+            list(_rfctobe_describe_delta(delta)), ["Label (Was Here): Added"]
         )

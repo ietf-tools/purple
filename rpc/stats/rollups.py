@@ -242,12 +242,13 @@ def queue_rollup(
     # Bulk-load every per-doc history walk the category build needs, so the
     # rollup runs a handful of queries instead of several per document.
     seg_by_doc = _assignment_segments_by_doc(doc_ids)
-    legacy_slug_by_pk = (
-        dict(
-            Label.objects.filter(slug__in=LEGACY_STATE_LABEL_SLUGS).values_list(
-                "pk", "slug"
-            )
-        )
+    legacy_by_pk = (
+        {
+            pk: (slug, text)
+            for pk, slug, text in Label.objects.filter(
+                slug__in=LEGACY_STATE_LABEL_SLUGS
+            ).values_list("pk", "slug", "text")
+        }
         if include_legacy
         else {}
     )
@@ -256,16 +257,16 @@ def queue_rollup(
             "pk", flat=True
         )
     )
-    label_iv = _label_intervals_by_doc(doc_ids, set(legacy_slug_by_pk) | awaiting_pks)
+    label_iv = _label_intervals_by_doc(doc_ids, set(legacy_by_pk) | awaiting_pks)
     reason_by_doc = _blocked_reason_intervals_by_doc(doc_ids, now)
 
     def _categories(doc_id: int) -> dict[str, tuple[bool, list]]:
         """Per-doc ``{category: (is_blocked, merged_intervals)}`` from bulk data.
 
         ``category`` is an assignment role slug (post-transition) or a legacy
-        state label slug (pre-transition). ``awaiting ref:`` time is carved out of
-        ``final_review_editor`` into a blocked ``awaiting_ref`` category, and — for
-        docs with blocking reasons — the single ``blocked`` category is itemised
+        state label's display text (pre-transition). ``awaiting ref:`` time is carved
+        out of ``final_review_editor`` into a blocked ``awaiting_ref`` category, and —
+        for docs with blocking reasons — the single ``blocked`` category is itemised
         into one blocked category per reason (mirroring the doc timeline). All
         sourced from the bulk lookups above rather than per-doc queries.
         """
@@ -274,13 +275,13 @@ def queue_rollup(
             _b, intervals = raw.setdefault(role_id, (is_blocked, []))
             intervals.extend((start, end) for start, end, _state in runs)
         if doc_id in legacy_ids:
-            for lpk, slug in legacy_slug_by_pk.items():
+            for lpk, (slug, text) in legacy_by_pk.items():
                 is_blocked = slug in LEGACY_BLOCKED_LABEL_SLUGS
                 for start, end in label_iv.get(doc_id, {}).get(lpk, []):
                     clipped = clip(start, end, hi=TRANSITION_DATE)
                     if clipped is None:
                         continue
-                    _b, intervals = raw.setdefault(slug, (is_blocked, []))
+                    _b, intervals = raw.setdefault(text or slug, (is_blocked, []))
                     intervals.append(clipped)
         result = {
             category: (is_blocked, merge_intervals(intervals, now))
