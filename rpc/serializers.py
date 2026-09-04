@@ -1245,11 +1245,18 @@ def _rfctobe_describe_delta(delta: ModelDelta):
             new = set(delta.new_record.labels.values_list("label__pk", flat=True))
             added = new - old
             removed = old - new
-            hist_labels = Label.history.as_of(delta.new_record.history_date)
-            for label in hist_labels.filter(id__in=added):
-                yield f"Label ({label.slug}): Added"
-            for label in hist_labels.filter(id__in=removed):
-                yield f"Label ({label.slug}): Removed"
+            ids = added | removed
+            display = {lbl.id: str(lbl) for lbl in Label.objects.filter(id__in=ids)}
+            # Labels deleted since aren't in the live table; recover their last name.
+            for label_id in ids - display.keys():
+                snapshot = Label.history.filter(id=label_id).first()
+                display[label_id] = (
+                    (snapshot.text or snapshot.slug) if snapshot else f"#{label_id}"
+                )
+            for label_id in added:
+                yield f"Label ({display[label_id]}): Added"
+            for label_id in removed:
+                yield f"Label ({display[label_id]}): Removed"
         elif change.field in _PERSON_FK_FIELDS:
             display_field = change.field.removesuffix("_id")
             old_label = _person_label(change.old)
