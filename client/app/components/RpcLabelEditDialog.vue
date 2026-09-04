@@ -269,7 +269,7 @@ const label = reactive<Label>(props.label ? { ...props.label } : NEW_LABEL_DEFAU
 const isNew = computed(() => label.id === undefined)
 const slugEdited = ref(false)
 
-// Mirror the backend slug format: lowercase kebab-case (see migration 0016).
+// Match the slug the backend generates from the name: lowercase kebab-case.
 const toSlug = (value: string) =>
   value
     .toLowerCase()

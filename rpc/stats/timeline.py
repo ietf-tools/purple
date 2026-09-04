@@ -34,7 +34,6 @@ TRANSITION_DATE = datetime.datetime(2026, 5, 20, tzinfo=datetime.UTC)
 # Only these labels are reconstructed on the timeline; every other label
 # (complexity/type/exception classifications) is a persistent attribute, not a
 # time-boxed state.
-# Slugs are lowercase since migration 0016 re-slugged all labels (slugify).
 LEGACY_STATE_LABEL_SLUGS = frozenset(
     {
         "edit",
@@ -74,10 +73,9 @@ KIND_AWAITING = "awaiting_ref"
 # (and the generated TS client) expose them as an enum rather than a bare string.
 KIND_CHOICES = (KIND_BLOCKED, KIND_WORKING, KIND_LEGACY, KIND_AWAITING)
 
-# Manually-applied labels flagging a final-review doc that is waiting on a
-# referenced RFC-to-be. Only ever set while in the final_review_editor state.
-# Slugified from "awaiting ref: <target>" by migration 0016, so the separator is
-# a hyphen, not the original "awaiting ref:".
+# Slug prefix of the manually-applied labels flagging a final-review doc that is
+# waiting on a referenced RFC-to-be. Only ever set while in the
+# final_review_editor state.
 AWAITING_REF_LABEL_PREFIX = "awaiting-ref-"
 
 
