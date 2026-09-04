@@ -5,9 +5,9 @@
       <div
         class="bg-violet-700 bg-gradient-to-tr from-violet-800 to-violet-600 px-4 pr-2 py-4 sm:pl-6">
         <div class="flex items-center justify-between">
-          <HeadlessDialogTitle class="text-base font-semibold leading-6 text-white"
-            >Edit Label</HeadlessDialogTitle
-          >
+          <HeadlessDialogTitle class="text-base font-semibold leading-6 text-white">{{
+            isNew ? 'New Label' : 'Edit Label'
+          }}</HeadlessDialogTitle>
           <div class="ml-3 flex h-7 items-center">
             <button
               type="button"
@@ -31,9 +31,36 @@
         class="mt-10 space-y-8 border-b border-gray-900/10 p-6 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:border-t sm:pb-0">
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
+            for="text"
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
+            >Text</label
+          >
+          <div class="mt-2 sm:col-span-2 sm:mt-0">
+            <div
+              class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
+              <input
+                id="text"
+                v-model="label.text"
+                type="text"
+                name="text"
+                :disabled="!isNew"
+                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 sm:text-sm sm:leading-6"
+                placeholder="e.g. 'IANA Hold'"
+                @input="onTextInput" />
+            </div>
+            <p v-if="!isNew" class="mt-1 text-xs text-gray-500">
+              The text can't be edited here. For minor clarifications, please contact the admin to
+              edit it in the admin interface; <br />if the meaning would change substantially,
+              create a new label instead.
+            </p>
+          </div>
+        </div>
+
+        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+          <label
             for="slug"
             class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
-            >Label Name</label
+            >Slug</label
           >
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <div
@@ -43,9 +70,34 @@
                 v-model="label.slug"
                 type="text"
                 name="slug"
-                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
-                placeholder="e.g. 'markdown'" />
+                :disabled="!isNew"
+                class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 sm:text-sm sm:leading-6"
+                placeholder="auto-generated from name"
+                @input="slugEdited = true" />
             </div>
+            <p class="mt-1 text-xs text-gray-500">
+              {{
+                isNew
+                  ? 'Auto-generated from the name; adjust before saving if needed.'
+                  : 'Slugs are immutable once created.'
+              }}
+            </p>
+          </div>
+        </div>
+
+        <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
+          <label
+            for="description"
+            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
+            >Description</label
+          >
+          <div class="mt-2 sm:col-span-2 sm:mt-0">
+            <textarea
+              id="description"
+              v-model="label.description"
+              name="description"
+              rows="2"
+              class="block w-full rounded-md border-0 py-1.5 text-gray-900 dark:text-neutral-100 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:max-w-md sm:text-sm sm:leading-6" />
           </div>
         </div>
 
@@ -203,13 +255,34 @@ const props = defineProps<Props>()
 
 const NEW_LABEL_DEFAULTS: Label = {
   slug: '',
+  text: '',
+  description: '',
   isException: false,
+  isComplexity: false,
   color: 'slate',
   used: true,
   isPublic: false
 }
 
 const label = reactive<Label>(props.label ? { ...props.label } : NEW_LABEL_DEFAULTS)
+
+const isNew = computed(() => label.id === undefined)
+const slugEdited = ref(false)
+
+// Mirror the backend slug format: lowercase kebab-case (see migration 0016).
+const toSlug = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+function onTextInput() {
+  // Auto-fill the slug from the text until the user hand-edits it (create only).
+  if (isNew.value && !slugEdited.value) {
+    label.slug = toSlug(label.text)
+  }
+}
 
 async function save() {
   try {

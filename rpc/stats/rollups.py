@@ -659,7 +659,7 @@ def queue_counts_rollup(
     # "Gone to edit" = first time with no missing references since enqueue.
     # Missing references = not-received relationships (any era) + legacy MISSREF.
     notrecv = _missing_ref_intervals_by_doc(doc_ids)
-    missref_label = Label.objects.filter(slug="MISSREF").first()
+    missref_label = Label.objects.filter(slug="missref").first()
     missref_by_doc = (
         _label_intervals_by_doc(doc_ids, {missref_label.pk}) if missref_label else {}
     )

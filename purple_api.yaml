@@ -4622,7 +4622,15 @@ components:
           readOnly: true
         slug:
           type: string
+          description: Stable machine key, auto-generated from text; referenced in
+            code.
           maxLength: 64
+        text:
+          type: string
+          description: Display text shown on the label.
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:
@@ -4635,13 +4643,23 @@ components:
           type: boolean
       required:
         - slug
+        - text
     LabelRequest:
       type: object
       properties:
         slug:
           type: string
           minLength: 1
+          description: Stable machine key, auto-generated from text; referenced in
+            code.
           maxLength: 64
+        text:
+          type: string
+          minLength: 1
+          description: Display text shown on the label.
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:
@@ -4654,6 +4672,7 @@ components:
           type: boolean
       required:
         - slug
+        - text
     LabelStat:
       type: object
       properties:
@@ -5126,7 +5145,16 @@ components:
         slug:
           type: string
           minLength: 1
+          description: Stable machine key, auto-generated from text; referenced in
+            code.
           maxLength: 64
+        text:
+          type: string
+          minLength: 1
+          description: Display text shown on the label.
+          maxLength: 255
+        description:
+          type: string
         is_exception:
           type: boolean
         is_complexity:

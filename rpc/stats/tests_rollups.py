@@ -402,7 +402,7 @@ class QueueCountsRollupTests(TestCase):
     def test_missref_label_within_a_week_counts_as_entered_missing_ref(self):
         # Pre-transition, the MISSREF label is often applied a few days after
         # enqueue but reflects entry state: within a week counts, beyond doesn't.
-        missref = LabelFactory(slug="MISSREF")
+        missref = LabelFactory(slug="missref")
         h_enq = dt(2026, 3, 5)
         h = self._doc(h_enq)
         apply_label_over(
@@ -442,7 +442,7 @@ class QueueCountsRollupTests(TestCase):
         # label (its subtlest invariant: interval boundaries are label-set
         # change-points, so an overlapping second label matters).
         rfc = self._doc(dt(2026, 1, 1))
-        a = LabelFactory(slug="MISSREF")
+        a = LabelFactory(slug="missref")
         b = LabelFactory(slug="AUTH48")
         apply_label_over(rfc, a, dt(2026, 2, 1), dt(2026, 4, 1))
         apply_label_over(rfc, b, dt(2026, 3, 1), dt(2026, 5, 1))  # overlaps a
