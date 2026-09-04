@@ -1,10 +1,14 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import xml.etree.ElementTree as ET
+from unittest.mock import patch
 
 from django.test import TestCase
 
+from rpc.factories import RfcToBeFactory
+
 from .metadata import (
     Metadata,
+    MetadataComparator,
     _already_parenthesized,
     _inline_text,
     _is_simple_expression,
@@ -199,3 +203,44 @@ class InlineTextTests(TestCase):
             "J Doe",
             "single letter name",
         )
+
+
+class CompareRevisionTests(TestCase):
+    """The revision row compares the working rev against the datatracker's latest."""
+
+    def _comparator(self, rev, latest):
+        rfc = RfcToBeFactory(rev=rev)
+        comparator = MetadataComparator(rfc, {"title": rfc.title})
+        # Bypass the datatracker fetch by priming the cached_property.
+        comparator.__dict__["latest_rev"] = latest
+        return comparator
+
+    def test_matches_latest(self):
+        row = self._comparator("05", "05").compare_revision()
+        self.assertTrue(row["is_match"])
+        self.assertFalse(row["is_error"])
+
+    def test_behind_latest_is_a_fixable_error(self):
+        row = self._comparator("05", "07").compare_revision()
+        self.assertFalse(row["is_match"])
+        self.assertTrue(row["is_error"])  # blocks publication
+        self.assertTrue(row["can_fix"])  # offers a fix
+        self.assertEqual(row["db_value"], "05")  # left: working rev
+        self.assertEqual(row["xml_value"], "07")  # right: datatracker latest
+
+    def test_unfetchable_latest_does_not_block(self):
+        row = self._comparator("05", None).compare_revision()
+        self.assertTrue(row["is_match"])
+        self.assertFalse(row["is_error"])
+        self.assertFalse(row["can_fix"])
+
+    @patch.object(MetadataComparator, "compare_all")
+    @patch.object(MetadataComparator, "_fetch_latest_rev", return_value="07")
+    def test_fix_bumps_rev_to_latest(self, _fetch, mock_compare_all):
+        rfc = RfcToBeFactory(rev="05")
+        mock_compare_all.return_value = [
+            {"field": "revision", "is_match": False, "can_fix": True}
+        ]
+        Metadata.update_metadata(rfc, {})
+        rfc.refresh_from_db()
+        self.assertEqual(rfc.rev, "07")

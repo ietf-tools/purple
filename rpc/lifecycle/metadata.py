@@ -5,11 +5,13 @@ import datetime
 import logging
 import re
 import xml.etree.ElementTree as ET
+from functools import cached_property
 from itertools import zip_longest
 from typing import Any
 
 from django.db import transaction
 
+from datatracker.rpcapi import with_rpcapi
 from rpc.models import (
     DocRelationshipName,
     RfcToBe,
@@ -193,6 +195,13 @@ class Metadata:
                             rfctobe.abstract = new_abstract
                             rfctobe.save(update_fields=["abstract"])
                             updated_fields["abstract"] = new_abstract
+
+                    elif field == "revision":
+                        new_rev = comparator.latest_rev
+                        if new_rev:
+                            rfctobe.rev = new_rev
+                            rfctobe.save(update_fields=["rev"])
+                            updated_fields["rev"] = new_rev
 
                     elif field == "updates":
                         # Delete existing updates relationships
@@ -392,6 +401,25 @@ class MetadataComparator:
         self.rfc_to_be = rfc_to_be
         self.xml_metadata = xml_metadata
 
+    @cached_property
+    def latest_rev(self):
+        """The draft's latest revision per the datatracker, or None if unavailable."""
+        return self._fetch_latest_rev()
+
+    @with_rpcapi
+    def _fetch_latest_rev(self, *, rpcapi):
+        draft = self.rfc_to_be.draft
+        datatracker_id = getattr(draft, "datatracker_id", None)
+        if datatracker_id is None:
+            return None
+        try:
+            return rpcapi.get_draft_by_id(datatracker_id).rev
+        except Exception:
+            logger.exception(
+                "Failed to fetch latest revision for draft %s", datatracker_id
+            )
+            return None
+
     def compare_all(self):
         """
         Compare all metadata fields and return list of comparison results.
@@ -414,12 +442,48 @@ class MetadataComparator:
         return [
             self.compare_title(),
             self.compare_publication_date(),
+            self.compare_revision(),
             self.compare_authors(),
             self.compare_updates(),
             self.compare_obsoletes(),
             self.compare_subseries(),
             self.compare_abstract(),
         ]
+
+    def compare_revision(self):
+        """Compare the working revision against the datatracker's latest.
+
+        An out-of-date rev is an error (it blocks publication); the fix bumps
+        rfc_to_be.rev to the datatracker's latest. If the latest can't be fetched
+        we stay silent rather than block on a transient datatracker failure.
+        """
+        db_value = self.rfc_to_be.rev or ""
+        latest = self.latest_rev
+        if latest is None:
+            return {
+                "field": "revision",
+                "db_value": db_value,
+                "xml_value": "",
+                "is_match": True,
+                "can_fix": False,
+                "is_error": False,
+                "detail": "Could not fetch the latest revision from the datatracker.",
+            }
+        is_match = db_value == latest
+        return {
+            "field": "revision",
+            "db_value": db_value,
+            "xml_value": latest,
+            "is_match": is_match,
+            "can_fix": True,
+            "is_error": not is_match,
+            "detail": (
+                ""
+                if is_match
+                else f"Working on {db_value or '(none)'}, but the datatracker's "
+                f"latest is {latest}."
+            ),
+        }
 
     def compare_title(self):
         """Compare title field"""
