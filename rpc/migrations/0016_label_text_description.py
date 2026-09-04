@@ -69,7 +69,7 @@ class Migration(migrations.Migration):
             name="text",
             field=models.CharField(
                 default="",
-                help_text="What the label reads as where it is shown.",
+                help_text="Display text shown on the label.",
                 max_length=255,
             ),
         ),
@@ -83,7 +83,7 @@ class Migration(migrations.Migration):
             name="text",
             field=models.CharField(
                 default="",
-                help_text="What the label reads as where it is shown.",
+                help_text="Display text shown on the label.",
                 max_length=255,
             ),
         ),
