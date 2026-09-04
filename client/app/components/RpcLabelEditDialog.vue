@@ -31,25 +31,25 @@
         class="mt-10 space-y-8 border-b border-gray-900/10 p-6 sm:space-y-0 sm:divide-y sm:divide-gray-900/10 sm:border-t sm:pb-0">
         <div class="sm:grid sm:grid-cols-3 sm:items-start sm:gap-4 sm:py-6">
           <label
-            for="name"
+            for="text"
             class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-100 sm:pt-1.5"
-            >Name</label
+            >Text</label
           >
           <div class="mt-2 sm:col-span-2 sm:mt-0">
             <div
               class="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-indigo-600 sm:max-w-md">
               <input
-                id="name"
-                v-model="label.name"
+                id="text"
+                v-model="label.text"
                 type="text"
-                name="name"
+                name="text"
                 :disabled="!isNew"
                 class="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 dark:text-neutral-100 placeholder:text-gray-400 focus:ring-0 disabled:text-gray-500 sm:text-sm sm:leading-6"
                 placeholder="e.g. 'IANA Hold'"
-                @input="onNameInput" />
+                @input="onTextInput" />
             </div>
             <p v-if="!isNew" class="mt-1 text-xs text-gray-500">
-              The name can't be edited here. For minor clarifications, please contact the admin to
+              The text can't be edited here. For minor clarifications, please contact the admin to
               edit it in the admin interface; <br />if the meaning would change substantially,
               create a new label instead.
             </p>
@@ -255,7 +255,7 @@ const props = defineProps<Props>()
 
 const NEW_LABEL_DEFAULTS: Label = {
   slug: '',
-  name: '',
+  text: '',
   description: '',
   isException: false,
   isComplexity: false,
@@ -269,18 +269,18 @@ const label = reactive<Label>(props.label ? { ...props.label } : NEW_LABEL_DEFAU
 const isNew = computed(() => label.id === undefined)
 const slugEdited = ref(false)
 
-// Mirror the backend slug format: lowercase snake_case (see migration 0016).
+// Mirror the backend slug format: lowercase kebab-case (see migration 0016).
 const toSlug = (value: string) =>
   value
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
 
-function onNameInput() {
-  // Auto-fill the slug from the name until the user hand-edits it (create only).
+function onTextInput() {
+  // Auto-fill the slug from the text until the user hand-edits it (create only).
   if (isNew.value && !slugEdited.value) {
-    label.slug = toSlug(label.name)
+    label.slug = toSlug(label.text)
   }
 }
 

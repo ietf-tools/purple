@@ -480,7 +480,7 @@ class LabelSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "slug",
-            "name",
+            "text",
             "description",
             "is_exception",
             "is_complexity",
@@ -488,16 +488,16 @@ class LabelSerializer(serializers.ModelSerializer):
             "used",
             "is_public",
         ]
-        extra_kwargs = {"name": {"required": True}}
+        extra_kwargs = {"text": {"required": True}}
 
     def get_fields(self):
         fields = super().get_fields()
-        # slug (the stable machine key) and name (the display label) are set once at
-        # creation and read-only afterward here; the admin interface can still change
-        # them since it doesn't go through this serializer.
+        # slug (the stable machine key) and text (what the label reads as) are set
+        # once at creation and read-only afterward here; the admin interface can still
+        # change them since it doesn't go through this serializer.
         if self.instance is not None:
             fields["slug"].read_only = True
-            fields["name"].read_only = True
+            fields["text"].read_only = True
         return fields
 
 

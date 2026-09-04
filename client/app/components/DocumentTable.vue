@@ -215,7 +215,7 @@ function transformLabels(val: string[], defaultColor: ColorEnum): Label[] {
       return {
         id: 0,
         slug: item,
-        name: item,
+        text: item,
         color: defaultColor
       }
     } else {

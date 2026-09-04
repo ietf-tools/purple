@@ -34,11 +34,11 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     reasons: set[str] = set()
 
     # Gate 0: Always blocks regardless of current assignment
-    if rfc.labels.filter(slug="author_input_required").exists():
+    if rfc.labels.filter(slug="author-input-required").exists():
         reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
-    if rfc.labels.filter(slug="stream_hold").exists():
+    if rfc.labels.filter(slug="stream-hold").exists():
         reasons.add(BlockingReason.LABEL_STREAM_HOLD)
-    if rfc.labels.filter(slug="tools_issue").exists():
+    if rfc.labels.filter(slug="tools-issue").exists():
         reasons.add(BlockingReason.TOOLS_ISSUE)
     if rfc.rpcrelateddocument_set.filter(
         relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
@@ -52,7 +52,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     if _is_active_or_pending_assignment(rfc, slugs):
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
-        if rfc.labels.filter(slug="extref_hold").exists():
+        if rfc.labels.filter(slug="extref-hold").exists():
             reasons.add(BlockingReason.LABEL_EXTREF_HOLD)
         # any related documents not received (2g/3g/withdrawn), add only first
         blocking_slugs = [
@@ -89,7 +89,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     if _is_active_or_pending_assignment(rfc, slugs):
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
-        if rfc.labels.filter(slug="iana_hold").exists():
+        if rfc.labels.filter(slug="iana-hold").exists():
             reasons.add(BlockingReason.LABEL_IANA_HOLD)
         # any document this draft normatively references has not completed first edit
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
@@ -116,7 +116,7 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     # Gate 5: Blocks publishing
     slugs = ["publisher"]
     if _is_active_or_pending_assignment(rfc, slugs):
-        if rfc.labels.filter(slug="iana_hold").exists():
+        if rfc.labels.filter(slug="iana-hold").exists():
             reasons.add(BlockingReason.LABEL_IANA_HOLD)
         # any document this draft normatively references is not ready for publication
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")

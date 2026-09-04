@@ -12,7 +12,7 @@
         ]"
         @change="handleCheckboxChange"
         size="small"
-        :label="`${label.isException ? '⚠️ ' : ''}${label.name.substring(label.name.indexOf(SLUG_SEPARATOR) + 1)}`" />
+        :label="`${label.isException ? '⚠️ ' : ''}${label.text.substring(label.text.indexOf(SLUG_SEPARATOR) + 1)}`" />
     </div>
   </div>
 </template>

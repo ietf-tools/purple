@@ -4622,12 +4622,12 @@ components:
           readOnly: true
         slug:
           type: string
-          description: Stable machine key, auto-generated from name; referenced in
+          description: Stable machine key, auto-generated from text; referenced in
             code.
           maxLength: 64
-        name:
+        text:
           type: string
-          description: Human-readable name
+          description: Display text shown on the label.
           maxLength: 255
         description:
           type: string
@@ -4642,21 +4642,21 @@ components:
         is_public:
           type: boolean
       required:
-        - name
         - slug
+        - text
     LabelRequest:
       type: object
       properties:
         slug:
           type: string
           minLength: 1
-          description: Stable machine key, auto-generated from name; referenced in
+          description: Stable machine key, auto-generated from text; referenced in
             code.
           maxLength: 64
-        name:
+        text:
           type: string
           minLength: 1
-          description: Human-readable name
+          description: Display text shown on the label.
           maxLength: 255
         description:
           type: string
@@ -4671,8 +4671,8 @@ components:
         is_public:
           type: boolean
       required:
-        - name
         - slug
+        - text
     LabelStat:
       type: object
       properties:
@@ -5146,13 +5146,13 @@ components:
         slug:
           type: string
           minLength: 1
-          description: Stable machine key, auto-generated from name; referenced in
+          description: Stable machine key, auto-generated from text; referenced in
             code.
           maxLength: 64
-        name:
+        text:
           type: string
           minLength: 1
-          description: Human-readable name
+          description: Display text shown on the label.
           maxLength: 255
         description:
           type: string
