@@ -217,6 +217,7 @@ def process_rfctobe_changes_for_queue_task():
         return f"Queue changes processed ({change_count} RFCs changed)"
     except SkippedChangeNotification as err:
         logger.info("RFC changes notification was skipped: %s", str(err))
+        return f"Queue change processing skipped ({str(err)})"
     except Exception:
         logger.exception("Error in process_rfctobe_changes_for_queue_task")
 
