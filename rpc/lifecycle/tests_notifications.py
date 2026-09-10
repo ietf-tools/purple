@@ -2,7 +2,6 @@
 from unittest.mock import patch
 
 from django.test import TestCase
-from django.utils import timezone
 
 from rpc.factories import RfcToBeFactory, TaskRunFactory
 from rpc.models import RfcToBe
