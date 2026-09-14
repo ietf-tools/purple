@@ -12,9 +12,9 @@ from purple.crossref import submit as submit_to_crossref
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
-# Registers rpc.backfill_rfc_assignments so it can be scheduled from the admin.
-# Celery's autodiscovery only looks at each app's tasks module, so a task defined
-# elsewhere is invisible until something imports it.
+# Registers the backfill task so it can be scheduled from the admin. Celery's
+# autodiscovery only looks at each app's tasks module, so a task defined elsewhere
+# is invisible until something imports it.
 from . import tasks_backfill_assignments  # noqa: F401
 from .lifecycle.metadata import Metadata
 from .lifecycle.notifications import (
