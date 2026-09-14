@@ -843,7 +843,7 @@ class QueueCounts(views.APIView):
 
         enqueuing = RfcToBe.objects.filter(disposition__slug="created").count()
         queue = RfcToBe.objects.filter(disposition__slug="in_progress").count()
-        days_ago = datetime.date.today() - datetime.timedelta(days=30)
+        days_ago = timezone.now() - datetime.timedelta(days=30)
         published = RfcToBe.objects.filter(
             disposition__slug="published", published_at__gte=days_ago
         ).count()
