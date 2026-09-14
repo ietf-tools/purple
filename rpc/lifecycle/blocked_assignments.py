@@ -9,6 +9,7 @@ from ..models import (
     BlockingReason,
     DispositionName,
     DocRelationshipName,
+    Notification,
     RfcToBe,
     RfcToBeBlockingReason,
     RpcRole,
@@ -277,6 +278,11 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
         reason.resolved = now
         reason.save(update_fields=["resolved"])
 
+    Notification.emit(
+        Notification.EventType.UNBLOCKED,
+        f"{rfc.name} was unblocked",
+        rfc_to_be=rfc,
+    )
     return True
 
 
