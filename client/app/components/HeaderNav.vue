@@ -167,7 +167,7 @@
           <Icon name="solar:bell-bold-duotone" size="1.25em" aria-hidden="true" />
           <span
             v-if="unreadCount > 0"
-            class="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-gray-800"
+            class="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-violet-600 dark:bg-violet-500 ring-2 ring-white dark:ring-gray-800"
             aria-hidden="true" />
         </Anchor>
 
