@@ -18,6 +18,7 @@ from utils.task_utils import RetryTask
 from . import tasks_backfill_assignments  # noqa: F401
 from .lifecycle.metadata import Metadata
 from .lifecycle.notifications import (
+    SkippedChangeNotification,
     notify_datatracker_queue,
     process_rfctobe_changes_for_queue,
 )
@@ -218,6 +219,9 @@ def process_rfctobe_changes_for_queue_task():
         change_count = process_rfctobe_changes_for_queue()
         logger.info(f"Detected {change_count} RFC changes for queue")
         return f"Queue changes processed ({change_count} RFCs changed)"
+    except SkippedChangeNotification as err:
+        logger.info("RFC changes notification was skipped: %s", str(err))
+        return f"Queue change processing skipped ({str(err)})"
     except Exception:
         logger.exception("Error in process_rfctobe_changes_for_queue_task")
 

@@ -5,11 +5,14 @@ import datetime
 import logging
 import re
 import xml.etree.ElementTree as ET
+from functools import cached_property
 from itertools import zip_longest
 from typing import Any
 
 from django.db import transaction
+from rpcapi_client.exceptions import NotFoundException
 
+from datatracker.rpcapi import datatracker_api, with_rpcapi
 from rpc.models import (
     DocRelationshipName,
     RfcToBe,
@@ -19,6 +22,14 @@ from rpc.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+class RfcxmlRevError(ValueError):
+    """The RFCXML docName gives no revision for this draft."""
+
+
+class DatatrackerInconsistency(Exception):
+    """A linked draft is missing from the datatracker or has no revision there."""
 
 
 def _already_parenthesized(s: str) -> bool:
@@ -156,6 +167,7 @@ class Metadata:
             "updates": updates,
             "publication_date": date,
             "subseries": subseries,
+            "doc_name": root.attrib.get("docName", ""),
         }
 
     @classmethod
@@ -193,6 +205,13 @@ class Metadata:
                             rfctobe.abstract = new_abstract
                             rfctobe.save(update_fields=["abstract"])
                             updated_fields["abstract"] = new_abstract
+
+                    elif field == "revision":
+                        new_rev = comparison.get("xml_value")
+                        if new_rev:
+                            rfctobe.rev = new_rev
+                            rfctobe.save(update_fields=["rev"])
+                            updated_fields["rev"] = new_rev
 
                     elif field == "updates":
                         # Delete existing updates relationships
@@ -392,6 +411,24 @@ class MetadataComparator:
         self.rfc_to_be = rfc_to_be
         self.xml_metadata = xml_metadata
 
+    @cached_property
+    @with_rpcapi
+    def _datatracker_rev(self, *, rpcapi) -> str:
+        """The draft's latest rev per the datatracker."""
+        draft = self.rfc_to_be.draft
+        with datatracker_api():
+            try:
+                rev = rpcapi.get_draft_by_id(draft.datatracker_id).rev
+            except NotFoundException:
+                raise DatatrackerInconsistency(
+                    f"Datatracker has no draft {draft.name} (id {draft.datatracker_id})"
+                ) from None
+        if not rev:
+            raise DatatrackerInconsistency(
+                f"Datatracker draft {draft.name} has no revision"
+            )
+        return rev
+
     def compare_all(self):
         """
         Compare all metadata fields and return list of comparison results.
@@ -414,12 +451,78 @@ class MetadataComparator:
         return [
             self.compare_title(),
             self.compare_publication_date(),
+            self.compare_revision(),
             self.compare_authors(),
             self.compare_updates(),
             self.compare_obsoletes(),
             self.compare_subseries(),
             self.compare_abstract(),
         ]
+
+    def _rfcxml_rev(self) -> str:
+        """The rev from the RFCXML docName, "<draft name>-<rev>"."""
+        doc_name = self.xml_metadata.get("doc_name") or ""
+        if not doc_name:
+            raise RfcxmlRevError(
+                "RFCXML docName not recorded; redo metadata validation."
+            )
+        draft = self.rfc_to_be.draft
+        if draft is None:
+            rev = doc_name.rpartition("-")[2]
+        elif doc_name.startswith(f"{draft.name}-"):
+            rev = doc_name.removeprefix(f"{draft.name}-")
+        else:
+            raise RfcxmlRevError(
+                f"RFCXML docName {doc_name} is not for draft {draft.name}."
+            )
+        if not rev.isdigit():
+            raise RfcxmlRevError(f"RFCXML docName {doc_name} has no revision suffix.")
+        return rev
+
+    def compare_revision(self):
+        """Compare the RFCXML rev with the datatracker's, then with the database."""
+        db_value = self.rfc_to_be.rev or ""
+        problems = []
+        try:
+            xml_rev = self._rfcxml_rev()
+        except RfcxmlRevError as e:
+            xml_rev = None
+            problems.append(str(e))
+        dt_rev = self._datatracker_rev if self.rfc_to_be.draft is not None else None
+        row = {"field": "revision", "db_value": db_value, "xml_value": xml_rev or ""}
+
+        if dt_rev and not xml_rev:
+            problems.append(f"The datatracker's latest is -{dt_rev}.")
+        elif dt_rev and xml_rev != dt_rev:
+            problems.append(
+                f"RFCXML is -{xml_rev} but the datatracker's latest is -{dt_rev}."
+            )
+        if problems:
+            return row | {
+                "is_match": False,
+                "can_fix": False,
+                "is_error": True,
+                "detail": " ".join(
+                    [*problems, "The publisher must resolve this before publishing."]
+                ),
+            }
+
+        is_match = db_value == xml_rev
+        return row | {
+            "is_match": is_match,
+            "can_fix": True,
+            "is_error": not is_match,
+            "detail": (
+                ""
+                if is_match
+                else f"Working on -{db_value or '(none)'}; "
+                + (
+                    f"RFCXML and datatracker both say -{xml_rev}."
+                    if dt_rev
+                    else f"the RFCXML says -{xml_rev}."
+                )
+            ),
+        }
 
     def compare_title(self):
         """Compare title field"""

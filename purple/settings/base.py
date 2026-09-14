@@ -223,3 +223,6 @@ STORAGES: dict[str, dict[str, Any]] = {
     "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     "red_bucket": {"BACKEND": "django.core.files.storage.InMemoryStorage"},
 }
+
+# Tests
+TEST_RUNNER = "utils.test_runner.QuietLogsRunner"

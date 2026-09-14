@@ -4,6 +4,7 @@ import datetime
 
 import factory
 from django.db.models import Max
+from django.utils import timezone
 
 from .models import (
     ActionHolder,
@@ -23,6 +24,7 @@ from .models import (
     SourceFormatName,
     StdLevelName,
     StreamName,
+    TaskRun,
     TlpBoilerplateChoiceName,
     UnusableRfcNumber,
 )
@@ -242,3 +244,10 @@ class PublicationAttemptFactory(factory.django.DjangoModelFactory):
 
     class Meta:
         model = PublicationAttempt
+
+
+class TaskRunFactory(factory.django.DjangoModelFactory):
+    last_run_at = factory.LazyFunction(timezone.now)
+
+    class Meta:
+        model = TaskRun

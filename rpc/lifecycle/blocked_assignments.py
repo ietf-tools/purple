@@ -7,6 +7,7 @@ from rest_framework.exceptions import NotFound
 from ..models import (
     Assignment,
     BlockingReason,
+    DispositionName,
     DocRelationshipName,
     RfcToBe,
     RfcToBeBlockingReason,
@@ -30,7 +31,14 @@ def _is_active_or_pending_assignment(rfc: RfcToBe, slugs) -> bool:
 
 
 def get_block_reasons(rfc: RfcToBe) -> set[str]:
-    """Compute whether blocked and collect blocking reasons."""
+    """Compute whether blocked and collect blocking reasons.
+
+    A document in a terminal disposition is never blocked: blocking says work
+    cannot proceed, and there is none left.
+    """
+    if rfc.disposition_id not in DispositionName.ACTIVE_SLUGS:
+        return set()
+
     reasons: set[str] = set()
 
     # Gate 0: Always blocks regardless of current assignment

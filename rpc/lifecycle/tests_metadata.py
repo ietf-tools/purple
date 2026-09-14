@@ -1,10 +1,17 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 import xml.etree.ElementTree as ET
+from unittest.mock import MagicMock, patch
 
 from django.test import TestCase
+from rpcapi_client.exceptions import ApiException, NotFoundException
+
+from datatracker.rpcapi import DataTrackerUnavailable
+from rpc.factories import RfcToBeFactory
 
 from .metadata import (
+    DatatrackerInconsistency,
     Metadata,
+    MetadataComparator,
     _already_parenthesized,
     _inline_text,
     _is_simple_expression,
@@ -199,3 +206,129 @@ class InlineTextTests(TestCase):
             "J Doe",
             "single letter name",
         )
+
+
+class ParseDocNameTests(TestCase):
+    def test_doc_name_is_captured_verbatim(self):
+        xml = '<rfc docName="draft-ietf-foo-16"><front><title>T</title></front></rfc>'
+        self.assertEqual(Metadata.parse_rfc_xml(xml)["doc_name"], "draft-ietf-foo-16")
+
+    def test_missing_doc_name_is_empty(self):
+        xml = "<rfc><front><title>T</title></front></rfc>"
+        self.assertEqual(Metadata.parse_rfc_xml(xml)["doc_name"], "")
+
+
+class CompareRevisionTests(TestCase):
+    """RFCXML and datatracker must agree before the database rev is judged."""
+
+    DRAFT = "draft-ietf-foo-bar"
+
+    def _row(self, rev, *, doc_name, latest=None, draft=True):
+        rfc = RfcToBeFactory(rev=rev, draft__name=self.DRAFT)
+        if not draft:
+            rfc.draft = None
+        comparator = MetadataComparator(rfc, {"title": rfc.title, "doc_name": doc_name})
+        # Bypass the datatracker fetch by priming the cached_property.
+        if draft:
+            comparator.__dict__["_datatracker_rev"] = latest
+            return comparator.compare_revision()
+        with patch("datatracker.rpcapi.get_rpcapi_client", side_effect=AssertionError):
+            return comparator.compare_revision()
+
+    def _assert_hard_error(self, row):
+        self.assertFalse(row["is_match"])
+        self.assertTrue(row["is_error"])
+        self.assertFalse(row["can_fix"])
+        self.assertIn("publisher must resolve", row["detail"])
+
+    def test_all_agree(self):
+        row = self._row("16", doc_name=f"{self.DRAFT}-16", latest="16")
+        self.assertTrue(row["is_match"])
+        self.assertFalse(row["is_error"])
+
+    def test_agreed_but_database_stale_is_fixable(self):
+        row = self._row("15", doc_name=f"{self.DRAFT}-16", latest="16")
+        self.assertFalse(row["is_match"])
+        self.assertTrue(row["is_error"])
+        self.assertTrue(row["can_fix"])
+        self.assertEqual(row["db_value"], "15")
+        self.assertEqual(row["xml_value"], "16")
+
+    def test_no_draft_compares_xml_with_database_only(self):
+        row = self._row("16", doc_name="draft-whatever-16", draft=False)
+        self.assertTrue(row["is_match"])
+        self.assertFalse(row["is_error"])
+
+    def test_no_draft_stale_database_is_fixable(self):
+        row = self._row("15", doc_name="draft-whatever-16", draft=False)
+        self.assertFalse(row["is_match"])
+        self.assertTrue(row["is_error"])
+        self.assertTrue(row["can_fix"])
+        self.assertEqual(row["xml_value"], "16")
+        self.assertIn("the RFCXML says -16", row["detail"])
+
+    def test_no_draft_with_unusable_doc_name_blocks(self):
+        row = self._row("16", doc_name="draft-whatever-final", draft=False)
+        self._assert_hard_error(row)
+        self.assertIn("no revision suffix", row["detail"])
+
+    def test_document_and_datatracker_disagree(self):
+        row = self._row("16", doc_name=f"{self.DRAFT}-16", latest="17")
+        self._assert_hard_error(row)
+        self.assertIn("-16", row["detail"])
+        self.assertIn("-17", row["detail"])
+
+    def test_doc_name_for_another_draft(self):
+        row = self._row("16", doc_name="draft-someone-else-16", latest="16")
+        self._assert_hard_error(row)
+        self.assertIn("not for draft", row["detail"])
+        self.assertIn("latest is -16", row["detail"])
+        self.assertEqual(row["xml_value"], "")
+
+    def test_doc_name_without_revision_suffix(self):
+        row = self._row("16", doc_name=f"{self.DRAFT}-final", latest="16")
+        self._assert_hard_error(row)
+        self.assertIn("no revision suffix", row["detail"])
+
+    def test_missing_doc_name(self):
+        row = self._row("16", doc_name="", latest="16")
+        self._assert_hard_error(row)
+        self.assertIn("docName not recorded", row["detail"])
+
+    def test_datatracker_failure_is_a_503(self):
+        rfc = RfcToBeFactory(rev="16", draft__name=self.DRAFT)
+        rpcapi = MagicMock()
+        rpcapi.get_draft_by_id.side_effect = ApiException(status=500)
+        with (
+            patch("datatracker.rpcapi.get_rpcapi_client", return_value=rpcapi),
+            self.assertRaises(DataTrackerUnavailable),
+        ):
+            MetadataComparator(rfc, {"doc_name": f"{self.DRAFT}-16"}).compare_revision()
+
+    def _datatracker_rev(self, rfc, rpcapi):
+        with patch("datatracker.rpcapi.get_rpcapi_client", return_value=rpcapi):
+            return MetadataComparator(rfc, {})._datatracker_rev
+
+    def test_datatracker_rev_raises_for_missing_draft_or_rev(self):
+        rfc = RfcToBeFactory(draft__name=self.DRAFT)
+        rpcapi = MagicMock()
+        rpcapi.get_draft_by_id.return_value.rev = "16"
+        self.assertEqual(self._datatracker_rev(rfc, rpcapi), "16")
+        rpcapi.get_draft_by_id.return_value.rev = ""
+        with self.assertRaisesRegex(DatatrackerInconsistency, "has no revision"):
+            self._datatracker_rev(rfc, rpcapi)
+        rpcapi.get_draft_by_id.side_effect = NotFoundException()
+        with self.assertRaisesRegex(
+            DatatrackerInconsistency, f"has no draft {self.DRAFT}"
+        ):
+            self._datatracker_rev(rfc, rpcapi)
+
+    @patch.object(MetadataComparator, "compare_all")
+    def test_fix_sets_rev_to_agreed_value(self, mock_compare_all):
+        rfc = RfcToBeFactory(rev="15", draft__name=self.DRAFT)
+        mock_compare_all.return_value = [
+            {"field": "revision", "is_match": False, "can_fix": True, "xml_value": "16"}
+        ]
+        Metadata.update_metadata(rfc, {"doc_name": f"{self.DRAFT}-16"})
+        rfc.refresh_from_db()
+        self.assertEqual(rfc.rev, "16")
