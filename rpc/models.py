@@ -1480,3 +1480,71 @@ class DirtyBits(models.Model):
 
     class Meta:
         verbose_name_plural = "dirty bits"
+
+
+class Notification(models.Model):
+    """An in-app notification about a document event.
+
+    A null recipient is a broadcast every authenticated user can see; a set recipient
+    targets a single RpcPerson. Read state is tracked per RpcPerson
+    (NotificationReadMarker); other users can view notifications but their reads are
+    not recorded.
+    """
+
+    class EventType(models.TextChoices):
+        UNBLOCKED = "unblocked", "document unblocked"
+
+    recipient = models.ForeignKey(
+        "RpcPerson",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        help_text="Person to notify; null broadcasts to everyone",
+    )
+    event_type = models.CharField(max_length=32, choices=EventType.choices)
+    rfc_to_be = models.ForeignKey(
+        "RfcToBe",
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        help_text="Document this notification is about",
+    )
+    message = models.CharField(max_length=255)
+    created = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        ordering = ["-created"]
+        indexes = [models.Index(fields=["recipient", "-created"])]
+
+    def __str__(self):
+        who = self.recipient if self.recipient_id else "everyone"
+        return f"{self.get_event_type_display()} for {who}"
+
+    @classmethod
+    def emit(cls, event_type, message, *, rfc_to_be=None, recipient=None):
+        """Create a notification. recipient=None broadcasts to everyone."""
+        return cls.objects.create(
+            recipient=recipient,
+            event_type=event_type,
+            rfc_to_be=rfc_to_be,
+            message=message,
+        )
+
+
+class NotificationReadMarker(models.Model):
+    """Per-person watermark: notifications created at or before seen_at are read.
+
+    Keyed on RpcPerson to match the recipient dimension, and kept as its own model
+    to avoid churning RpcPerson's history.
+    """
+
+    person = models.OneToOneField(
+        "RpcPerson",
+        on_delete=models.CASCADE,
+        related_name="notification_read_marker",
+    )
+    seen_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.person} read up to {self.seen_at}"

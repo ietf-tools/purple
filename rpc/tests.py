@@ -19,6 +19,8 @@ from rpc.models import (
     Cluster,
     ClusterMember,
     DocRelationshipName,
+    Notification,
+    NotificationReadMarker,
     RpcRelatedDocument,
     RpcRole,
 )
@@ -29,13 +31,19 @@ from .factories import (
     ClusterFactory,
     DispositionNameFactory,
     RfcToBeFactory,
+    RpcPersonFactory,
+    RpcRoleFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
     StreamNameFactory,
     TlpBoilerplateChoiceNameFactory,
     UnusableRfcNumberFactory,
 )
-from .lifecycle.blocked_assignments import get_block_reasons
+from .lifecycle.blocked_assignments import (
+    apply_manual_block,
+    apply_manual_unblock,
+    get_block_reasons,
+)
 from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts
@@ -711,3 +719,139 @@ class PublicClusterConsistencyTests(TestCase):
         self.assertEqual(
             PublicQueueItemSerializer().get_cluster(lone), {"number": inactive.number}
         )
+
+
+class NotificationTests(TestCase):
+    def test_only_unblock_emits_broadcast_notification(self):
+        RpcRoleFactory(slug="blocked")
+        rfc = RfcToBeFactory()
+
+        apply_manual_block(rfc, comment="hold it")
+        self.assertFalse(  # blocking a doc does not notify
+            Notification.objects.filter(rfc_to_be=rfc).exists()
+        )
+
+        apply_manual_unblock(rfc)
+        unblocked = Notification.objects.filter(event_type="unblocked", rfc_to_be=rfc)
+        self.assertEqual(unblocked.count(), 1)
+        n = unblocked.get()
+        self.assertIsNone(n.recipient)  # broadcast: everyone sees it
+        self.assertEqual(n.rfc_to_be, rfc)
+        self.assertIn(rfc.name, n.message)
+
+    def test_endpoints_require_auth(self):
+        for method, path in (
+            ("get", "/api/rpc/notifications/"),
+            ("get", "/api/rpc/notifications/unread_count/"),
+            ("post", "/api/rpc/notifications/mark_read/"),
+        ):
+            resp = getattr(self.client, method)(path)
+            self.assertIn(resp.status_code, (401, 403), (path, resp.status_code))
+
+
+class DefaultPermissionTests(TestCase):
+    """Guard against a regression that opens the API to anonymous users.
+
+    Deliberately checks only each rpc_router viewset's -list route, which always
+    exists and is cheap to call. Endpoints outside the router, other actions, and
+    views with their own permission_classes need their own test next to these.
+    """
+
+    def test_default_permission_is_authenticated(self):
+        from django.conf import settings
+
+        self.assertEqual(
+            settings.REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"],
+            ["rest_framework.permissions.IsAuthenticated"],
+        )
+
+    def test_rpc_api_list_endpoints_reject_anonymous(self):
+        # Iterate the router so a new viewset is covered without editing this test.
+        from purple.urls import rpc_router
+
+        checked: list[str] = []
+        for pattern in rpc_router.urls:
+            name = getattr(pattern, "name", None)
+            if not name or not name.endswith("-list") or name in checked:
+                continue
+            kwargs = {
+                key: "1" for key in pattern.pattern.regex.groupindex if key != "format"
+            }
+            url = reverse(name, kwargs=kwargs)
+            resp = self.client.get(url)
+            self.assertIn(
+                resp.status_code, (401, 403), msg=f"{url} -> {resp.status_code}"
+            )
+            checked.append(name)
+        self.assertGreaterEqual(len(checked), 15)  # the router yielded real routes
+
+
+class NotificationDotTests(TestCase):
+    def setUp(self):
+        # Map each login user to an RpcPerson without the datatracker round-trip.
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        mock = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock.side_effect = lambda user: self.people.get(user.pk)
+
+        self.person = RpcPersonFactory()
+        self.user = self._make_user("notif-user", self.person)
+        self.client.force_login(self.user)
+
+    def _make_user(self, username, person):
+        user = get_user_model().objects.create_user(
+            username=username,
+            password="test-password",
+            name=username,
+            datatracker_subject_id=f"subject-{username}",
+        )
+        self.people[user.pk] = person
+        return user
+
+    def _count(self):
+        resp = self.client.get("/api/rpc/notifications/unread_count/")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return resp.json()["count"]
+
+    def test_mark_read_clears_the_broadcast_dot_per_person(self):
+        Notification.objects.create(
+            recipient=None,
+            event_type="unblocked",
+            message="a document was unblocked",
+        )
+        # No read marker yet: the broadcast is unread for this person.
+        self.assertEqual(self._count(), 1)
+
+        # Marking read stamps this person's watermark; the broadcast is now read.
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertEqual(self._count(), 0)
+
+        # A different RpcPerson who never read it still sees it as unread.
+        other = self._make_user("other-user", RpcPersonFactory())
+        self.client.force_login(other)
+        self.assertEqual(self._count(), 1)
+
+    def test_viewer_without_rpcperson_sees_list_but_no_read_tracking(self):
+        Notification.objects.create(
+            recipient=None,
+            event_type="unblocked",
+            message="a document was unblocked",
+        )
+        # No datatracker_subject_id -> no RpcPerson, so no read state is tracked.
+        outsider = get_user_model().objects.create_user(
+            username="outsider", password="test-password", name="Outsider"
+        )
+        self.client.force_login(outsider)
+
+        # The broadcast is still visible in the list...
+        list_resp = self.client.get("/api/rpc/notifications/")
+        self.assertEqual(list_resp.status_code, 200, list_resp.content)
+        self.assertEqual(len(list_resp.json()["results"]), 1)
+
+        # ...but there is no bell count and mark_read records nothing.
+        self.assertEqual(self._count(), 0)
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertFalse(NotificationReadMarker.objects.exists())
