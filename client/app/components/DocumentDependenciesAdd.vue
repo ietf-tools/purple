@@ -83,7 +83,7 @@ import { snackbarForErrors } from '~/utils/snackbar'
 
 const relatedDocuments = defineModel<RpcRelatedDocument[]>('relatedDocuments', {
   required: true,
-  default: []
+  default: () => []
 })
 
 const isOpenDependencyModal = defineModel<boolean>('isOpenDependencyModal', { required: true })
