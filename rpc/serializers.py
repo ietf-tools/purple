@@ -1785,6 +1785,43 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         return cached_name or rpc_person.datatracker_person.plain_name
 
 
+class CreateRpcPersonSerializer(serializers.ModelSerializer):
+    """Create an RpcPerson, linking the datatracker account by its login email."""
+
+    # No model field of its own; the view resolves it to the datatracker_person FK.
+    datatracker_email = serializers.EmailField(write_only=True)
+    roles = serializers.SlugRelatedField(
+        slug_field="slug",
+        queryset=RpcRole.objects.all(),
+        source="can_hold_role",
+        many=True,
+        required=False,
+    )
+    manager = serializers.PrimaryKeyRelatedField(
+        queryset=RpcPerson.objects.filter(can_hold_role__slug="manager"),
+        required=False,
+        allow_null=True,
+    )
+
+    class Meta:
+        model = RpcPerson
+        fields = [
+            "id",
+            "datatracker_email",
+            "hours_per_week",
+            "roles",
+            "manager",
+            "is_active",
+        ]
+
+    def create(self, validated_data):
+        validated_data.pop("datatracker_email", None)  # consumed by the view
+        roles = validated_data.pop("can_hold_role", [])
+        rpc_person = RpcPerson.objects.create(**validated_data)
+        rpc_person.can_hold_role.set(roles)
+        return rpc_person
+
+
 class FinalApprovalCountsSerializer(serializers.Serializer):
     approved = serializers.IntegerField()
     total = serializers.IntegerField()

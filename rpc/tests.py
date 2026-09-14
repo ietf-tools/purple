@@ -19,6 +19,7 @@ from rpc.models import (
     Cluster,
     ClusterMember,
     DocRelationshipName,
+    RpcPerson,
     RpcRelatedDocument,
     RpcRole,
 )
@@ -29,6 +30,7 @@ from .factories import (
     ClusterFactory,
     DispositionNameFactory,
     RfcToBeFactory,
+    RpcPersonFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
     StreamNameFactory,
@@ -710,4 +712,90 @@ class PublicClusterConsistencyTests(TestCase):
         lone = self._member(inactive, "in_progress", 1)
         self.assertEqual(
             PublicQueueItemSerializer().get_cluster(lone), {"number": inactive.number}
+        )
+
+
+class CreateRpcPersonTests(TestCase):
+    """POST /api/rpc/rpc_person/ resolves the datatracker account by email."""
+
+    def setUp(self):
+        cache.clear()
+        self.superuser = get_user_model().objects.create_superuser(
+            username="rpc-admin", password="pw", name="RPC Admin"
+        )
+
+    def _rpcapi(self, email=None, person_pk=None):
+        mock = MagicMock()
+        mock.persons_by_email.return_value = (
+            [
+                rpcapi_client.EmailPerson(
+                    email=email,
+                    person_pk=person_pk,
+                    name="J",
+                    last_name="Doe",
+                    initials="J.",
+                )
+            ]
+            if person_pk is not None
+            else []
+        )
+        return mock
+
+    def _post(self, data, rpcapi):
+        with patch("datatracker.rpcapi.get_rpcapi_client", return_value=rpcapi):
+            return self.client.post(
+                "/api/rpc/rpc_person/",
+                data=json.dumps(data),
+                content_type="application/json",
+            )
+
+    def test_creates_person_resolved_by_email(self):
+        self.client.force_login(self.superuser)
+        resp = self._post(
+            {
+                "datatracker_email": "jdoe@example.org",
+                "hours_per_week": 20,
+                "roles": ["first_editor"],
+            },
+            self._rpcapi("jdoe@example.org", 12345),
+        )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        person = RpcPerson.objects.get(datatracker_person__datatracker_id=12345)
+        self.assertEqual(person.hours_per_week, 20)
+        self.assertEqual(
+            list(person.can_hold_role.values_list("slug", flat=True)), ["first_editor"]
+        )
+
+    def test_unknown_email_is_rejected(self):
+        self.client.force_login(self.superuser)
+        resp = self._post(
+            {"datatracker_email": "nobody@example.org", "roles": []}, self._rpcapi()
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.assertIn("datatracker_email", resp.json())
+
+    def test_existing_team_member_is_rejected(self):
+        self.client.force_login(self.superuser)
+        existing = RpcPersonFactory()
+        resp = self._post(
+            {"datatracker_email": "dup@example.org", "roles": []},
+            self._rpcapi(
+                "dup@example.org", int(existing.datatracker_person.datatracker_id)
+            ),
+        )
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_non_manager_is_forbidden(self):
+        plain = get_user_model().objects.create_user(
+            username="plain", password="pw", name="Plain User"
+        )
+        self.client.force_login(plain)
+        rpcapi = self._rpcapi("x@example.org", 999)
+        rpcapi.get_subject_person_by_id.side_effect = (
+            rpcapi_client.exceptions.NotFoundException()
+        )
+        resp = self._post({"datatracker_email": "x@example.org", "roles": []}, rpcapi)
+        self.assertEqual(resp.status_code, 403, resp.content)
+        self.assertFalse(
+            RpcPerson.objects.filter(datatracker_person__datatracker_id=999).exists()
         )

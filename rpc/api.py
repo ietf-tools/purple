@@ -113,6 +113,7 @@ from .serializers import (
     CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
     CreateRfcToBeSerializer,
+    CreateRpcPersonSerializer,
     CreateRpcRelatedDocumentSerializer,
     DocumentAssignmentSerializer,
     DocumentCommentSerializer,
@@ -334,7 +335,7 @@ def extend_schema_with_draft_name(actions=None):
     )
 
 
-class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
+class RpcPersonViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.select_related("datatracker_person").prefetch_related(
         "capable_of", "can_hold_role"
@@ -342,9 +343,46 @@ class RpcPersonViewSet(viewsets.ReadOnlyModelViewSet, viewsets.GenericViewSet):
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
 
+    def get_serializer_class(self):
+        if self.action == "create":
+            return CreateRpcPersonSerializer
+        return super().get_serializer_class()
+
+    @with_rpcapi
+    def perform_create(self, serializer, rpcapi: rpcapi_client.PurpleApi):
+        user = self.request.user
+        if user.is_superuser:
+            is_manager = True
+        else:
+            rpcperson = user.rpcperson()
+            is_manager = (
+                rpcperson is not None
+                and rpcperson.can_hold_role.filter(slug="manager").exists()
+            )
+        if not is_manager:
+            raise PermissionDenied("Only managers can add team members.")
+
+        email = serializer.validated_data["datatracker_email"]
+        try:
+            with datatracker_api():
+                dt_person, _ = DatatrackerPerson.objects.first_or_create_by_email(
+                    email, rpcapi=rpcapi
+                )
+        except DatatrackerPerson.DoesNotExist:
+            raise ValidationError(
+                {"datatracker_email": "No Datatracker account found for this email."}
+            ) from None
+        if RpcPerson.objects.filter(datatracker_person=dt_person).exists():
+            raise ValidationError(
+                {"datatracker_email": "This person is already a team member."}
+            )
+        serializer.save(datatracker_person=dt_person)
+
     @with_rpcapi
     def get_serializer_context(self, rpcapi: rpcapi_client.PurpleApi):
         """Add context to the serializer"""
+        if self.action not in ("list", "retrieve"):
+            return super().get_serializer_context()
         person_ids = list(
             RpcPerson.objects.values_list(
                 "datatracker_person__datatracker_id", flat=True
