@@ -1,5 +1,24 @@
 <template>
-  <BaseCard>
+  <div
+    v-if="props.compact"
+    class="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 shadow dark:border-gray-700 dark:bg-neutral-900 sm:px-6">
+    <span class="text-base font-semibold text-gray-900 dark:text-gray-200">{{ props.title }}:</span>
+    <span v-if="props.labels.length === 0" class="italic">(None)</span>
+    <RpcCheckbox
+      v-for="label in props.labels"
+      :key="label.id"
+      :label="`${label.isException ? '⚠️ ' : ''}${label.text}`"
+      :value="label.id"
+      :checked="Boolean(selectedLabelIds?.includes(label.id ?? 0))"
+      :class="[
+        'pl-1 pr-2 rounded-md text-xs font-medium ring-1 ring-inset',
+        badgeColors[label.color ?? ('gray' satisfies ColorEnum)]
+      ]"
+      @change="handleCheckboxChange"
+      size="small"
+      :title="label.text" />
+  </div>
+  <BaseCard v-else>
     <template #header>
       <CardHeader :title="props.title" />
     </template>
@@ -44,9 +63,10 @@ import { sortObject } from '~/utils/sort'
 type Props = {
   title: string
   labels: Label[]
+  compact?: boolean
 }
 
-const props = defineProps<Props>()
+const props = withDefaults(defineProps<Props>(), { compact: false })
 
 const selectedLabelIds = defineModel<number[] | null>()
 
