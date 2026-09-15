@@ -34,12 +34,22 @@
               class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 text-black bg-white dark:text-white dark:bg-black rounded-t-xl">
               Complexities
             </h2>
-            <div class="grid grid-cols-2">
+            <div :class="labels2.length > 1 ? 'grid grid-cols-2' : 'flex flex-col gap-y-3'">
+              <DocLabelsCard
+                v-if="labels2.length <= 1"
+                title="Exceptions"
+                compact
+                v-model="selectedLabelIds"
+                :labels="labels2" />
               <DocLabelsCard
                 title="Other complexities"
                 v-model="selectedLabelIds"
                 :labels="labels1" />
-              <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
+              <DocLabelsCard
+                v-if="labels2.length > 1"
+                title="Exceptions"
+                v-model="selectedLabelIds"
+                :labels="labels2" />
             </div>
           </div>
 
