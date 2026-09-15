@@ -16,6 +16,12 @@ export const docTabsFactory = (draftName: string) => {
       icon: 'fluent:layer-diagonal-person-16-regular'
     },
     {
+      id: 'editorial-notes',
+      name: 'Editorial Notes',
+      to: `/docs/${sanitisedDraftName}/editorial-notes`,
+      icon: 'fluent:notepad-16-regular'
+    },
+    {
       id: 'approvals',
       name: 'Approvals',
       to: `/docs/${sanitisedDraftName}/approvals`,

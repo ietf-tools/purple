@@ -1723,6 +1723,61 @@ paths:
               schema:
                 $ref: "#/components/schemas/DocumentComment"
           description: ""
+  /api/rpc/documents/{draft_name}/editorial_note/:
+    get:
+      operationId: documents_editorial_note_retrieve
+      description: |-
+        Read or replace the editorial notes for an RfcToBe
+
+        A document has at most one note. GET answers with an empty, unsaved note until
+        something has been saved, so the client never has to create it explicitly.
+      parameters:
+        - in: path
+          name: draft_name
+          schema:
+            type: string
+          required: true
+      tags:
+        - purple
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorialNote"
+          description: ""
+    put:
+      operationId: documents_editorial_note_update
+      description: |-
+        Read or replace the editorial notes for an RfcToBe
+
+        A document has at most one note. GET answers with an empty, unsaved note until
+        something has been saved, so the client never has to create it explicitly.
+      parameters:
+        - in: path
+          name: draft_name
+          schema:
+            type: string
+          required: true
+      tags:
+        - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditorialNoteRequest"
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EditorialNote"
+          description: ""
   /api/rpc/documents/{draft_name}/final_approvals/:
     get:
       operationId: documents_final_approvals_list
@@ -4517,6 +4572,37 @@ components:
             - $ref: "#/components/schemas/Name"
           nullable: true
           readOnly: true
+    EditorialNote:
+      type: object
+      description: |-
+        Serialize the editorial notes for an RfcToBe
+
+        Also used for a note that has never been saved, so updated_at can be null.
+      properties:
+        text:
+          type: string
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_by:
+          allOf:
+            - $ref: "#/components/schemas/BaseDatatrackerPerson"
+          readOnly: true
+      required:
+        - text
+    EditorialNoteRequest:
+      type: object
+      description: |-
+        Serialize the editorial notes for an RfcToBe
+
+        Also used for a note that has never been saved, so updated_at can be null.
+      properties:
+        text:
+          type: string
+      required:
+        - text
     EventTypeEnum:
       enum:
         - unblocked

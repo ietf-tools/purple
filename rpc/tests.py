@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.exceptions import NotFound
 
-from datatracker.factories import DocumentFactory
+from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
 from datatracker.models import Document
 from rpc.models import (
     Assignment,
@@ -19,6 +19,7 @@ from rpc.models import (
     Cluster,
     ClusterMember,
     DocRelationshipName,
+    EditorialNote,
     Notification,
     NotificationReadMarker,
     RpcRelatedDocument,
@@ -855,3 +856,78 @@ class NotificationDotTests(TestCase):
         resp = self.client.post("/api/rpc/notifications/mark_read/")
         self.assertEqual(resp.status_code, 204, resp.content)
         self.assertFalse(NotificationReadMarker.objects.exists())
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+class EditorialNoteTests(TestCase):
+    def setUp(self):
+        self.rfc_to_be = RfcToBeFactory()
+        self.person = DatatrackerPersonFactory()
+        patcher = patch(
+            "rpcauth.models.User.datatracker_person",
+            autospec=True,
+            return_value=self.person,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.user = get_user_model().objects.create_user(
+            username="notes-user", password="test-password", name="Notes User"
+        )
+        self.client.force_login(self.user)
+        self.url = reverse(
+            "document-editorial-note", kwargs={"draft_name": self.rfc_to_be.draft.name}
+        )
+
+    def _put(self, url, data):
+        return self.client.put(url, json.dumps(data), content_type="application/json")
+
+    def test_get_before_anything_saved(self, _fetch):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(
+            resp.json(), {"text": "", "updated_at": None, "updated_by": None}
+        )
+        self.assertFalse(EditorialNote.objects.exists())
+
+    def test_put_creates_note(self, _fetch):
+        resp = self._put(self.url, {"text": "Check https://example.com/x first"})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["text"], "Check https://example.com/x first")
+        self.assertIsNotNone(data["updated_at"])
+        self.assertEqual(
+            data["updated_by"]["person_id"], int(self.person.datatracker_id)
+        )
+        note = EditorialNote.objects.get(rfc_to_be=self.rfc_to_be)
+        self.assertEqual(note.text, "Check https://example.com/x first")
+        self.assertEqual(note.updated_by, self.person)
+
+    def test_put_replaces_note(self, _fetch):
+        EditorialNote.objects.create(rfc_to_be=self.rfc_to_be, text="old")
+        resp = self._put(self.url, {"text": "new"})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["text"], "new")
+        self.assertEqual(
+            EditorialNote.objects.filter(rfc_to_be=self.rfc_to_be).count(), 1
+        )
+        self.assertEqual(self.client.get(self.url).json()["text"], "new")
+
+    def test_put_can_clear_note(self, _fetch):
+        EditorialNote.objects.create(rfc_to_be=self.rfc_to_be, text="old")
+        resp = self._put(self.url, {"text": ""})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(EditorialNote.objects.get(rfc_to_be=self.rfc_to_be).text, "")
+
+    def test_put_requires_text(self, _fetch):
+        resp = self._put(self.url, {})
+        self.assertEqual(resp.status_code, 400, resp.content)
+
+    def test_unknown_document(self, _fetch):
+        url = reverse("document-editorial-note", kwargs={"draft_name": "draft-nope-00"})
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_requires_login(self, _fetch):
+        self.client.logout()
+        self.assertIn(self.client.get(self.url).status_code, (401, 403))
+        self.assertIn(self._put(self.url, {"text": "x"}).status_code, (401, 403))
+        self.assertFalse(EditorialNote.objects.exists())
