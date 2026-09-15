@@ -20,6 +20,13 @@
               class="animate-spin" />
           </h3>
           <div class="flex gap-2">
+            <Anchor
+              v-if="mailArchiveHref"
+              :href="mailArchiveHref"
+              :class="[classForBtnType.cancel, classesForBtnSize.xs]">
+              <Icon name="fluent:mail-list-16-regular" class="mr-1" />
+              Search messages
+            </Anchor>
             <template v-if="isEditing">
               <BaseButton btn-type="cancel" size="xs" :disabled="isSaving" @click="cancelEdit">
                 Cancel
@@ -64,8 +71,10 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
+import { classForBtnType, classesForBtnSize } from '~/utils/button'
 import { type DocTabId } from '~/utils/doc'
 import { snackbarForErrors } from '~/utils/snackbar'
+import { mailArchiveSearchUrl } from '~/utils/url'
 
 const route = useRoute()
 const api = useApi()
@@ -93,6 +102,11 @@ const {
 const isEditing = ref(false)
 const isSaving = ref(false)
 const draftText = ref('')
+
+const mailArchiveHref = computed(() => {
+  const name = rfcToBe.value?.name
+  return name?.startsWith('draft-') ? mailArchiveSearchUrl(name) : undefined
+})
 
 const updatedAgo = computed(() =>
   note.value?.updatedAt ? DateTime.fromJSDate(note.value.updatedAt).toRelative() : null
