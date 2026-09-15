@@ -915,6 +915,7 @@ class QueueList(ListAPIView):
         .with_active_actionholders()
         .with_blocking_reasons()
         .with_final_approvals()
+        .order_by("enqueued_at", "pk")
     )
     serializer_class = QueueItemSerializer
     filter_backends = (filters.DjangoFilterBackend,)
