@@ -43,6 +43,7 @@ from .models import (
     Label,
     MailMessage,
     MetadataValidationResults,
+    Notification,
     RfcAuthor,
     RfcToBe,
     RfcToBeBlockingReason,
@@ -322,6 +323,31 @@ class AssignmentSerializer(serializers.ModelSerializer):
         return super().to_internal_value(data)
 
 
+class NotificationSerializer(serializers.ModelSerializer):
+    """In-app notification, with a per-request unread flag from the read watermark."""
+
+    draft_name = serializers.SerializerMethodField()
+    unread = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Notification
+        fields = [
+            "id",
+            "event_type",
+            "draft_name",
+            "message",
+            "created",
+            "unread",
+        ]
+
+    def get_draft_name(self, obj) -> str:
+        return obj.rfc_to_be.name if obj.rfc_to_be_id else ""
+
+    def get_unread(self, obj) -> bool:
+        seen_at = self.context.get("seen_at")
+        return seen_at is None or obj.created > seen_at
+
+
 class AssignmentHistorySerializer(HistorySerializer):
     """History serializer for Assignment"""
 
@@ -480,12 +506,25 @@ class LabelSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "slug",
+            "text",
+            "description",
             "is_exception",
             "is_complexity",
             "color",
             "used",
             "is_public",
         ]
+        extra_kwargs = {"text": {"required": True}}
+
+    def get_fields(self):
+        fields = super().get_fields()
+        # slug (the stable machine key) and text (what the label reads as) are set
+        # once at creation and read-only afterward here; the admin interface can still
+        # change them since it doesn't go through this serializer.
+        if self.instance is not None:
+            fields["slug"].read_only = True
+            fields["text"].read_only = True
+        return fields
 
 
 class AdditionalEmailSerializer(serializers.ModelSerializer):
@@ -1232,11 +1271,18 @@ def _rfctobe_describe_delta(delta: ModelDelta):
             new = set(delta.new_record.labels.values_list("label__pk", flat=True))
             added = new - old
             removed = old - new
-            hist_labels = Label.history.as_of(delta.new_record.history_date)
-            for label in hist_labels.filter(id__in=added):
-                yield f"Label ({label.slug}): Added"
-            for label in hist_labels.filter(id__in=removed):
-                yield f"Label ({label.slug}): Removed"
+            ids = added | removed
+            display = {lbl.id: str(lbl) for lbl in Label.objects.filter(id__in=ids)}
+            # Labels deleted since aren't in the live table; recover their last name.
+            for label_id in ids - display.keys():
+                snapshot = Label.history.filter(id=label_id).first()
+                display[label_id] = (
+                    (snapshot.text or snapshot.slug) if snapshot else f"#{label_id}"
+                )
+            for label_id in added:
+                yield f"Label ({display[label_id]}): Added"
+            for label_id in removed:
+                yield f"Label ({display[label_id]}): Removed"
         elif change.field in _PERSON_FK_FIELDS:
             display_field = change.field.removesuffix("_id")
             old_label = _person_label(change.old)
@@ -1452,7 +1498,7 @@ class NestedAssignmentSerializer(AssignmentSerializer):
     """Assignment serializer with nested RfcToBe details"""
 
     rfc_to_be = RfcToBeSerializer(read_only=True)
-    enqueued_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    enqueued_at = serializers.DateTimeField(read_only=True)
     assigned_at = serializers.DateTimeField(read_only=True, allow_null=True)
 
     class Meta(AssignmentSerializer.Meta):
@@ -2301,7 +2347,8 @@ class SubmissionListItemSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     stream = serializers.CharField()
-    submitted = serializers.DateTimeField()
+    # Datatracker might return no submission date for some docs; keep it nullable
+    submitted = serializers.DateTimeField(allow_null=True, required=False)
 
 
 def check_user_has_role(user, role) -> bool:

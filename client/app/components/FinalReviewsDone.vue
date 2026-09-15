@@ -218,7 +218,8 @@ const columns = [
       if (!date) return h('span', { class: 'text-gray-400' }, '-')
       return DateTime.fromJSDate(date, { zone: 'utc' }).toLocaleString(DateTime.DATE_MED)
     },
-    sortingFn: 'alphanumeric'
+    sortingFn: (rowA, rowB) =>
+      sortDate(rowA.original.finalReviewStartedAt, rowB.original.finalReviewStartedAt)
   })
 ]
 

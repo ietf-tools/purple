@@ -46,7 +46,7 @@ type RpcRelatedDocumentAsObject = {
 }
 
 const relatedDocuments = defineModel<RpcRelatedDocumentAsObject[]>({
-  default: [] as RpcRelatedDocumentAsObject[]
+  default: () => [] as RpcRelatedDocumentAsObject[]
 })
 
 const { roleName } = useRoleName()

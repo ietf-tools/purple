@@ -157,8 +157,8 @@ class ApprovalLogMessageAdmin(admin.ModelAdmin):
 
 @admin.register(Label)
 class LabelAdmin(admin.ModelAdmin):
-    list_display = ["slug", "is_complexity", "is_exception", "color"]
-    search_fields = ["slug"]
+    list_display = ["slug", "text", "is_complexity", "is_exception", "color"]
+    search_fields = ["slug", "text"]
     list_filter = ["is_complexity", "is_exception", "color"]
 
 

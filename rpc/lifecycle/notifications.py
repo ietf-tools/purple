@@ -151,11 +151,19 @@ def get_updated_rfcs_since(current_check_time):
     return RfcToBe.objects.filter(pk__in=candidate_ids)
 
 
+class SkippedChangeNotification(Exception):
+    """Non-error exception indicating the change check was skipped/ignored"""
+
+
 def process_rfctobe_changes_for_queue():
     """Check history tables for RFC changes since the last run and, if any exist
     and no edits occurred in the past minute, notify the queue precompute and
     datatracker endpoints (unless NOTIFY_DT_QUEUE_ENABLED is False).
-    Uses a DB-level lock to prevent concurrent execution."""
+    Uses a DB-level lock to prevent concurrent execution.
+
+    Raises SkippedChangeNotification if the task is already running or if the
+    notification is deferred, otherwise returns the number of changes detected.
+    """
 
     logger.info("Processing RfcToBe changes from history")
 
@@ -168,7 +176,7 @@ def process_rfctobe_changes_for_queue():
         )
         if task_run.is_running:
             logger.info("Task is already running, skipping this execution")
-            return
+            raise SkippedChangeNotification("Task is already running")
         task_run.is_running = True
         task_run.save()
 
@@ -181,7 +189,9 @@ def process_rfctobe_changes_for_queue():
                 "Changes detected in last minute, skipping notification to avoid "
                 "notifying during active edits"
             )
-            return
+            raise SkippedChangeNotification(
+                "Recent changes detected, deferring notification"
+            )
 
         # Get last successful notification time from DB
         last_check = task_run.last_run_at

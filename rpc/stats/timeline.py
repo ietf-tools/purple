@@ -36,30 +36,30 @@ TRANSITION_DATE = datetime.datetime(2026, 5, 20, tzinfo=datetime.UTC)
 # time-boxed state.
 LEGACY_STATE_LABEL_SLUGS = frozenset(
     {
-        "EDIT",
-        "REF",
-        "RFC-EDITOR",
-        "TI",
-        "AUTH48-DONE",
-        "PENDING",
-        "AUTH",
-        "AUTH48",
-        "IESG",
-        "MISSREF",
-        "IANA",
+        "edit",
+        "ref",
+        "rfc-editor",
+        "ti",
+        "auth48-done",
+        "pending",
+        "auth",
+        "auth48",
+        "iesg",
+        "missref",
+        "iana",
     }
 )
 
 # The subset of old-editor states that count as "blocked". The remaining
-# legacy states (EDIT, REF, RFC-EDITOR, AUTH48-DONE, PENDING) are active work.
+# legacy states (edit, ref, rfc-editor, auth48-done, pending) are active work.
 LEGACY_BLOCKED_LABEL_SLUGS = frozenset(
     {
-        "TI",
-        "AUTH",
-        "AUTH48",
-        "IESG",
-        "MISSREF",
-        "IANA",
+        "ti",
+        "auth",
+        "auth48",
+        "iesg",
+        "missref",
+        "iana",
     }
 )
 
@@ -73,9 +73,10 @@ KIND_AWAITING = "awaiting_ref"
 # (and the generated TS client) expose them as an enum rather than a bare string.
 KIND_CHOICES = (KIND_BLOCKED, KIND_WORKING, KIND_LEGACY, KIND_AWAITING)
 
-# Manually-applied labels flagging a final-review doc that is waiting on a
-# referenced RFC-to-be. Only ever set while in the final_review_editor state.
-AWAITING_REF_LABEL_PREFIX = "awaiting ref:"
+# Slug prefix of the manually-applied labels flagging a final-review doc that is
+# waiting on a referenced RFC-to-be. Only ever set while in the
+# final_review_editor state.
+AWAITING_REF_LABEL_PREFIX = "awaiting-ref-"
 
 
 @dataclass
@@ -302,6 +303,7 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
     ).order_by("slug")
     for label in labels:
         is_blocked = label.slug in LEGACY_BLOCKED_LABEL_SLUGS
+        display = label.text or label.slug
         segments: list[Segment] = []
         for interval in rfc.time_intervals_with_label(label):
             clipped = clip(interval.start, interval.end, hi=TRANSITION_DATE)
@@ -312,14 +314,14 @@ def legacy_bands(rfc: RfcToBe) -> list[Band]:
                     start=clipped[0],
                     end=clipped[1],
                     kind=KIND_BLOCKED if is_blocked else KIND_LEGACY,
-                    label=label.slug,
+                    label=display,
                 )
             )
         if segments:
             bands.append(
                 Band(
                     kind=KIND_BLOCKED if is_blocked else KIND_LEGACY,
-                    label=label.slug,
+                    label=display,
                     segments=segments,
                 )
             )

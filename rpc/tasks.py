@@ -12,8 +12,13 @@ from purple.crossref import submit as submit_to_crossref
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
+# Registers the backfill task so it can be scheduled from the admin. Celery's
+# autodiscovery only looks at each app's tasks module, so a task defined elsewhere
+# is invisible until something imports it.
+from . import tasks_backfill_assignments  # noqa: F401
 from .lifecycle.metadata import Metadata
 from .lifecycle.notifications import (
+    SkippedChangeNotification,
     notify_datatracker_queue,
     process_rfctobe_changes_for_queue,
 )
@@ -214,6 +219,9 @@ def process_rfctobe_changes_for_queue_task():
         change_count = process_rfctobe_changes_for_queue()
         logger.info(f"Detected {change_count} RFC changes for queue")
         return f"Queue changes processed ({change_count} RFCs changed)"
+    except SkippedChangeNotification as err:
+        logger.info("RFC changes notification was skipped: %s", str(err))
+        return f"Queue change processing skipped ({str(err)})"
     except Exception:
         logger.exception("Error in process_rfctobe_changes_for_queue_task")
 
