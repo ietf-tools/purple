@@ -23,6 +23,8 @@ class ProcessRfctobeChangesForQueueTests(TestCase):
                 "rpc.lifecycle.notifications.get_updated_rfcs_since",
                 return_value=RfcToBe.objects.filter(pk=updated_rfc.pk),
             ),
+            # Wraps assertRaises: assertNoLogs skips its check if exiting on an error.
+            self.assertNoLogs("rpc.lifecycle.notifications", level="ERROR"),
             self.assertRaises(SkippedChangeNotification) as cm,
         ):
             process_rfctobe_changes_for_queue()

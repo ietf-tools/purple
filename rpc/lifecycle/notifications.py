@@ -212,6 +212,10 @@ def process_rfctobe_changes_for_queue():
 
         return queue_rfcs.count()
 
+    except SkippedChangeNotification:
+        # deliberate deferral, already logged above; not an error
+        raise
+
     except Exception as e:
         logger.exception(f"Unexpected error in process_rfctobe_changes_for_queue: {e}")
         raise
