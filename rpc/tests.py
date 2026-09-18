@@ -749,6 +749,27 @@ class NotificationTests(TestCase):
             self.assertIn(resp.status_code, (401, 403), (path, resp.status_code))
 
 
+class QueueOrderTests(TestCase):
+    def test_oldest_enqueued_first(self):
+        user = get_user_model().objects.create_user(
+            username="queue-reader", password="pw", name="Queue Reader"
+        )
+        self.client.force_login(user)
+        newer, older = RfcToBeFactory(), RfcToBeFactory()
+        # enqueued_at is the creation history row; make `older` a day older
+        first = older.history.filter(history_type="+").get()
+        first.history_date -= timedelta(days=1)
+        first.save()
+
+        resp = self.client.get("/api/rpc/queue/")
+
+        self.assertEqual(resp.status_code, 200, resp.content)
+        body = resp.json()
+        items = body["results"] if isinstance(body, dict) else body
+        ids = [item["id"] for item in items]
+        self.assertLess(ids.index(older.id), ids.index(newer.id))
+
+
 class DefaultPermissionTests(TestCase):
     """Guard against a regression that opens the API to anonymous users.
 
