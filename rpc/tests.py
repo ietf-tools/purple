@@ -20,6 +20,8 @@ from rpc.models import (
     ClusterMember,
     DocRelationshipName,
     RpcPerson,
+    Notification,
+    NotificationReadMarker,
     RpcRelatedDocument,
     RpcRole,
 )
@@ -31,13 +33,18 @@ from .factories import (
     DispositionNameFactory,
     RfcToBeFactory,
     RpcPersonFactory,
+    RpcRoleFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
     StreamNameFactory,
     TlpBoilerplateChoiceNameFactory,
     UnusableRfcNumberFactory,
 )
-from .lifecycle.blocked_assignments import get_block_reasons
+from .lifecycle.blocked_assignments import (
+    apply_manual_block,
+    apply_manual_unblock,
+    get_block_reasons,
+)
 from .utils import next_rfc_number
 
 # Minimal data that rpcapi_client.FullDraft.from_json() accepts

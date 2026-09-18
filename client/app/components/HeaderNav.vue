@@ -1,3 +1,4 @@
+<!-- Copyright The IETF Trust 2026, All Rights Reserved -->
 <template>
   <div
     class="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8"
@@ -156,13 +157,19 @@
         </HeadlessMenu>
 
         <!-- View Notifications -->
-        <button
+        <Anchor
           v-if="userStore.authenticated"
-          type="button"
-          class="-m-2.5 mx-2 text-gray-400 dark:text-neutral-400 hover:text-gray-500 dark:hover:text-violet-400">
-          <span class="sr-only">View notifications</span>
+          href="/notifications"
+          class="relative -m-2.5 mx-2 text-gray-400 dark:text-neutral-400 hover:text-gray-500 dark:hover:text-violet-400">
+          <span class="sr-only"
+            >View notifications{{ unreadCount > 0 ? ` (${unreadCount} new)` : '' }}</span
+          >
           <Icon name="solar:bell-bold-duotone" size="1.25em" aria-hidden="true" />
-        </button>
+          <span
+            v-if="unreadCount > 0"
+            class="absolute -top-0.5 -right-0.5 block h-2 w-2 rounded-full bg-violet-600 dark:bg-violet-500 ring-2 ring-white dark:ring-gray-800"
+            aria-hidden="true" />
+        </Anchor>
 
         <!-- Separator -->
         <div
@@ -246,6 +253,8 @@ const buttonId = useId() // avoid a hydration error - see https://github.com/nux
 const siteStore = useSiteStore()
 const userStore = useUserStore()
 const datatrackerLinks = useDatatrackerLinks()
+
+const { unreadCount } = useNotifications()
 
 // DATA
 
