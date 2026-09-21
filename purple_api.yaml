@@ -2818,6 +2818,25 @@ paths:
                 items:
                   $ref: "#/components/schemas/RpcPerson"
           description: ""
+    post:
+      operationId: rpc_person_create
+      tags:
+        - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRpcPersonRequest"
+        required: true
+      security:
+        - cookieAuth: []
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateRpcPerson"
+          description: ""
   /api/rpc/rpc_person/{person_id}/assignments/:
     get:
       operationId: rpc_person_assignments_list
@@ -4370,6 +4389,53 @@ components:
         - stream
         - submitted_format
         - title
+    CreateRpcPerson:
+      type: object
+      description: Create an RpcPerson, linking the datatracker account by its login
+        email.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        hours_per_week:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        roles:
+          type: array
+          items:
+            type: string
+        manager:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+    CreateRpcPersonRequest:
+      type: object
+      description: Create an RpcPerson, linking the datatracker account by its login
+        email.
+      properties:
+        datatracker_email:
+          type: string
+          format: email
+          writeOnly: true
+          minLength: 1
+        hours_per_week:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        roles:
+          type: array
+          items:
+            type: string
+            minLength: 1
+        manager:
+          type: integer
+          nullable: true
+        is_active:
+          type: boolean
+      required:
+        - datatracker_email
     CreateRpcRelatedDocumentRequest:
       type: object
       description: Serializer for creating a related document for an RfcToBe

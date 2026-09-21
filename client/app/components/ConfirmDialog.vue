@@ -52,7 +52,7 @@
                 <button
                   type="button"
                   class="inline-flex w-full justify-center rounded-md bg-rose-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-rose-500 sm:ml-3 sm:w-auto"
-                  @click="close">
+                  @click="confirm">
                   Confirm
                 </button>
                 <button type="button" class="btn-secondary" @click="close">Cancel</button>
@@ -79,11 +79,16 @@ const props = withDefaults(defineProps<Props>(), {
   caption: 'Are you sure you want to continue?'
 })
 
-const emit = defineEmits(['update:isShown'])
+const emit = defineEmits(['update:isShown', 'confirm'])
 
 // METHODS
 
 function close() {
   emit('update:isShown', false)
+}
+
+function confirm() {
+  emit('confirm')
+  close()
 }
 </script>

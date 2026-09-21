@@ -34,6 +34,19 @@ class DatatrackerPersonQuerySet(models.QuerySet):
             raise DatatrackerPerson.DoesNotExist() from err
         return self.first_or_create(datatracker_id=dtpers.id)
 
+    @with_rpcapi
+    def first_or_create_by_email(
+        self, email, *, rpcapi: rpcapi_client.PurpleApi
+    ) -> tuple["DatatrackerPerson", bool]:
+        """Get an instance by datatracker email, creating it if necessary.
+
+        Raises DatatrackerPerson.DoesNotExist if no datatracker person has that email.
+        """
+        matches = rpcapi.persons_by_email([email])
+        if not matches:
+            raise DatatrackerPerson.DoesNotExist()
+        return self.first_or_create(datatracker_id=matches[0].person_pk)
+
 
 class DatatrackerPerson(models.Model):
     """Person known to the datatracker"""
