@@ -83,22 +83,6 @@
           </div>
         </div>
 
-        <!-- Timezone -->
-        <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-          <div>
-            <label
-              for="timezone"
-              class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-200 sm:mt-1.5"
-              >Timezone</label
-            >
-          </div>
-          <div class="sm:col-span-2">
-            <select id="timezone" v-model="state.timezone" name="timezone" class="form-select">
-              <option v-for="timezone of timezones" :key="timezone">{{ timezone }}</option>
-            </select>
-          </div>
-        </div>
-
         <!-- Hours per week -->
         <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
           <div>
@@ -116,22 +100,6 @@
               name="hours"
               class="form-input" />
           </div>
-        </div>
-      </div>
-
-      <!-- Manager -->
-      <div class="space-y-2 px-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:space-y-0 sm:px-6 sm:py-5">
-        <div>
-          <label
-            for="manager"
-            class="block text-sm font-medium leading-6 text-gray-900 dark:text-neutral-200 sm:mt-1.5"
-            >Manager</label
-          >
-        </div>
-        <div class="sm:col-span-2">
-          <select id="manager" v-model="state.manager" name="manager" class="form-select">
-            <option v-for="manager of managers" :key="manager">{{ manager }}</option>
-          </select>
         </div>
       </div>
 
@@ -174,7 +142,8 @@
   <ConfirmDialog
     v-model:is-shown="state.confirmShown"
     title="Manager Role Selected"
-    caption="Are you sure you want to create a new team member with the Manager role?" />
+    caption="Are you sure you want to create a new team member with the Manager role?"
+    @confirm="save" />
 </template>
 
 <script setup lang="ts">
@@ -194,9 +163,7 @@ type State = {
   name: string
   email: string
   datatracker: string
-  timezone: string
   hours: number
-  manager: string
   roles: string[]
   confirmShown: boolean
 }
@@ -205,11 +172,7 @@ const state = reactive<State>({
   name: '',
   email: '',
   datatracker: '',
-  timezone: import.meta.client
-    ? Intl.DateTimeFormat().resolvedOptions().timeZone
-    : 'America/New_York',
   hours: 20,
-  manager: '',
   roles: [],
   confirmShown: false
 })
@@ -237,9 +200,6 @@ const handleRoleCheckboxChange = (e: Event) => {
     state.roles.splice(indexOf, 1)
   }
 }
-
-const managers: string[] = []
-const timezones = import.meta.client ? Intl.supportedValuesOf('timeZone') : []
 
 type Role = {
   value: string
@@ -288,6 +248,10 @@ const roles: Role[] = [
 
 const nameIpt = ref(null)
 
+const api = useApi()
+const snackbar = useSnackbar()
+const isSaving = ref(false)
+
 // METHODS
 
 function close() {
@@ -297,10 +261,34 @@ function close() {
 }
 
 function createUser() {
-  if (state.roles.includes('manager')) {
+  // The manager role grants elevated access, so confirm before saving.
+  if (state.roles.includes('manager') && !state.confirmShown) {
     state.confirmShown = true
-  } else {
+    return
+  }
+  save()
+}
+
+async function save() {
+  state.confirmShown = false
+  if (isSaving.value) {
+    return
+  }
+  isSaving.value = true
+  try {
+    await api.rpcPersonCreate({
+      createRpcPersonRequest: {
+        datatrackerEmail: state.datatracker,
+        hoursPerWeek: state.hours,
+        roles: state.roles,
+        isActive: true
+      }
+    })
     ok()
+  } catch (error) {
+    await snackbarForErrors({ snackbar, error, defaultTitle: 'Failed to create team member' })
+  } finally {
+    isSaving.value = false
   }
 }
 </script>

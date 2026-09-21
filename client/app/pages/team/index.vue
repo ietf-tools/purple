@@ -105,11 +105,17 @@ const api = useApi()
 
 // METHODS
 
-function newTeamMember() {
-  openOverlayModal({
-    component: UserCreateDialog,
-    mode: 'side'
-  })
+async function newTeamMember() {
+  try {
+    await openOverlayModal({
+      component: UserCreateDialog,
+      mode: 'side'
+    })
+  } catch {
+    return // dialog was cancelled
+  }
+  snackbar.add({ type: 'success', title: 'Success', text: 'Created new team member' })
+  await refresh()
 }
 
 // INIT

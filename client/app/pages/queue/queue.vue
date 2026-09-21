@@ -92,7 +92,7 @@
         type="button"
         class="text-xs text-gray-500 hover:text-gray-700 dark:text-neutral-400 dark:hover:text-neutral-200 hover:underline"
         @click="resetFilters">
-        Reset filters
+        Reset filters & sort
       </button>
       <div class="text-sm text-gray-500 dark:text-neutral-400">
         {{ table.getRowModel().rows.length }} records
@@ -126,7 +126,10 @@
             :error="[error, clustersError, peopleError]"
             :column-count="table.getAllColumns().length"
             :row-count="table.getRowModel().rows.length" />
-          <tr v-for="row in table.getRowModel().rows" :key="row.id">
+          <tr
+            v-for="row in table.getRowModel().rows"
+            :key="row.id"
+            :class="isExpedited(row.original) ? 'bg-yellow-50 dark:bg-yellow-500/10' : ''">
             <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
               <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
             </RpcTd>
@@ -209,9 +212,19 @@ const selectedRoleFilter = ref<string | null>(null)
 
 const columnHelper = createColumnHelper<QueueItem>()
 
-const sorting = ref<SortingState>([])
+const isExpedited = (d: QueueItem) =>
+  d.labels?.some((l) => l.slug.toLowerCase() === 'expedited') ?? false
+
+// show Expedited first
+const DEFAULT_SORTING: SortingState = [{ id: 'expedited', desc: true }]
+const sorting = ref<SortingState>([...DEFAULT_SORTING])
 
 const columns = [
+  // Hidden; exists only so the default sort can key on it.
+  columnHelper.accessor((d) => isExpedited(d), {
+    id: 'expedited',
+    sortingFn: (a, b, id) => Number(a.getValue(id)) - Number(b.getValue(id))
+  }),
   columnHelper.display({
     id: 'icon',
     header: '',
@@ -560,6 +573,7 @@ const table = useVueTable({
     return data.value
   },
   columns,
+  initialState: { columnVisibility: { expedited: false } },
   state: {
     get globalFilter() {
       return JSON.stringify([
@@ -695,6 +709,7 @@ const resetFilters = () => {
   selectedIanaStatusFilter.value = null
   selectedLabelFilters.value = {}
   searchQuery.value = ''
+  sorting.value = [...DEFAULT_SORTING]
 }
 
 const {
