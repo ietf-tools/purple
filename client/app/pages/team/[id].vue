@@ -137,60 +137,80 @@
         </dl>
       </div>
 
-      <!-- Assignments List -->
-      <div>
-        <div class="rounded-lg bg-white dark:bg-neutral-900 shadow-sm ring-1 ring-gray-900/5 p-6">
-          <h2 class="text-sm font-semibold leading-6 text-gray-900 dark:text-neutral-200">
-            Active Assignments
-          </h2>
-
+      <!-- Assignments -->
+      <div class="space-y-6">
+        <CollapsibleCard
+          title="Active Assignments"
+          storage-key="team-member-active"
+          :count="
+            assignmentsStatus === 'success' ? assignmentsTable.getRowModel().rows.length : undefined
+          ">
           <template v-if="assignmentsStatus === 'error'">
             {{ assignmentsError }}
             (note: this might be a permissions error)
           </template>
-
           <template v-if="assignmentsStatus === 'pending'">
             <Icon name="ei:spinner-3" size="1em" class="animate-spin" />
           </template>
-
           <template v-if="assignmentsStatus === 'success'">
-            <div v-if="sortedAssignments.length > 0" class="mt-4">
-              <RpcTable>
-                <RpcThead>
-                  <tr
-                    v-for="headerGroup in assignmentsTable.getHeaderGroups()"
-                    :key="headerGroup.id">
-                    <RpcTh
-                      v-for="header in headerGroup.headers"
-                      :key="header.id"
-                      :colSpan="header.colSpan"
-                      :is-sortable="header.column.getCanSort()"
-                      :sort-direction="header.column.getIsSorted()"
-                      :column-name="getVNodeText(header.column.columnDef.header)"
-                      @click="header.column.getToggleSortingHandler()?.($event)">
-                      <div class="flex items-center gap-2">
-                        <FlexRender
-                          v-if="!header.isPlaceholder"
-                          :render="header.column.columnDef.header"
-                          :props="header.getContext()" />
-                      </div>
-                    </RpcTh>
-                  </tr>
-                </RpcThead>
-                <RpcTbody>
-                  <tr v-for="row in assignmentsTable.getRowModel().rows" :key="row.id">
-                    <RpcTd v-for="cell in row.getVisibleCells()" :key="cell.id">
-                      <FlexRender :render="cell.column.columnDef.cell" :props="cell.getContext()" />
-                    </RpcTd>
-                  </tr>
-                </RpcTbody>
-              </RpcTable>
+            <div v-if="assignmentsTable.getRowModel().rows.length > 0" class="mt-4">
+              <AssignmentsTable :table="assignmentsTable" />
             </div>
             <div v-else class="mt-6 text-center py-8">
               <p class="text-sm text-gray-500">No current assignments</p>
             </div>
           </template>
-        </div>
+        </CollapsibleCard>
+        <CollapsibleCard
+          title="Completed Assignments — Documents in Queue"
+          storage-key="team-member-completed-queue"
+          :count="
+            completedStatus === 'success'
+              ? completedQueueTable.getRowModel().rows.length
+              : undefined
+          ">
+          <template v-if="completedStatus === 'error'">
+            {{ completedError }}
+            (note: this might be a permissions error)
+          </template>
+          <template v-if="completedStatus === 'pending'">
+            <Icon name="ei:spinner-3" size="1em" class="animate-spin" />
+          </template>
+          <template v-if="completedStatus === 'success'">
+            <div v-if="completedQueueTable.getRowModel().rows.length > 0" class="mt-4">
+              <AssignmentsTable :table="completedQueueTable" />
+            </div>
+            <div v-else class="mt-6 text-center py-8">
+              <p class="text-sm text-gray-500">
+                No completed assignments on documents still in the queue
+              </p>
+            </div>
+          </template>
+        </CollapsibleCard>
+        <CollapsibleCard
+          title="Completed Assignments — Published Documents"
+          storage-key="team-member-completed-published"
+          :count="
+            completedStatus === 'success'
+              ? completedPublishedTable.getRowModel().rows.length
+              : undefined
+          ">
+          <template v-if="completedStatus === 'error'">
+            {{ completedError }}
+            (note: this might be a permissions error)
+          </template>
+          <template v-if="completedStatus === 'pending'">
+            <Icon name="ei:spinner-3" size="1em" class="animate-spin" />
+          </template>
+          <template v-if="completedStatus === 'success'">
+            <div v-if="completedPublishedTable.getRowModel().rows.length > 0" class="mt-4">
+              <AssignmentsTable :table="completedPublishedTable" />
+            </div>
+            <div v-else class="mt-6 text-center py-8">
+              <p class="text-sm text-gray-500">No completed assignments on published documents</p>
+            </div>
+          </template>
+        </CollapsibleCard>
       </div>
     </div>
   </div>
@@ -205,10 +225,10 @@ import {
   useVueTable,
   createColumnHelper
 } from '@tanstack/vue-table'
-import type { SortingState } from '@tanstack/vue-table'
+import type { ColumnDef, Row, SortingState } from '@tanstack/vue-table'
 import { useLocalStorage } from '@vueuse/core'
 import { DateTime } from 'luxon'
-import type { Cluster, Label, NestedAssignment } from '~/purple_client'
+import type { Cluster, CompletedAssignment, Label, NestedAssignment } from '~/purple_client'
 import { calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 
@@ -244,6 +264,16 @@ const {
 } = await useAsyncData(
   `person-assignments-${route.params.id}`,
   () => api.rpcPersonAssignmentsList({ personId: personId.value }),
+  { server: false, lazy: true }
+)
+
+const {
+  data: completedAssignments,
+  status: completedStatus,
+  error: completedError
+} = await useAsyncData(
+  `person-completed-assignments-${route.params.id}`,
+  () => api.rpcPersonCompletedAssignmentsList({ personId: personId.value }),
   { server: false, lazy: true }
 )
 
@@ -490,6 +520,152 @@ const assignmentsTable = useVueTable({
   getSortedRowModel: getSortedRowModel(),
   manualSorting: false
 })
+
+// COMPLETED ASSIGNMENTS
+
+const IN_QUEUE_DISPOSITIONS = ['created', 'in_progress']
+
+const completedInQueue = computed(() =>
+  (completedAssignments.value ?? []).filter((a) =>
+    IN_QUEUE_DISPOSITIONS.includes(a.rfcToBe?.disposition ?? '')
+  )
+)
+
+const completedPublished = computed(() =>
+  (completedAssignments.value ?? []).filter((a) => a.rfcToBe?.disposition === 'published')
+)
+
+const dateSortingFn = <T>(rowA: Row<T>, rowB: Row<T>, columnId: string) => {
+  const a = rowA.getValue<Date | null | undefined>(columnId)
+  const b = rowB.getValue<Date | null | undefined>(columnId)
+  const aTime = a instanceof Date ? a.getTime() : -Infinity
+  const bTime = b instanceof Date ? b.getTime() : -Infinity
+  return aTime - bTime
+}
+
+const dateCell = (value: Date | null | undefined) =>
+  value
+    ? h(
+        'time',
+        { datetime: value.toISOString(), class: 'text-xs' },
+        DateTime.fromJSDate(value).toISODate() ?? ''
+      )
+    : ''
+
+const labelsCell = (ids: number[] | undefined) => {
+  const resolved = (ids ?? [])
+    .map((id) => allLabels.value.find((l) => l.id === id))
+    .filter(Boolean) as Label[]
+  return resolved.length
+    ? h(
+        'span',
+        { class: 'flex flex-wrap gap-1' },
+        resolved.map((l) => h(RpcLabel, { label: l }))
+      )
+    : ''
+}
+
+const completedColumnHelper = createColumnHelper<CompletedAssignment>()
+
+const completedColumns = [
+  completedColumnHelper.accessor((a) => a.rfcToBe?.rfcNumber ?? null, {
+    id: 'rfcNumber',
+    header: 'RFC',
+    cell: (data) => {
+      const num = data.getValue()
+      return num ? h('span', { class: 'font-mono' }, `RFC ${num}`) : ''
+    },
+    sortingFn: 'alphanumeric',
+    sortUndefined: 'last'
+  }),
+  completedColumnHelper.accessor((a) => a.rfcToBe?.name ?? '', {
+    id: 'document',
+    header: 'Document',
+    cell: ({ row }) => {
+      const name = row.original.rfcToBe?.name ?? ''
+      return h('div', [
+        h(Anchor, { href: `/docs/${name}`, class: ANCHOR_STYLE }, () => name),
+        row.original.comment
+          ? h(
+              'blockquote',
+              {
+                class:
+                  'mt-1 border-l-2 border-gray-300 dark:border-neutral-600 pl-2 text-xs italic text-gray-500 dark:text-neutral-400'
+              },
+              row.original.comment
+            )
+          : null
+      ])
+    },
+    sortingFn: 'alphanumeric'
+  }),
+  completedColumnHelper.display({
+    id: 'labels',
+    header: 'Labels',
+    cell: ({ row }) => labelsCell(row.original.rfcToBe?.labels),
+    enableSorting: false
+  }),
+  completedColumnHelper.accessor('role', {
+    header: 'Role',
+    cell: (data) => roleName(data.getValue()),
+    sortingFn: (rowA, rowB) => roleOrder(rowA.original.role) - roleOrder(rowB.original.role)
+  }),
+  completedColumnHelper.accessor('completedAt', {
+    header: 'Completed',
+    cell: (data) => dateCell(data.getValue()),
+    sortingFn: dateSortingFn,
+    sortUndefined: 'last'
+  })
+]
+
+const publishedAtColumn = completedColumnHelper.accessor((a) => a.rfcToBe?.publishedAt ?? null, {
+  id: 'publishedAt',
+  header: 'Published',
+  cell: (data) => dateCell(data.getValue()),
+  sortingFn: dateSortingFn,
+  sortUndefined: 'last'
+})
+
+const completedQueueSorting = useLocalStorage<SortingState>('team-member-completed-queue-sorting', [
+  { id: 'completedAt', desc: true }
+])
+const completedPublishedSorting = useLocalStorage<SortingState>(
+  'team-member-completed-published-sorting',
+  [{ id: 'completedAt', desc: true }]
+)
+
+const completedTable = (
+  rows: Ref<CompletedAssignment[]>,
+  columns: ColumnDef<CompletedAssignment, any>[],
+  sorting: Ref<SortingState>
+) =>
+  useVueTable({
+    get data() {
+      return rows.value
+    },
+    columns,
+    state: {
+      get sorting() {
+        return sorting.value
+      }
+    },
+    onSortingChange: (updater) => {
+      sorting.value = typeof updater === 'function' ? updater(sorting.value) : updater
+    },
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel()
+  })
+
+const completedQueueTable = completedTable(
+  completedInQueue,
+  completedColumns,
+  completedQueueSorting
+)
+const completedPublishedTable = completedTable(
+  completedPublished,
+  [...completedColumns, publishedAtColumn],
+  completedPublishedSorting
+)
 
 // Handle error state
 if (personError.value) {

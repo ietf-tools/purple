@@ -1505,6 +1505,27 @@ class NestedAssignmentSerializer(AssignmentSerializer):
         fields = AssignmentSerializer.Meta.fields + ["enqueued_at", "assigned_at"]
 
 
+class CompletedAssignmentDocumentSerializer(serializers.ModelSerializer):
+    name = serializers.CharField(read_only=True)
+    disposition = serializers.SlugRelatedField(slug_field="slug", read_only=True)
+    labels = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = RfcToBe
+        fields = ["id", "name", "rfc_number", "disposition", "published_at", "labels"]
+
+
+class CompletedAssignmentSerializer(serializers.ModelSerializer):
+    """A finished assignment with just enough of its document to list it."""
+
+    rfc_to_be = CompletedAssignmentDocumentSerializer(read_only=True)
+    completed_at = serializers.DateTimeField(read_only=True, allow_null=True)
+
+    class Meta:
+        model = Assignment
+        fields = ["id", "role", "comment", "rfc_to_be", "completed_at"]
+
+
 def _rfctobe_is_blocked(rfctobe: RfcToBe | None) -> bool:
     """Return True if the given RfcToBe has an active 'blocked' role assignment."""
     if not rfctobe:

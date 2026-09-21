@@ -801,3 +801,35 @@ class CreateRpcPersonTests(TestCase):
         self.assertFalse(
             RpcPerson.objects.filter(datatracker_person__datatracker_id=999).exists()
         )
+
+
+class RpcPersonCompletedAssignmentsTests(TestCase):
+    def setUp(self):
+        user = get_user_model().objects.create_user(
+            username="viewer", password="pw", name="Viewer"
+        )
+        self.client.force_login(user)
+        self.person = RpcPersonFactory()
+        self.active = AssignmentFactory(person=self.person)
+        self.done = AssignmentFactory(person=self.person)
+        self.done.state = Assignment.State.DONE
+        self.done.save()
+
+    def _get(self):
+        resp = self.client.get(
+            f"/api/rpc/rpc_person/{self.person.pk}/completed_assignments/"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return resp.json()
+
+    def test_lists_only_completed_assignments(self):
+        items = self._get()
+        self.assertEqual([item["id"] for item in items], [self.done.pk])
+        self.assertIsNotNone(items[0]["completed_at"])
+        doc = items[0]["rfc_to_be"]
+        self.assertEqual(doc["name"], self.done.rfc_to_be.name)
+        self.assertEqual(doc["disposition"], "in_progress")
+
+    def test_active_assignments_endpoint_is_unchanged(self):
+        resp = self.client.get(f"/api/rpc/rpc_person/{self.person.pk}/assignments/")
+        self.assertEqual([item["id"] for item in resp.json()], [self.active.pk])

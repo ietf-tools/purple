@@ -111,6 +111,7 @@ from .serializers import (
     ClusterMemberHistorySerializer,
     ClusterReorderDocumentsSerializer,
     ClusterSerializer,
+    CompletedAssignmentSerializer,
     CreateActionHolderSerializer,
     CreateFinalApprovalSerializer,
     CreateRfcAuthorSerializer,
@@ -463,6 +464,43 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
         )
 
         return queryset
+
+
+@extend_schema_view(
+    list=extend_schema(
+        parameters=[OpenApiParameter("person_id", int, OpenApiParameter.PATH)]
+    )
+)
+class RpcPersonCompletedAssignmentViewSet(
+    mixins.ListModelMixin, viewsets.GenericViewSet
+):
+    """Completed assignments for a specific RPC Person, newest first
+
+    URL router must provide the `person_id` kwarg
+    """
+
+    serializer_class = CompletedAssignmentSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        HistoricalAssignment = Assignment.history.model
+        completed_at = Subquery(
+            HistoricalAssignment.objects.filter(
+                id=OuterRef("id"), state=Assignment.State.DONE
+            )
+            .order_by("history_date")
+            .values("history_date")[:1]
+        )
+        return (
+            Assignment.objects.filter(
+                person_id=int(self.kwargs["person_id"]), state=Assignment.State.DONE
+            )
+            .exclude(role_id="blocked")
+            .select_related("rfc_to_be__draft", "rfc_to_be__disposition")
+            .prefetch_related("rfc_to_be__labels")
+            .annotate(completed_at=completed_at)
+            .order_by("-completed_at", "-pk")
+        )
 
 
 @extend_schema(
