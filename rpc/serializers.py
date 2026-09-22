@@ -39,6 +39,7 @@ from .models import (
     ClusterMember,
     DispositionName,
     DocRelationshipName,
+    EditorialNote,
     FinalApproval,
     Label,
     MailMessage,
@@ -2411,6 +2412,21 @@ class DocumentCommentSerializer(serializers.ModelSerializer):
             "last_edit",
         ]
         read_only_fields = ["rfc_to_be", "by", "time"]
+
+
+class EditorialNoteSerializer(serializers.ModelSerializer):
+    """Serialize the editorial notes for an RfcToBe
+
+    Also used for a note that has never been saved, so updated_at can be null.
+    """
+
+    text = serializers.CharField(allow_blank=True)
+    updated_at = serializers.DateTimeField(read_only=True, allow_null=True)
+    updated_by = BaseDatatrackerPersonSerializer(read_only=True)
+
+    class Meta:
+        model = EditorialNote
+        fields = ["text", "updated_at", "updated_by"]
 
 
 class UnusableRfcNumberSerializer(serializers.ModelSerializer):

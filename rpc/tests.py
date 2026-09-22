@@ -11,7 +11,7 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework.exceptions import NotFound
 
-from datatracker.factories import DocumentFactory
+from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
 from datatracker.models import Document
 from rpc.models import (
     Assignment,
@@ -19,6 +19,9 @@ from rpc.models import (
     Cluster,
     ClusterMember,
     DocRelationshipName,
+    EditorialNote,
+    Notification,
+    NotificationReadMarker,
     RpcPerson,
     RpcRelatedDocument,
     RpcRole,
@@ -31,6 +34,7 @@ from .factories import (
     DispositionNameFactory,
     RfcToBeFactory,
     RpcPersonFactory,
+    RpcRoleFactory,
     SourceFormatNameFactory,
     StdLevelNameFactory,
     StreamNameFactory,
@@ -38,6 +42,8 @@ from .factories import (
     UnusableRfcNumberFactory,
 )
 from .lifecycle.blocked_assignments import (
+    apply_manual_block,
+    apply_manual_unblock,
     get_block_reasons,
 )
 from .utils import next_rfc_number
@@ -715,6 +721,232 @@ class PublicClusterConsistencyTests(TestCase):
         self.assertEqual(
             PublicQueueItemSerializer().get_cluster(lone), {"number": inactive.number}
         )
+
+
+class NotificationTests(TestCase):
+    def test_only_unblock_emits_broadcast_notification(self):
+        RpcRoleFactory(slug="blocked")
+        rfc = RfcToBeFactory()
+
+        apply_manual_block(rfc, comment="hold it")
+        self.assertFalse(  # blocking a doc does not notify
+            Notification.objects.filter(rfc_to_be=rfc).exists()
+        )
+
+        apply_manual_unblock(rfc)
+        unblocked = Notification.objects.filter(event_type="unblocked", rfc_to_be=rfc)
+        self.assertEqual(unblocked.count(), 1)
+        n = unblocked.get()
+        self.assertIsNone(n.recipient)  # broadcast: everyone sees it
+        self.assertEqual(n.rfc_to_be, rfc)
+        self.assertIn(rfc.name, n.message)
+
+    def test_endpoints_require_auth(self):
+        for method, path in (
+            ("get", "/api/rpc/notifications/"),
+            ("get", "/api/rpc/notifications/unread_count/"),
+            ("post", "/api/rpc/notifications/mark_read/"),
+        ):
+            resp = getattr(self.client, method)(path)
+            self.assertIn(resp.status_code, (401, 403), (path, resp.status_code))
+
+
+class DefaultPermissionTests(TestCase):
+    """Guard against a regression that opens the API to anonymous users.
+
+    Deliberately checks only each rpc_router viewset's -list route, which always
+    exists and is cheap to call. Endpoints outside the router, other actions, and
+    views with their own permission_classes need their own test next to these.
+    """
+
+    def test_default_permission_is_authenticated(self):
+        from django.conf import settings
+
+        self.assertEqual(
+            settings.REST_FRAMEWORK["DEFAULT_PERMISSION_CLASSES"],
+            ["rest_framework.permissions.IsAuthenticated"],
+        )
+
+    def test_rpc_api_list_endpoints_reject_anonymous(self):
+        # Iterate the router so a new viewset is covered without editing this test.
+        from purple.urls import rpc_router
+
+        checked: list[str] = []
+        for pattern in rpc_router.urls:
+            name = getattr(pattern, "name", None)
+            if not name or not name.endswith("-list") or name in checked:
+                continue
+            kwargs = {
+                key: "1" for key in pattern.pattern.regex.groupindex if key != "format"
+            }
+            url = reverse(name, kwargs=kwargs)
+            resp = self.client.get(url)
+            self.assertIn(
+                resp.status_code, (401, 403), msg=f"{url} -> {resp.status_code}"
+            )
+            checked.append(name)
+        self.assertGreaterEqual(len(checked), 15)  # the router yielded real routes
+
+
+class NotificationDotTests(TestCase):
+    def setUp(self):
+        # Map each login user to an RpcPerson without the datatracker round-trip.
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        mock = patcher.start()
+        self.addCleanup(patcher.stop)
+        mock.side_effect = lambda user: self.people.get(user.pk)
+
+        self.person = RpcPersonFactory()
+        self.user = self._make_user("notif-user", self.person)
+        self.client.force_login(self.user)
+
+    def _make_user(self, username, person):
+        user = get_user_model().objects.create_user(
+            username=username,
+            password="test-password",
+            name=username,
+            datatracker_subject_id=f"subject-{username}",
+        )
+        self.people[user.pk] = person
+        return user
+
+    def _count(self):
+        resp = self.client.get("/api/rpc/notifications/unread_count/")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return resp.json()["count"]
+
+    def test_mark_read_clears_the_broadcast_dot_per_person(self):
+        Notification.objects.create(
+            recipient=None,
+            event_type="unblocked",
+            message="a document was unblocked",
+        )
+        # No read marker yet: the broadcast is unread for this person.
+        self.assertEqual(self._count(), 1)
+
+        # Marking read stamps this person's watermark; the broadcast is now read.
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertEqual(self._count(), 0)
+
+        # A different RpcPerson who never read it still sees it as unread.
+        other = self._make_user("other-user", RpcPersonFactory())
+        self.client.force_login(other)
+        self.assertEqual(self._count(), 1)
+
+    def test_viewer_without_rpcperson_sees_list_but_no_read_tracking(self):
+        Notification.objects.create(
+            recipient=None,
+            event_type="unblocked",
+            message="a document was unblocked",
+        )
+        # No datatracker_subject_id -> no RpcPerson, so no read state is tracked.
+        outsider = get_user_model().objects.create_user(
+            username="outsider", password="test-password", name="Outsider"
+        )
+        self.client.force_login(outsider)
+
+        # The broadcast is still visible in the list...
+        list_resp = self.client.get("/api/rpc/notifications/")
+        self.assertEqual(list_resp.status_code, 200, list_resp.content)
+        self.assertEqual(len(list_resp.json()["results"]), 1)
+
+        # ...but there is no bell count and mark_read records nothing.
+        self.assertEqual(self._count(), 0)
+        resp = self.client.post("/api/rpc/notifications/mark_read/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertFalse(NotificationReadMarker.objects.exists())
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+class EditorialNoteTests(TestCase):
+    def setUp(self):
+        self.rfc_to_be = RfcToBeFactory()
+        self.person = DatatrackerPersonFactory()
+        patcher = patch(
+            "rpcauth.models.User.datatracker_person",
+            autospec=True,
+            return_value=self.person,
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.user = get_user_model().objects.create_user(
+            username="notes-user", password="test-password", name="Notes User"
+        )
+        self.client.force_login(self.user)
+        self.url = reverse(
+            "document-editorial-note", kwargs={"draft_name": self.rfc_to_be.draft.name}
+        )
+
+    def _put(self, url, data):
+        return self.client.put(url, json.dumps(data), content_type="application/json")
+
+    def test_get_before_anything_saved(self, _fetch):
+        resp = self.client.get(self.url)
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(
+            resp.json(), {"text": "", "updated_at": None, "updated_by": None}
+        )
+        self.assertFalse(EditorialNote.objects.exists())
+
+    def test_put_creates_note(self, _fetch):
+        resp = self._put(self.url, {"text": "Check https://example.com/x first"})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        data = resp.json()
+        self.assertEqual(data["text"], "Check https://example.com/x first")
+        self.assertIsNotNone(data["updated_at"])
+        self.assertEqual(
+            data["updated_by"]["person_id"], int(self.person.datatracker_id)
+        )
+        note = EditorialNote.objects.get(rfc_to_be=self.rfc_to_be)
+        self.assertEqual(note.text, "Check https://example.com/x first")
+        self.assertEqual(note.updated_by, self.person)
+
+    def test_timestamp_and_author_only_move_together(self, _fetch):
+        self._put(self.url, {"text": "via the API"})
+        note = EditorialNote.objects.get(rfc_to_be=self.rfc_to_be)
+        stamped = (note.updated_at, note.updated_by)
+        self.assertIsNotNone(stamped[0])
+
+        # A save outside the API (admin, shell, a future code path) must not
+        # produce a fresh timestamp attributed to the previous editor.
+        note.text = "changed some other way"
+        note.save()
+        note.refresh_from_db()
+        self.assertEqual((note.updated_at, note.updated_by), stamped)
+
+    def test_put_replaces_note(self, _fetch):
+        EditorialNote.objects.create(rfc_to_be=self.rfc_to_be, text="old")
+        resp = self._put(self.url, {"text": "new"})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["text"], "new")
+        self.assertEqual(
+            EditorialNote.objects.filter(rfc_to_be=self.rfc_to_be).count(), 1
+        )
+        self.assertEqual(self.client.get(self.url).json()["text"], "new")
+
+    def test_put_can_clear_note(self, _fetch):
+        EditorialNote.objects.create(rfc_to_be=self.rfc_to_be, text="old")
+        resp = self._put(self.url, {"text": ""})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(EditorialNote.objects.get(rfc_to_be=self.rfc_to_be).text, "")
+
+    def test_put_requires_text(self, _fetch):
+        resp = self._put(self.url, {})
+        self.assertEqual(resp.status_code, 400, resp.content)
+        self.assertFalse(EditorialNote.objects.exists())  # nothing left behind
+        self.assertIsNone(self.client.get(self.url).json()["updated_at"])
+
+    def test_unknown_document(self, _fetch):
+        url = reverse("document-editorial-note", kwargs={"draft_name": "draft-nope-00"})
+        self.assertEqual(self.client.get(url).status_code, 404)
+
+    def test_requires_login(self, _fetch):
+        self.client.logout()
+        self.assertIn(self.client.get(self.url).status_code, (401, 403))
+        self.assertIn(self._put(self.url, {"text": "x"}).status_code, (401, 403))
+        self.assertFalse(EditorialNote.objects.exists())
 
 
 class CreateRpcPersonTests(TestCase):

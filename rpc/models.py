@@ -1133,6 +1133,26 @@ class RpcRelatedDocument(models.Model):
         return f"{self.relationship} relationship from {self.source} to {target}"
 
 
+class EditorialNote(models.Model):
+    """Shared free-text scratchpad the RPC keeps for an RfcToBe"""
+
+    rfc_to_be = models.OneToOneField(
+        RfcToBe, on_delete=models.CASCADE, related_name="editorial_note"
+    )
+    text = models.TextField(blank=True, default="")
+    updated_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    def __str__(self):
+        return f"EditorialNote for {self.rfc_to_be}"
+
+
 class RpcDocumentComment(RulesModel):
     """Private RPC comment about a draft, RFC or RFC-to-be"""
 

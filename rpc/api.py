@@ -75,6 +75,7 @@ from .models import (
     ClusterMember,
     DispositionName,
     DocRelationshipName,
+    EditorialNote,
     FinalApproval,
     Label,
     MetadataValidationResults,
@@ -119,6 +120,7 @@ from .serializers import (
     CreateRpcRelatedDocumentSerializer,
     DocumentAssignmentSerializer,
     DocumentCommentSerializer,
+    EditorialNoteSerializer,
     FinalApprovalSerializer,
     HistorySerializer,
     IanaStatusSerializer,
@@ -2733,6 +2735,44 @@ class Mail(views.APIView):
                 }
             ).data
         )
+
+
+class EditorialNoteView(views.APIView):
+    """Read or replace the editorial notes for an RfcToBe
+
+    A document has at most one note. GET answers with an empty, unsaved note until
+    something has been saved, so the client never has to create it explicitly.
+    """
+
+    @extend_schema(
+        operation_id="documents_editorial_note_retrieve",
+        responses=EditorialNoteSerializer,
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")],
+    )
+    def get(self, request, draft_name: str):
+        rfc_to_be = resolve_rfctobe(draft_name)
+        note = EditorialNote.objects.filter(rfc_to_be=rfc_to_be).first()
+        if note is None:
+            note = EditorialNote(rfc_to_be=rfc_to_be)
+        return Response(EditorialNoteSerializer(note).data)
+
+    @extend_schema(
+        operation_id="documents_editorial_note_update",
+        request=EditorialNoteSerializer,
+        responses=EditorialNoteSerializer,
+        parameters=[OpenApiParameter("draft_name", OpenApiTypes.STR, "path")],
+    )
+    def put(self, request, draft_name: str):
+        rfc_to_be = resolve_rfctobe(draft_name)
+        note = EditorialNote.objects.filter(rfc_to_be=rfc_to_be).first()
+        if note is None:
+            note = EditorialNote(rfc_to_be=rfc_to_be)
+        serializer = EditorialNoteSerializer(note, data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save(
+            updated_by=request.user.datatracker_person(), updated_at=timezone.now()
+        )
+        return Response(serializer.data)
 
 
 class DocumentMail(views.APIView):
