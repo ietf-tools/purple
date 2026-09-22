@@ -10,7 +10,7 @@
         API error while requesting draft: {{ rfcToBeError }}
       </div>
 
-      <div class="flex flex-row">
+      <div class="flex flex-col gap-y-4">
         <DocInfoCard :rfc-to-be="rfcToBe" :draft-name="draftName" />
         <EditAuthors v-if="rfcToBe" :draft-name="draftName" v-model="rfcToBe" />
       </div>
@@ -20,12 +20,22 @@
           <h2 class="font-bold text-lg border border-gray-200 pl-6 pt-4 pb-2 bg-white rounded-t-xl">
             Complexities
           </h2>
-          <div class="flex flex-row">
+          <div :class="labels2.length > 1 ? 'flex flex-row' : 'flex flex-col gap-y-3'">
+            <DocLabelsCard
+              v-if="labels2.length <= 1"
+              title="Exceptions"
+              compact
+              v-model="selectedLabelIds"
+              :labels="labels2" />
             <DocLabelsCard
               title="Other complexities"
               v-model="selectedLabelIds"
               :labels="labels1" />
-            <DocLabelsCard title="Exceptions" v-model="selectedLabelIds" :labels="labels2" />
+            <DocLabelsCard
+              v-if="labels2.length > 1"
+              title="Exceptions"
+              v-model="selectedLabelIds"
+              :labels="labels2" />
           </div>
         </div>
         <div class="flex flex-col">
