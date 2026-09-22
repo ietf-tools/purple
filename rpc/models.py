@@ -1140,7 +1140,7 @@ class EditorialNote(models.Model):
         RfcToBe, on_delete=models.CASCADE, related_name="editorial_note"
     )
     text = models.TextField(blank=True, default="")
-    updated_at = models.DateTimeField(auto_now=True)
+    updated_at = models.DateTimeField(null=True, blank=True)
     updated_by = models.ForeignKey(
         "datatracker.DatatrackerPerson",
         null=True,

@@ -42,3 +42,11 @@ test('linkify preserves newlines between URLs', () => {
     { text: '\nb' }
   ])
 })
+
+test('linkify links bare domains but not version numbers or e-mail addresses', () => {
+  expect(linkify('see rfc-editor.org/errata, not v1.2 or me@example.com')).toEqual([
+    { text: 'see ' },
+    { text: 'rfc-editor.org/errata', href: 'http://rfc-editor.org/errata' },
+    { text: ', not v1.2 or me@example.com' }
+  ])
+})

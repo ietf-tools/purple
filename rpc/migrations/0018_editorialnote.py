@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                     ),
                 ),
                 ("text", models.TextField(blank=True, default="")),
-                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("updated_at", models.DateTimeField(blank=True, null=True)),
                 (
                     "rfc_to_be",
                     models.OneToOneField(

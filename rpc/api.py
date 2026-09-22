@@ -2764,10 +2764,14 @@ class EditorialNoteView(views.APIView):
     )
     def put(self, request, draft_name: str):
         rfc_to_be = resolve_rfctobe(draft_name)
-        note, _ = EditorialNote.objects.get_or_create(rfc_to_be=rfc_to_be)
+        note = EditorialNote.objects.filter(rfc_to_be=rfc_to_be).first()
+        if note is None:
+            note = EditorialNote(rfc_to_be=rfc_to_be)
         serializer = EditorialNoteSerializer(note, data=request.data)
         serializer.is_valid(raise_exception=True)
-        serializer.save(updated_by=request.user.datatracker_person())
+        serializer.save(
+            updated_by=request.user.datatracker_person(), updated_at=timezone.now()
+        )
         return Response(serializer.data)
 
 

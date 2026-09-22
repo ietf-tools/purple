@@ -57,8 +57,7 @@
           v-model="draftText"
           rows="20"
           aria-label="Editorial notes"
-          class="mt-4 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white"
-          placeholder="Notes for the editors working on this document" />
+          class="mt-4 block w-full rounded border border-gray-300 bg-white px-3 py-2 text-sm text-black focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-black dark:text-white" />
         <LinkifiedText
           v-else-if="note?.text"
           :text="note.text"

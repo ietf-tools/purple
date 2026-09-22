@@ -903,6 +903,19 @@ class EditorialNoteTests(TestCase):
         self.assertEqual(note.text, "Check https://example.com/x first")
         self.assertEqual(note.updated_by, self.person)
 
+    def test_timestamp_and_author_only_move_together(self, _fetch):
+        self._put(self.url, {"text": "via the API"})
+        note = EditorialNote.objects.get(rfc_to_be=self.rfc_to_be)
+        stamped = (note.updated_at, note.updated_by)
+        self.assertIsNotNone(stamped[0])
+
+        # A save outside the API (admin, shell, a future code path) must not
+        # produce a fresh timestamp attributed to the previous editor.
+        note.text = "changed some other way"
+        note.save()
+        note.refresh_from_db()
+        self.assertEqual((note.updated_at, note.updated_by), stamped)
+
     def test_put_replaces_note(self, _fetch):
         EditorialNote.objects.create(rfc_to_be=self.rfc_to_be, text="old")
         resp = self._put(self.url, {"text": "new"})
@@ -922,6 +935,8 @@ class EditorialNoteTests(TestCase):
     def test_put_requires_text(self, _fetch):
         resp = self._put(self.url, {})
         self.assertEqual(resp.status_code, 400, resp.content)
+        self.assertFalse(EditorialNote.objects.exists())  # nothing left behind
+        self.assertIsNone(self.client.get(self.url).json()["updated_at"])
 
     def test_unknown_document(self, _fetch):
         url = reverse("document-editorial-note", kwargs={"draft_name": "draft-nope-00"})
