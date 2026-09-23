@@ -32,6 +32,8 @@ from .factories import (
     AssignmentFactory,
     ClusterFactory,
     DispositionNameFactory,
+    FinalApprovalFactory,
+    RfcAuthorFactory,
     RfcToBeFactory,
     RpcPersonFactory,
     RpcRoleFactory,
@@ -1033,3 +1035,52 @@ class CreateRpcPersonTests(TestCase):
         self.assertFalse(
             RpcPerson.objects.filter(datatracker_person__datatracker_id=999).exists()
         )
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+class FinalApprovalEditorFlagTests(TestCase):
+    """The approvers list says which approvers are editors of the document."""
+
+    def setUp(self):
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="approvals-user", password="pw", name="Approvals User"
+            )
+        )
+        # The route's draft_name pattern excludes '.', unlike the factory's fake names.
+        self.rfc = RfcToBeFactory(draft__name="draft-test-approvers")
+        editor = RfcAuthorFactory(rfc_to_be=self.rfc, is_editor=True)
+        author = RfcAuthorFactory(rfc_to_be=self.rfc)
+        self.by_editor = FinalApprovalFactory(
+            rfc_to_be=self.rfc, approver=editor.datatracker_person
+        )
+        self.by_author = FinalApprovalFactory(
+            rfc_to_be=self.rfc, approver=author.datatracker_person
+        )
+        self.by_outsider = FinalApprovalFactory(rfc_to_be=self.rfc)
+
+    def test_flag_follows_the_author_record(self, _fetch):
+        resp = self.client.get(
+            f"/api/rpc/documents/{self.rfc.draft.name}/final_approvals/"
+        )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        flags = {item["id"]: item["approver_is_editor"] for item in resp.json()}
+        self.assertEqual(
+            flags,
+            {
+                self.by_editor.pk: True,
+                self.by_author.pk: False,
+                self.by_outsider.pk: False,
+            },
+        )
+
+    def test_editor_of_another_document_does_not_count(self, _fetch):
+        other = RfcAuthorFactory(is_editor=True)  # editor, but of a different RfcToBe
+        approval = FinalApprovalFactory(
+            rfc_to_be=self.rfc, approver=other.datatracker_person
+        )
+        resp = self.client.get(
+            f"/api/rpc/documents/{self.rfc.draft.name}/final_approvals/"
+        )
+        flags = {item["id"]: item["approver_is_editor"] for item in resp.json()}
+        self.assertFalse(flags[approval.pk])

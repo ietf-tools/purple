@@ -167,7 +167,10 @@ const columns = [
         ])
       }
 
-      const approverVNode = formatAuthor(approver)
+      const approverVNode = h('span', [
+        formatAuthor(approver),
+        rowOriginal.approverIsEditor ? ' (editor)' : ''
+      ])
       if (!rowOriginal.overridingApprover) {
         return h('span', [approverVNode])
       }

@@ -2645,6 +2645,7 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
             super()
             .get_queryset()
             .filter(rfc_to_be=resolve_rfctobe(self.kwargs["draft_name"]))
+            .with_approver_is_editor()
             .order_by("-requested")
         )
 
