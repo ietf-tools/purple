@@ -273,7 +273,7 @@ const {
   error: completedError
 } = await useAsyncData(
   `person-completed-assignments-${route.params.id}`,
-  () => api.rpcPersonCompletedAssignmentsList({ personId: personId.value }),
+  () => api.rpcPersonAssignmentsCompletedList({ personId: personId.value }),
   { server: false, lazy: true }
 )
 

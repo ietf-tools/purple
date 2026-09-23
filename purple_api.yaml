@@ -2863,13 +2863,10 @@ paths:
                 items:
                   $ref: "#/components/schemas/NestedAssignment"
           description: ""
-  /api/rpc/rpc_person/{person_id}/completed_assignments/:
+  /api/rpc/rpc_person/{person_id}/assignments/completed/:
     get:
-      operationId: rpc_person_completed_assignments_list
-      description: |-
-        Completed assignments for a specific RPC Person, newest first
-
-        URL router must provide the `person_id` kwarg
+      operationId: rpc_person_assignments_completed_list
+      description: Completed assignments for the person, newest first.
       parameters:
         - in: path
           name: person_id

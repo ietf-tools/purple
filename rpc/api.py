@@ -465,24 +465,20 @@ class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet)
 
         return queryset
 
-
-@extend_schema_view(
-    list=extend_schema(
-        parameters=[OpenApiParameter("person_id", int, OpenApiParameter.PATH)]
+    @extend_schema(
+        operation_id="rpc_person_assignments_completed_list",
+        parameters=[OpenApiParameter("person_id", int, OpenApiParameter.PATH)],
+        responses=CompletedAssignmentSerializer(many=True),
     )
-)
-class RpcPersonCompletedAssignmentViewSet(
-    mixins.ListModelMixin, viewsets.GenericViewSet
-):
-    """Completed assignments for a specific RPC Person, newest first
-
-    URL router must provide the `person_id` kwarg
-    """
-
-    serializer_class = CompletedAssignmentSerializer
-    pagination_class = None
-
-    def get_queryset(self):
+    @action(
+        detail=False,
+        methods=["get"],
+        url_path="completed",
+        serializer_class=CompletedAssignmentSerializer,
+        pagination_class=None,
+    )
+    def completed(self, request, person_id):
+        """Completed assignments for the person, newest first."""
         HistoricalAssignment = Assignment.history.model
         completed_at = Subquery(
             HistoricalAssignment.objects.filter(
@@ -491,9 +487,10 @@ class RpcPersonCompletedAssignmentViewSet(
             .order_by("history_date")
             .values("history_date")[:1]
         )
-        return (
+        # Not get_queryset(): the list excludes done assignments by design.
+        queryset = (
             Assignment.objects.filter(
-                person_id=int(self.kwargs["person_id"]), state=Assignment.State.DONE
+                person_id=int(person_id), state=Assignment.State.DONE
             )
             .exclude(role_id="blocked")
             .select_related("rfc_to_be__draft", "rfc_to_be__disposition")
@@ -501,6 +498,7 @@ class RpcPersonCompletedAssignmentViewSet(
             .annotate(completed_at=completed_at)
             .order_by("-completed_at", "-pk")
         )
+        return Response(self.get_serializer(queryset, many=True).data)
 
 
 @extend_schema(

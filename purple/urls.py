@@ -114,11 +114,6 @@ rpc_router.register(
     rpc_api.RpcPersonAssignmentViewSet,
     basename="rpcperson-assignment",
 )
-rpc_router.register(
-    r"rpc_person/(?P<person_id>[^/.]+)/completed_assignments",
-    rpc_api.RpcPersonCompletedAssignmentViewSet,
-    basename="rpcperson-completed-assignment",
-)
 rpc_router.register(r"rpc_roles", rpc_api.RpcRoleViewSet)
 rpc_router.register(r"doc_relationship_names", rpc_api.DocRelationshipNameViewSet)
 rpc_router.register(

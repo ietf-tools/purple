@@ -817,7 +817,7 @@ class RpcPersonCompletedAssignmentsTests(TestCase):
 
     def _get(self):
         resp = self.client.get(
-            f"/api/rpc/rpc_person/{self.person.pk}/completed_assignments/"
+            f"/api/rpc/rpc_person/{self.person.pk}/assignments/completed/"
         )
         self.assertEqual(resp.status_code, 200, resp.content)
         return resp.json()
