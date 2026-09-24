@@ -1,9 +1,4 @@
-"""Add a final approver when an author is added, and drop pending ones when removed.
-
-One-way: the author list determines the approver list, never the reverse. An
-approval someone has already given is kept when the author is removed, so the
-record of who approved is not lost to a later edit of the author list.
-"""
+"""Add a final approver when an author is added, and drop pending ones when removed."""
 
 from rpc.models import FinalApproval, RfcAuthor
 
