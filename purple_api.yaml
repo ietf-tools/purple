@@ -2918,6 +2918,29 @@ paths:
                 items:
                   $ref: "#/components/schemas/NestedAssignment"
           description: ""
+  /api/rpc/rpc_person/{person_id}/assignments/completed/:
+    get:
+      operationId: rpc_person_assignments_completed_list
+      description: Completed assignments for the person, newest first.
+      parameters:
+        - in: path
+          name: person_id
+          schema:
+            type: integer
+          required: true
+      tags:
+        - purple
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletedAssignment"
+          description: ""
   /api/rpc/rpc_person/{id}/:
     get:
       operationId: rpc_person_retrieve
@@ -4199,6 +4222,55 @@ components:
         * `fuchsia` - fuchsia
         * `pink` - pink
         * `rose` - rose
+    CompletedAssignment:
+      type: object
+      description: A finished assignment with just enough of its document to list
+        it.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        role:
+          type: string
+        comment:
+          type: string
+        rfc_to_be:
+          allOf:
+            - $ref: "#/components/schemas/CompletedAssignmentDocument"
+          readOnly: true
+        completed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+        - role
+    CompletedAssignmentDocument:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        rfc_number:
+          type: integer
+          maximum: 2147483647
+          minimum: 0
+          nullable: true
+        disposition:
+          type: string
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        labels:
+          type: array
+          items:
+            type: integer
+          readOnly: true
     CreateActionHolder:
       type: object
       description: Serializer for creating ActionHolder instances
