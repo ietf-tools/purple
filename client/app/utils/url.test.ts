@@ -8,6 +8,6 @@ test('isInternalLink', () => {
 
 test('mailArchiveSearchUrl', () => {
   expect(mailArchiveSearchUrl('draft-ietf-tls-mldsa')).toBe(
-    'https://mailarchive.ietf.org/arch/search/?email_list=rfc-editor&subject=draft-ietf-tls-mldsa'
+    'https://mailarchive.ietf.org/arch/search/?email_list=rfc-editor&q=subject%3A%28draft-ietf-tls-mldsa%29'
   )
 })
