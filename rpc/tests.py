@@ -9,6 +9,7 @@ from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework.exceptions import NotFound
 
 from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
@@ -20,8 +21,10 @@ from rpc.models import (
     ClusterMember,
     DocRelationshipName,
     EditorialNote,
+    FinalApproval,
     Notification,
     NotificationReadMarker,
+    RfcAuthor,
     RpcPerson,
     RpcRelatedDocument,
     RpcRole,
@@ -47,6 +50,10 @@ from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
     get_block_reasons,
+)
+from .lifecycle.final_approvals import (
+    add_final_approval_for_author,
+    drop_pending_final_approvals_for_author,
 )
 from .utils import next_rfc_number
 
@@ -1116,3 +1123,145 @@ class FinalApprovalEditorFlagTests(TestCase):
         )
         flags = {item["id"]: item["approver_is_editor"] for item in resp.json()}
         self.assertFalse(flags[approval.pk])
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+class AuthorFinalApprovalSyncTests(TestCase):
+    """The author list drives the final approver list, one way."""
+
+    def setUp(self):
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="author-sync-user", password="pw", name="Author Sync User"
+            )
+        )
+        self.rfc = RfcToBeFactory(draft__name="draft-test-author-sync")
+        self.authors_url = f"/api/rpc/documents/{self.rfc.draft.name}/authors/"
+
+    def approvals(self, person):
+        return FinalApproval.objects.filter(rfc_to_be=self.rfc, approver=person)
+
+    def test_adding_an_author_requests_their_approval(self, _fetch):
+        person = DatatrackerPersonFactory()
+        resp = self.client.post(
+            self.authors_url,
+            data=json.dumps(
+                {"titlepage_name": "A. Author", "person_id": person.datatracker_id}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        approval = self.approvals(person).get()
+        self.assertIsNone(approval.approved)
+        self.assertIsNone(approval.overriding_approver)
+
+    def test_adding_an_author_with_an_existing_approval_adds_nothing(self, _fetch):
+        person = DatatrackerPersonFactory()
+        FinalApprovalFactory(rfc_to_be=self.rfc, approver=person)
+        resp = self.client.post(
+            self.authors_url,
+            data=json.dumps(
+                {"titlepage_name": "A. Author", "person_id": person.datatracker_id}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        self.assertEqual(self.approvals(person).count(), 1)
+
+    def test_an_author_without_a_person_requests_nothing(self, _fetch):
+        # Older documents list bodies such as the IAB, with no datatracker person.
+        body = RfcAuthorFactory(rfc_to_be=self.rfc, datatracker_person=None)
+        self.assertIsNone(add_final_approval_for_author(body))
+        self.assertEqual(drop_pending_final_approvals_for_author(body), 0)
+        self.assertFalse(FinalApproval.objects.filter(rfc_to_be=self.rfc).exists())
+
+    def test_removing_an_author_withdraws_their_pending_request(self, _fetch):
+        author = RfcAuthorFactory(rfc_to_be=self.rfc)
+        FinalApprovalFactory(rfc_to_be=self.rfc, approver=author.datatracker_person)
+        other = FinalApprovalFactory(rfc_to_be=self.rfc)  # somebody else's, untouched
+        resp = self.client.delete(f"{self.authors_url}{author.pk}/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertFalse(RfcAuthor.objects.filter(pk=author.pk).exists())
+        self.assertFalse(self.approvals(author.datatracker_person).exists())
+        self.assertTrue(FinalApproval.objects.filter(pk=other.pk).exists())
+
+    def test_removing_an_author_keeps_an_approval_they_gave(self, _fetch):
+        author = RfcAuthorFactory(rfc_to_be=self.rfc)
+        given = FinalApprovalFactory(
+            rfc_to_be=self.rfc,
+            approver=author.datatracker_person,
+            approved=timezone.now(),
+        )
+        pending = FinalApprovalFactory(
+            rfc_to_be=self.rfc, approver=author.datatracker_person
+        )
+        resp = self.client.delete(f"{self.authors_url}{author.pk}/")
+        self.assertEqual(resp.status_code, 204, resp.content)
+        self.assertTrue(FinalApproval.objects.filter(pk=given.pk).exists())
+        self.assertFalse(FinalApproval.objects.filter(pk=pending.pk).exists())
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+@patch("rpc.serializers.compute_deep_references_task")
+@patch("rpc.api.set_stream_manager_task")
+class ImportRequestsAuthorApprovalsTests(TestCase):
+    """Importing a draft requests final approval from each of its authors."""
+
+    def setUp(self):
+        cache.clear()
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="import-approvals-user", password="pw", name="Importer"
+            )
+        )
+        self.fmt = SourceFormatNameFactory(slug="xml-v3")
+        self.boilerplate = TlpBoilerplateChoiceNameFactory(slug="trust200902")
+        self.std_level = StdLevelNameFactory(slug="ps")
+        self.stream = StreamNameFactory(slug="ietf")
+
+    def test_each_author_gets_a_pending_approval(self, *_mocks):
+        rpcapi = MagicMock()
+        rpcapi.get_draft_by_id.return_value = rpcapi_client.FullDraft(
+            id=4242,
+            name="draft-test-import-approvals",
+            rev="00",
+            title="Test: import approvals",
+            abstract="",
+            group="",
+            stream="ietf",
+            pages=10,
+            intended_std_level="ps",
+            consensus=None,
+            authors=[
+                rpcapi_client.DocumentAuthor(
+                    person=101, plain_name="First Author", affiliation=""
+                ),
+                rpcapi_client.DocumentAuthor(
+                    person=102, plain_name="Second Author", affiliation=""
+                ),
+            ],
+        )
+        rpcapi.get_draft_references.return_value = []
+        data = {
+            "submitted_format": self.fmt.pk,
+            "boilerplate": self.boilerplate.pk,
+            "std_level": self.std_level.pk,
+            "stream": self.stream.pk,
+            "external_deadline": (date.today() + timedelta(days=30)).isoformat(),
+            "labels": [],
+        }
+        with patch("datatracker.rpcapi.get_rpcapi_client", return_value=rpcapi):
+            resp = self.client.post(
+                "/api/rpc/submissions/4242/import/",
+                data=json.dumps(data),
+                content_type="application/json",
+            )
+        self.assertEqual(resp.status_code, 200, resp.content)
+        approvals = FinalApproval.objects.filter(
+            rfc_to_be__draft__name="draft-test-import-approvals"
+        )
+        self.assertEqual(
+            sorted(approvals.values_list("approver__datatracker_id", flat=True)),
+            [101, 102],
+        )
+        self.assertFalse(approvals.exclude(approved__isnull=True).exists())

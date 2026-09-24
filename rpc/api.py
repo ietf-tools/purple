@@ -57,6 +57,10 @@ from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
 )
+from .lifecycle.final_approvals import (
+    add_final_approval_for_author,
+    drop_pending_final_approvals_for_author,
+)
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
     begin_publication_attempt,
@@ -816,11 +820,12 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                     }
                 )
                 if author_serializer.is_valid():
-                    author_serializer.save(
+                    author = author_serializer.save(
                         datatracker_person=datatracker_person,
                         rfc_to_be=rfctobe,
                         order=author_order,
                     )
+                    add_final_approval_for_author(author)
                     author_order += 1
                 else:
                     return Response(author_serializer.errors, status=400)
@@ -1863,22 +1868,20 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
                 dt_person, _ = DatatrackerPerson.objects.first_or_create(
                     datatracker_id=person_id,
                 )
-                serializer.save(
+                author = serializer.save(
                     rfc_to_be=rfc_to_be,
                     datatracker_person=dt_person,
                     order=max_order + 1,
                 )
+                add_final_approval_for_author(author)
         else:
             # If no person_id is provided, save the author without it
             serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)
 
     def perform_destroy(self, instance: RfcAuthor):
-        if instance.rfc_to_be_id and instance.datatracker_person_id:
-            FinalApproval.objects.filter(
-                rfc_to_be_id=instance.rfc_to_be_id,
-                approver_id=instance.datatracker_person_id,
-            ).delete()
-        instance.delete()
+        with transaction.atomic():
+            drop_pending_final_approvals_for_author(instance)
+            instance.delete()
 
     def get_serializer_class(self):
         if self.action == "create":
