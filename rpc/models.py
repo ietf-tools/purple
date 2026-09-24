@@ -15,6 +15,7 @@ from django.db.models import (
     BooleanField,
     Case,
     Count,
+    Exists,
     OuterRef,
     Prefetch,
     Q,
@@ -220,7 +221,7 @@ class RfcToBeQuerySet(models.QuerySet):
                 "finalapproval_set",
                 queryset=FinalApproval.objects.select_related(
                     "approver", "overriding_approver"
-                ),
+                ).with_approver_is_editor(),
             )
         )
 
@@ -942,6 +943,18 @@ class FinalApprovalQuerySet(models.QuerySet):
     def active(self):
         """QuerySet including only not-completed FinalApprovals"""
         return self.filter(approved__isnull=True)
+
+    def with_approver_is_editor(self):
+        """Annotate whether the approver is listed as an editor among the authors"""
+        return self.annotate(
+            approver_is_editor=Exists(
+                RfcAuthor.objects.filter(
+                    rfc_to_be=OuterRef("rfc_to_be"),
+                    datatracker_person=OuterRef("approver"),
+                    is_editor=True,
+                )
+            )
+        )
 
 
 class FinalApproval(models.Model):

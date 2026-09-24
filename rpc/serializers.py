@@ -664,6 +664,7 @@ class FinalApprovalSerializer(serializers.Serializer):
     rfc_to_be = MinimalRfcToBeSerializer(read_only=True)
     requested = serializers.DateTimeField(read_only=True)
     approver = BaseDatatrackerPersonSerializer(read_only=True)
+    approver_is_editor = serializers.SerializerMethodField()
     approved = serializers.DateTimeField(required=False, allow_null=True)
     overriding_approver = BaseDatatrackerPersonSerializer(
         allow_null=True, read_only=True
@@ -673,6 +674,18 @@ class FinalApprovalSerializer(serializers.Serializer):
         write_only=True, required=False
     )
     comment = serializers.CharField(allow_blank=True, required=False)
+
+    @extend_schema_field(serializers.BooleanField())
+    def get_approver_is_editor(self, obj) -> bool:
+        # Annotated by FinalApprovalQuerySet.with_approver_is_editor() on list
+        # views; a freshly saved instance is not, so fall back to a query.
+        if hasattr(obj, "approver_is_editor"):
+            return obj.approver_is_editor
+        return RfcAuthor.objects.filter(
+            rfc_to_be_id=obj.rfc_to_be_id,
+            datatracker_person_id=obj.approver_id,
+            is_editor=True,
+        ).exists()
 
     def update(self, instance, validated_data):
         approver_person_id = validated_data.pop("approver_person_id", None)

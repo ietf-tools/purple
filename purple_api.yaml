@@ -4276,6 +4276,9 @@ components:
           allOf:
             - $ref: "#/components/schemas/BaseDatatrackerPerson"
           readOnly: true
+        approver_is_editor:
+          type: boolean
+          readOnly: true
         approved:
           type: string
           format: date-time
@@ -4692,6 +4695,9 @@ components:
         approver:
           allOf:
             - $ref: "#/components/schemas/BaseDatatrackerPerson"
+          readOnly: true
+        approver_is_editor:
+          type: boolean
           readOnly: true
         approved:
           type: string
