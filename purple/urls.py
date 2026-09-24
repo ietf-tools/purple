@@ -153,6 +153,11 @@ urlpatterns = [
     path("api/rpc/mail", rpc_api.Mail.as_view()),
     path("api/rpc/documents/<str:draft_name>/mail", rpc_api.DocumentMail.as_view()),
     path(
+        "api/rpc/documents/<str:draft_name>/editorial_note/",
+        rpc_api.EditorialNoteView.as_view(),
+        name="document-editorial-note",
+    ),
+    path(
         "api/rpc/mailtemplate/<int:rfctobe_id>/",
         rpc_api.RfcMailTemplatesList.as_view(),
     ),

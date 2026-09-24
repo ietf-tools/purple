@@ -1,5 +1,5 @@
 <template>
-  <div v-for="labelFilter in allLabelFilters">
+  <div v-for="labelFilter in sortedLabelFilters" :key="labelFilter.id" class="whitespace-nowrap">
     <RpcTristateButton
       :checked="
         labelFilter.id && selectedLabelsTristate?.[labelFilter.id] !== undefined
@@ -36,5 +36,9 @@ const allLabelFilters = defineModel<Label[]>('all-label-filters', { required: tr
 const selectedLabelsTristate = defineModel<Record<number, TristateValue>>(
   'selected-label-filters',
   { required: true }
+)
+
+const sortedLabelFilters = computed(() =>
+  [...allLabelFilters.value].sort((a, b) => a.text.localeCompare(b.text))
 )
 </script>

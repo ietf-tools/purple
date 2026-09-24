@@ -6,7 +6,8 @@
 
     <ErrorAlert v-if="error || peopleError"> {{ error }} {{ peopleError }} </ErrorAlert>
 
-    <div class="flex flex-row gap-x-8 justify-between mb-4 text-gray-800 dark:text-gray-300">
+    <div
+      class="flex flex-row flex-wrap gap-x-8 gap-y-4 justify-between mb-4 text-gray-800 dark:text-gray-300">
       <fieldset>
         <legend class="font-bold text-sm flex">
           Filters
@@ -74,12 +75,12 @@
           </div>
         </fieldset>
       </div>
-      <fieldset class="flex-1">
+      <fieldset class="flex-1 min-w-[30rem]">
         <legend class="font-bold text-sm flex items-end">
           Label
           <span class="text-md">&nbsp;</span>
         </legend>
-        <div class="grid grid-cols-[repeat(auto-fill,11em)] gap-x-3 pt-1">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(15em,1fr))] gap-2 pt-1">
           <LabelsFilter
             v-model:all-label-filters="allLabelFilters"
             v-model:selected-label-filters="selectedLabelFilters" />

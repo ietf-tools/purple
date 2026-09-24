@@ -148,6 +148,7 @@
 
 <script setup lang="ts">
 import { overlayModalMethodsKey } from '~/providers/providerKeys'
+import { assignmentRoleOrder } from '~/utils/sort'
 
 // DIALOG
 
@@ -201,50 +202,42 @@ const handleRoleCheckboxChange = (e: Event) => {
   }
 }
 
-type Role = {
-  value: string
-  label: string
-  description: string
-  caution?: boolean
+// Longer descriptions than RpcRole.desc carries; anything missing falls back to it.
+const ROLE_DESCRIPTIONS: Record<string, string> = {
+  enqueuer: 'Prepares an incoming submission and adds it to the queue.',
+  formatting: 'An editor for docs that require extensive XML formatting.',
+  ref_checker: 'Checks the normative references of an incoming document.',
+  first_editor: 'An editor who makes the first editing pass.',
+  second_editor:
+    'A more experienced editor who makes a 2nd pass and also checks things like code components and IANA actions.',
+  final_review_editor:
+    'An editor who handles the interactions with authors during their final review (AUTH48).',
+  publisher:
+    'An editor who does the final-final reviews after the author has signed off and publishes the RFC to the website.',
+  manager:
+    'A manager can access restricted sections like Legal, Manage Team Members, Assign Docs, Change RFC Status, Withdraw Document and more.'
 }
 
-const roles: Role[] = [
-  {
-    value: 'formatting',
-    label: 'Formatter',
-    description: 'An editor for docs that require extensive XML formatting.'
-  },
-  {
-    value: 'pe',
-    label: 'Primary Editor',
-    description: 'An editor who makes the first editing pass.'
-  },
-  {
-    value: 're',
-    label: 'RFC Editor',
-    description:
-      'A more experienced editor who makes a 2nd pass and also checks things like code components and IANA actions.'
-  },
-  {
-    value: 'finrev',
-    label: 'Final Review',
-    description:
-      'An editor who handles the interactions with authors during their final review (AUTH48).'
-  },
-  {
-    value: 'pub',
-    label: 'Publisher',
-    description:
-      'An editor who does the final-final reviews after the author has signed off and publishes the RFC to the website.'
-  },
-  {
-    value: 'manager',
-    label: 'Manager',
-    description:
-      'A manager can access restricted sections like Legal, Manage Team Members, Assign Docs, Change RFC Status, Withdraw Document and more.',
-    caution: true
-  }
-]
+const { roles: rpcRoles } = useRoleName()
+
+// Assignment roles in workflow order, then anything else (manager)
+const roles = computed(() =>
+  [...rpcRoles.value]
+    .filter((role) => role.slug !== 'blocked')
+    .sort((a, b) => {
+      const order = (slug: string) => {
+        const i = assignmentRoleOrder.indexOf(slug as (typeof assignmentRoleOrder)[number])
+        return i === -1 ? assignmentRoleOrder.length : i
+      }
+      return order(a.slug) - order(b.slug) || a.name.localeCompare(b.name)
+    })
+    .map((role) => ({
+      value: role.slug,
+      label: role.name,
+      description: ROLE_DESCRIPTIONS[role.slug] ?? role.desc ?? '',
+      caution: role.slug === 'manager'
+    }))
+)
 
 const nameIpt = ref(null)
 

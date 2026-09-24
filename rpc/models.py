@@ -15,6 +15,7 @@ from django.db.models import (
     BooleanField,
     Case,
     Count,
+    Exists,
     OuterRef,
     Prefetch,
     Q,
@@ -220,7 +221,7 @@ class RfcToBeQuerySet(models.QuerySet):
                 "finalapproval_set",
                 queryset=FinalApproval.objects.select_related(
                     "approver", "overriding_approver"
-                ),
+                ).with_approver_is_editor(),
             )
         )
 
@@ -943,6 +944,18 @@ class FinalApprovalQuerySet(models.QuerySet):
         """QuerySet including only not-completed FinalApprovals"""
         return self.filter(approved__isnull=True)
 
+    def with_approver_is_editor(self):
+        """Annotate whether the approver is listed as an editor among the authors"""
+        return self.annotate(
+            approver_is_editor=Exists(
+                RfcAuthor.objects.filter(
+                    rfc_to_be=OuterRef("rfc_to_be"),
+                    datatracker_person=OuterRef("approver"),
+                    is_editor=True,
+                )
+            )
+        )
+
 
 class FinalApproval(models.Model):
     """Captures approvals for publication
@@ -1131,6 +1144,26 @@ class RpcRelatedDocument(models.Model):
     def __str__(self):
         target = self.target_document if self.target_document else self.target_rfctobe
         return f"{self.relationship} relationship from {self.source} to {target}"
+
+
+class EditorialNote(models.Model):
+    """Shared free-text scratchpad the RPC keeps for an RfcToBe"""
+
+    rfc_to_be = models.OneToOneField(
+        RfcToBe, on_delete=models.CASCADE, related_name="editorial_note"
+    )
+    text = models.TextField(blank=True, default="")
+    updated_at = models.DateTimeField(null=True, blank=True)
+    updated_by = models.ForeignKey(
+        "datatracker.DatatrackerPerson",
+        null=True,
+        blank=True,
+        on_delete=models.PROTECT,
+        related_name="+",
+    )
+
+    def __str__(self):
+        return f"EditorialNote for {self.rfc_to_be}"
 
 
 class RpcDocumentComment(RulesModel):
