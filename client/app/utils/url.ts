@@ -53,11 +53,14 @@ export const gitHubUrlBuilder = (repository: string): string => `https://github.
 const RFC_EDITOR_MAIL_LIST = 'rfc-editor'
 
 /**
- * Mail archive search for messages on the rfc-editor list whose subject mentions
- * the draft. The archive's advanced search takes the list and subject as separate
- * query parameters rather than as operators inside `q`.
+ * Mail archive search for messages on the rfc-editor list whose subject names the
+ * draft. The `subject=` parameter is a loose match that returns any message sharing
+ * a word with the draft name; a `subject:(...)` operator in `q` requires every word.
  */
 export const mailArchiveSearchUrl = (draftName: string): string => {
-  const params = new URLSearchParams({ email_list: RFC_EDITOR_MAIL_LIST, subject: draftName })
+  const params = new URLSearchParams({
+    email_list: RFC_EDITOR_MAIL_LIST,
+    q: `subject:(${draftName})`
+  })
   return `https://mailarchive.ietf.org/arch/search/?${params}`
 }
