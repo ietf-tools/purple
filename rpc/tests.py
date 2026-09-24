@@ -1127,7 +1127,7 @@ class FinalApprovalEditorFlagTests(TestCase):
 
 @patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
 class AuthorFinalApprovalSyncTests(TestCase):
-    """The author list drives the final approver list, one way."""
+    """The author list determines the final approver list, one way."""
 
     def setUp(self):
         self.client.force_login(
