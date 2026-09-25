@@ -944,6 +944,13 @@ class FinalApprovalQuerySet(models.QuerySet):
         """QuerySet including only not-completed FinalApprovals"""
         return self.filter(approved__isnull=True)
 
+    def first_or_create(self, defaults=None, **kwargs):
+        """Like get_or_create(), but returns the first match when there are several."""
+        try:
+            return self.get_or_create(defaults, **kwargs)
+        except FinalApproval.MultipleObjectsReturned:
+            return self.filter(**kwargs).first(), False
+
     def with_approver_is_editor(self):
         """Annotate whether the approver is listed as an editor among the authors"""
         return self.annotate(

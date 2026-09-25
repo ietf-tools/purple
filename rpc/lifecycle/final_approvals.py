@@ -10,13 +10,10 @@ def ensure_final_approval_for_author(author: RfcAuthor) -> None:
     """
     if author.datatracker_person_id is None:
         return
-    pending = FinalApproval.objects.active().filter(
-        rfc_to_be_id=author.rfc_to_be_id, approver_id=author.datatracker_person_id
-    )
-    if pending.exists():
-        return
-    FinalApproval.objects.create(
-        rfc_to_be_id=author.rfc_to_be_id, approver_id=author.datatracker_person_id
+    FinalApproval.objects.first_or_create(
+        rfc_to_be_id=author.rfc_to_be_id,
+        approver_id=author.datatracker_person_id,
+        approved=None,
     )
 
 
