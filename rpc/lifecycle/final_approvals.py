@@ -6,7 +6,8 @@ from rpc.models import FinalApproval, RfcAuthor
 def ensure_final_approval_for_author(author: RfcAuthor) -> None:
     """Create a FinalApproval request for an author unless one is already pending.
 
-    Does nothing when the author has no datatracker person.     """
+    Does nothing when the author has no datatracker person.
+    """
     if author.datatracker_person_id is None:
         return
     pending = FinalApproval.objects.active().filter(
