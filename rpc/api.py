@@ -58,8 +58,8 @@ from .lifecycle.blocked_assignments import (
     apply_manual_unblock,
 )
 from .lifecycle.final_approvals import (
-    add_final_approval_for_author,
     drop_pending_final_approvals_for_author,
+    ensure_final_approval_for_author,
 )
 from .lifecycle.metadata import Metadata, MetadataComparator
 from .lifecycle.publication import (
@@ -825,7 +825,7 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
                         rfc_to_be=rfctobe,
                         order=author_order,
                     )
-                    add_final_approval_for_author(author)
+                    ensure_final_approval_for_author(author)
                     author_order += 1
                 else:
                     return Response(author_serializer.errors, status=400)
@@ -1873,7 +1873,7 @@ class RpcAuthorViewSet(viewsets.ModelViewSet):
                     datatracker_person=dt_person,
                     order=max_order + 1,
                 )
-                add_final_approval_for_author(author)
+                ensure_final_approval_for_author(author)
         else:
             # If no person_id is provided, save the author without it
             serializer.save(rfc_to_be=rfc_to_be, order=max_order + 1)

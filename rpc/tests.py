@@ -52,8 +52,8 @@ from .lifecycle.blocked_assignments import (
     get_block_reasons,
 )
 from .lifecycle.final_approvals import (
-    add_final_approval_for_author,
     drop_pending_final_approvals_for_author,
+    ensure_final_approval_for_author,
 )
 from .utils import next_rfc_number
 
@@ -1155,7 +1155,7 @@ class AuthorFinalApprovalSyncTests(TestCase):
         self.assertIsNone(approval.approved)
         self.assertIsNone(approval.overriding_approver)
 
-    def test_adding_an_author_with_an_existing_approval_adds_nothing(self, _fetch):
+    def test_adding_an_author_with_a_pending_request_adds_nothing(self, _fetch):
         person = DatatrackerPersonFactory()
         FinalApprovalFactory(rfc_to_be=self.rfc, approver=person)
         resp = self.client.post(
@@ -1168,11 +1168,27 @@ class AuthorFinalApprovalSyncTests(TestCase):
         self.assertEqual(resp.status_code, 201, resp.content)
         self.assertEqual(self.approvals(person).count(), 1)
 
+    def test_adding_an_author_who_approved_before_asks_again(self, _fetch):
+        person = DatatrackerPersonFactory()
+        FinalApprovalFactory(
+            rfc_to_be=self.rfc, approver=person, approved=timezone.now()
+        )
+        resp = self.client.post(
+            self.authors_url,
+            data=json.dumps(
+                {"titlepage_name": "A. Author", "person_id": person.datatracker_id}
+            ),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 201, resp.content)
+        self.assertEqual(self.approvals(person).count(), 2)
+        self.assertEqual(self.approvals(person).active().count(), 1)
+
     def test_an_author_without_a_person_requests_nothing(self, _fetch):
         # Older documents list bodies such as the IAB, with no datatracker person.
         body = RfcAuthorFactory(rfc_to_be=self.rfc, datatracker_person=None)
-        self.assertIsNone(add_final_approval_for_author(body))
-        self.assertEqual(drop_pending_final_approvals_for_author(body), 0)
+        ensure_final_approval_for_author(body)
+        drop_pending_final_approvals_for_author(body)
         self.assertFalse(FinalApproval.objects.filter(rfc_to_be=self.rfc).exists())
 
     def test_removing_an_author_withdraws_their_pending_request(self, _fetch):
