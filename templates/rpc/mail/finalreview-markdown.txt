@@ -11,7 +11,8 @@ Please review the procedures for your review using kramdown-rfc:
 
 https://www.rfc-editor.org/rpc/wiki/doku.php?id=pilot_test_instructions_completing_auth48_using_kramdown
 
-Once the review is complete, it will be published as an RFC.
+Once the review is complete and each of the authors has approved the document for
+publication, it will be published as an RFC.
 
 
 Files
