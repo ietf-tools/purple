@@ -54,7 +54,9 @@
                         class="mt-0.5 ml-4 text-xs text-gray-500 dark:text-neutral-400 list-disc list-inside">
                         <li v-for="br in blockingReasons" :key="br.name">
                           {{ br.name
-                          }}<template v-if="br.comment">: <span class="italic">{{ br.comment }}</span></template>
+                          }}<template v-if="br.comment"
+                            >: <span class="italic">{{ br.comment }}</span></template
+                          >
                         </li>
                       </ul>
                     </template>
