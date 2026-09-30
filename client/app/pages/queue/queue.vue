@@ -396,11 +396,19 @@ const columns = [
                       data.row.original.blockingReasons,
                       data.row.original.actionholderSet
                     )
+                    const shortReasons = formatBlockingReasons(
+                      data.row.original.blockingReasons,
+                      data.row.original.actionholderSet,
+                      40
+                    )
                     children.push(
                       h(
                         'span',
-                        { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2' },
-                        reasons
+                        {
+                          class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2',
+                          title: shortReasons === reasons ? undefined : reasons
+                        },
+                        shortReasons
                       )
                     )
                   }

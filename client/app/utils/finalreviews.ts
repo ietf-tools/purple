@@ -7,9 +7,26 @@ import type {
   RfcToBeBlockingReason
 } from '~/purple_client'
 
+// A manual hold's reason is the free text given when setting it, cut to
+// maxReasonLength where a view has no room for all of it.
+export const formatBlockingReason = (
+  br: RfcToBeBlockingReason,
+  maxReasonLength?: number
+): string | undefined => {
+  if (br.reason?.slug !== 'manual_hold' || !br.comment) {
+    return br.reason?.name
+  }
+  const reason =
+    maxReasonLength && br.comment.length > maxReasonLength
+      ? `${br.comment.substring(0, maxReasonLength)}...`
+      : br.comment
+  return `${br.reason.name}: ${reason}`
+}
+
 export const formatBlockingReasons = (
   blockingReasons: RfcToBeBlockingReason[],
-  actionholders?: ActionHolder[]
+  actionholders?: ActionHolder[],
+  maxReasonLength?: number
 ): string =>
   blockingReasons
     .map((br) => {
@@ -20,7 +37,7 @@ export const formatBlockingReasons = (
           .join(', ')
         return `${br.reason.name}: ${names}`
       }
-      return br.reason?.name
+      return formatBlockingReason(br, maxReasonLength)
     })
     .filter(Boolean)
     .join(', ')

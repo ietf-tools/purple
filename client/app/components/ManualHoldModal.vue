@@ -5,7 +5,7 @@
     <Heading :heading-level="2" class="pb-3 pt-5">Set Manual Hold</Heading>
     <div class="mb-4">
       <label class="block text-sm font-medium mb-1" for="manual-hold-comment"
-        >Comment (optional)</label
+        >Comment / Reason (optional)</label
       >
       <textarea
         id="manual-hold-comment"
@@ -41,7 +41,7 @@ const isSaving = ref(false)
 const handleSave = async () => {
   isSaving.value = true
   try {
-    await props.onConfirm(comment.value)
+    await props.onConfirm(comment.value.trim())
     ok()
   } finally {
     isSaving.value = false

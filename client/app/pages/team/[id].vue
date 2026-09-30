@@ -231,6 +231,7 @@ import { DateTime } from 'luxon'
 import type { Cluster, CompletedAssignment, Label, NestedAssignment } from '~/purple_client'
 import { calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
+import { formatBlockingReason } from '~/utils/finalreviews'
 
 const route = useRoute()
 const api = useApi()
@@ -375,7 +376,7 @@ const assignmentColumns = [
           ? h(
               'ul',
               { class: 'mt-0.5 list-disc list-inside text-xs text-red-500 dark:text-red-400' },
-              blockingReasons.map((br) => h('li', br.reason?.name))
+              blockingReasons.map((br) => h('li', formatBlockingReason(br)))
             )
           : null,
         a.comment
