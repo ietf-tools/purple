@@ -6064,11 +6064,21 @@ components:
         avg_pct_blocked_all:
           type: number
           format: double
+        avg_weeks_to_final_review:
+          type: number
+          format: double
+          nullable: true
+        avg_weeks_in_queue:
+          type: number
+          format: double
+          nullable: true
         legacy_included:
           type: boolean
       required:
         - avg_pct_blocked
         - avg_pct_blocked_all
+        - avg_weeks_in_queue
+        - avg_weeks_to_final_review
         - docs_at_start
         - docs_blocked_entire
         - docs_entered

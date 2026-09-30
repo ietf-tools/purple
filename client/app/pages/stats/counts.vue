@@ -104,7 +104,7 @@
                   :key="p.label"
                   class="px-3 py-2 text-right tabular-nums"
                   :class="row.divider ? dividerClass : ''">
-                  {{ row.format(row.get(p)) }}
+                  {{ cell(row, p) }}
                 </td>
               </tr>
               <tr
@@ -128,7 +128,7 @@
                   :key="p.label"
                   class="px-3 py-2 text-right tabular-nums"
                   :class="row.divider ? dividerClass : ''">
-                  {{ row.format(row.get(p)) }}
+                  {{ cell(row, p) }}
                 </td>
               </tr>
             </tbody>
@@ -187,13 +187,20 @@ const dividerClass = 'border-b-2 border-gray-500 dark:border-neutral-400'
 
 const int = (n: number) => n.toLocaleString()
 const pct = (n: number) => `${n}%`
+const weeks = (n: number) => `${n.toFixed(1)} wk`
 
 type MetricRow = {
   label: string
   note?: string // long qualifier, folded onto its own line
   divider?: boolean // heavier bottom border, to offset the rows above
-  get: (p: QueueCountStatPeriod) => number
+  get: (p: QueueCountStatPeriod) => number | null
   format: (n: number) => string
+}
+
+// An average over no docs is null: shown as a dash rather than as zero.
+const cell = (row: MetricRow, p: QueueCountStatPeriod) => {
+  const value = row.get(p)
+  return value === null ? '—' : row.format(value)
 }
 
 const docCountRows: MetricRow[] = [
@@ -210,8 +217,21 @@ const docCountRows: MetricRow[] = [
   {
     label: 'Avg % time blocked',
     note: '(docs not blocked at any point in period)',
+    divider: true,
     get: (p) => p.avgPctBlocked,
     format: pct
+  },
+  {
+    label: 'Avg time in progress before final review',
+    note: '(unblocked time, docs entering final review in period)',
+    get: (p) => p.avgWeeksToFinalReview,
+    format: weeks
+  },
+  {
+    label: 'Avg time in queue',
+    note: '(RFCs published in period)',
+    get: (p) => p.avgWeeksInQueue,
+    format: weeks
   }
 ]
 
