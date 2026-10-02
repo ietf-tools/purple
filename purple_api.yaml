@@ -2962,6 +2962,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/RpcPerson"
           description: ""
+    patch:
+      operationId: rpc_person_partial_update
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this rpc person.
+          required: true
+      tags:
+        - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedRpcPersonActiveRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RpcPersonActive"
+          description: ""
   /api/rpc/rpc_roles/:
     get:
       operationId: rpc_roles_list
@@ -5645,6 +5670,13 @@ components:
           type: string
           description: Revision of draft being worked on.
           maxLength: 16
+    PatchedRpcPersonActiveRequest:
+      type: object
+      description: Mark a team member active or inactive; nothing else is changed
+        here.
+      properties:
+        is_active:
+          type: boolean
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -6720,6 +6752,16 @@ components:
       required:
         - capabilities
         - roles
+    RpcPersonActive:
+      type: object
+      description: Mark a team member active or inactive; nothing else is changed
+        here.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
     RpcRelatedDocument:
       type: object
       description: Serializer for related document for an RfcToBe

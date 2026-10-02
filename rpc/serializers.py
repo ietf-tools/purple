@@ -1848,6 +1848,15 @@ class RpcPersonSerializer(serializers.ModelSerializer):
         return cached_name or rpc_person.datatracker_person.plain_name
 
 
+class RpcPersonActiveSerializer(serializers.ModelSerializer):
+    """Mark a team member active or inactive; nothing else is changed here."""
+
+    class Meta:
+        model = RpcPerson
+        fields = ["id", "is_active"]
+        read_only_fields = ["id"]
+
+
 class CreateRpcPersonSerializer(serializers.ModelSerializer):
     """Create an RpcPerson, linking the datatracker account by its login email."""
 

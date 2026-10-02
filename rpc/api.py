@@ -148,6 +148,7 @@ from .serializers import (
     QueueStatsSerializer,
     RfcAuthorSerializer,
     RfcToBeSerializer,
+    RpcPersonActiveSerializer,
     RpcPersonSerializer,
     RpcRelatedDocumentSerializer,
     RpcRoleSerializer,
@@ -345,31 +346,44 @@ def extend_schema_with_draft_name(actions=None):
     )
 
 
-class RpcPersonViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+def _is_manager(user) -> bool:
+    if user.is_superuser:
+        return True
+    rpcperson = user.rpcperson()
+    return (
+        rpcperson is not None
+        and rpcperson.can_hold_role.filter(slug="manager").exists()
+    )
+
+
+class RpcPersonViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.select_related("datatracker_person").prefetch_related(
         "capable_of", "can_hold_role"
     )
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
+    # PATCH only: an update changes nothing but is_active, so there is no whole
+    # person to PUT.
+    http_method_names = ["get", "post", "patch", "head", "options"]
 
     def get_serializer_class(self):
         if self.action == "create":
             return CreateRpcPersonSerializer
+        if self.action == "partial_update":
+            return RpcPersonActiveSerializer
         return super().get_serializer_class()
+
+    def perform_update(self, serializer):
+        if not _is_manager(self.request.user):
+            raise PermissionDenied("Only managers can change a team member's status.")
+        serializer.save()
 
     @with_rpcapi
     def perform_create(self, serializer, rpcapi: rpcapi_client.PurpleApi):
-        user = self.request.user
-        if user.is_superuser:
-            is_manager = True
-        else:
-            rpcperson = user.rpcperson()
-            is_manager = (
-                rpcperson is not None
-                and rpcperson.can_hold_role.filter(slug="manager").exists()
-            )
-        if not is_manager:
+        if not _is_manager(self.request.user):
             raise PermissionDenied("Only managers can add team members.")
 
         email = serializer.validated_data["datatracker_email"]

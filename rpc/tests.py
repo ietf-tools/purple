@@ -1044,6 +1044,66 @@ class CreateRpcPersonTests(TestCase):
         )
 
 
+class RpcPersonActiveTests(TestCase):
+    """PATCH /api/rpc/rpc_person/<id>/ marks a team member active or inactive."""
+
+    def setUp(self):
+        self.person = RpcPersonFactory(hours_per_week=40)
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        patcher.start().side_effect = lambda user: self.people.get(user.pk)
+        self.addCleanup(patcher.stop)
+
+    def _login(self, rpcperson):
+        user = get_user_model().objects.create_user(username=f"user-{rpcperson.pk}")
+        self.people[user.pk] = rpcperson
+        self.client.force_login(user)
+
+    def _login_manager(self):
+        manager = RpcPersonFactory()
+        manager.can_hold_role.add(RpcRoleFactory(slug="manager"))
+        self._login(manager)
+
+    def _patch(self, data):
+        return self.client.patch(
+            f"/api/rpc/rpc_person/{self.person.pk}/",
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+
+    def test_manager_marks_inactive_and_active_again(self):
+        self._login_manager()
+        resp = self._patch({"is_active": False})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.person.refresh_from_db()
+        self.assertFalse(self.person.is_active)
+        self._patch({"is_active": True})
+        self.person.refresh_from_db()
+        self.assertTrue(self.person.is_active)
+
+    def test_only_is_active_changes(self):
+        self._login_manager()
+        self._patch({"is_active": False, "hours_per_week": 5})
+        self.person.refresh_from_db()
+        self.assertEqual(self.person.hours_per_week, 40)
+
+    def test_non_manager_is_refused(self):
+        self._login(RpcPersonFactory())
+        resp = self._patch({"is_active": False})
+        self.assertEqual(resp.status_code, 403, resp.content)
+        self.person.refresh_from_db()
+        self.assertTrue(self.person.is_active)
+
+    def test_put_is_not_allowed(self):
+        self._login_manager()
+        resp = self.client.put(
+            f"/api/rpc/rpc_person/{self.person.pk}/",
+            data=json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 405, resp.content)
+
+
 class RpcPersonCompletedAssignmentsTests(TestCase):
     def setUp(self):
         user = get_user_model().objects.create_user(
