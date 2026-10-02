@@ -451,6 +451,46 @@ class QueueCountsRollupTests(TestCase):
             want = [(iv.start, iv.end) for iv in rfc.time_intervals_with_label(label)]
             assert bulk.get(label.pk, []) == want, label.slug
 
+    def test_average_weeks_to_final_review_and_in_queue(self):
+        # A: 4 weeks from enqueue to final review, 1 of them blocked -> 3 weeks.
+        # After the transition, as assignments before it are not counted.
+        a = self._doc(dt(2026, 5, 25))
+        make_assignment(
+            a, "blocked", [(dt(2026, 6, 1), "in_progress"), (dt(2026, 6, 8), "done")]
+        )
+        make_assignment(a, "final_review_editor", [(dt(2026, 6, 22), "in_progress")])
+        # B: 4 weeks to final review, never blocked.
+        b = self._doc(dt(2026, 5, 18))
+        make_assignment(b, "final_review_editor", [(dt(2026, 6, 15), "in_progress")])
+        # C and D published in June after 8 and 6 weeks in the queue.
+        self._doc(dt(2026, 4, 20), published_at=dt(2026, 6, 15), slug="published")
+        self._doc(dt(2026, 5, 18), published_at=dt(2026, 6, 29), slug="published")
+
+        june, july = queue_counts_rollup("month", 2, self.now)
+        assert june["avg_weeks_to_final_review"] == 3.5  # (3 + 4) / 2
+        assert june["avg_weeks_in_queue"] == 7.0  # (8 + 6) / 2
+        assert july["avg_weeks_to_final_review"] is None
+        assert july["avg_weeks_in_queue"] is None
+
+    def test_legacy_auth48_label_starts_final_review(self):
+        auth48 = LabelFactory(slug="auth48")
+        iana = LabelFactory(slug="iana")
+        # E: AUTH48 4 weeks after enqueue, 1 week of it blocked on IANA -> 3 weeks.
+        e = self._doc(dt(2026, 3, 2))
+        apply_label_over(e, iana, dt(2026, 3, 9), dt(2026, 3, 16))
+        apply_label_over(e, auth48, dt(2026, 3, 30), dt(2026, 4, 10))
+        # F: AUTH48 after 2 weeks; a later final_review_editor assignment does not
+        # move its start, the earlier of the two wins.
+        f = self._doc(dt(2026, 3, 2))
+        apply_label_over(f, auth48, dt(2026, 3, 16), dt(2026, 3, 27))
+        make_assignment(f, "final_review_editor", [(dt(2026, 6, 1), "in_progress")])
+
+        rollup = queue_counts_rollup("month", 5, self.now)
+        march = next(p for p in rollup if p["label"] == "2026-03")
+        june = next(p for p in rollup if p["label"] == "2026-06")
+        assert march["avg_weeks_to_final_review"] == 2.5  # (3 + 2) / 2
+        assert june["avg_weeks_to_final_review"] is None
+
     def test_pages_use_historical_page_count(self):
         # Pages are read from the history record in effect when the doc entered,
         # not the current value.

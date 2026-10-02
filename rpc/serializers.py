@@ -459,6 +459,8 @@ class QueueCountStatPeriodSerializer(serializers.Serializer):
     docs_entered_missing_ref = serializers.IntegerField()
     avg_pct_blocked = serializers.FloatField()
     avg_pct_blocked_all = serializers.FloatField()
+    avg_weeks_to_final_review = serializers.FloatField(allow_null=True)
+    avg_weeks_in_queue = serializers.FloatField(allow_null=True)
     legacy_included = serializers.BooleanField()
 
 

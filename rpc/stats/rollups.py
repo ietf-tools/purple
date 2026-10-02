@@ -134,6 +134,8 @@ _MISSING_REF_ENTRY_GRACE = datetime.timedelta(minutes=5)
 # label appearing within a week of enqueue as "entered the queue missing a ref".
 _MISSREF_LABEL_ENTRY_GRACE = datetime.timedelta(weeks=1)
 
+_WEEK = datetime.timedelta(weeks=1)
+
 
 def _missing_ref_at_entry(
     intervals: list[tuple[datetime.datetime, datetime.datetime]],
@@ -640,6 +642,12 @@ def queue_counts_rollup(
     effect when it entered / went to edit. Blocked time is the same union used by
     the time view; "% time blocked" is over the time a doc was in the queue
     during the period.
+
+    Two averages, in weeks: the unblocked time from enqueue to entering final
+    review, over docs entering final review in the period; and the time from
+    enqueue to publication, over docs published in the period. Final review
+    starts at the first ``final_review_editor`` assignment or, before the
+    transition, the first legacy AUTH48 label, whichever is earlier.
     """
     now = now or timezone.now()
     windows = period_windows(period, count, now)
@@ -653,9 +661,31 @@ def queue_counts_rollup(
             models.Q(published_at__isnull=True) | models.Q(published_at__gte=earliest)
         )
         .with_enqueued_at()
-        .values("pk", "published_at", "enqueued_at")
+        .with_final_review_started_at()
+        .values("pk", "published_at", "enqueued_at", "final_review_started_at")
     )
     doc_ids = [d["pk"] for d in docs]
+
+    auth48_label = Label.objects.filter(slug="auth48").first()
+    auth48_intervals: dict[int, list] = (
+        {
+            pk: labels[auth48_label.pk]
+            for pk, labels in _label_intervals_by_doc(
+                doc_ids, {auth48_label.pk}
+            ).items()
+        }
+        if auth48_label
+        else {}
+    )
+    for d in docs:
+        fr_starts = [
+            start
+            for start, _end in auth48_intervals.get(d["pk"], [])
+            if start < TRANSITION_DATE
+        ]
+        if d["final_review_started_at"] is not None:
+            fr_starts.append(d["final_review_started_at"])
+        d["final_review_started_at"] = min(fr_starts, default=None)
 
     # "Gone to edit" = first time with no missing references since enqueue.
     # Missing references = not-received relationships (any era) + legacy MISSREF.
@@ -741,6 +771,8 @@ def queue_counts_rollup(
         pages_blocked_end = pages_in_progress_end = 0
         docs_blocked_entire = rest = 0
         pct_sum = 0.0
+        to_final_review_seconds: list[float] = []
+        to_publish_seconds: list[float] = []
 
         for d in docs:
             enq, pub = d["enqueued_at"], d["published_at"]
@@ -761,6 +793,16 @@ def queue_counts_rollup(
             if pub is not None and start <= pub < eff_end:
                 rfcs_published += 1
                 pages_published += pub_pages.get(d["pk"], 0)
+                if pub > enq:
+                    to_publish_seconds.append((pub - enq).total_seconds())
+            fr = d["final_review_started_at"]
+            if fr is not None and start <= fr < eff_end and fr > enq:
+                blocked_before = overlap_seconds(
+                    blocked_intervals.get(d["pk"], []), enq, fr
+                )
+                to_final_review_seconds.append(
+                    max(0.0, (fr - enq).total_seconds() - blocked_before)
+                )
             gte = d["gone_to_edit"]
             if gte is not None and start <= gte < eff_end:
                 pages_to_edit += gone_pages.get(d["pk"], 0)
@@ -812,10 +854,19 @@ def queue_counts_rollup(
                     if (members := rest + docs_blocked_entire)
                     else 0.0
                 ),
+                "avg_weeks_to_final_review": _mean_weeks(to_final_review_seconds),
+                "avg_weeks_in_queue": _mean_weeks(to_publish_seconds),
                 "legacy_included": start < TRANSITION_DATE,
             }
         )
     return periods
+
+
+def _mean_weeks(seconds: list[float]) -> float | None:
+    """Mean of ``seconds`` in weeks to one decimal, or None when there are none."""
+    if not seconds:
+        return None
+    return round(sum(seconds) / len(seconds) / _WEEK.total_seconds(), 1)
 
 
 # Stream keys shown on the "Stream" stats tab, in display order (legacy is
