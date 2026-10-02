@@ -15,6 +15,7 @@ from rest_framework.exceptions import NotFound
 from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
 from datatracker.models import Document
 from rpc.models import (
+    AdditionalEmail,
     Assignment,
     BlockingReason,
     Cluster,
@@ -1281,3 +1282,62 @@ class ImportRequestsAuthorApprovalsTests(TestCase):
             [101, 102],
         )
         self.assertFalse(approvals.exclude(approved__isnull=True).exists())
+
+
+@patch("datatracker.models.Document._fetch", return_value=None)
+@patch(
+    "datatracker.models.DatatrackerPerson.email",
+    new=property(lambda person: f"{person.datatracker_id}@example.org"),
+)
+class IntakeMailTemplateTests(TestCase):
+    def setUp(self):
+        patcher = patch(
+            "rpcauth.models.User.datatracker_person",
+            autospec=True,
+            return_value=DatatrackerPersonFactory(),
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.client.force_login(
+            get_user_model().objects.create_user(username="mail-user", name="Mail")
+        )
+        self.rfc_to_be = RfcToBeFactory(
+            rev="03", shepherd=DatatrackerPersonFactory(datatracker_id="200")
+        )
+        RfcAuthorFactory(
+            rfc_to_be=self.rfc_to_be,
+            datatracker_person=DatatrackerPersonFactory(datatracker_id="100"),
+        )
+        AdditionalEmail.objects.create(
+            rfc_to_be=self.rfc_to_be, email="extra@example.org"
+        )
+
+    def intake(self):
+        resp = self.client.get(f"/api/rpc/mailtemplate/{self.rfc_to_be.pk}/")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return next(
+            t["template"] for t in resp.json() if t["template"]["msgtype"] == "intake"
+        )
+
+    def test_subject_names_the_draft_with_its_revision(self, *_):
+        self.assertEqual(
+            self.intake()["subject"],
+            f"Document intake questions about {self.rfc_to_be.draft.name}-03",
+        )
+
+    def test_goes_to_authors_and_additional_emails(self, *_):
+        self.assertEqual(self.intake()["to"], "100@example.org,extra@example.org")
+
+    def test_copies_the_archive_rfc_editor_and_shepherd(self, *_):
+        cc = self.intake()["cc"]
+        for address in (
+            "auth48archive@rfc-editor.org",
+            "rfc-editor@rfc-editor.org",
+            "200@example.org",
+        ):
+            self.assertIn(address, cc)
+
+    def test_body_is_the_intake_text_unescaped(self, *_):
+        body = self.intake()["body"]
+        self.assertTrue(body.startswith("Author(s),"))
+        self.assertIn("<tt/>", body)

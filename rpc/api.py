@@ -2877,6 +2877,9 @@ class RfcMailTemplatesList(views.APIView):
             raise NotFound("Unknown rfctobe_id") from None
 
         draft_name = rfc_to_be.name
+        draft_name_with_rev = (
+            f"{draft_name}-{rfc_to_be.rev}" if rfc_to_be.rev else draft_name
+        )
         rfc_number = rfc_to_be.rfc_number or "XXXX"
 
         # Pick the final review template and subject based on the draft's labels.
@@ -2910,6 +2913,7 @@ class RfcMailTemplatesList(views.APIView):
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
             ("enqueuing", "rpc/mail/enqueuing.txt", "Enqueuing Notice"),
+            ("intake", "rpc/mail/intake.txt", "Intake Form"),
             ("finalreview", finalreview_template, "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
@@ -2980,6 +2984,11 @@ class RfcMailTemplatesList(views.APIView):
                 "subject": f"{draft_name} has been added to the RFC Editor queue",
                 "to": author_emails,
                 "cc": list(interested_parties),
+            },
+            "intake": {
+                "subject": f"Document intake questions about {draft_name_with_rev}",
+                "to": author_emails,
+                "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
             },
             "finalreview": {
                 "subject": finalreview_subject,

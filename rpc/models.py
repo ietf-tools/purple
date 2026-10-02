@@ -1404,6 +1404,7 @@ class MailMessage(models.Model):
         FINAL_REVIEW = "finalreview", "final review notification"
         PUBLICATION = "publication", "publication announcement"
         ENQUEUING = "enqueuing", "enqueuing notification"
+        INTAKE = "intake", "intake form"
 
     msgtype = models.CharField(choices=MessageType.choices, max_length=64)
     rfctobe = models.ForeignKey(
