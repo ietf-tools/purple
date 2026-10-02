@@ -162,7 +162,7 @@ const columns = [
   columnHelper.accessor('roles', {
     header: 'Roles',
     cell: (data) => {
-      const roles = data.getValue()
+      const roles = data.getValue() ?? []
 
       if (roles.length === 0) {
         return h('i', '(none)')
@@ -181,7 +181,7 @@ const columns = [
   columnHelper.accessor('capabilities', {
     header: 'Capabilities',
     cell: (data) => {
-      const capabilities = data.getValue()
+      const capabilities = data.getValue() ?? []
 
       if (capabilities.length === 0) {
         return h('i', '(none)')

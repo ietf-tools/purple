@@ -1812,8 +1812,8 @@ class RpcPersonSerializer(serializers.ModelSerializer):
     """
 
     name = serializers.SerializerMethodField()
-    capabilities = CapabilitySerializer(source="capable_of", many=True)
-    roles = RpcRoleSerializer(source="can_hold_role", many=True)
+    capabilities = CapabilitySerializer(source="capable_of", many=True, read_only=True)
+    roles = RpcRoleSerializer(source="can_hold_role", many=True, read_only=True)
     email = serializers.EmailField(source="datatracker_person.email", read_only=True)
     picture = serializers.URLField(source="datatracker_person.picture", read_only=True)
     datatracker_url = serializers.URLField(
@@ -1846,15 +1846,6 @@ class RpcPersonSerializer(serializers.ModelSerializer):
             rpc_person.datatracker_person.datatracker_id, None
         )
         return cached_name or rpc_person.datatracker_person.plain_name
-
-
-class RpcPersonActiveSerializer(serializers.ModelSerializer):
-    """Mark a team member active or inactive; nothing else is changed here."""
-
-    class Meta:
-        model = RpcPerson
-        fields = ["id", "is_active"]
-        read_only_fields = ["id"]
 
 
 class CreateRpcPersonSerializer(serializers.ModelSerializer):

@@ -280,7 +280,7 @@ async function toggleActive() {
   try {
     await api.rpcPersonPartialUpdate({
       id: personId.value,
-      patchedRpcPersonActiveRequest: { isActive }
+      patchedRpcPersonRequest: { isActive }
     })
   } catch (error) {
     snackbarForErrors({ snackbar, error, defaultTitle: 'Failed to change status' })
