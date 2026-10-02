@@ -19,6 +19,23 @@ from .metadata import (
 
 
 class MetadataTests(TestCase):
+    def test_initials_get_the_trailing_period_xml2rfc_adds(self):
+        for initials, expected in (
+            ("S", "S. Pallagatti"),
+            ("S.", "S. Pallagatti"),
+            (" S ", "S. Pallagatti"),
+            ("S J", "S J. Pallagatti"),  # xml2rfc adds only the final period
+            ("Ä", "Ä. Pallagatti"),
+            ("Д", "Д Pallagatti"),  # not Latin: xml2rfc leaves it alone
+        ):
+            with self.subTest(initials=initials):
+                self.assertEqual(
+                    Metadata.extract_name_from_author_dict(
+                        {"initials": initials, "surname": "Pallagatti"}
+                    ),
+                    expected,
+                )
+
     def test_extract_name_from_author_dict(self):
         self.assertEqual(
             Metadata.extract_name_from_author_dict({}), "", "empty input dict"

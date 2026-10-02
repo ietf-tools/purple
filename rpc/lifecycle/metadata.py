@@ -4,6 +4,7 @@
 import datetime
 import logging
 import re
+import unicodedata
 import xml.etree.ElementTree as ET
 from functools import cached_property
 from itertools import zip_longest
@@ -30,6 +31,12 @@ class RfcxmlRevError(ValueError):
 
 class DatatrackerInconsistency(Exception):
     """A linked draft is missing from the datatracker or has no revision there."""
+
+
+def _is_latin(s: str) -> bool:
+    """Whether every letter in s is Latin script, as xml2rfc's is_script(s, "Latin")
+    decides it: punctuation, spaces and combining marks don't count either way."""
+    return all(unicodedata.name(ch, "").startswith("LATIN") for ch in s if ch.isalpha())
 
 
 def _already_parenthesized(s: str) -> bool:
@@ -377,11 +384,12 @@ class Metadata:
         It's likely this will eventually change to capture non-Latin names, but we're
         not doing that yet.
         """
-        xml_name = (
-            author_dict.get("initials", "").rstrip()
-            + " "
-            + author_dict.get("surname", "").lstrip()
-        ).strip()
+        initials = author_dict.get("initials", "").strip()
+        # xml2rfc renders Latin initials with a trailing period whether or not
+        # the source has one, so "S" is published as "S.": compare that.
+        if initials and not initials.endswith(".") and _is_latin(initials):
+            initials += "."
+        xml_name = (initials + " " + author_dict.get("surname", "").lstrip()).strip()
         if not xml_name:
             xml_fullname = (
                 author_dict.get("asciiFullname", "") or author_dict.get("fullname", "")
