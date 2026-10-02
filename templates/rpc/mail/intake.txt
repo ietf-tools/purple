@@ -3,8 +3,10 @@ Template for the intake form: questions sent to the authors once their
 document is in the RFC Editor queue. The subject and recipients are set in
 rpc.api.RfcMailTemplatesList.
 
-The items under "To be sent as needed" apply only to some documents; the
-editor removes the ones that don't apply before sending.
+The items under "To be sent as needed" apply only to some documents. The
+cluster and errata items are filled in, or left out, from the document's
+cluster and the RFCs it obsoletes or updates; the editor removes any of the
+others that don't apply before sending.
 {% endcomment %}Author(s),
 
 Congratulations, your document has been successfully added to the RFC Editor queue!
@@ -101,8 +103,8 @@ X) Because there are some author comments present in the XML, please confirm
 that there are no outstanding updates related to these comments.
 
 
-X) This document is part of Cluster XXX:
-https://queue.rfc-editor.org/clusters/XXX/
+{% if cluster %}X) This document is part of Cluster {{ cluster.number }}:
+https://queue.rfc-editor.org/clusters/{{ cluster.number }}/
 
 Please provide the order in which the cluster should be read.
 We will assign RFC numbers accordingly.
@@ -119,16 +121,14 @@ https://authors.ietf.org/en/rfc-publication-process#clusters
 https://queue.rfc-editor.org/clusters/
 
 
-x) Because this document [updates/obsoletes] RFC[s] XXXX [and YYYY], please review
+{% endif %}{% if errata_rfcs %}x) Because this document {{ errata_relation }}, please review
 the reported errata and confirm whether they have been addressed in this
 document or are not relevant:
+{% for number in errata_rfcs %}
+* RFC {{ number }} (https://www.rfc-editor.org/errata/rfc{{ number }})
+{% endfor %}
 
-* RFC XXXX (https://www.rfc-editor.org/errata/rfcXXXX)
-
-* RFC YYYY (https://www.rfc-editor.org/errata/rfcYYYY)
-
-
-x)  Would you like to participate in the RPC Pilot Test for editing in kramdown-rfc?
+{% endif %}x)  Would you like to participate in the RPC Pilot Test for editing in kramdown-rfc?
 If so, please let us know and provide a self-contained kramdown-rfc file. For more
 information about this experiment, see:
 https://www.rfc-editor.org/rpc/wiki/doku.php?id=pilot_test_kramdown_rfc.

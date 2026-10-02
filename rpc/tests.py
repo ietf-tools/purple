@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import rpcapi_client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -31,7 +31,11 @@ from rpc.models import (
     RpcRole,
 )
 
-from .api import apply_submission_cluster_membership, resolve_rfctobe
+from .api import (
+    _rfc_list,
+    apply_submission_cluster_membership,
+    resolve_rfctobe,
+)
 from .factories import (
     AssignmentFactory,
     ClusterFactory,
@@ -1341,3 +1345,49 @@ class IntakeMailTemplateTests(TestCase):
         body = self.intake()["body"]
         self.assertTrue(body.startswith("Author(s),"))
         self.assertIn("<tt/>", body)
+
+    def _relate(self, relationship, rfc_number):
+        RpcRelatedDocument.objects.create(
+            relationship_id=relationship,
+            source=self.rfc_to_be,
+            target_rfctobe=RfcToBeFactory(rfc_number=rfc_number),
+        )
+
+    def test_cluster_section_names_the_cluster(self, *_):
+        cluster = ClusterFactory(number=42)
+        ClusterMember.objects.create(cluster=cluster, doc=self.rfc_to_be.draft)
+        self.assertIn(
+            "This document is part of Cluster 42:\n"
+            "https://queue.rfc-editor.org/clusters/42/\n",
+            self.intake()["body"],
+        )
+
+    def test_errata_section_names_the_obsoleted_and_updated_rfcs(self, *_):
+        self._relate("obs", 4646)
+        self._relate("updates", 4111)
+        self._relate("updates", 4103)
+        self.assertIn(
+            "Because this document obsoletes RFC 4646 and updates RFCs 4103 and "
+            "4111, please review\n"
+            "the reported errata and confirm whether they have been addressed in this\n"
+            "document or are not relevant:\n\n"
+            "* RFC 4103 (https://www.rfc-editor.org/errata/rfc4103)\n\n"
+            "* RFC 4111 (https://www.rfc-editor.org/errata/rfc4111)\n\n"
+            "* RFC 4646 (https://www.rfc-editor.org/errata/rfc4646)\n\n\n"
+            "x)  Would you like",
+            self.intake()["body"],
+        )
+
+    def test_sections_that_do_not_apply_are_left_out(self, *_):
+        body = self.intake()["body"]
+        self.assertNotIn("This document is part of Cluster", body)
+        self.assertNotIn("reported errata", body)
+        # The item before them is followed by the usual two blank lines.
+        self.assertIn("related to these comments.\n\n\nx)  Would you like", body)
+
+
+class RfcListTests(SimpleTestCase):
+    def test_wording(self):
+        self.assertEqual(_rfc_list([1]), "RFC 1")
+        self.assertEqual(_rfc_list([1, 2]), "RFCs 1 and 2")
+        self.assertEqual(_rfc_list([1, 2, 3]), "RFCs 1, 2, and 3")

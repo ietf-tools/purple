@@ -2859,6 +2859,16 @@ class DocumentMail(views.APIView):
         )
 
 
+def _rfc_list(numbers) -> str:
+    """RFC numbers as prose: "RFC 1", "RFCs 1 and 2", "RFCs 1, 2, and 3"."""
+    names = [str(n) for n in numbers]
+    if len(names) == 1:
+        return f"RFC {names[0]}"
+    if len(names) == 2:
+        return f"RFCs {names[0]} and {names[1]}"
+    return f"RFCs {', '.join(names[:-1])}, and {names[-1]}"
+
+
 class RfcMailTemplatesList(views.APIView):
     @extend_schema(
         responses=MailTemplateSerializer(many=True),
@@ -3006,6 +3016,27 @@ class RfcMailTemplatesList(views.APIView):
         for override in template_overrides.values():
             override["to"] = list(dict.fromkeys([*override["to"], *additional_emails]))
 
+        # For the intake form's errata question: the published RFCs this
+        # document obsoletes or updates.
+        obsoleted_rfcs = sorted(
+            rfc_to_be.obsoletes.exclude(rfc_number=None).values_list(
+                "rfc_number", flat=True
+            )
+        )
+        updated_rfcs = sorted(
+            rfc_to_be.updates.exclude(rfc_number=None).values_list(
+                "rfc_number", flat=True
+            )
+        )
+        errata_relation = " and ".join(
+            f"{verb} {_rfc_list(numbers)}"
+            for verb, numbers in (
+                ("obsoletes", obsoleted_rfcs),
+                ("updates", updated_rfcs),
+            )
+            if numbers
+        )
+
         serializer = MailTemplateSerializer(
             [
                 {
@@ -3022,6 +3053,9 @@ class RfcMailTemplatesList(views.APIView):
                                 "group_name": datatracker_group_name(rfc_to_be.group)
                                 if rfc_to_be.group
                                 else None,
+                                "cluster": rfc_to_be.cluster,
+                                "errata_relation": errata_relation,
+                                "errata_rfcs": sorted({*obsoleted_rfcs, *updated_rfcs}),
                             },
                         ),
                     },
