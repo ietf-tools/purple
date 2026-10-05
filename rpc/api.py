@@ -41,6 +41,7 @@ from rest_framework.exceptions import (
 )
 from rest_framework.generics import ListAPIView
 from rest_framework.pagination import LimitOffsetPagination
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rules.contrib.rest_framework import AutoPermissionViewSetMixin
 
@@ -101,6 +102,7 @@ from .models import (
     UnusableRfcNumber,
 )
 from .pagination import DefaultLimitOffsetPagination
+from .permissions import IsManager, is_manager
 from .rfcindex import mark_rfcindex_as_dirty
 from .serializers import (
     NO_HEAD_SHA_SENTINEL,
@@ -282,13 +284,6 @@ def profile(request):
     if not user.is_authenticated:
         return JsonResponse({"authenticated": False})
     rpcperson = user.rpcperson()
-    # grant manager permissions to managers and superusers
-    if user.is_superuser:
-        is_manager = True
-    elif rpcperson is None:
-        is_manager = False
-    else:
-        is_manager = rpcperson.can_hold_role.filter(slug="manager").exists()
 
     return JsonResponse(
         {
@@ -297,7 +292,7 @@ def profile(request):
             "name": user.name,
             "avatar": user.avatar,
             "rpcPersonId": rpcperson.id if rpcperson is not None else None,
-            "isManager": is_manager,
+            "isManager": is_manager(user),
         }
     )
 
@@ -345,13 +340,23 @@ def extend_schema_with_draft_name(actions=None):
     )
 
 
-class RpcPersonViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
+class RpcPersonViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     serializer_class = RpcPersonSerializer
     queryset = RpcPerson.objects.select_related("datatracker_person").prefetch_related(
         "capable_of", "can_hold_role"
     )
     filter_backends = (filters.DjangoFilterBackend,)
     filterset_fields = ["is_active"]
+    # PATCH only: of a person, only is_active and hours_per_week can be written,
+    # so there is no whole person to PUT.
+    http_method_names = ["get", "post", "patch", "head", "options"]
+
+    def get_permissions(self):
+        if self.action in ("create", "partial_update"):
+            return [IsAuthenticated(), IsManager()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.action == "create":
@@ -360,18 +365,6 @@ class RpcPersonViewSet(mixins.CreateModelMixin, viewsets.ReadOnlyModelViewSet):
 
     @with_rpcapi
     def perform_create(self, serializer, rpcapi: rpcapi_client.PurpleApi):
-        user = self.request.user
-        if user.is_superuser:
-            is_manager = True
-        else:
-            rpcperson = user.rpcperson()
-            is_manager = (
-                rpcperson is not None
-                and rpcperson.can_hold_role.filter(slug="manager").exists()
-            )
-        if not is_manager:
-            raise PermissionDenied("Only managers can add team members.")
-
         email = serializer.validated_data["datatracker_email"]
         try:
             with datatracker_api():

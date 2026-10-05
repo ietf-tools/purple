@@ -115,6 +115,13 @@
                 <template v-if="person.isActive">active</template>
                 <template v-else>inactive</template>
               </span>
+              <button
+                v-if="userStore.isManager"
+                type="button"
+                class="ml-2 rounded-md bg-white dark:bg-neutral-800 px-2 py-1 text-xs font-semibold text-gray-900 dark:text-neutral-200 shadow-sm ring-1 ring-inset ring-gray-300 dark:ring-neutral-600 hover:bg-gray-50 dark:hover:bg-neutral-700"
+                @click="toggleActive">
+                {{ person.isActive ? 'Mark inactive' : 'Mark active' }}
+              </button>
             </dd>
           </div>
           <div class="px-6 py-4">
@@ -249,12 +256,43 @@ console.log({ personId: personId.value })
 const {
   data: person,
   status: personStatus,
-  error: personError
+  error: personError,
+  refresh: refreshPerson
 } = await useAsyncData(
   `person-${route.params.id}`,
   () => api.rpcPersonRetrieve({ id: personId.value }),
   { server: false, lazy: true }
 )
+
+const userStore = useUserStore()
+const snackbar = useSnackbar()
+
+async function toggleActive() {
+  if (!person.value) return
+  const isActive = !person.value.isActive
+  const name = person.value.name
+  if (
+    !isActive &&
+    !confirm(`Mark ${name} inactive? They will no longer be offered for new assignments.`)
+  ) {
+    return
+  }
+  try {
+    await api.rpcPersonPartialUpdate({
+      id: personId.value,
+      patchedRpcPersonRequest: { isActive }
+    })
+  } catch (error) {
+    snackbarForErrors({ snackbar, error, defaultTitle: 'Failed to change status' })
+    return
+  }
+  snackbar.add({
+    type: 'success',
+    title: 'Success',
+    text: `${name} is now ${isActive ? 'active' : 'inactive'}`
+  })
+  await refreshPerson()
+}
 
 // Fetch person assignments
 const {

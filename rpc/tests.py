@@ -1049,6 +1049,124 @@ class CreateRpcPersonTests(TestCase):
         )
 
 
+class RpcPersonActiveTests(TestCase):
+    """PATCH /api/rpc/rpc_person/<id>/ edits a team member (is_active, hours)."""
+
+    def setUp(self):
+        self.person = RpcPersonFactory(hours_per_week=40)
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        patcher.start().side_effect = lambda user: self.people.get(user.pk)
+        self.addCleanup(patcher.stop)
+        # The PATCH response is a whole person, whose name and email come from
+        # the datatracker; don't call it.
+        fetch_patcher = patch(
+            "datatracker.models.DatatrackerPerson._fetch", return_value="Test Person"
+        )
+        fetch_patcher.start()
+        self.addCleanup(fetch_patcher.stop)
+
+    def _login(self, rpcperson):
+        user = get_user_model().objects.create_user(username=f"user-{rpcperson.pk}")
+        self.people[user.pk] = rpcperson
+        self.client.force_login(user)
+
+    def _login_manager(self):
+        manager = RpcPersonFactory()
+        manager.can_hold_role.add(RpcRoleFactory(slug="manager"))
+        self._login(manager)
+
+    def _patch(self, data):
+        return self.client.patch(
+            f"/api/rpc/rpc_person/{self.person.pk}/",
+            data=json.dumps(data),
+            content_type="application/json",
+        )
+
+    def test_manager_marks_inactive_and_active_again(self):
+        self._login_manager()
+        resp = self._patch({"is_active": False})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.person.refresh_from_db()
+        self.assertFalse(self.person.is_active)
+        self._patch({"is_active": True})
+        self.person.refresh_from_db()
+        self.assertTrue(self.person.is_active)
+
+    def test_hours_per_week_can_be_changed(self):
+        self._login_manager()
+        resp = self._patch({"hours_per_week": 20})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertEqual(resp.json()["hours_per_week"], 20)
+        self.person.refresh_from_db()
+        self.assertEqual(self.person.hours_per_week, 20)
+
+    def test_nested_and_derived_fields_are_read_only(self):
+        self._login_manager()
+        resp = self._patch({"roles": [{"slug": "manager"}], "name": "Someone else"})
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.assertFalse(self.person.can_hold_role.exists())
+
+    def test_non_manager_is_refused(self):
+        self._login(RpcPersonFactory())
+        resp = self._patch({"is_active": False})
+        self.assertEqual(resp.status_code, 403, resp.content)
+        self.person.refresh_from_db()
+        self.assertTrue(self.person.is_active)
+
+    def test_put_is_not_allowed(self):
+        self._login_manager()
+        resp = self.client.put(
+            f"/api/rpc/rpc_person/{self.person.pk}/",
+            data=json.dumps({"is_active": False}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 405, resp.content)
+
+    def test_non_manager_cannot_add_a_team_member(self):
+        self._login(RpcPersonFactory())
+        resp = self.client.post(
+            "/api/rpc/rpc_person/",
+            data=json.dumps({"datatracker_email": "x@example.org", "roles": []}),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 403, resp.content)
+        self.assertEqual(resp.json()["detail"], "Only managers can do this.")
+
+    def test_signed_out_is_refused(self):
+        resp = self._patch({"is_active": False})
+        self.assertEqual(resp.status_code, 403, resp.content)
+
+
+class ProfileIsManagerTests(TestCase):
+    """The profile's isManager, which the UI uses to show manager-only actions."""
+
+    def setUp(self):
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        patcher.start().side_effect = lambda user: self.people.get(user.pk)
+        self.addCleanup(patcher.stop)
+
+    def _is_manager(self, user, rpcperson=None):
+        self.people[user.pk] = rpcperson
+        self.client.force_login(user)
+        return self.client.get("/api/rpc/profile/").json()["isManager"]
+
+    def test_manager_role(self):
+        manager = RpcPersonFactory()
+        manager.can_hold_role.add(RpcRoleFactory(slug="manager"))
+        user = get_user_model().objects.create_user(username="manager")
+        self.assertTrue(self._is_manager(user, manager))
+
+    def test_rpc_person_without_the_role(self):
+        user = get_user_model().objects.create_user(username="editor")
+        self.assertFalse(self._is_manager(user, RpcPersonFactory()))
+
+    def test_superuser_without_rpc_person(self):
+        user = get_user_model().objects.create_superuser(username="admin")
+        self.assertTrue(self._is_manager(user))
+
+
 class RpcPersonCompletedAssignmentsTests(TestCase):
     def setUp(self):
         user = get_user_model().objects.create_user(

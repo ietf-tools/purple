@@ -2962,6 +2962,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/RpcPerson"
           description: ""
+    patch:
+      operationId: rpc_person_partial_update
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          description: A unique integer value identifying this rpc person.
+          required: true
+      tags:
+        - purple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PatchedRpcPersonRequest"
+      security:
+        - cookieAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RpcPerson"
+          description: ""
   /api/rpc/rpc_roles/:
     get:
       operationId: rpc_roles_list
@@ -4024,6 +4049,22 @@ components:
           maxLength: 32
         name:
           type: string
+          maxLength: 255
+        desc:
+          type: string
+      required:
+        - name
+        - slug
+    CapabilityRequest:
+      type: object
+      properties:
+        slug:
+          type: string
+          minLength: 1
+          maxLength: 32
+        name:
+          type: string
+          minLength: 1
           maxLength: 255
         desc:
           type: string
@@ -5647,6 +5688,21 @@ components:
           type: string
           description: Revision of draft being worked on.
           maxLength: 16
+    PatchedRpcPersonRequest:
+      type: object
+      description: |-
+        Serialize an RpcPerson
+
+        To avoid datatracker API calls, use the `name_map` parameter to
+        pass a dict mapping datatracker Person ID to name (designed for use
+        with the `get_persons()` API endpoint).
+      properties:
+        hours_per_week:
+          type: integer
+          maximum: 32767
+          minimum: 0
+        is_active:
+          type: boolean
     PatchedRpcRelatedDocumentRequest:
       type: object
       description: Serializer for related document for an RfcToBe
@@ -6701,10 +6757,12 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Capability"
+          readOnly: true
         roles:
           type: array
           items:
             $ref: "#/components/schemas/RpcRole"
+          readOnly: true
         is_active:
           type: boolean
         email:
@@ -6719,9 +6777,6 @@ components:
           type: string
           format: uri
           readOnly: true
-      required:
-        - capabilities
-        - roles
     RpcRelatedDocument:
       type: object
       description: Serializer for related document for an RfcToBe
