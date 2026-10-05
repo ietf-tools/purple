@@ -5168,12 +5168,14 @@ components:
         - finalreview
         - publication
         - enqueuing
+        - intake
       type: string
       description: |-
         * `blank` - freeform
         * `finalreview` - final review notification
         * `publication` - publication announcement
         * `enqueuing` - enqueuing notification
+        * `intake` - intake form
     Name:
       type: object
       description: Serialize any Name subclass

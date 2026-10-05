@@ -1,0 +1,146 @@
+{% autoescape off %}{% comment %}
+Template for the intake form: questions sent to the authors once their
+document is in the RFC Editor queue. The subject and recipients are set in
+rpc.api.RfcMailTemplatesList.
+
+The items under "To be sent as needed" apply only to some documents. The
+cluster and errata items are filled in, or left out, from the document's
+cluster and the RFCs it obsoletes or updates; the editor removes any of the
+others that don't apply before sending.
+{% endcomment %}Author(s),
+
+Congratulations, your document has been successfully added to the RFC Editor queue!
+The team at the RFC Production Center (RPC) is looking forward to working with you.
+
+To help reduce processing time and improve editing accuracy, please confer with
+your coauthors and respond to the questions below.  Only one author needs to reply
+to this message.
+
+Notes:
+
+* If you need/want to make updates to your document, we encourage you to make those
+changes and resubmit to the Datatracker.
+
+* If you feel no updates to the document are necessary, please reply with any
+applicable rationale/comments.
+
+* The RPC team will not work on your document until we receive a
+reply.  After we hear from you, your document will start moving through the queue.
+
+Please feel free to contact us with any questions you may have at
+rfc-editor@rfc-editor.org.
+
+Thank you!
+The RPC Team
+
+--
+
+1) Please review and confirm that the Authors' Addresses, Contributors, and
+Acknowledgments sections are current.
+
+
+2) Please share any style information that could help us with editing your
+document. For example:
+
+* Is your document's format or its terminology based on another document,
+WG style guide, etc.?
+
+* Is there a general pattern of term capitalization or formatting that the
+editors can follow (e.g., "<tt/> should be used for token names.")?
+
+
+3) Please carefully review the reference entries in the References section
+to confirm that their information is current and that any URLs resolve to
+the correct source.  Unless otherwise specified, the references will be
+updated per standard RFC style, as described at:
+https://authors.ietf.org/en/reference-style-guidance.
+
+
+4) Is there any text that requires special handling? For example,
+are there any contentious sections that should be edited more carefully?
+
+---
+
+To be sent as needed:
+
+X) This document uses one (or more) of the following text styles:
+
+* fixed width font (<tt/> or `)
+* italics (<em/> or *)
+* bold (<strong/> or **)
+
+Are these text styles used consistently? If not, please provide an
+updated xml/md file to the RPC and note the intended style usage.
+
+
+X) Since this document appears to contain a formal language
+(see https://authors.ietf.org/formal-languages) or code / code
+snippets that will be marked with <sourcecode> in this document's
+XML file, please confirm that:
+
+* it validates
+
+* this document matches the current guidance for the type.  Some
+formal languages (e.g., YANG) require certain reference entries
+and/or boilerplate in the Security Considerations section.
+For YANG, please ensure the document aligns with the guidance in RFC 9907.
+
+* the type is set. Otherwise, let us know what type should be used
+so that we can update accordingly.  (See
+https://www.rfc-editor.org/rpc/wiki/doku.php?id=sourcecode-types.)
+
+
+X) Since this document contains SVG and the RPC cannot update SVG
+diagrams, please ensure that:
+
+* the SVG figures match the ASCII art used in the text output as
+closely as possible, and
+
+* the figures fit on the pages of the PDF output.
+
+
+X) Because there are some author comments present in the XML, please confirm
+that there are no outstanding updates related to these comments.
+
+
+{% if cluster %}X) This document is part of Cluster {{ cluster.number }}:
+https://queue.rfc-editor.org/clusters/{{ cluster.number }}/
+
+Please provide the order in which the cluster should be read.
+We will assign RFC numbers accordingly.
+If the order is not important, please let us know.
+
+* Note any text that is repeated within the cluster and should be edited
+in a similar manner (e.g., parallel introductory text, text that is
+essentially identical but applies to different technologies, for instance NETCONF/RESTCONF).
+
+* For more information about clusters, see:
+https://authors.ietf.org/en/rfc-publication-process#clusters
+
+* For a list of all current clusters, see:
+https://queue.rfc-editor.org/clusters/
+
+
+{% endif %}{% if errata_rfcs %}x) Because this document {{ errata_relation }}, please review
+the reported errata and confirm whether they have been addressed in this
+document or are not relevant:
+{% for number in errata_rfcs %}
+* RFC {{ number }} (https://www.rfc-editor.org/errata/rfc{{ number }})
+{% endfor %}
+
+{% endif %}x)  Would you like to participate in the RPC Pilot Test for editing in kramdown-rfc?
+If so, please let us know and provide a self-contained kramdown-rfc file. For more
+information about this experiment, see:
+https://www.rfc-editor.org/rpc/wiki/doku.php?id=pilot_test_kramdown_rfc.
+
+
+X) Would you like to participate in the RPC Pilot Test for completing Final Review
+in GitHub? If so, please let us know and provide all author, AD, and/or document
+shepherd GitHub usernames. For more information about this experiment, see:
+https://www.rfc-editor.org/rpc/wiki/doku.php?id=rpc-github-phase-0-pilot-test.
+
+---
+
+X) Is there anything else that the RPC should be aware of while editing this
+document?
+{% endautoescape %}

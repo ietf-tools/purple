@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import rpcapi_client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -15,6 +15,7 @@ from rest_framework.exceptions import NotFound
 from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
 from datatracker.models import Document
 from rpc.models import (
+    AdditionalEmail,
     Assignment,
     BlockingReason,
     Cluster,
@@ -30,7 +31,11 @@ from rpc.models import (
     RpcRole,
 )
 
-from .api import apply_submission_cluster_membership, resolve_rfctobe
+from .api import (
+    _rfc_list,
+    apply_submission_cluster_membership,
+    resolve_rfctobe,
+)
 from .factories import (
     AssignmentFactory,
     ClusterFactory,
@@ -1281,3 +1286,108 @@ class ImportRequestsAuthorApprovalsTests(TestCase):
             [101, 102],
         )
         self.assertFalse(approvals.exclude(approved__isnull=True).exists())
+
+
+@patch("datatracker.models.Document._fetch", return_value=None)
+@patch(
+    "datatracker.models.DatatrackerPerson.email",
+    new=property(lambda person: f"{person.datatracker_id}@example.org"),
+)
+class IntakeMailTemplateTests(TestCase):
+    def setUp(self):
+        patcher = patch(
+            "rpcauth.models.User.datatracker_person",
+            autospec=True,
+            return_value=DatatrackerPersonFactory(),
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.client.force_login(
+            get_user_model().objects.create_user(username="mail-user", name="Mail")
+        )
+        self.rfc_to_be = RfcToBeFactory(
+            rev="03", shepherd=DatatrackerPersonFactory(datatracker_id="200")
+        )
+        RfcAuthorFactory(
+            rfc_to_be=self.rfc_to_be,
+            datatracker_person=DatatrackerPersonFactory(datatracker_id="100"),
+        )
+        AdditionalEmail.objects.create(
+            rfc_to_be=self.rfc_to_be, email="extra@example.org"
+        )
+
+    def intake(self):
+        resp = self.client.get(f"/api/rpc/mailtemplate/{self.rfc_to_be.pk}/")
+        self.assertEqual(resp.status_code, 200, resp.content)
+        return next(
+            t["template"] for t in resp.json() if t["template"]["msgtype"] == "intake"
+        )
+
+    def test_subject_names_the_draft_with_its_revision(self, *_):
+        self.assertEqual(
+            self.intake()["subject"],
+            f"Document intake questions about {self.rfc_to_be.draft.name}-03",
+        )
+
+    def test_goes_to_authors_and_additional_emails(self, *_):
+        self.assertEqual(self.intake()["to"], "100@example.org,extra@example.org")
+
+    def test_copies_the_archive_rfc_editor_and_shepherd(self, *_):
+        cc = self.intake()["cc"]
+        for address in (
+            "auth48archive@rfc-editor.org",
+            "rfc-editor@rfc-editor.org",
+            "200@example.org",
+        ):
+            self.assertIn(address, cc)
+
+    def test_body_is_the_intake_text_unescaped(self, *_):
+        body = self.intake()["body"]
+        self.assertTrue(body.startswith("Author(s),"))
+        self.assertIn("<tt/>", body)
+
+    def _relate(self, relationship, rfc_number):
+        RpcRelatedDocument.objects.create(
+            relationship_id=relationship,
+            source=self.rfc_to_be,
+            target_rfctobe=RfcToBeFactory(rfc_number=rfc_number),
+        )
+
+    def test_cluster_section_names_the_cluster(self, *_):
+        cluster = ClusterFactory(number=42)
+        ClusterMember.objects.create(cluster=cluster, doc=self.rfc_to_be.draft)
+        self.assertIn(
+            "This document is part of Cluster 42:\n"
+            "https://queue.rfc-editor.org/clusters/42/\n",
+            self.intake()["body"],
+        )
+
+    def test_errata_section_names_the_obsoleted_and_updated_rfcs(self, *_):
+        self._relate("obs", 4646)
+        self._relate("updates", 4111)
+        self._relate("updates", 4103)
+        self.assertIn(
+            "Because this document obsoletes RFC 4646 and updates RFCs 4103 and "
+            "4111, please review\n"
+            "the reported errata and confirm whether they have been addressed in this\n"
+            "document or are not relevant:\n\n"
+            "* RFC 4103 (https://www.rfc-editor.org/errata/rfc4103)\n\n"
+            "* RFC 4111 (https://www.rfc-editor.org/errata/rfc4111)\n\n"
+            "* RFC 4646 (https://www.rfc-editor.org/errata/rfc4646)\n\n\n"
+            "x)  Would you like",
+            self.intake()["body"],
+        )
+
+    def test_sections_that_do_not_apply_are_left_out(self, *_):
+        body = self.intake()["body"]
+        self.assertNotIn("This document is part of Cluster", body)
+        self.assertNotIn("reported errata", body)
+        # The item before them is followed by the usual two blank lines.
+        self.assertIn("related to these comments.\n\n\nx)  Would you like", body)
+
+
+class RfcListTests(SimpleTestCase):
+    def test_wording(self):
+        self.assertEqual(_rfc_list([1]), "RFC 1")
+        self.assertEqual(_rfc_list([1, 2]), "RFCs 1 and 2")
+        self.assertEqual(_rfc_list([1, 2, 3]), "RFCs 1, 2, and 3")

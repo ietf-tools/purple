@@ -2859,6 +2859,16 @@ class DocumentMail(views.APIView):
         )
 
 
+def _rfc_list(numbers) -> str:
+    """RFC numbers as prose: "RFC 1", "RFCs 1 and 2", "RFCs 1, 2, and 3"."""
+    names = [str(n) for n in numbers]
+    if len(names) == 1:
+        return f"RFC {names[0]}"
+    if len(names) == 2:
+        return f"RFCs {names[0]} and {names[1]}"
+    return f"RFCs {', '.join(names[:-1])}, and {names[-1]}"
+
+
 class RfcMailTemplatesList(views.APIView):
     @extend_schema(
         responses=MailTemplateSerializer(many=True),
@@ -2877,6 +2887,9 @@ class RfcMailTemplatesList(views.APIView):
             raise NotFound("Unknown rfctobe_id") from None
 
         draft_name = rfc_to_be.name
+        draft_name_with_rev = (
+            f"{draft_name}-{rfc_to_be.rev}" if rfc_to_be.rev else draft_name
+        )
         rfc_number = rfc_to_be.rfc_number or "XXXX"
 
         # Pick the final review template and subject based on the draft's labels.
@@ -2910,6 +2923,7 @@ class RfcMailTemplatesList(views.APIView):
         message_templates = (
             ("blank", "rpc/mail/blank.txt", "Blank Message"),
             ("enqueuing", "rpc/mail/enqueuing.txt", "Enqueuing Notice"),
+            ("intake", "rpc/mail/intake.txt", "Intake Form"),
             ("finalreview", finalreview_template, "Final Review"),
             ("publication", "rpc/mail/publication.txt", "Announce Publication"),
         )
@@ -2981,6 +2995,11 @@ class RfcMailTemplatesList(views.APIView):
                 "to": author_emails,
                 "cc": list(interested_parties),
             },
+            "intake": {
+                "subject": f"Document intake questions about {draft_name_with_rev}",
+                "to": author_emails,
+                "cc": ["auth48archive@rfc-editor.org"] + list(interested_parties),
+            },
             "finalreview": {
                 "subject": finalreview_subject,
                 "to": author_emails,
@@ -2996,6 +3015,27 @@ class RfcMailTemplatesList(views.APIView):
         # Every template also sends to the document's additional emails.
         for override in template_overrides.values():
             override["to"] = list(dict.fromkeys([*override["to"], *additional_emails]))
+
+        # For the intake form's errata question: the published RFCs this
+        # document obsoletes or updates.
+        obsoleted_rfcs = sorted(
+            rfc_to_be.obsoletes.exclude(rfc_number=None).values_list(
+                "rfc_number", flat=True
+            )
+        )
+        updated_rfcs = sorted(
+            rfc_to_be.updates.exclude(rfc_number=None).values_list(
+                "rfc_number", flat=True
+            )
+        )
+        errata_relation = " and ".join(
+            f"{verb} {_rfc_list(numbers)}"
+            for verb, numbers in (
+                ("obsoletes", obsoleted_rfcs),
+                ("updates", updated_rfcs),
+            )
+            if numbers
+        )
 
         serializer = MailTemplateSerializer(
             [
@@ -3013,6 +3053,9 @@ class RfcMailTemplatesList(views.APIView):
                                 "group_name": datatracker_group_name(rfc_to_be.group)
                                 if rfc_to_be.group
                                 else None,
+                                "cluster": rfc_to_be.cluster,
+                                "errata_relation": errata_relation,
+                                "errata_rfcs": sorted({*obsoleted_rfcs, *updated_rfcs}),
                             },
                         ),
                     },
