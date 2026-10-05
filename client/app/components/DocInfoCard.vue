@@ -568,6 +568,15 @@
                   {{ rfcToBe.repository }}
                 </a>
                 <span v-else>(none)</span>
+                <BaseButton
+                  v-if="!rfcToBe.repository && !props.isReadOnly"
+                  class="ml-2"
+                  size="xs"
+                  btn-type="outline"
+                  :disabled="isCreatingRepo"
+                  @click="createRepo">
+                  Create repo
+                </BaseButton>
               </div>
               <p
                 v-if="rfcToBe.repository"
@@ -655,6 +664,27 @@ import { dispositionValues } from '~/utils/document_relations-utils'
 import { formatBlockingReason } from '~/utils/finalreviews'
 
 const datatrackerLinks = useDatatrackerLinks()
+
+const isCreatingRepo = ref(false)
+
+// Retry for when creating the repo on import failed. The work runs in the
+// background: a success shows as the repository, only a failure is notified.
+async function createRepo() {
+  if (!props.rfcToBe?.name) return
+  isCreatingRepo.value = true
+  try {
+    await api.documentsCreateRepo({ draftName: props.rfcToBe.name })
+    snackbar.add({
+      type: 'success',
+      title: 'Creating repo',
+      text: 'It will show here once created; you will get a notification if it fails.'
+    })
+  } catch (error) {
+    snackbarForErrors({ snackbar, error, defaultTitle: 'Could not start creating the repo' })
+  } finally {
+    isCreatingRepo.value = false
+  }
+}
 
 type PatchPersonField = 'streamManagerId' | 'shepherdId' | 'iesgContactId'
 
