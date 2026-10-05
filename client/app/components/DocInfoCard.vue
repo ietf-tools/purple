@@ -30,7 +30,7 @@
                     <li
                       v-for="br in rfcToBe.blockingReasons.filter((r) => r.resolved == null)"
                       :key="br.reason?.slug">
-                      {{ br.reason?.name ?? '(no name)' }}
+                      {{ formatBlockingReason(br) ?? '(no name)' }}
                     </li>
                   </ul>
                 </template>
@@ -652,6 +652,7 @@ import { draftAssignmentsHref } from '~/utils/url'
 import { classForBtnType } from '~/utils/button'
 import type { SelectOption } from '~/utils/html'
 import { dispositionValues } from '~/utils/document_relations-utils'
+import { formatBlockingReason } from '~/utils/finalreviews'
 
 const datatrackerLinks = useDatatrackerLinks()
 
