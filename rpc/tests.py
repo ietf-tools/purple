@@ -1045,7 +1045,7 @@ class CreateRpcPersonTests(TestCase):
 
 
 class RpcPersonActiveTests(TestCase):
-    """PATCH /api/rpc/rpc_person/<id>/ marks a team member active or inactive."""
+    """PATCH /api/rpc/rpc_person/<id>/ edits a team member (is_active, hours)."""
 
     def setUp(self):
         self.person = RpcPersonFactory(hours_per_week=40)
@@ -1053,6 +1053,13 @@ class RpcPersonActiveTests(TestCase):
         patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
         patcher.start().side_effect = lambda user: self.people.get(user.pk)
         self.addCleanup(patcher.stop)
+        # The PATCH response is a whole person, whose name and email come from
+        # the datatracker; don't call it.
+        fetch_patcher = patch(
+            "datatracker.models.DatatrackerPerson._fetch", return_value="Test Person"
+        )
+        fetch_patcher.start()
+        self.addCleanup(fetch_patcher.stop)
 
     def _login(self, rpcperson):
         user = get_user_model().objects.create_user(username=f"user-{rpcperson.pk}")
