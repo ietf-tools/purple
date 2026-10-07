@@ -43,7 +43,7 @@
       <textarea
         v-model="comment"
         rows="2"
-        class="flex-1 text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
+        class="w-full max-w-md text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
         @blur="patchComment" />
     </label>
   </li>
