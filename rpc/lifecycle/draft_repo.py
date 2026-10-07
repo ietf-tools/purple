@@ -5,7 +5,8 @@ The repository is created from the organization's base-template (organization:
 GITHUB_DRAFTS_ORG), is private, is named after the draft without its revision, and
 uses the draft title as its description. A single commit on the Approved branch
 replaces the README and adds the approved I-D's txt and xml from the IETF archive,
-each together with a ".original" copy. Markdown sources are committed manually.
+each together with a ".original" copy. The RPC-edits branch is created at the same
+commit. Markdown sources are committed manually.
 
 Every failure raises DraftRepoError with a message intended for the user, for
 example an existing repository, a file missing from the archive, or GitHub being
@@ -28,6 +29,7 @@ logger = logging.getLogger(__name__)
 
 TEMPLATE_REPO = "base-template"
 BRANCH = "Approved"
+EDITS_BRANCH = "RPC-edits"
 COMMIT_MESSAGE = "approved I-D"
 ARCHIVE_URL = "https://www.ietf.org/archive/id/"
 REQUEST_TIMEOUT = 30  # seconds
@@ -120,6 +122,7 @@ def _commit(repo, files: dict[str, bytes]):
     )
     commit = repo.create_git_commit(COMMIT_MESSAGE, tree, [parent])
     ref.edit(commit.sha)
+    repo.create_git_ref(f"refs/heads/{EDITS_BRANCH}", commit.sha)
 
 
 def create_draft_repo(rfc_to_be: RfcToBe) -> str:

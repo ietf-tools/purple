@@ -105,6 +105,9 @@ class CreateDraftRepoTests(TestCase):
         self.ref.edit.assert_called_once_with(
             self.repo.create_git_commit.return_value.sha
         )
+        self.repo.create_git_ref.assert_called_once_with(
+            "refs/heads/RPC-edits", self.repo.create_git_commit.return_value.sha
+        )
         self.rfc_to_be.refresh_from_db()
         self.assertEqual(self.rfc_to_be.repository, FULL_NAME)
 
