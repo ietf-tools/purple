@@ -29,8 +29,9 @@
             :class="n.unread ? 'bg-violet-600' : 'bg-transparent'"
             aria-hidden="true" />
           <Icon
-            name="solar:lock-keyhole-unlocked-bold-duotone"
-            class="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+            :name="notificationIcon(n.eventType).name"
+            class="mt-0.5 h-5 w-5 shrink-0"
+            :class="notificationIcon(n.eventType).class" />
           <div class="min-w-0 flex-1">
             <div class="text-sm text-gray-900 dark:text-gray-100">{{ n.message }}</div>
           </div>
@@ -47,6 +48,7 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
+import { EventTypeEnum } from '~/purple_client'
 
 const api = useApi()
 const { markAllRead } = useNotifications()
@@ -61,6 +63,11 @@ const { data, pending, error, refresh } = await useAsyncData(
 )
 
 const items = computed(() => data.value?.results ?? [])
+
+const notificationIcon = (eventType: EventTypeEnum) =>
+  eventType === EventTypeEnum.RepoNotCreated
+    ? { name: 'uil:github', class: 'text-red-600' }
+    : { name: 'solar:lock-keyhole-unlocked-bold-duotone', class: 'text-green-600' }
 
 const relativeTime = (d?: Date) => (d ? (DateTime.fromJSDate(d).toRelative() ?? '') : '')
 
