@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import rpcapi_client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
+from django.db.models import ProtectedError
 from django.test import SimpleTestCase, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -16,6 +17,7 @@ from datatracker.factories import DatatrackerPersonFactory, DocumentFactory
 from datatracker.models import Document
 from rpc.models import (
     AdditionalEmail,
+    ApprovalLogMessage,
     Assignment,
     BlockingReason,
     Cluster,
@@ -41,6 +43,7 @@ from .factories import (
     ClusterFactory,
     DispositionNameFactory,
     FinalApprovalFactory,
+    LabelFactory,
     RfcAuthorFactory,
     RfcToBeFactory,
     RpcPersonFactory,
@@ -1509,3 +1512,60 @@ class RfcListTests(SimpleTestCase):
         self.assertEqual(_rfc_list([1]), "RFC 1")
         self.assertEqual(_rfc_list([1, 2]), "RFCs 1 and 2")
         self.assertEqual(_rfc_list([1, 2, 3]), "RFCs 1, 2, and 3")
+
+
+@patch("datatracker.models.DatatrackerPerson._fetch", return_value="Test Person")
+class DeleteRestrictionTests(TestCase):
+    """Records of the work are not deleted through the API or by a cascade."""
+
+    def setUp(self):
+        self.client.force_login(
+            get_user_model().objects.create_user(
+                username="delete-user", password="pw", name="Delete User"
+            )
+        )
+        self.rfc = RfcToBeFactory(draft__name="draft-test-deletes")
+        self.doc_url = f"/api/rpc/documents/{self.rfc.draft.name}"
+
+    def test_delete_is_not_offered(self, _fetch):
+        log = ApprovalLogMessage.objects.create(
+            rfc_to_be=self.rfc, log_message="approved", by=DatatrackerPersonFactory()
+        )
+        for url in (
+            f"{self.doc_url}/",
+            f"{self.doc_url}/approval_logs/{log.pk}/",
+            f"/api/rpc/labels/{LabelFactory(slug='test-label').pk}/",
+            f"/api/rpc/unusable_rfc_numbers/{UnusableRfcNumberFactory().pk}/",
+        ):
+            with self.subTest(url=url):
+                self.assertEqual(self.client.delete(url).status_code, 405)
+        self.assertTrue(ApprovalLogMessage.objects.filter(pk=log.pk).exists())
+
+    def test_pending_final_approval_can_be_deleted(self, _fetch):
+        approval = FinalApprovalFactory(rfc_to_be=self.rfc)
+        resp = self.client.delete(f"{self.doc_url}/final_approvals/{approval.pk}/")
+        self.assertEqual(resp.status_code, 204)
+        self.assertFalse(FinalApproval.objects.filter(pk=approval.pk).exists())
+
+    def test_given_final_approval_cannot_be_deleted(self, _fetch):
+        approval = FinalApprovalFactory(rfc_to_be=self.rfc, approved=timezone.now())
+        resp = self.client.delete(f"{self.doc_url}/final_approvals/{approval.pk}/")
+        self.assertEqual(resp.status_code, 400)
+        self.assertTrue(FinalApproval.objects.filter(pk=approval.pk).exists())
+
+    def test_rfctobe_with_editorial_note_is_protected(self, _fetch):
+        EditorialNote.objects.create(rfc_to_be=self.rfc, text="note")
+        with self.assertRaises(ProtectedError):
+            self.rfc.delete()
+
+    def test_document_in_a_cluster_is_protected(self, _fetch):
+        doc = DocumentFactory(pages=1)
+        ClusterMember.objects.create(cluster=ClusterFactory(), doc=doc)
+        with self.assertRaises(ProtectedError):
+            doc.delete()
+
+    def test_manager_of_someone_is_protected(self, _fetch):
+        manager = RpcPersonFactory()
+        RpcPersonFactory(manager=manager)
+        with self.assertRaises(ProtectedError):
+            manager.delete()

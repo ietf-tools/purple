@@ -62,7 +62,7 @@
     <div
       class="flex flex-row items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 rounded-b-xl">
       <BaseButton
-        v-if="props.finalApproval"
+        v-if="props.finalApproval && !props.finalApproval.approved"
         btn-type="delete"
         @click="deleteFinalApproval"
         :hidden="isFinalReviewApiSuccess || isDeleted"

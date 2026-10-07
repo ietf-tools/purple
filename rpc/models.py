@@ -79,7 +79,7 @@ class RpcPerson(models.Model):
         "RpcPerson",
         blank=True,
         null=True,
-        on_delete=models.RESTRICT,
+        on_delete=models.PROTECT,
         limit_choices_to={"can_hold_role__slug": "manager"},
         related_name="managed_people",
     )
@@ -681,7 +681,7 @@ class DocRelationshipName(Name):
 
 class ClusterMember(models.Model):
     cluster = models.ForeignKey("rpc.Cluster", on_delete=models.CASCADE)
-    doc = models.ForeignKey("datatracker.Document", on_delete=models.CASCADE)
+    doc = models.ForeignKey("datatracker.Document", on_delete=models.PROTECT)
     order = models.IntegerField(null=True, blank=True)
     history = HistoricalRecords()
 
@@ -1074,14 +1074,6 @@ class ActionHolder(models.Model):
                 name="actionholder_exactly_one_target",
                 violation_error_message="exactly one target field must be set",
             ),
-            models.CheckConstraint(
-                condition=(
-                    models.Q(completed__isnull=True)
-                    | models.Q(datatracker_person__isnull=False)
-                ),
-                name="actionholder_completion_requires_person",
-                violation_error_message="completion requires a person",
-            ),
         ]
 
     def __str__(self):
@@ -1157,7 +1149,7 @@ class EditorialNote(models.Model):
     """Shared free-text scratchpad the RPC keeps for an RfcToBe"""
 
     rfc_to_be = models.OneToOneField(
-        RfcToBe, on_delete=models.CASCADE, related_name="editorial_note"
+        RfcToBe, on_delete=models.PROTECT, related_name="editorial_note"
     )
     text = models.TextField(blank=True, default="")
     updated_at = models.DateTimeField(null=True, blank=True)
