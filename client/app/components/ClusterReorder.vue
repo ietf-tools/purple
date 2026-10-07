@@ -44,7 +44,9 @@
             {{ clusterDocument.name }}
           </td>
           <td class="py-2 pr-3 text-right font-mono text-gray-600 dark:text-gray-300">
-            {{ queueItemByDraftName[clusterDocument.name]?.pages }}
+            <template v-if="queueStatus === 'success'">
+              {{ queueItemByDraftName[clusterDocument.name]?.pages ?? '-' }}
+            </template>
           </td>
           <td class="py-2 pr-3">
             <span
