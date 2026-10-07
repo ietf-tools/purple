@@ -12,7 +12,7 @@
             v-model="hours"
             class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
             @blur="patchTimeSpent" />
-          <span class="ml-1">h</span>
+          <abbr class="ml-1" title="hours">h</abbr>
         </label>
         <div class="w-[13em] flex justify-end items-center gap-2">
           <AssignmentState :state="props.assignment.state" />
