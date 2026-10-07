@@ -451,16 +451,12 @@ class ImportSubmissionClusteringTests(TestCase):
     def test_import_queues_the_draft_repo_for_the_importer(
         self, mock_repo_task, mock_sst, mock_cdr
     ):
-        importer = RpcPersonFactory()
         rpcapi = self._make_rpcapi(drafts_by_id={4001: "draft-repo-a"})
-        with (
-            patch("rpcauth.models.User.rpcperson", return_value=importer),
-            self.captureOnCommitCallbacks(execute=True),
-        ):
+        with self.captureOnCommitCallbacks(execute=True):
             response = self._do_import(4001, rpcapi)
         self.assertEqual(response.status_code, 200, response.content)
         rfc_to_be = RfcToBe.objects.get(draft__name="draft-repo-a")
-        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, importer.pk)
+        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, self.user.pk)
 
     @override_settings(GITHUB_DRAFTS_WRITE_TOKEN=None)
     @patch("rpc.api.create_draft_repo_task")

@@ -7,6 +7,7 @@ import requests
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from github import GithubException, UnknownObjectException
+from rpcapi_client.exceptions import ApiException
 
 from rpc.factories import RfcToBeFactory, RpcPersonFactory
 from rpc.models import Notification
@@ -24,7 +25,9 @@ def _response(status_code, content=b""):
     return response
 
 
-@override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
+@override_settings(
+    GITHUB_DRAFTS_WRITE_TOKEN="write-token", GITHUB_DRAFTS_ORG="rfc-editor-drafts"
+)
 class CreateDraftRepoTests(TestCase):
     def setUp(self):
         self.rfc_to_be = RfcToBeFactory(
@@ -105,6 +108,15 @@ class CreateDraftRepoTests(TestCase):
         self.rfc_to_be.refresh_from_db()
         self.assertEqual(self.rfc_to_be.repository, FULL_NAME)
 
+    @override_settings(GITHUB_DRAFTS_ORG="rfc-editor-drafts-staging")
+    def test_uses_the_configured_organization(self):
+        self.repo.full_name = f"rfc-editor-drafts-staging/{NAME}"
+        create_draft_repo(self.rfc_to_be)
+        self.github.get_organization.assert_called_with("rfc-editor-drafts-staging")
+        self.github.get_repo.assert_called_with(
+            "rfc-editor-drafts-staging/base-template"
+        )
+
     def test_existing_repo_aborts(self):
         self.org.get_repo.side_effect = None
         with self.assertRaisesMessage(DraftRepoExists, f"{FULL_NAME} already exists"):
@@ -133,6 +145,24 @@ class CreateDraftRepoTests(TestCase):
         self.rfc_to_be.refresh_from_db()
         self.assertEqual(self.rfc_to_be.repository, "")
 
+    def test_waits_while_github_still_fills_the_new_repo(self):
+        """GitHub returns 409 ("Git Repository is empty") until it has populated a
+        repository created from a template."""
+        self.repo.get_git_ref.side_effect = [
+            GithubException(409, {"message": "Git Repository is empty."}),
+            UnknownObjectException(404),
+            self.ref,
+        ]
+        self.assertEqual(create_draft_repo(self.rfc_to_be), FULL_NAME)
+        self.assertEqual(self.repo.get_git_ref.call_count, 3)
+        self.ref.edit.assert_called_once()
+
+    def test_other_github_errors_while_waiting_abort(self):
+        self.repo.get_git_ref.side_effect = GithubException(500)
+        with self.assertRaisesMessage(DraftRepoError, "GitHub failed while creating"):
+            create_draft_repo(self.rfc_to_be)
+        self.assertEqual(self.repo.get_git_ref.call_count, 1)
+
     def test_branch_that_never_appears_aborts(self):
         self.repo.get_git_ref.side_effect = UnknownObjectException(404)
         with self.assertRaisesMessage(DraftRepoError, "Approved branch never appeared"):
@@ -159,10 +189,16 @@ class CreateDraftRepoTaskTests(TestCase):
     def setUp(self):
         self.rfc_to_be = RfcToBeFactory(draft__name=NAME)
         self.importer = RpcPersonFactory()
+        self.user = get_user_model().objects.create_user(username="importer")
+        patcher = mock.patch(
+            "rpcauth.models.User.rpcperson", return_value=self.importer
+        )
+        self.rpcperson = patcher.start()
+        self.addCleanup(patcher.stop)
 
     @mock.patch("rpc.tasks.create_draft_repo", return_value=FULL_NAME)
     def test_success_is_not_notified(self, _create):
-        create_draft_repo_task(self.rfc_to_be.pk, self.importer.pk)
+        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
         self.assertFalse(Notification.objects.exists())
 
     @mock.patch(
@@ -170,9 +206,10 @@ class CreateDraftRepoTaskTests(TestCase):
         side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
     )
     def test_tells_the_importer_why_not(self, _create):
-        create_draft_repo_task(self.rfc_to_be.pk, self.importer.pk)
+        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
         notification = Notification.objects.get()
         self.assertEqual(notification.event_type, "repo_not_created")
+        self.assertEqual(notification.recipient, self.importer)
         self.assertEqual(
             notification.message,
             f"No repo created for {NAME}: {FULL_NAME} already exists",
@@ -186,11 +223,30 @@ class CreateDraftRepoTaskTests(TestCase):
         create_draft_repo_task(self.rfc_to_be.pk, None)
         self.assertIsNone(Notification.objects.get().recipient)
 
+    @mock.patch(
+        "rpc.tasks.create_draft_repo",
+        side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
+    )
+    def test_an_unreachable_datatracker_tells_everyone(self, _create):
+        self.rpcperson.side_effect = ApiException(status=503)
+        with self.assertLogs("rpc.tasks", level="WARNING"):
+            create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+        self.assertIsNone(Notification.objects.get().recipient)
+
+    @mock.patch(
+        "rpc.tasks.create_draft_repo",
+        side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
+    )
+    def test_other_errors_looking_up_the_importer_are_raised(self, _create):
+        self.rpcperson.side_effect = RuntimeError("bug")
+        with self.assertRaises(RuntimeError):
+            create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+
 
 @override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
 @mock.patch("rpc.api.create_draft_repo_task")
 class CreateRepoActionTests(TestCase):
-    """POST /api/rpc/documents/<name>/create_repo/: the retry button"""
+    """POST /api/rpc/documents/<name>/create_repo/, used by the retry button"""
 
     def setUp(self):
         self.rfc_to_be = RfcToBeFactory(draft__name=NAME, repository="")
@@ -200,13 +256,14 @@ class CreateRepoActionTests(TestCase):
         )
         patcher.start()
         self.addCleanup(patcher.stop)
-        self.client.force_login(get_user_model().objects.create_user(username="u"))
+        self.user = get_user_model().objects.create_user(username="u")
+        self.client.force_login(self.user)
         self.url = f"/api/rpc/documents/{NAME}/create_repo/"
 
     def test_queues_the_task_for_the_requester(self, task):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 202, response.content)
-        task.delay.assert_called_once_with(self.rfc_to_be.pk, self.requester.pk)
+        task.delay.assert_called_once_with(self.rfc_to_be.pk, self.user.pk)
 
     def test_refused_when_the_document_has_a_repository(self, task):
         self.rfc_to_be.repository = FULL_NAME
@@ -224,10 +281,12 @@ class CreateRepoActionTests(TestCase):
 
 @override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
 class CreateDraftReposTaskTests(TestCase):
-    """The admin-run task that creates repos for the whole queue"""
+    """The task that creates repositories for all queued documents"""
 
     def setUp(self):
-        self.created = RfcToBeFactory(draft__name="draft-a")  # factory: in_progress
+        self.created = RfcToBeFactory(
+            draft__name="draft-a"
+        )  # factory default: in_progress
         self.exists = RfcToBeFactory(draft__name="draft-b")
         self.fails = RfcToBeFactory(draft__name="draft-c")
         RfcToBeFactory(draft__name="draft-d", repository="x/draft-d")

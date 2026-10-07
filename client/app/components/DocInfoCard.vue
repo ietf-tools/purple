@@ -667,8 +667,8 @@ const datatrackerLinks = useDatatrackerLinks()
 
 const isCreatingRepo = ref(false)
 
-// Retry for when creating the repo on import failed. The work runs in the
-// background: a success shows as the repository, only a failure is notified.
+// Retries repository creation after it failed on import. The work runs in the
+// background: on success the repository field is filled, a failure is notified.
 async function createRepo() {
   if (!props.rfcToBe?.name) return
   isCreatingRepo.value = true

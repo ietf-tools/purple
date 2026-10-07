@@ -800,11 +800,9 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 
             transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
             if draft_repo.is_enabled():
-                importer = request.user.rpcperson()
+                importer_id = request.user.pk
                 transaction.on_commit(
-                    lambda: create_draft_repo_task.delay(
-                        rfctobe.pk, importer.pk if importer else None
-                    )
+                    lambda: create_draft_repo_task.delay(rfctobe.pk, importer_id)
                 )
 
             # create the authors
@@ -1653,8 +1651,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=["post"], url_path="create_repo")
     def create_repo(self, request, draft__name=None):
-        """Retry creating the document's repo in rfc-editor-drafts; the outcome
-        arrives as a notification to the caller."""
+        """Retry creating the document's repository in the background. Only a
+        failure is reported, as a notification to the caller."""
         rfctobe = self.get_object()
         if not draft_repo.is_enabled():
             raise serializers.ValidationError("Creating repos is not configured.")
@@ -1662,8 +1660,7 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 f"{rfctobe.name} already has a repository: {rfctobe.repository}"
             )
-        requester = request.user.rpcperson()
-        create_draft_repo_task.delay(rfctobe.pk, requester.pk if requester else None)
+        create_draft_repo_task.delay(rfctobe.pk, request.user.pk)
         return Response(status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(

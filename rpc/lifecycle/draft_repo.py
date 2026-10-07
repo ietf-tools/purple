@@ -1,15 +1,15 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
-"""Create a document's repository in rfc-editor-drafts when it is imported
+"""Create a document's repository in the drafts organization on import
 
-The repo is made from rfc-editor-drafts/base-template, named after the draft (no
-revision), private, with the draft's title as its description. One commit on the
-Approved branch then replaces the template's README and adds the approved I-D's
-txt and xml from the IETF archive, each also as a ".original" copy. The markdown
-source, where there is one, is still committed by hand.
+The repository is created from the organization's base-template (organization:
+GITHUB_DRAFTS_ORG), is private, is named after the draft without its revision, and
+uses the draft title as its description. A single commit on the Approved branch
+replaces the README and adds the approved I-D's txt and xml from the IETF archive,
+each together with a ".original" copy. Markdown sources are committed manually.
 
-Any problem aborts with a DraftRepoError whose message is shown to the user: the
-repo already existing, a file missing from the archive, or GitHub being
-unreachable. Nothing is retried or partly reused.
+Every failure raises DraftRepoError with a message intended for the user, for
+example an existing repository, a file missing from the archive, or GitHub being
+unavailable. Failed attempts are not retried.
 """
 
 import base64
@@ -26,24 +26,25 @@ from rpc.models import RfcToBe
 
 logger = logging.getLogger(__name__)
 
-DRAFTS_ORG = "rfc-editor-drafts"
 TEMPLATE_REPO = "base-template"
 BRANCH = "Approved"
 COMMIT_MESSAGE = "approved I-D"
 ARCHIVE_URL = "https://www.ietf.org/archive/id/"
 REQUEST_TIMEOUT = 30  # seconds
-# The template's branch may not be in the new repo yet when the create call
-# returns; how long to wait for it before giving up.
+# GitHub populates a repository created from a template asynchronously. Until it
+# has done so, requests for the branch return 409 ("Git Repository is empty") or
+# 404.
 BRANCH_WAIT_ATTEMPTS = 10
 BRANCH_WAIT_SECONDS = 2
+_NOT_READY_STATUSES = (404, 409)
 
 
 class DraftRepoError(Exception):
-    """Creating the repo was abandoned; the message says why, for the user."""
+    """Repository creation stopped; the message is shown to the user."""
 
 
 class DraftRepoExists(DraftRepoError):
-    """The repo is already there, so it was left alone."""
+    """The repository already exists and was not modified."""
 
 
 def is_enabled() -> bool:
@@ -68,7 +69,7 @@ def _download(filename: str) -> bytes:
 
 
 def _repo_files(rfc_to_be: RfcToBe) -> dict[str, bytes]:
-    """Path -> content of everything the first commit writes"""
+    """Files for the initial commit, as path -> content"""
     name = rfc_to_be.name
     if not rfc_to_be.rev:
         raise DraftRepoError(f"{name} has no revision, so its files can't be found")
@@ -88,7 +89,9 @@ def _wait_for_branch(repo):
     for attempt in range(BRANCH_WAIT_ATTEMPTS):
         try:
             return repo.get_git_ref(f"heads/{BRANCH}")
-        except UnknownObjectException:
+        except GithubException as err:
+            if err.status not in _NOT_READY_STATUSES:
+                raise
             if attempt + 1 < BRANCH_WAIT_ATTEMPTS:
                 time.sleep(BRANCH_WAIT_SECONDS)
     raise DraftRepoError(
@@ -98,8 +101,7 @@ def _wait_for_branch(repo):
 
 
 def _commit(repo, files: dict[str, bytes]):
-    """Write all files in one commit on the branch, as base64 blobs so any bytes
-    survive"""
+    """Write all files in one commit on the branch. Blobs are sent base64-encoded."""
     ref = _wait_for_branch(repo)
     parent = repo.get_git_commit(ref.object.sha)
     tree = repo.create_git_tree(
@@ -121,25 +123,26 @@ def _commit(repo, files: dict[str, bytes]):
 
 
 def create_draft_repo(rfc_to_be: RfcToBe) -> str:
-    """Create and populate the document's repo; return its "owner/name"
+    """Create and populate the document's repository and return its "owner/name".
 
-    Raises DraftRepoError, with a message for the user, if it can't.
+    Raises DraftRepoError, with a message for the user, if this is not possible.
     """
     name = rfc_to_be.name
-    # Before touching GitHub, so a missing file leaves nothing behind.
+    drafts_org = settings.GITHUB_DRAFTS_ORG
+    # Download first, so that a missing file does not leave an empty repository.
     files = _repo_files(rfc_to_be)
     try:
         github = Github(auth=GithubAuthToken(settings.GITHUB_DRAFTS_WRITE_TOKEN))
-        org = github.get_organization(DRAFTS_ORG)
+        org = github.get_organization(drafts_org)
         try:
             org.get_repo(name)
         except UnknownObjectException:
             pass
         else:
-            raise DraftRepoExists(f"{DRAFTS_ORG}/{name} already exists")
+            raise DraftRepoExists(f"{drafts_org}/{name} already exists")
         repo = org.create_repo_from_template(
             name,
-            github.get_repo(f"{DRAFTS_ORG}/{TEMPLATE_REPO}"),
+            github.get_repo(f"{drafts_org}/{TEMPLATE_REPO}"),
             description=rfc_to_be.title,
             private=True,
         )
@@ -147,7 +150,7 @@ def create_draft_repo(rfc_to_be: RfcToBe) -> str:
     except GithubException as err:
         logger.exception("GitHub error creating the repo for %s", name)
         raise DraftRepoError(
-            f"GitHub failed while creating {DRAFTS_ORG}/{name} ({err.status})"
+            f"GitHub failed while creating {drafts_org}/{name} ({err.status})"
         ) from err
     except requests.RequestException as err:
         logger.exception("Could not reach GitHub to create the repo for %s", name)

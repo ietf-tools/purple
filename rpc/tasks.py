@@ -2,6 +2,7 @@
 import rpcapi_client
 from celery import shared_task
 from celery.utils.log import get_task_logger
+from django.contrib.auth import get_user_model
 from django.db.models import F
 from django.utils import timezone
 
@@ -58,25 +59,38 @@ def set_stream_manager_task(rfc_to_be_id: int):
 
 
 @shared_task
-def create_draft_repo_task(rfc_to_be_id: int, notify_person_id: int | None = None):
-    """Create the document's repo in rfc-editor-drafts. Only a failure is
-    notified, to notify_person_id or, if None, to everyone; on success the
-    repository simply appears on the document."""
+def create_draft_repo_task(rfc_to_be_id: int, notify_user_id: int | None = None):
+    """Create the document's repository in the drafts organization.
+
+    Only failures are notified: to the RpcPerson of notify_user_id, or to everyone
+    if there is none. On success the repository is recorded on the document.
+    """
     rfctobe = RfcToBe.objects.get(pk=rfc_to_be_id)
     try:
         create_draft_repo(rfctobe)
     except DraftRepoError as err:
-        recipient = (
-            RpcPerson.objects.filter(pk=notify_person_id).first()
-            if notify_person_id is not None
-            else None
-        )
         Notification.emit(
             Notification.EventType.REPO_NOT_CREATED,
             f"No repo created for {rfctobe.name}: {err}"[:255],
             rfc_to_be=rfctobe,
-            recipient=recipient,
+            recipient=_rpc_person_of(notify_user_id),
         )
+
+
+def _rpc_person_of(user_id: int | None) -> RpcPerson | None:
+    """The user's RpcPerson, or None if there is none or the datatracker cannot be
+    reached, in which case the notification goes to everyone instead."""
+    user = get_user_model().objects.filter(pk=user_id).first() if user_id else None
+    if user is None:
+        return None
+    try:
+        with datatracker_api():
+            return user.rpcperson()
+    except DataTrackerUnavailable:
+        logger.warning(
+            "Could not look up the RpcPerson of user %s", user_id, exc_info=True
+        )
+        return None
 
 
 logger = get_task_logger(__name__)
@@ -236,9 +250,12 @@ def publish_rfctobe_task(self, rfctobe_id, expected_head):
 
 @shared_task
 def create_draft_repos_task():
-    """Create the rfc-editor-drafts repo for every document in the queue that has
-    no repository yet. A repo already on GitHub is skipped; any other problem is
-    logged and the next document tried. Run it from the admin's periodic tasks."""
+    """Create repositories for all queued documents that have none yet.
+
+    Documents whose repository already exists on GitHub are skipped. Other failures
+    are logged and processing continues. Intended to be run manually from the
+    periodic tasks admin.
+    """
     if not draft_repo.is_enabled():
         logger.warning("Draft repos not created: PURPLE_GH_DRAFTS_WRITE_TOKEN is unset")
         return "Draft repos not created (no write token)"
