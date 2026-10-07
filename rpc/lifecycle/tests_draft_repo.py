@@ -203,7 +203,17 @@ class CreateDraftRepoTaskTests(TestCase):
 
     @mock.patch(
         "rpc.tasks.create_draft_repo",
-        side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
+        side_effect=DraftRepoError(
+            "draft-ietf-foo-bar-03.xml is not in the IETF archive"
+        ),
+    )
+    def test_other_failures_have_no_manual_fix_hint(self, _create):
+        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+        self.assertNotIn("manual fix", Notification.objects.get().message)
+
+    @mock.patch(
+        "rpc.tasks.create_draft_repo",
+        side_effect=DraftRepoExists(f"{FULL_NAME} already exists"),
     )
     def test_tells_the_importer_why_not(self, _create):
         create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
@@ -212,7 +222,8 @@ class CreateDraftRepoTaskTests(TestCase):
         self.assertEqual(notification.recipient, self.importer)
         self.assertEqual(
             notification.message,
-            f"No repo created for {NAME}: {FULL_NAME} already exists",
+            f"No repo created for {NAME}: {FULL_NAME} already exists"
+            " (needs manual fix)",
         )
 
     @mock.patch(

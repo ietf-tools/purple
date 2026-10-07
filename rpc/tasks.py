@@ -69,9 +69,11 @@ def create_draft_repo_task(rfc_to_be_id: int, notify_user_id: int | None = None)
     try:
         create_draft_repo(rfctobe)
     except DraftRepoError as err:
+        # Retrying cannot succeed while the repository exists.
+        hint = " (needs manual fix)" if isinstance(err, DraftRepoExists) else ""
         Notification.emit(
             Notification.EventType.REPO_NOT_CREATED,
-            f"No repo created for {rfctobe.name}: {err}"[:255],
+            f"No repo created for {rfctobe.name}: {err}{hint}"[:255],
             rfc_to_be=rfctobe,
             recipient=_rpc_person_of(notify_user_id),
         )

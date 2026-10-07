@@ -21,7 +21,7 @@
     <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
       <li v-for="n in items" :key="n.id">
         <Anchor
-          :href="`/docs/${n.draftName}/assignments`"
+          :href="documentPathBuilder({ name: n.draftName })"
           class="flex items-start gap-3 py-3 px-2 -mx-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
           :class="n.unread ? 'bg-violet-50/60 dark:bg-violet-900/20' : ''">
           <span
@@ -49,6 +49,7 @@
 <script setup lang="ts">
 import { DateTime } from 'luxon'
 import { EventTypeEnum } from '~/purple_client'
+import { documentPathBuilder } from '~/utils/url'
 
 const api = useApi()
 const { markAllRead } = useNotifications()
