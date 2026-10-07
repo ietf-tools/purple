@@ -1067,7 +1067,7 @@ class ActionHolder(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(target_document__isnull=True)
                     ^ models.Q(target_rfctobe__isnull=True)
                 ),
@@ -1075,7 +1075,7 @@ class ActionHolder(models.Model):
                 violation_error_message="exactly one target field must be set",
             ),
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(completed__isnull=True)
                     | models.Q(datatracker_person__isnull=False)
                 ),
@@ -1119,7 +1119,7 @@ class RpcRelatedDocument(models.Model):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(target_document__isnull=True)
                     ^ models.Q(target_rfctobe__isnull=True)
                 ),
@@ -1190,7 +1190,7 @@ class RpcDocumentComment(RulesModel):
     class Meta:
         constraints = [
             models.CheckConstraint(
-                check=(
+                condition=(
                     models.Q(document__isnull=True) ^ models.Q(rfc_to_be__isnull=True)
                 ),
                 name="rpcdocumentcomment_exactly_one_target",
