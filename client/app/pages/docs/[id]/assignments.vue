@@ -44,6 +44,11 @@
                       <BaseBadge :label="roleName(assignment.role)" />
                       <AssignmentState :state="assignment.state" />
                     </div>
+                    <blockquote
+                      v-if="assignment.comment"
+                      class="mt-1 border-l-2 border-gray-300 dark:border-neutral-600 pl-2 text-xs italic text-gray-500 dark:text-neutral-400">
+                      {{ assignment.comment }}
+                    </blockquote>
                     <template
                       v-if="
                         assignment.role === 'blocked' &&

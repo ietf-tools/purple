@@ -1,42 +1,51 @@
 <template>
-  <li
-    class="flex flex-row gap-4 mb-4 justify-between items-center bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
-    <div class="w-[13em] text-md font-bold">{{ props.personName }}:</div>
-    <form class="flex gap-4 whitespace-nowrap" @submit.prevent>
-      <label class="text-xs"
-        >time spent:
-        <input
-          type="text"
-          size="4"
-          :id="props.assignment.id?.toString() ?? 'assignment'"
-          v-model="hours"
-          class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
-          @blur="patchTimeSpent" />
-        <span class="ml-1">h</span>
-      </label>
-      <div class="w-[13em] flex justify-end items-center gap-2">
-        <AssignmentState :state="props.assignment.state" />
-        <template v-if="props.assignment.role !== 'blocked'">
-          <BaseButton
-            v-if="props.assignment.state === 'assigned'"
-            btnType="default"
-            @click="startAssignment"
-            size="xs"
-            :disabled="isSaving">
-            Start
-          </BaseButton>
-          <BaseButton
-            v-else-if="props.assignment.state === 'in_progress'"
-            btnType="default"
-            @mousedown="isFinishing = true"
-            @click="finishAssignment"
-            size="xs"
-            :disabled="isSaving">
-            Finish
-          </BaseButton>
-        </template>
-      </div>
-    </form>
+  <li class="flex flex-col gap-1 mb-4 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-md">
+    <div class="flex flex-row gap-4 justify-between items-center">
+      <div class="w-[13em] text-md font-bold">{{ props.personName }}:</div>
+      <form class="flex gap-4 whitespace-nowrap" @submit.prevent>
+        <label class="text-xs"
+          >time spent:
+          <input
+            type="text"
+            size="4"
+            :id="props.assignment.id?.toString() ?? 'assignment'"
+            v-model="hours"
+            class="text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
+            @blur="patchTimeSpent" />
+          <span class="ml-1">h</span>
+        </label>
+        <div class="w-[13em] flex justify-end items-center gap-2">
+          <AssignmentState :state="props.assignment.state" />
+          <template v-if="props.assignment.role !== 'blocked'">
+            <BaseButton
+              v-if="props.assignment.state === 'assigned'"
+              btnType="default"
+              @click="startAssignment"
+              size="xs"
+              :disabled="isSaving">
+              Start
+            </BaseButton>
+            <BaseButton
+              v-else-if="props.assignment.state === 'in_progress'"
+              btnType="default"
+              @mousedown="isFinishing = true"
+              @click="finishAssignment"
+              size="xs"
+              :disabled="isSaving">
+              Finish
+            </BaseButton>
+          </template>
+        </div>
+      </form>
+    </div>
+    <label class="flex items-start gap-2 text-xs"
+      >notes:
+      <textarea
+        v-model="comment"
+        rows="2"
+        class="flex-1 text-xs p-1 bg-white text-black dark:bg-black dark:text-white"
+        @blur="patchComment" />
+    </label>
   </li>
 </template>
 
@@ -59,6 +68,7 @@ const api = useApi()
 const snackbar = useSnackbar()
 
 const hours = ref(durationStringToHours(props.assignment.timeSpent))
+const comment = ref(props.assignment.comment ?? '')
 
 const startAssignment = async () => {
   isSaving.value = true
@@ -111,6 +121,25 @@ const finishAssignment = async () => {
   }
   isSaving.value = false
   isFinishing.value = false
+  props.onSuccess() // triggers reload of data from page under modal
+}
+
+const patchComment = async () => {
+  if (comment.value === (props.assignment.comment ?? '')) return
+  const { id } = props.assignment
+  if (id === undefined) {
+    throw Error('Internal error: expected assignment to have id')
+  }
+  try {
+    const updatedAssignment = await api.assignmentsPartialUpdate({
+      id,
+      patchedAssignmentRequest: { comment: comment.value }
+    })
+    props.assignment.comment = updatedAssignment.comment
+  } catch (e) {
+    console.error('Unable to update notes on assignment', e)
+    snackbarForErrors({ snackbar, defaultTitle: 'Unable to update notes on assignment', error: e })
+  }
   props.onSuccess() // triggers reload of data from page under modal
 }
 
