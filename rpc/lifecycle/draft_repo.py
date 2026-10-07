@@ -132,8 +132,6 @@ def create_draft_repo(rfc_to_be: RfcToBe) -> str:
     """
     name = rfc_to_be.name
     drafts_org = settings.GITHUB_DRAFTS_ORG
-    # Download first, so that a missing file does not leave an empty repository.
-    files = _repo_files(rfc_to_be)
     try:
         github = Github(auth=GithubAuthToken(settings.GITHUB_DRAFTS_WRITE_TOKEN))
         org = github.get_organization(drafts_org)
@@ -143,6 +141,9 @@ def create_draft_repo(rfc_to_be: RfcToBe) -> str:
             pass
         else:
             raise DraftRepoExists(f"{drafts_org}/{name} already exists")
+        # Downloaded before creating, so that a missing file does not leave an empty
+        # repository.
+        files = _repo_files(rfc_to_be)
         repo = org.create_repo_from_template(
             name,
             github.get_repo(f"{drafts_org}/{TEMPLATE_REPO}"),

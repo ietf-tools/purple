@@ -124,15 +124,16 @@ class CreateDraftRepoTests(TestCase):
         self.org.get_repo.side_effect = None
         with self.assertRaisesMessage(DraftRepoExists, f"{FULL_NAME} already exists"):
             create_draft_repo(self.rfc_to_be)
+        self.get.assert_not_called()
         self.org.create_repo_from_template.assert_not_called()
 
-    def test_missing_file_aborts_before_github(self):
+    def test_missing_file_aborts_before_creating(self):
         self.archive[f"https://www.ietf.org/archive/id/{NAME}-03.xml"] = _response(404)
         with self.assertRaisesMessage(
             DraftRepoError, f"{NAME}-03.xml is not in the IETF archive"
         ):
             create_draft_repo(self.rfc_to_be)
-        self.github.get_organization.assert_not_called()
+        self.org.create_repo_from_template.assert_not_called()
 
     def test_unreachable_archive_aborts(self):
         self.get.side_effect = requests.ConnectionError()
