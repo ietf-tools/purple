@@ -22,6 +22,7 @@
           class="border-b border-gray-200 dark:border-gray-600 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
           <th class="pb-2 w-6"></th>
           <th class="pb-2">Document</th>
+          <th class="pb-2 w-16">Pages</th>
           <th class="pb-2 w-48">Labels</th>
           <th class="pb-2 w-40">Enqueue Date</th>
           <th class="pb-2 w-56">Assignees</th>
@@ -41,6 +42,9 @@
           </td>
           <td class="py-2 pr-3 font-semibold">
             {{ clusterDocument.name }}
+          </td>
+          <td class="py-2 pr-3 text-right font-mono text-gray-600 dark:text-gray-300">
+            {{ queueItemByDraftName[clusterDocument.name]?.pages }}
           </td>
           <td class="py-2 pr-3">
             <span
