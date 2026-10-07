@@ -1481,7 +1481,9 @@ def _rfc_numbers_for_relationship(rfctobe: RfcToBe, relationship_id: str) -> lis
         ]
     ),
 )
-class RfcToBeViewSet(viewsets.ModelViewSet):
+class RfcToBeViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = (
         RfcToBe.objects.all()
         .select_related(
@@ -2110,7 +2112,9 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         )
 
 
-class LabelViewSet(viewsets.ModelViewSet):
+class LabelViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = Label.objects.all()
     serializer_class = LabelSerializer
 
@@ -2314,7 +2318,9 @@ class StatsQueuePublished(_StatsPeriodView):
         return Response(QueuePublishedStatsSerializer(data).data)
 
 
-class UnusableRfcNumberViewSet(viewsets.ModelViewSet):
+class UnusableRfcNumberViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = UnusableRfcNumber.objects.all()
     serializer_class = UnusableRfcNumberSerializer
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
@@ -2689,6 +2695,25 @@ class FinalApprovalViewSet(viewsets.ModelViewSet):
             return CreateFinalApprovalSerializer
         return FinalApprovalSerializer
 
+    @extend_schema(
+        responses={
+            204: None,
+            400: inline_serializer(
+                name="DeleteFinalApprovalErrorResponse",
+                fields={"detail": serializers.CharField()},
+            ),
+        },
+    )
+    def destroy(self, request, *args, **kwargs):
+        final_approval = self.get_object()
+        if final_approval.approved is not None:
+            return Response(
+                {"detail": "Cannot delete a final approval that was given."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        final_approval.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema_with_draft_name()
 class ActionHolderViewSet(
@@ -2722,8 +2747,12 @@ class ActionHolderViewSet(
         return ActionHolderSerializer
 
 
-@extend_schema_with_draft_name()
-class ApprovalLogMessageViewSet(viewsets.ModelViewSet):
+@extend_schema_with_draft_name(
+    ["list", "retrieve", "create", "update", "partial_update"]
+)
+class ApprovalLogMessageViewSet(
+    mixins.CreateModelMixin, mixins.UpdateModelMixin, viewsets.ReadOnlyModelViewSet
+):
     queryset = ApprovalLogMessage.objects.all()
     serializer_class = ApprovalLogMessageSerializer
     filter_backends = (filters.DjangoFilterBackend,)
