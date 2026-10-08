@@ -744,6 +744,12 @@ paths:
               schema:
                 $ref: "#/components/schemas/RfcToBe"
           description: ""
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EnqueuePermissionDenied"
+          description: ""
   /api/rpc/documents/{draft__name}/history/:
     get:
       operationId: documents_history_list
@@ -4785,6 +4791,13 @@ components:
           type: string
       required:
         - text
+    EnqueuePermissionDenied:
+      type: object
+      properties:
+        detail:
+          type: string
+      required:
+        - detail
     EventTypeEnum:
       enum:
         - unblocked
