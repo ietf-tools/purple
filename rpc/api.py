@@ -192,6 +192,10 @@ logger = logging.getLogger(__name__)
 
 PUB_QUEUE_API_KEY_ENDPOINT = "api.pubq"
 
+# Search keywords (lowercased, with spaces, "-" and "_" removed) that match
+# April 1st RFCs.
+APRIL_FIRST_SEARCH_KEYWORDS = {"april1", "april1st", "aprilfirst"}
+
 
 def resolve_rfctobe(identifier: str) -> RfcToBe:
     """Return the RfcToBe for a given identifier.
@@ -1820,6 +1824,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
                 subseriesmember__type__slug=subseries_type,
                 subseriesmember__number=subseries_number,
             )
+        if re.sub(r"[\s_-]", "", query.lower()) in APRIL_FIRST_SEARCH_KEYWORDS:
+            q_filter |= Q(is_april_first_rfc=True)
 
         queryset = RfcToBe.objects.filter(q_filter).distinct().order_by("-id")
         if disposition:
