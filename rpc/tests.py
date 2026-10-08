@@ -1509,3 +1509,53 @@ class RfcListTests(SimpleTestCase):
         self.assertEqual(_rfc_list([1]), "RFC 1")
         self.assertEqual(_rfc_list([1, 2]), "RFCs 1 and 2")
         self.assertEqual(_rfc_list([1, 2, 3]), "RFCs 1, 2, and 3")
+
+
+class EnqueueTests(TestCase):
+    """POST /api/rpc/documents/<name>/enqueue/ is for RPC team members only."""
+
+    def setUp(self):
+        self.people = {}
+        patcher = patch("rpcauth.models.User.rpcperson", autospec=True)
+        patcher.start().side_effect = lambda user: self.people.get(user.pk)
+        self.addCleanup(patcher.stop)
+        fetch_patcher = patch(
+            "datatracker.models.DatatrackerPerson._fetch", return_value="Test Person"
+        )
+        fetch_patcher.start()
+        self.addCleanup(fetch_patcher.stop)
+        self.rfctobe = RfcToBeFactory(
+            draft__name="draft-test-enqueue",
+            disposition=DispositionNameFactory(slug="created"),
+        )
+
+    def _enqueue(self):
+        return self.client.post(
+            f"/api/rpc/documents/{self.rfctobe.draft.name}/enqueue/"
+        )
+
+    def test_user_without_rpc_person_is_refused(self):
+        superuser = get_user_model().objects.create_superuser(
+            username="admin", password="pw"
+        )
+        self.client.force_login(superuser)
+        resp = self._enqueue()
+        self.assertEqual(resp.status_code, 403)
+        self.rfctobe.refresh_from_db()
+        self.assertEqual(self.rfctobe.disposition_id, "created")
+        self.assertFalse(Assignment.objects.filter(rfc_to_be=self.rfctobe).exists())
+
+    def test_rpc_person_enqueues_and_is_recorded_as_enqueuer(self):
+        person = RpcPersonFactory()
+        user = get_user_model().objects.create_user(username="rpc-member")
+        self.people[user.pk] = person
+        self.client.force_login(user)
+        resp = self._enqueue()
+        self.assertEqual(resp.status_code, 200, resp.content)
+        self.rfctobe.refresh_from_db()
+        self.assertEqual(self.rfctobe.disposition_id, "in_progress")
+        assignment = Assignment.objects.get(rfc_to_be=self.rfctobe)
+        self.assertEqual(
+            (assignment.role_id, assignment.person, assignment.state),
+            ("enqueuer", person, Assignment.State.DONE),
+        )
