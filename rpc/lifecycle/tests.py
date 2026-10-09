@@ -8,12 +8,19 @@ from rest_framework import serializers
 from rpc.factories import (
     AssignmentFactory,
     DispositionNameFactory,
+    LabelFactory,
     PublicationAttemptFactory,
     RfcToBeActionHolderFactory,
     RfcToBeFactory,
     RpcRoleFactory,
 )
-from rpc.models import Assignment, PublicationAttempt, RfcToBe
+from rpc.models import (
+    Assignment,
+    BlockingReason,
+    PublicationAttempt,
+    RfcToBe,
+    RfcToBeBlockingReason,
+)
 
 from .activities import (
     ENQUEUER,
@@ -23,7 +30,7 @@ from .activities import (
     complete_activities,
     pending_activities,
 )
-from .blocked_assignments import get_block_reasons
+from .blocked_assignments import apply_manual_block, get_block_reasons
 from .publication import (
     AmbiguousFilesError,
     MissingFilesError,
@@ -408,3 +415,86 @@ class BlockedDispositionTests(TestCase):
         """created is an active disposition, so the rule must not catch it."""
         rfc = self._rfc_that_would_block("created")
         self.assertTrue(get_block_reasons(rfc))
+
+
+class BlockReasonSyncTests(TestCase):
+    """While a document stays blocked, its stored reasons follow the current ones."""
+
+    def setUp(self):
+        self.rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="in_progress")
+        )
+        self.author_input = LabelFactory(slug="author-input-required")
+        self.stream_hold = LabelFactory(slug="stream-hold")
+
+    def change_labels(self, add=(), remove=()):
+        with self.captureOnCommitCallbacks(execute=True):
+            for label in add:
+                self.rfc.labels.add(label)
+            for label in remove:
+                self.rfc.labels.remove(label)
+
+    def active_reasons(self):
+        return set(
+            RfcToBeBlockingReason.objects.filter(
+                rfc_to_be=self.rfc, resolved__isnull=True
+            ).values_list("reason_id", flat=True)
+        )
+
+    def active_blocked_assignments(self):
+        return list(
+            self.rfc.assignment_set.filter(role__slug="blocked")
+            .active()
+            .values_list("pk", flat=True)
+        )
+
+    def test_one_label_block_replaced_by_another(self):
+        self.change_labels(add=[self.author_input])
+        self.assertEqual(
+            self.active_reasons(), {BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED}
+        )
+        blocked = self.active_blocked_assignments()
+
+        self.change_labels(add=[self.stream_hold])
+        self.change_labels(remove=[self.author_input])
+
+        self.assertEqual(self.active_reasons(), {BlockingReason.LABEL_STREAM_HOLD})
+        self.assertTrue(
+            RfcToBeBlockingReason.objects.filter(
+                rfc_to_be=self.rfc,
+                reason_id=BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED,
+                resolved__isnull=False,
+            ).exists()
+        )
+        self.assertEqual(self.active_blocked_assignments(), blocked)
+
+    def test_manual_hold_outlasts_automatic_reasons(self):
+        apply_manual_block(self.rfc, comment="waiting")
+        self.change_labels(add=[self.author_input])
+        self.assertEqual(
+            self.active_reasons(),
+            {BlockingReason.MANUAL_HOLD, BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED},
+        )
+
+        self.change_labels(remove=[self.author_input])
+
+        self.assertEqual(self.active_reasons(), {BlockingReason.MANUAL_HOLD})
+        self.assertTrue(self.active_blocked_assignments())
+
+    def test_block_starts_with_its_reason_already_stored(self):
+        RfcToBeBlockingReason.objects.create(
+            rfc_to_be=self.rfc, reason_id=BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED
+        )
+
+        self.change_labels(add=[self.author_input])
+
+        self.assertEqual(
+            RfcToBeBlockingReason.objects.filter(
+                rfc_to_be=self.rfc, resolved__isnull=True
+            ).count(),
+            1,
+        )
+        self.assertEqual(
+            self.active_reasons(), {BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED}
+        )
+        self.assertTrue(self.active_blocked_assignments())
