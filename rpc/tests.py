@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import rpcapi_client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -26,6 +26,7 @@ from rpc.models import (
     Notification,
     NotificationReadMarker,
     RfcAuthor,
+    RfcToBe,
     RpcPerson,
     RpcRelatedDocument,
     RpcRole,
@@ -444,6 +445,29 @@ class ImportSubmissionClusteringTests(TestCase):
 
         doc_b = Document.objects.get(datatracker_id=B_ID)
         self.assertEqual(doc_b.intended_std_level, "")
+
+    @override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
+    @patch("rpc.api.create_draft_repo_task")
+    def test_import_queues_the_draft_repo_for_the_importer(
+        self, mock_repo_task, mock_sst, mock_cdr
+    ):
+        rpcapi = self._make_rpcapi(drafts_by_id={4001: "draft-repo-a"})
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._do_import(4001, rpcapi)
+        self.assertEqual(response.status_code, 200, response.content)
+        rfc_to_be = RfcToBe.objects.get(draft__name="draft-repo-a")
+        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, self.user.pk)
+
+    @override_settings(GITHUB_DRAFTS_WRITE_TOKEN=None)
+    @patch("rpc.api.create_draft_repo_task")
+    def test_import_without_a_write_token_creates_no_repo(
+        self, mock_repo_task, mock_sst, mock_cdr
+    ):
+        rpcapi = self._make_rpcapi(drafts_by_id={4002: "draft-repo-b"})
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._do_import(4002, rpcapi)
+        self.assertEqual(response.status_code, 200, response.content)
+        mock_repo_task.delay.assert_not_called()
 
 
 class DocumentSearchTests(TestCase):

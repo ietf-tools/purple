@@ -191,6 +191,10 @@ DOI_AUTHOR_ORGS = [
 
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
+# Repository creation on import is disabled while this is unset.
+GITHUB_DRAFTS_WRITE_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_WRITE_TOKEN")
+# Organization in which document repositories are created from its base-template.
+GITHUB_DRAFTS_ORG = os.environ.get("PURPLE_GH_DRAFTS_ORG") or "rfc-editor-drafts"
 
 # API tokens
 APP_API_TOKENS = {

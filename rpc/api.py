@@ -54,6 +54,7 @@ from .dt_v1_api_utils import (
     datatracker_group_list_email,
     datatracker_group_name,
 )
+from .lifecycle import draft_repo
 from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
@@ -174,6 +175,7 @@ from .tasks import (
     RPC_PERSON_NAME_MAP_CACHE_KEY,
     RPC_PERSON_NAME_MAP_CACHE_TTL,
     compute_deep_references_task,
+    create_draft_repo_task,
     publish_rfctobe_task,
     send_mail_task,
     set_stream_manager_task,
@@ -801,6 +803,11 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             )
 
             transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
+            if draft_repo.is_enabled():
+                importer_id = request.user.pk
+                transaction.on_commit(
+                    lambda: create_draft_repo_task.delay(rfctobe.pk, importer_id)
+                )
 
             # create the authors
             if draft_info is None:
@@ -1649,6 +1656,25 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             defaults={"state": Assignment.State.DONE},
         )
         return Response(RfcToBeSerializer(rfctobe, context={"request": request}).data)
+
+    @extend_schema(
+        operation_id="documents_create_repo",
+        request=None,
+        responses={202: None},
+    )
+    @action(detail=True, methods=["post"], url_path="create_repo")
+    def create_repo(self, request, draft__name=None):
+        """Retry creating the document's repository in the background. Only a
+        failure is reported, as a notification to the caller."""
+        rfctobe = self.get_object()
+        if not draft_repo.is_enabled():
+            raise serializers.ValidationError("Creating repos is not configured.")
+        if rfctobe.repository:
+            raise serializers.ValidationError(
+                f"{rfctobe.name} already has a repository: {rfctobe.repository}"
+            )
+        create_draft_repo_task.delay(rfctobe.pk, request.user.pk)
+        return Response(status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(
         operation_id="documents_pub_status_retrieve",
