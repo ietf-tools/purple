@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "datatracker.apps.DatatrackerConfig",
     "rpc.apps.RpcConfig",
     "rpcauth.apps.RpcAuthConfig",
+    "analytics.apps.AnalyticsConfig",
 ]
 
 MIDDLEWARE = [
@@ -113,6 +114,7 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "Backend API for the Purple app",
     "VERSION": "0.1",
     "SCHEMA_PATH_PREFIX": "/api/rpc/",
+    "PREPROCESSING_HOOKS": ["purple.openapi.exclude_analytics"],
     "COMPONENT_NO_READ_ONLY_REQUIRED": True,
     "COMPONENT_SPLIT_REQUEST": True,
     # Give the shared stats-tab choice sets one canonical enum name so the same
@@ -195,6 +197,7 @@ GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
 # API tokens
 APP_API_TOKENS = {
     "api.pubq": ["pubq-token"],
+    "api.analytics": ["analytics-token"],
 }
 
 # Celery Beat
