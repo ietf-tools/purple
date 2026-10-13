@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Purple analytics
-  version: '0.1'
+  version: "0.1"
   description: Read-only view of RPC data for the analytics database
 paths:
   /api/analytics/dispositions/:
@@ -9,114 +9,114 @@ paths:
       operationId: dispositions_list
       description: All document lifecycle states
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AnalyticsDisposition'
-          description: ''
+                  $ref: "#/components/schemas/AnalyticsDisposition"
+          description: ""
   /api/analytics/documents/:
     get:
       operationId: documents_list
       description: All documents, in every disposition, with their labels and assignments
       parameters:
-      - name: limit
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
-      - name: offset
-        required: false
-        in: query
-        description: The initial index from which to return the results.
-        schema:
-          type: integer
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedAnalyticsDocumentList'
-          description: ''
+                $ref: "#/components/schemas/PaginatedAnalyticsDocumentList"
+          description: ""
   /api/analytics/labels/:
     get:
       operationId: labels_list
       description: All labels, including unused and non-public ones
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AnalyticsLabel'
-          description: ''
+                  $ref: "#/components/schemas/AnalyticsLabel"
+          description: ""
   /api/analytics/roles/:
     get:
       operationId: roles_list
       description: All roles staff can hold on a document
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AnalyticsRole'
-          description: ''
+                  $ref: "#/components/schemas/AnalyticsRole"
+          description: ""
   /api/analytics/source-formats/:
     get:
       operationId: source_formats_list
       description: All source formats
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AnalyticsSourceFormat'
-          description: ''
+                  $ref: "#/components/schemas/AnalyticsSourceFormat"
+          description: ""
   /api/analytics/staff/:
     get:
       operationId: staff_list
       description: All RPC staff, current and former
       tags:
-      - analytics
+        - analytics
       security:
-      - apiKeyAuth: []
+        - apiKeyAuth: []
       responses:
-        '200':
+        "200":
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/AnalyticsStaff'
-          description: ''
+                  $ref: "#/components/schemas/AnalyticsStaff"
+          description: ""
 components:
   schemas:
     AnalyticsAssignment:
@@ -131,7 +131,7 @@ components:
           readOnly: true
         state:
           allOf:
-          - $ref: '#/components/schemas/StateEnum'
+            - $ref: "#/components/schemas/StateEnum"
           readOnly: true
         staff_datatracker_id:
           type: integer
@@ -214,7 +214,7 @@ components:
         assignments:
           type: array
           items:
-            $ref: '#/components/schemas/AnalyticsAssignment'
+            $ref: "#/components/schemas/AnalyticsAssignment"
           readOnly: true
     AnalyticsLabel:
       type: object
@@ -269,8 +269,8 @@ components:
     PaginatedAnalyticsDocumentList:
       type: object
       required:
-      - count
-      - results
+        - count
+        - results
       properties:
         count:
           type: integer
@@ -288,14 +288,14 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/AnalyticsDocument'
+            $ref: "#/components/schemas/AnalyticsDocument"
     StateEnum:
       enum:
-      - assigned
-      - in_progress
-      - done
-      - withdrawn
-      - closed_for_hold
+        - assigned
+        - in_progress
+        - done
+        - withdrawn
+        - closed_for_hold
       type: string
       description: |-
         * `assigned` - Assigned
