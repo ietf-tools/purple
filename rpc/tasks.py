@@ -2,7 +2,6 @@
 import rpcapi_client
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.contrib.auth import get_user_model
 from django.db.models import F
 from django.utils import timezone
 
@@ -59,11 +58,11 @@ def set_stream_manager_task(rfc_to_be_id: int):
 
 
 @shared_task
-def create_draft_repo_task(rfc_to_be_id: int, notify_user_id: int | None = None):
+def create_draft_repo_task(rfc_to_be_id: int, notify_person_id: int | None = None):
     """Create the document's repository in the drafts organization.
 
-    Only failures are notified: to the RpcPerson of notify_user_id, or to everyone
-    if there is none. On success the repository is recorded on the document.
+    Only failures are notified: to the RpcPerson with pk notify_person_id, or to
+    everyone if there is none. On success the repository is recorded on the document.
     """
     rfctobe = RfcToBe.objects.get(pk=rfc_to_be_id)
     try:
@@ -75,24 +74,8 @@ def create_draft_repo_task(rfc_to_be_id: int, notify_user_id: int | None = None)
             Notification.EventType.REPO_NOT_CREATED,
             f"No repo created for {rfctobe.name}: {err}{hint}"[:255],
             rfc_to_be=rfctobe,
-            recipient=_rpc_person_of(notify_user_id),
+            recipient=RpcPerson.objects.filter(pk=notify_person_id).first(),
         )
-
-
-def _rpc_person_of(user_id: int | None) -> RpcPerson | None:
-    """The user's RpcPerson, or None if there is none or the datatracker cannot be
-    reached, in which case the notification goes to everyone instead."""
-    user = get_user_model().objects.filter(pk=user_id).first() if user_id else None
-    if user is None:
-        return None
-    try:
-        with datatracker_api():
-            return user.rpcperson()
-    except DataTrackerUnavailable:
-        logger.warning(
-            "Could not look up the RpcPerson of user %s", user_id, exc_info=True
-        )
-        return None
 
 
 logger = get_task_logger(__name__)

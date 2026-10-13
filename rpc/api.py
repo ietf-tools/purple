@@ -800,7 +800,8 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
 
             transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
             if draft_repo.is_enabled():
-                importer_id = request.user.pk
+                importer = request.user.rpcperson()
+                importer_id = importer.pk if importer else None
                 transaction.on_commit(
                     lambda: create_draft_repo_task.delay(rfctobe.pk, importer_id)
                 )
@@ -1660,7 +1661,8 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
             raise serializers.ValidationError(
                 f"{rfctobe.name} already has a repository: {rfctobe.repository}"
             )
-        create_draft_repo_task.delay(rfctobe.pk, request.user.pk)
+        requester = request.user.rpcperson()
+        create_draft_repo_task.delay(rfctobe.pk, requester.pk if requester else None)
         return Response(status=status.HTTP_202_ACCEPTED)
 
     @extend_schema(

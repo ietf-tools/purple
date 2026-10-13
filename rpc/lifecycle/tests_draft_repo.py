@@ -7,7 +7,6 @@ import requests
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 from github import GithubException, UnknownObjectException
-from rpcapi_client.exceptions import ApiException
 
 from rpc.factories import RfcToBeFactory, RpcPersonFactory
 from rpc.models import Notification
@@ -193,16 +192,10 @@ class CreateDraftRepoTaskTests(TestCase):
     def setUp(self):
         self.rfc_to_be = RfcToBeFactory(draft__name=NAME)
         self.importer = RpcPersonFactory()
-        self.user = get_user_model().objects.create_user(username="importer")
-        patcher = mock.patch(
-            "rpcauth.models.User.rpcperson", return_value=self.importer
-        )
-        self.rpcperson = patcher.start()
-        self.addCleanup(patcher.stop)
 
     @mock.patch("rpc.tasks.create_draft_repo", return_value=FULL_NAME)
     def test_success_is_not_notified(self, _create):
-        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+        create_draft_repo_task(self.rfc_to_be.pk, self.importer.pk)
         self.assertFalse(Notification.objects.exists())
 
     @mock.patch(
@@ -212,7 +205,7 @@ class CreateDraftRepoTaskTests(TestCase):
         ),
     )
     def test_other_failures_have_no_manual_fix_hint(self, _create):
-        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+        create_draft_repo_task(self.rfc_to_be.pk, self.importer.pk)
         self.assertNotIn("manual fix", Notification.objects.get().message)
 
     @mock.patch(
@@ -220,7 +213,7 @@ class CreateDraftRepoTaskTests(TestCase):
         side_effect=DraftRepoExists(f"{FULL_NAME} already exists"),
     )
     def test_tells_the_importer_why_not(self, _create):
-        create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
+        create_draft_repo_task(self.rfc_to_be.pk, self.importer.pk)
         notification = Notification.objects.get()
         self.assertEqual(notification.event_type, "repo_not_created")
         self.assertEqual(notification.recipient, self.importer)
@@ -237,25 +230,6 @@ class CreateDraftRepoTaskTests(TestCase):
     def test_without_an_importer_tells_everyone(self, _create):
         create_draft_repo_task(self.rfc_to_be.pk, None)
         self.assertIsNone(Notification.objects.get().recipient)
-
-    @mock.patch(
-        "rpc.tasks.create_draft_repo",
-        side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
-    )
-    def test_an_unreachable_datatracker_tells_everyone(self, _create):
-        self.rpcperson.side_effect = ApiException(status=503)
-        with self.assertLogs("rpc.tasks", level="WARNING"):
-            create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
-        self.assertIsNone(Notification.objects.get().recipient)
-
-    @mock.patch(
-        "rpc.tasks.create_draft_repo",
-        side_effect=DraftRepoError(f"{FULL_NAME} already exists"),
-    )
-    def test_other_errors_looking_up_the_importer_are_raised(self, _create):
-        self.rpcperson.side_effect = RuntimeError("bug")
-        with self.assertRaises(RuntimeError):
-            create_draft_repo_task(self.rfc_to_be.pk, self.user.pk)
 
 
 @override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
@@ -278,7 +252,7 @@ class CreateRepoActionTests(TestCase):
     def test_queues_the_task_for_the_requester(self, task):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, 202, response.content)
-        task.delay.assert_called_once_with(self.rfc_to_be.pk, self.user.pk)
+        task.delay.assert_called_once_with(self.rfc_to_be.pk, self.requester.pk)
 
     def test_refused_when_the_document_has_a_repository(self, task):
         self.rfc_to_be.repository = FULL_NAME
