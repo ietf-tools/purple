@@ -219,9 +219,21 @@ class CreateDraftRepoTaskTests(TestCase):
         self.assertEqual(notification.recipient, self.importer)
         self.assertEqual(
             notification.message,
-            f"No repo created for {NAME}: {FULL_NAME} already exists"
-            " (needs manual fix)",
+            f"No repo created (needs manual fix) for {NAME}: "
+            f"{FULL_NAME} already exists",
         )
+
+    @mock.patch(
+        "rpc.tasks.create_draft_repo",
+        side_effect=DraftRepoExists(f"{FULL_NAME} already exists"),
+    )
+    def test_the_hint_survives_a_long_name(self, _create):
+        long_name = "draft-" + "x" * 240
+        rfc_to_be = RfcToBeFactory(draft__name=long_name)
+        create_draft_repo_task(rfc_to_be.pk, self.importer.pk)
+        message = Notification.objects.get().message
+        self.assertEqual(len(message), 255)
+        self.assertTrue(message.startswith("No repo created (needs manual fix) for"))
 
     @mock.patch(
         "rpc.tasks.create_draft_repo",

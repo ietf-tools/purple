@@ -1,12 +1,12 @@
 # Copyright The IETF Trust 2026, All Rights Reserved
 """Create a document's repository in the drafts organization on import
 
-The repository is created from the organization's base-template (organization:
-GITHUB_DRAFTS_ORG), is private, is named after the draft without its revision, and
-uses the draft title as its description. A single commit on the Approved branch
-replaces the README and adds the approved I-D's txt and xml from the IETF archive,
-each together with a ".original" copy. The RPC-edits branch is created at the same
-commit. Markdown sources are committed manually.
+The repository is created from the template repository GITHUB_DRAFTS_TEMPLATE_REPO
+in the organization GITHUB_DRAFTS_ORG, is private, is named after the draft without
+its revision, and uses the draft title as its description. A single commit on the
+Approved branch replaces the README and adds the approved I-D's txt and xml from the
+IETF archive (ID_ARCHIVE_URL), each together with a ".original" copy. The RPC-edits
+branch is created at the same commit. Markdown sources are committed manually.
 
 Every failure raises DraftRepoError with a message intended for the user, for
 example an existing repository, a file missing from the archive, or GitHub being
@@ -27,17 +27,11 @@ from rpc.models import RfcToBe
 
 logger = logging.getLogger(__name__)
 
-TEMPLATE_REPO = "base-template"
 BRANCH = "Approved"
 EDITS_BRANCH = "RPC-edits"
 COMMIT_MESSAGE = "approved I-D"
-ARCHIVE_URL = "https://www.ietf.org/archive/id/"
-REQUEST_TIMEOUT = 30  # seconds
-# GitHub populates a repository created from a template asynchronously. Until it
-# has done so, requests for the branch return 409 ("Git Repository is empty") or
-# 404.
-BRANCH_WAIT_ATTEMPTS = 10
-BRANCH_WAIT_SECONDS = 2
+# Until GitHub has populated a repository created from a template, requests for the
+# branch return 409 ("Git Repository is empty") or 404.
 _NOT_READY_STATUSES = (404, 409)
 
 
@@ -54,9 +48,9 @@ def is_enabled() -> bool:
 
 
 def _download(filename: str) -> bytes:
-    url = f"{ARCHIVE_URL}{filename}"
+    url = f"{settings.ID_ARCHIVE_URL}{filename}"
     try:
-        response = requests.get(url, timeout=REQUEST_TIMEOUT)
+        response = requests.get(url, timeout=settings.ID_ARCHIVE_TIMEOUT)
     except requests.RequestException as err:
         raise DraftRepoError(
             f"Could not reach the IETF archive for {filename}"
@@ -88,14 +82,15 @@ def _repo_files(rfc_to_be: RfcToBe) -> dict[str, bytes]:
 
 
 def _wait_for_branch(repo):
-    for attempt in range(BRANCH_WAIT_ATTEMPTS):
+    attempts = settings.GITHUB_DRAFTS_BRANCH_WAIT_ATTEMPTS
+    for attempt in range(attempts):
         try:
             return repo.get_git_ref(f"heads/{BRANCH}")
         except GithubException as err:
             if err.status not in _NOT_READY_STATUSES:
                 raise
-            if attempt + 1 < BRANCH_WAIT_ATTEMPTS:
-                time.sleep(BRANCH_WAIT_SECONDS)
+            if attempt + 1 < attempts:
+                time.sleep(settings.GITHUB_DRAFTS_BRANCH_WAIT_SECONDS)
     raise DraftRepoError(
         f"{repo.full_name} was created, but its {BRANCH} branch never appeared, "
         "so no files were committed"
@@ -146,7 +141,7 @@ def create_draft_repo(rfc_to_be: RfcToBe) -> str:
         files = _repo_files(rfc_to_be)
         repo = org.create_repo_from_template(
             name,
-            github.get_repo(f"{drafts_org}/{TEMPLATE_REPO}"),
+            github.get_repo(f"{drafts_org}/{settings.GITHUB_DRAFTS_TEMPLATE_REPO}"),
             description=rfc_to_be.title,
             private=True,
         )

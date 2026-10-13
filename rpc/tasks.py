@@ -72,7 +72,7 @@ def create_draft_repo_task(rfc_to_be_id: int, notify_person_id: int | None = Non
         hint = " (needs manual fix)" if isinstance(err, DraftRepoExists) else ""
         Notification.emit(
             Notification.EventType.REPO_NOT_CREATED,
-            f"No repo created for {rfctobe.name}: {err}{hint}"[:255],
+            f"No repo created{hint} for {rfctobe.name}: {err}"[:255],
             rfc_to_be=rfctobe,
             recipient=RpcPerson.objects.filter(pk=notify_person_id).first(),
         )
