@@ -65,7 +65,7 @@ If an xml source file that can be converted using the xml2rfc tool
 at https://author-tools.ietf.org exists, please send us the file as soon
 as possible as this will increase the pace with which documents move
 through the RFC Editor queue. Note that files must be self-contained.
-If no XML file exists, please let us know so that we may move forward.
+If no xml file exists, please let us know so that we may move forward.
 
 {% endif %}---
 
@@ -84,7 +84,7 @@ updated xml/md file to the RPC and note the intended style usage.
 X) Since this document appears to contain a formal language
 (see https://authors.ietf.org/formal-languages) or code / code
 snippets that will be marked with <sourcecode> in this document's
-XML file, please confirm that:
+xml file, please confirm that:
 
 * it validates
 
@@ -107,7 +107,7 @@ closely as possible, and
 * the figures fit on the pages of the PDF output.
 
 
-X) Because there are some author comments present in the XML, please confirm
+X) Because there are some author comments present in the xml, please confirm
 that there are no outstanding updates related to these comments.
 
 
