@@ -724,8 +724,8 @@ paths:
     post:
       operationId: documents_create_repo
       description: |-
-        Retry creating the document's repo in rfc-editor-drafts; the outcome
-        arrives as a notification to the caller.
+        Retry creating the document's repository in the background. Only a
+        failure is reported, as a notification to the caller.
       parameters:
         - in: path
           name: draft__name
