@@ -17,6 +17,18 @@ export default defineNuxtConfig({
   headlessui: {
     prefix: 'Headless'
   },
+  icon: {
+    // Bundle the icons the app uses instead of fetching them from the Iconify API
+    provider: 'none',
+    fallbackToApi: false,
+    clientBundle: {
+      scan: {
+        globInclude: ['app/**/*.{vue,ts}'],
+        globExclude: ['app/purple_client/**']
+      },
+      sizeLimitKb: 256
+    }
+  },
   modules: [
     '@nuxt/devtools',
     '@nuxt/icon',
