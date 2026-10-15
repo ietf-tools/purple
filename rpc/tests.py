@@ -324,6 +324,12 @@ class ImportSubmissionClusteringTests(TestCase):
             name="Import Cluster User",
         )
         self.client.force_login(self.user)
+        # Import as an RPC team member. The real lookup goes to the datatracker,
+        # which these tests mock only for drafts and references.
+        self.importer = RpcPersonFactory()
+        patcher = patch("rpcauth.models.User.rpcperson", return_value=self.importer)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.fmt = SourceFormatNameFactory(slug="xml-v3")
         self.boilerplate = TlpBoilerplateChoiceNameFactory(slug="trust200902")
         self.std_level = StdLevelNameFactory(slug="ps")
@@ -451,16 +457,12 @@ class ImportSubmissionClusteringTests(TestCase):
     def test_import_queues_the_draft_repo_for_the_importer(
         self, mock_repo_task, mock_sst, mock_cdr
     ):
-        importer = RpcPersonFactory()
         rpcapi = self._make_rpcapi(drafts_by_id={4001: "draft-repo-a"})
-        with (
-            patch("rpcauth.models.User.rpcperson", return_value=importer),
-            self.captureOnCommitCallbacks(execute=True),
-        ):
+        with self.captureOnCommitCallbacks(execute=True):
             response = self._do_import(4001, rpcapi)
         self.assertEqual(response.status_code, 200, response.content)
         rfc_to_be = RfcToBe.objects.get(draft__name="draft-repo-a")
-        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, importer.pk)
+        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, self.importer.pk)
 
     @override_settings(GITHUB_DRAFTS_WRITE_TOKEN=None)
     @patch("rpc.api.create_draft_repo_task")
@@ -1381,6 +1383,13 @@ class ImportRequestsAuthorApprovalsTests(TestCase):
                 username="import-approvals-user", password="pw", name="Importer"
             )
         )
+        # Import as an RPC team member. The real lookup goes to the datatracker,
+        # which these tests mock only for drafts and references.
+        patcher = patch(
+            "rpcauth.models.User.rpcperson", return_value=RpcPersonFactory()
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.fmt = SourceFormatNameFactory(slug="xml-v3")
         self.boilerplate = TlpBoilerplateChoiceNameFactory(slug="trust200902")
         self.std_level = StdLevelNameFactory(slug="ps")
