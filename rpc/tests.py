@@ -1524,8 +1524,21 @@ class IntakeMailTemplateTests(TestCase):
             self.intake()["body"],
         )
 
+    def test_missing_xml_section_for_a_plaintext_submission(self, *_):
+        self.rfc_to_be.submitted_format = SourceFormatNameFactory(slug="txt")
+        self.rfc_to_be.save()
+        body = self.intake()["body"]
+        self.assertIn(
+            "edited more carefully?\n\n\n"
+            "5) We were unable to obtain an xml file from the Datatracker.\n",
+            body,
+        )
+        self.assertIn("so that we may move forward.\n\n---\n", body)
+
     def test_sections_that_do_not_apply_are_left_out(self, *_):
         body = self.intake()["body"]
+        self.assertNotIn("unable to obtain an xml file", body)
+        self.assertIn("edited more carefully?\n\n---\n", body)
         self.assertNotIn("This document is part of Cluster", body)
         self.assertNotIn("reported errata", body)
         # The item before them is followed by the usual two blank lines.
