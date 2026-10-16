@@ -53,7 +53,7 @@
     "@iconify-json/solar": "1.2.13",
     "@iconify-json/tabler": "1.2.42",
     "@iconify-json/uil": "1.2.3",
-    "@nuxt/devtools": "3.4.2",
+    "@nuxt/devtools": "3.4.3",
     "@nuxt/icon": "2.5.1",
     "@nuxt/test-utils": "4.3.2",
     "@nuxtjs/color-mode": "4.0.1",
