@@ -2054,9 +2054,10 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         slug_filter = request.query_params.getlist("relationship")
 
         class _ReverseRelationship:
-            def __init__(self, slug):
+            def __init__(self, slug, name):
                 self.pk = slug
                 self.slug = slug
+                self.name = name
 
         class _ReverseRpcRelatedDocument:
             def __init__(self, id, relationship, source, target_rfctobe):
@@ -2066,7 +2067,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 self.target_rfctobe = target_rfctobe
                 self.target_document = None
 
-        def append_reverse(rel_slug, fake_slug):
+        def append_reverse(rel_slug, fake_slug, fake_name):
             if slug_filter and fake_slug not in slug_filter:
                 return
 
@@ -2081,14 +2082,14 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 results.append(
                     _ReverseRpcRelatedDocument(
                         id=rel.id,
-                        relationship=_ReverseRelationship(fake_slug),
+                        relationship=_ReverseRelationship(fake_slug, fake_name),
                         source=rel.target_rfctobe,
                         target_rfctobe=rel.source,
                     )
                 )
 
-        append_reverse("updates", "updated_by")
-        append_reverse("obs", "obsoleted_by")
+        append_reverse("updates", "updated_by", "Updated By")
+        append_reverse("obs", "obsoleted_by", "Obsoleted By")
 
         page = self.paginate_queryset(results)
         if page is not None:

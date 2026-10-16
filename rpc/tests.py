@@ -195,6 +195,82 @@ class RelatedDocumentClusterSyncTests(TestCase):
         self.assertEqual(target.cluster.number, cluster.number)
 
 
+class RelatedDocumentListTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="test-user",
+            password="test-password",
+            name="Test User",
+        )
+        self.client.force_login(self.user)
+
+    def test_list_includes_updated_by_and_obsoleted_by(self):
+        target = RfcToBeFactory(draft__name="draft-target-doc")
+        for slug, name, source_name in [
+            ("updates", "Updates", "draft-updating-doc"),
+            ("obs", "Obsoletes", "draft-obsoleting-doc"),
+        ]:
+            relationship, _ = DocRelationshipName.objects.get_or_create(
+                slug=slug, defaults={"name": name, "desc": ""}
+            )
+            RpcRelatedDocument.objects.create(
+                source=RfcToBeFactory(draft__name=source_name),
+                relationship=relationship,
+                target_rfctobe=target,
+            )
+
+        response = self.client.get(
+            reverse("documents-related-list", kwargs={"draft_name": "draft-target-doc"})
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertCountEqual(
+            [
+                (
+                    rel["relationship"],
+                    rel["relationship_name"],
+                    rel["target_draft_name"],
+                )
+                for rel in response.json()
+            ],
+            [
+                ("updated_by", "Updated By", "draft-updating-doc"),
+                ("obsoleted_by", "Obsoleted By", "draft-obsoleting-doc"),
+            ],
+        )
+
+    def test_list_for_rfcs_without_drafts(self):
+        relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug="obs", defaults={"name": "Obsoletes", "desc": ""}
+        )
+        source = RfcToBeFactory(draft=None, rfc_number=10)
+        target = RfcToBeFactory(draft=None, rfc_number=3)
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=relationship, target_rfctobe=target
+        )
+
+        for identifier, expected in [
+            ("rfc10", ("obs", None, None, 3)),
+            ("rfc3", ("obsoleted_by", None, None, 10)),
+        ]:
+            response = self.client.get(
+                reverse("documents-related-list", kwargs={"draft_name": identifier})
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(
+                [
+                    (
+                        rel["relationship"],
+                        rel["draft_name"],
+                        rel["target_draft_name"],
+                        rel["target_rfc_number"],
+                    )
+                    for rel in response.json()
+                ],
+                [expected],
+            )
+
+
 class ApplySubmissionClusterMembershipTests(TestCase):
     def test_no_refs_creates_no_cluster(self):
         doc = RfcToBeFactory().draft

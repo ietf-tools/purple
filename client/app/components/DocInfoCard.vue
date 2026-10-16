@@ -363,9 +363,7 @@
               class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="obsoletes && obsoletes.length > 0" class="flex-1">
                 <span v-for="(doc, idx) in obsoletes" :key="doc.id">
-                  <NuxtLink
-                    :to="`/docs/${doc.targetDraftName}`"
-                    class="text-blue-600 hover:underline">
+                  <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }} </NuxtLink
                   ><span v-if="idx < obsoletes.length - 1">, </span>
                 </span>
@@ -385,9 +383,7 @@
                   v-for="doc in obsoletes"
                   :key="doc.id"
                   class="flex items-center justify-between text-sm">
-                  <NuxtLink
-                    :to="`/docs/${doc.targetDraftName}`"
-                    class="text-blue-600 hover:underline">
+                  <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
                   <button
@@ -431,9 +427,7 @@
               class="w-full flex flex-row items-center h-full mx-0 text-sm font-medium">
               <div v-if="updates && updates.length > 0" class="flex-1">
                 <span v-for="(doc, idx) in updates" :key="doc.id">
-                  <NuxtLink
-                    :to="`/docs/${doc.targetDraftName}`"
-                    class="text-blue-600 hover:underline">
+                  <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }} </NuxtLink
                   ><span v-if="idx < updates.length - 1">, </span>
                 </span>
@@ -453,9 +447,7 @@
                   v-for="doc in updates"
                   :key="doc.id"
                   class="flex items-center justify-between text-sm">
-                  <NuxtLink
-                    :to="`/docs/${doc.targetDraftName}`"
-                    class="text-blue-600 hover:underline">
+                  <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                     RFC {{ doc.targetRfcNumber }}
                   </NuxtLink>
                   <button
@@ -496,9 +488,7 @@
           <DescriptionListDetails>
             <div v-if="obsoletedBy && obsoletedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in obsoletedBy" :key="doc.id">
-                <NuxtLink
-                  :to="`/docs/${doc.targetDraftName}`"
-                  class="text-blue-600 hover:underline">
+                <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                   {{
                     doc.targetDisposition === 'published'
                       ? `RFC ${doc.targetRfcNumber}`
@@ -514,9 +504,7 @@
           <DescriptionListDetails>
             <div v-if="updatedBy && updatedBy.length > 0" class="text-sm font-medium">
               <span v-for="(doc, idx) in updatedBy" :key="doc.id">
-                <NuxtLink
-                  :to="`/docs/${doc.targetDraftName}`"
-                  class="text-blue-600 hover:underline">
+                <NuxtLink :to="relatedDocHref(doc)" class="text-blue-600 hover:underline">
                   {{
                     doc.targetDisposition === 'published'
                       ? `RFC ${doc.targetRfcNumber}`
@@ -653,7 +641,12 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
-import { type RfcToBe, type ColorEnum, ResponseError } from '~/purple_client'
+import {
+  type RfcToBe,
+  type ColorEnum,
+  type RpcRelatedDocument,
+  ResponseError
+} from '~/purple_client'
 import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
@@ -788,6 +781,10 @@ const obsoletedBy = computed(
 const updatedBy = computed(
   () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
 )
+
+// if RFC has no draft name (legacy or April1st), link those by RFC number
+const relatedDocHref = (doc: RpcRelatedDocument) =>
+  doc.targetDraftName ? `/docs/${doc.targetDraftName}` : `/docs/rfc${doc.targetRfcNumber}`
 
 const isEditingObsoletes = ref(false)
 const isEditingUpdates = ref(false)
