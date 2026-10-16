@@ -782,7 +782,7 @@ const updatedBy = computed(
   () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
 )
 
-// RFCs published before drafts existed have no draft name, so link those by RFC number
+// if RFC has no draft name (legacy or April1st), link those by RFC number
 const relatedDocHref = (doc: RpcRelatedDocument) =>
   doc.targetDraftName ? `/docs/${doc.targetDraftName}` : `/docs/rfc${doc.targetRfcNumber}`
 
