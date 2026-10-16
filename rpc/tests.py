@@ -195,6 +195,51 @@ class RelatedDocumentClusterSyncTests(TestCase):
         self.assertEqual(target.cluster.number, cluster.number)
 
 
+class RelatedDocumentListTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="test-user",
+            password="test-password",
+            name="Test User",
+        )
+        self.client.force_login(self.user)
+
+    def test_list_includes_updated_by_and_obsoleted_by(self):
+        target = RfcToBeFactory(draft__name="draft-target-doc")
+        for slug, name, source_name in [
+            ("updates", "Updates", "draft-updating-doc"),
+            ("obs", "Obsoletes", "draft-obsoleting-doc"),
+        ]:
+            relationship, _ = DocRelationshipName.objects.get_or_create(
+                slug=slug, defaults={"name": name, "desc": ""}
+            )
+            RpcRelatedDocument.objects.create(
+                source=RfcToBeFactory(draft__name=source_name),
+                relationship=relationship,
+                target_rfctobe=target,
+            )
+
+        response = self.client.get(
+            reverse("documents-related-list", kwargs={"draft_name": "draft-target-doc"})
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertCountEqual(
+            [
+                (
+                    rel["relationship"],
+                    rel["relationship_name"],
+                    rel["target_draft_name"],
+                )
+                for rel in response.json()
+            ],
+            [
+                ("updated_by", "Updated By", "draft-updating-doc"),
+                ("obsoleted_by", "Obsoleted By", "draft-obsoleting-doc"),
+            ],
+        )
+
+
 class ApplySubmissionClusterMembershipTests(TestCase):
     def test_no_refs_creates_no_cluster(self):
         doc = RfcToBeFactory().draft
