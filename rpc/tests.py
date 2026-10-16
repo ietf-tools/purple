@@ -239,6 +239,37 @@ class RelatedDocumentListTests(TestCase):
             ],
         )
 
+    def test_list_for_rfcs_without_drafts(self):
+        relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug="obs", defaults={"name": "Obsoletes", "desc": ""}
+        )
+        source = RfcToBeFactory(draft=None, rfc_number=10)
+        target = RfcToBeFactory(draft=None, rfc_number=3)
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=relationship, target_rfctobe=target
+        )
+
+        for identifier, expected in [
+            ("rfc10", ("obs", None, None, 3)),
+            ("rfc3", ("obsoleted_by", None, None, 10)),
+        ]:
+            response = self.client.get(
+                reverse("documents-related-list", kwargs={"draft_name": identifier})
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(
+                [
+                    (
+                        rel["relationship"],
+                        rel["draft_name"],
+                        rel["target_draft_name"],
+                        rel["target_rfc_number"],
+                    )
+                    for rel in response.json()
+                ],
+                [expected],
+            )
+
 
 class ApplySubmissionClusterMembershipTests(TestCase):
     def test_no_refs_creates_no_cluster(self):
