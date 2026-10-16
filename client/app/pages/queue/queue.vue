@@ -366,72 +366,33 @@ const columns = [
           }
         )
 
+        const blockingReasons = data.row.original.blockingReasons ?? []
+        const showReasons = role === 'blocked' && blockingReasons.length > 0
+
         listItems.push(
-          h('li', { class: 'flex gap-3' }, [
-            h('span', h(BaseBadge, { label: roleName(role), class: 'mr-1' })),
+          h('li', { class: 'flex items-baseline gap-2' }, [
             h(
               'ul',
-              { class: 'flex flex-col gap-2' },
-              assignmentsOfRole
-                .map((assignment) => {
-                  const rpcPerson = people.value.find((p) => p.id === assignment.person)
-                  const children: (VNode | string)[] = [
-                    h(
-                      Anchor,
-                      {
-                        href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-                        class: [ANCHOR_STYLE, 'text-sm nowrap']
-                      },
-                      () => [rpcPerson ? rpcPerson.name : '']
-                    )
-                  ]
-
-                  // Show blocking reasons for blocked assignments
-                  if (
-                    role === 'blocked' &&
-                    data.row.original.blockingReasons &&
-                    data.row.original.blockingReasons.length > 0
-                  ) {
-                    const reasons = formatBlockingReasons(
-                      data.row.original.blockingReasons,
-                      data.row.original.actionholderSet
-                    )
-                    const shortReasons = formatBlockingReasons(
-                      data.row.original.blockingReasons,
-                      data.row.original.actionholderSet,
-                      40
-                    )
-                    children.push(
-                      h(
-                        'span',
-                        {
-                          class: 'text-xs text-gray-500 dark:text-neutral-400 ml-2',
-                          title: shortReasons === reasons ? undefined : reasons
-                        },
-                        shortReasons
-                      )
-                    )
-                  }
-
-                  return h('div', { class: 'inline-flex items-baseline' }, children)
-                })
-                .reduce(
-                  (acc, item, index, arr) => {
-                    // add commas between items
-                    const listItemChildren = []
-                    listItemChildren.push(item)
-                    if (index < arr.length - 1) {
-                      listItemChildren.push(', ')
-                    } else {
-                      listItemChildren.push(' ')
-                    }
-                    const listItem = h('li', listItemChildren)
-                    acc.push(listItem)
-                    return acc
-                  },
-                  [] as (VNode | string)[]
+              { class: 'flex flex-col gap-2 w-36 shrink-0' },
+              assignmentsOfRole.map((assignment) => {
+                const rpcPerson = people.value.find((p) => p.id === assignment.person)
+                return h(
+                  'li',
+                  h(
+                    Anchor,
+                    {
+                      href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
+                      class: [ANCHOR_STYLE, 'text-sm']
+                    },
+                    () => [rpcPerson ? rpcPerson.name : '']
+                  )
                 )
+              })
             ),
+            h(BaseBadge, { label: roleName(role) }),
+            showReasons
+              ? blockingReasonsList(blockingReasons, data.row.original.actionholderSet)
+              : null,
             h('span', [
               h(
                 BaseButton,
