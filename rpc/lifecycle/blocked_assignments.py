@@ -120,6 +120,8 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
     if _is_active_or_pending_assignment(rfc, slugs):
         if rfc.actionholder_set.active().exists():
             reasons.add(BlockingReason.ACTION_HOLDER_ACTIVE)
+        if rfc.finalapproval_set.active().exists():
+            reasons.add(BlockingReason.FINAL_APPROVAL_PENDING)
         return reasons
 
     # Gate 5: Blocks publishing

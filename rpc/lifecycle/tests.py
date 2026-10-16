@@ -3,15 +3,18 @@ from unittest.mock import MagicMock, patch
 
 import jsonschema.exceptions
 from django.test import TestCase
+from django.utils import timezone
 from rest_framework import serializers
 
 from rpc.factories import (
     AssignmentFactory,
     DispositionNameFactory,
+    FinalApprovalFactory,
     LabelFactory,
     PublicationAttemptFactory,
     RfcToBeActionHolderFactory,
     RfcToBeFactory,
+    RpcPersonFactory,
     RpcRoleFactory,
 )
 from rpc.models import (
@@ -498,3 +501,67 @@ class BlockReasonSyncTests(TestCase):
             self.active_reasons(), {BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED}
         )
         self.assertTrue(self.active_blocked_assignments())
+
+
+class FinalReviewBlockingTests(TestCase):
+    """Unfinished final approvals block the final review stage."""
+
+    def setUp(self):
+        self.rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="in_progress")
+        )
+        for slug in (
+            "enqueuer",
+            "formatting",
+            "ref_checker",
+            "first_editor",
+            "second_editor",
+        ):
+            AssignmentFactory(
+                rfc_to_be=self.rfc,
+                role=RpcRoleFactory(slug=slug),
+                state=Assignment.State.DONE,
+            )
+        self.final_review = AssignmentFactory(
+            rfc_to_be=self.rfc,
+            role=RpcRoleFactory(slug="final_review_editor"),
+            person=RpcPersonFactory(),
+            state=Assignment.State.IN_PROGRESS,
+        )
+
+    def test_unfinished_final_approval_blocks(self):
+        FinalApprovalFactory(rfc_to_be=self.rfc)
+
+        self.assertEqual(
+            get_block_reasons(self.rfc), {BlockingReason.FINAL_APPROVAL_PENDING}
+        )
+
+    def test_finished_final_approval_does_not_block(self):
+        FinalApprovalFactory(rfc_to_be=self.rfc, approved=timezone.now())
+
+        self.assertEqual(get_block_reasons(self.rfc), set())
+
+    def test_block_lasts_until_approved(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            approval = FinalApprovalFactory(rfc_to_be=self.rfc)
+
+        self.final_review.refresh_from_db()
+        self.assertEqual(self.final_review.state, Assignment.State.CLOSED_FOR_HOLD)
+        self.assertTrue(
+            self.rfc.assignment_set.filter(role__slug="blocked").active().exists()
+        )
+
+        with self.captureOnCommitCallbacks(execute=True):
+            approval.approved = timezone.now()
+            approval.save()
+
+        self.assertFalse(
+            self.rfc.assignment_set.filter(role__slug="blocked").active().exists()
+        )
+        self.assertTrue(
+            self.rfc.assignment_set.filter(
+                role__slug="final_review_editor",
+                person=self.final_review.person,
+                state=Assignment.State.ASSIGNED,
+            ).exists()
+        )
