@@ -202,11 +202,6 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
         _sync_block_reasons(rfc, reasons or set())
 
         role = RpcRole.objects.get(slug="blocked")
-        comment = (
-            f"blocked because of blocking condition(s): {', '.join(reasons)}; "
-            if reasons
-            else ""
-        )
 
         if active_assignment_qs.exists():
             logger.info(
@@ -222,7 +217,6 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
                     role=role,
                     person=assignment.person,
                     state=Assignment.State.IN_PROGRESS,
-                    defaults={"comment": comment},
                 )
 
         else:
@@ -231,7 +225,6 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
                 rfc_to_be=rfc,
                 role=role,
                 state=Assignment.State.IN_PROGRESS,
-                comment=comment,
             )
 
     except Exception as err:

@@ -547,9 +547,9 @@ class FinalReviewBlockingTests(TestCase):
 
         self.final_review.refresh_from_db()
         self.assertEqual(self.final_review.state, Assignment.State.CLOSED_FOR_HOLD)
-        self.assertTrue(
-            self.rfc.assignment_set.filter(role__slug="blocked").active().exists()
-        )
+        blocked = self.rfc.assignment_set.filter(role__slug="blocked").active().get()
+        # Reasons are stored as RfcToBeBlockingReason rows, not in the comment
+        self.assertEqual(blocked.comment, "")
 
         with self.captureOnCommitCallbacks(execute=True):
             approval.approved = timezone.now()

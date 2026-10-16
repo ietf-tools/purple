@@ -23,11 +23,11 @@ export const formatBlockingReason = (
   return `${br.reason.name}: ${reason}`
 }
 
-export const formatBlockingReasons = (
+export const formatBlockingReasonList = (
   blockingReasons: RfcToBeBlockingReason[],
   actionholders?: ActionHolder[],
   maxReasonLength?: number
-): string =>
+): string[] =>
   blockingReasons
     .map((br) => {
       if (br.reason?.slug === 'actionholder_active' && actionholders?.length) {
@@ -39,8 +39,29 @@ export const formatBlockingReasons = (
       }
       return formatBlockingReason(br, maxReasonLength)
     })
-    .filter(Boolean)
-    .join(', ')
+    .filter((reason): reason is string => Boolean(reason))
+
+export const blockingReasonsList = (
+  blockingReasons: RfcToBeBlockingReason[],
+  actionholders?: ActionHolder[]
+) => {
+  const reasons = formatBlockingReasonList(blockingReasons, actionholders)
+  const shortReasons = formatBlockingReasonList(blockingReasons, actionholders, 40)
+  return h(
+    'ul',
+    { class: 'text-xs text-gray-500 dark:text-neutral-400 w-64' },
+    shortReasons.map((shortReason, index) =>
+      h(
+        'li',
+        {
+          class: 'flex gap-1',
+          title: shortReason === reasons[index] ? undefined : reasons[index]
+        },
+        [h('span', { 'aria-hidden': 'true' }, '•'), h('span', shortReason)]
+      )
+    )
+  )
+}
 
 export const columnFormatterCluster = (clusterNumber?: Cluster['number']) => {
   if (!clusterNumber) {
@@ -97,20 +118,17 @@ export const columnFormatterAssignments = ({
     const rpcPerson = people.find((p) => p.id === assignment.person)
     const name = rpcPerson ? rpcPerson.name : queueItemsIsPending ? '...' : '(unknown person)'
 
-    const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role, class: 'ml-2' })]
+    const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role })]
     if (assignment.role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
-      const reasons = formatBlockingReasons(blockingReasons, actionholders)
-      roleBadgeChildren.push(
-        h('span', { class: 'text-xs text-gray-500 dark:text-neutral-400 ml-1' }, reasons)
-      )
+      roleBadgeChildren.push(blockingReasonsList(blockingReasons, actionholders))
     }
 
-    return h('li', { class: 'flex items-baseline gap-1' }, [
+    return h('li', { class: 'flex items-baseline gap-2' }, [
       h(
         Anchor,
         {
           href: rpcPerson ? `/team/${rpcPerson.id}` : undefined,
-          class: [ANCHOR_STYLE, 'text-sm']
+          class: [ANCHOR_STYLE, 'text-sm w-36 shrink-0']
         },
         () => name
       ),
