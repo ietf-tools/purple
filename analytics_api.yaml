@@ -1,0 +1,310 @@
+openapi: 3.0.3
+info:
+  title: Purple analytics
+  version: "0.1"
+  description: Read-only view of RPC data for the analytics database
+paths:
+  /api/analytics/dispositions/:
+    get:
+      operationId: dispositions_list
+      description: All document lifecycle states
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsDisposition"
+          description: ""
+  /api/analytics/documents/:
+    get:
+      operationId: documents_list
+      description: All documents, in every disposition, with their labels and assignments
+      parameters:
+        - name: limit
+          required: false
+          in: query
+          description: Number of results to return per page.
+          schema:
+            type: integer
+        - name: offset
+          required: false
+          in: query
+          description: The initial index from which to return the results.
+          schema:
+            type: integer
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaginatedAnalyticsDocumentList"
+          description: ""
+  /api/analytics/labels/:
+    get:
+      operationId: labels_list
+      description: All labels, including unused and non-public ones
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsLabel"
+          description: ""
+  /api/analytics/roles/:
+    get:
+      operationId: roles_list
+      description: All roles staff can hold on a document
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsRole"
+          description: ""
+  /api/analytics/source-formats/:
+    get:
+      operationId: source_formats_list
+      description: All source formats
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsSourceFormat"
+          description: ""
+  /api/analytics/staff/:
+    get:
+      operationId: staff_list
+      description: All RPC staff, current and former
+      tags:
+        - analytics
+      security:
+        - apiKeyAuth: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnalyticsStaff"
+          description: ""
+components:
+  schemas:
+    AnalyticsAssignment:
+      type: object
+      description: A role on a document and the staff member holding it
+      properties:
+        role:
+          type: string
+          readOnly: true
+        role_name:
+          type: string
+          readOnly: true
+        state:
+          allOf:
+            - $ref: "#/components/schemas/StateEnum"
+          readOnly: true
+        staff_datatracker_id:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Datatracker person ID; null while nobody is assigned.
+        staff_name:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Null while nobody is assigned.
+    AnalyticsDisposition:
+      type: object
+      description: A lifecycle state of a document
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        used:
+          type: boolean
+          readOnly: true
+    AnalyticsDocument:
+      type: object
+      description: A document handled by the RPC, in any disposition
+      properties:
+        draft_name:
+          type: string
+          readOnly: true
+          nullable: true
+          description: Null for documents without a draft, such as April 1st RFCs.
+        draft_rev:
+          type: string
+          readOnly: true
+          description: Revision of the draft the RPC works on.
+        draft_datatracker_id:
+          type: integer
+          readOnly: true
+          nullable: true
+        rfc_number:
+          type: integer
+          readOnly: true
+          nullable: true
+        disposition:
+          type: string
+          readOnly: true
+        disposition_name:
+          type: string
+          readOnly: true
+        published_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        source_format:
+          type: string
+          readOnly: true
+          description: Slug of the format the document was submitted in.
+        source_format_name:
+          type: string
+          readOnly: true
+        pages:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Page count
+        cluster:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Number of the cluster the document belongs to.
+        labels:
+          type: array
+          items:
+            type: string
+          readOnly: true
+          description: Slugs of applied labels.
+        assignments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsAssignment"
+          readOnly: true
+    AnalyticsLabel:
+      type: object
+      description: A label that can be applied to documents
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        used:
+          type: boolean
+          readOnly: true
+    AnalyticsRole:
+      type: object
+      description: A role a staff member can hold on a document
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+    AnalyticsSourceFormat:
+      type: object
+      description: A format a document can be submitted in
+      properties:
+        slug:
+          type: string
+          readOnly: true
+        name:
+          type: string
+          readOnly: true
+        used:
+          type: boolean
+          readOnly: true
+    AnalyticsStaff:
+      type: object
+      description: An RPC staff member, current or former
+      properties:
+        name:
+          type: string
+          nullable: true
+          readOnly: true
+        datatracker_person_id:
+          type: integer
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+    PaginatedAnalyticsDocumentList:
+      type: object
+      required:
+        - count
+        - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: "#/components/schemas/AnalyticsDocument"
+    StateEnum:
+      enum:
+        - assigned
+        - in_progress
+        - done
+        - withdrawn
+        - closed_for_hold
+      type: string
+      description: |-
+        * `assigned` - Assigned
+        * `in_progress` - In Progress
+        * `done` - Done
+        * `withdrawn` - Withdrawn
+        * `closed_for_hold` - Closed For Hold
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY

@@ -38,9 +38,6 @@ from .models import (
 from .rfcindex import mark_rfcindex_as_processed, refresh_rfc_index, rfcindex_is_dirty
 from .utils import get_or_create_draft_by_name
 
-RPC_PERSON_NAME_MAP_CACHE_KEY = "rpc_person_name_map"
-RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
-
 
 @shared_task
 def set_stream_manager_task(rfc_to_be_id: int):
