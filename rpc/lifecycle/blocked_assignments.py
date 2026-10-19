@@ -236,14 +236,79 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
     return True
 
 
+def held_assignments(rfc: RfcToBe) -> list[Assignment]:
+    """Return the assignments the current block holds.
+
+    A hold stays in closed_for_hold after the block ends, so only holds newer
+    than the last finished assignment of the same role count.
+    """
+    held = []
+    assignments = rfc.assignment_set.exclude(role__slug="blocked").exclude(
+        state=Assignment.State.WITHDRAWN
+    )
+    roles = (
+        assignments.filter(state=Assignment.State.CLOSED_FOR_HOLD)
+        .values_list("role", flat=True)
+        .distinct()
+    )
+    for role in roles:
+        of_role = assignments.filter(role=role)
+        last_done = of_role.filter(state=Assignment.State.DONE).order_by("-pk").first()
+        holds = of_role.filter(state=Assignment.State.CLOSED_FOR_HOLD)
+        if last_done is not None:
+            holds = holds.filter(pk__gt=last_done.pk)
+        held.extend(holds)
+    return held
+
+
+def _hold_new_assignments(rfc: RfcToBe) -> bool:
+    """Put assignments made while blocked on hold next to the existing holds."""
+    new = list(rfc.assignment_set.exclude(role__slug="blocked").active())
+    for assignment in new:
+        assignment.state = Assignment.State.CLOSED_FOR_HOLD
+        assignment.comment = "Assigned while blocked"
+        assignment.save(update_fields=["state", "comment"])
+    if new:
+        logger.info("Put assignments made while blocked on hold for rfc %s", rfc.pk)
+    return bool(new)
+
+
+def _sync_blocked_assignments(rfc: RfcToBe) -> bool:
+    """Keep one blocked assignment per person holding work.
+
+    A document blocked with nobody holding work keeps one without a person, so
+    it stays blocked.
+    """
+    role = RpcRole.objects.get(slug="blocked")
+    holders = {h.person for h in held_assignments(rfc)}
+    changed = False
+    for person in holders:
+        _, created = Assignment.objects.get_or_create(
+            rfc_to_be=rfc,
+            role=role,
+            person=person,
+            state=Assignment.State.IN_PROGRESS,
+        )
+        changed |= created
+    for blocked in rfc.assignment_set.filter(role=role).active():
+        if blocked.person not in holders and (holders or blocked.person is not None):
+            blocked.state = Assignment.State.WITHDRAWN
+            blocked.save(update_fields=["state"])
+            changed = True
+    if not rfc.assignment_set.filter(role=role).active().exists():
+        Assignment.objects.create(
+            rfc_to_be=rfc, role=role, state=Assignment.State.IN_PROGRESS
+        )
+        changed = True
+    return changed
+
+
 def _close_blocked_assignments(rfc: RfcToBe) -> bool:
     """Mark active 'blocked' assignments as done and resolve blocking
-    reasons. Re-create any assignments closed_for_hold.
+    reasons. Give the held assignments back to their people.
     """
 
-    blocked_qs = (
-        rfc.assignment_set.filter(role__slug="blocked").active().order_by("-pk")
-    )
+    blocked_qs = rfc.assignment_set.filter(role__slug="blocked").active()
 
     if not blocked_qs.exists():
         return False
@@ -252,40 +317,22 @@ def _close_blocked_assignments(rfc: RfcToBe) -> bool:
         a.state = Assignment.State.DONE
         a.save(update_fields=["state"])
 
-        # For each previously blocked assignment, find the corresponding
-        # closed_for_hold and create a new assignment with the same person and role
-        closed_for_hold_qs = rfc.assignment_set.filter(
-            state=Assignment.State.CLOSED_FOR_HOLD,
-            person=a.person,
+    for held in held_assignments(rfc):
+        logger.info(
+            "Re-creating held %s assignment for rfc %s and person %s",
+            held.role_id,
+            rfc.pk,
+            held.person,
         )
-        if closed_for_hold_qs.exists():
-            # Find the closed_for_hold assignment with the most recent history_date
-            latest_assignment = None
-            latest_history_date = None
-            for assignment in closed_for_hold_qs:
-                hist = assignment.history.order_by("-history_date").first()
-                if hist and (
-                    latest_history_date is None
-                    or hist.history_date > latest_history_date
-                ):
-                    latest_assignment = assignment
-                    latest_history_date = hist.history_date
-            if latest_assignment:
-                logger.info(
-                    "Creating new assignment for last closed_for_hold for "
-                    "rfc %s and person %s",
-                    rfc.pk,
-                    a.person,
-                )
-                Assignment.objects.update_or_create(
-                    rfc_to_be=rfc,
-                    role=latest_assignment.role,
-                    person=latest_assignment.person,
-                    state=Assignment.State.ASSIGNED,
-                    defaults={
-                        "comment": "Re-created after blocked state cleared",
-                    },
-                )
+        Assignment.objects.update_or_create(
+            rfc_to_be=rfc,
+            role=held.role,
+            person=held.person,
+            state=Assignment.State.ASSIGNED,
+            defaults={
+                "comment": "Re-created after blocked state cleared",
+            },
+        )
 
     _sync_block_reasons(rfc, set())
 
@@ -333,6 +380,8 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
                     resolved__isnull=True,
                 ).exists()
                 if has_manual_hold:
+                    _hold_new_assignments(locked)
+                    _sync_blocked_assignments(locked)
                     _sync_block_reasons(locked, set())
                     logger.info(
                         "Automatic block cleared for rfc %s but manual hold active, "
@@ -344,7 +393,10 @@ def apply_blocked_assignment_for_rfc(rfc: RfcToBe) -> bool:
                 _close_blocked_assignments(locked)
                 return True
             elif blocked_now and blocked_before:
-                return _sync_block_reasons(locked, block_reasons)
+                held_new = _hold_new_assignments(locked)
+                blocked_synced = _sync_blocked_assignments(locked)
+                reasons_synced = _sync_block_reasons(locked, block_reasons)
+                return held_new or blocked_synced or reasons_synced
 
             return False
     except Exception as err:

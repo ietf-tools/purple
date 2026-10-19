@@ -85,26 +85,25 @@ export const sortCluster = (
   return clusterA.number - clusterB.number
 }
 
-export type AssignmentMessageProps =
-  | {
-      type: 'assign'
-      role: Assignment['role']
-      rfcToBeId: number
-    }
-  | {
-      type: 'change'
-      assignments: Assignment[]
-      role: Assignment['role']
-      rfcToBeId: number
-    }
-  | {
-      // Add an assignment of any role to a draft. Unlike 'assign' (role fixed by
-      // the pending-activity button that opened it), the assigner picks the role
-      // in the modal — allowing out-of-pipeline roles or re-adding a role whose
-      // earlier assignment was closed too early.
-      type: 'add'
-      rfcToBeId: number
-    }
+export type AssignmentMessageProps = {
+  rfcToBeId: number
+  // The role shown first; the dialog can switch to any other.
+  role?: Assignment['role']
+  // The draft's active and held assignments, which are ticked for their role.
+  assignments: Assignment[]
+}
+
+/**
+ * The assignments people currently hold on a draft: its active ones and, while it
+ * is blocked, the ones on hold. The 'blocked' assignments themselves are left out.
+ */
+export const currentAssignments = (
+  activeAssignments?: Assignment[],
+  heldAssignments?: Assignment[]
+): Assignment[] => [
+  ...(activeAssignments ?? []).filter((assignment) => assignment.role !== 'blocked'),
+  ...(heldAssignments ?? [])
+]
 
 export type RpcPersonWorkload = {
   personId: number

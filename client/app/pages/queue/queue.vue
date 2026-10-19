@@ -166,7 +166,12 @@ import type { SortingState } from '@tanstack/vue-table'
 import { groupBy } from 'es-toolkit/array'
 import { uniqBy } from 'es-toolkit/array'
 import type { Assignment, Cluster, IanaStatus, Label, QueueItem, RpcPerson } from '~/purple_client'
-import { calculatePeopleWorkload, calculateEnqueuedAtData, renderEnqueuedAt } from '~/utils/queue'
+import {
+  calculatePeopleWorkload,
+  calculateEnqueuedAtData,
+  currentAssignments,
+  renderEnqueuedAt
+} from '~/utils/queue'
 import { type QueueTabId, type AssignmentMessageProps } from '~/utils/queue'
 import { ANCHOR_STYLE } from '~/utils/html'
 import { overlayModalKey } from '~/providers/providerKeys'
@@ -319,10 +324,12 @@ const columns = [
   columnHelper.accessor('assignmentSet', {
     header: 'Assignees',
     cell: (data) => {
-      const assignments = data.getValue()
-      if (!assignments) {
+      const activeAssignments = data.getValue()
+      if (!activeAssignments) {
         return 'No assignments'
       }
+      const heldAssignments = data.row.original.heldAssignmentSet ?? []
+      const assignments = [...activeAssignments, ...heldAssignments]
 
       const rfcToBeId = data.row.original.id
       if (rfcToBeId === undefined) {
@@ -376,8 +383,7 @@ const columns = [
               { class: 'flex flex-col gap-2 w-36 shrink-0' },
               assignmentsOfRole.map((assignment) => {
                 const rpcPerson = people.value.find((p) => p.id === assignment.person)
-                return h(
-                  'li',
+                return h('li', [
                   h(
                     Anchor,
                     {
@@ -385,8 +391,11 @@ const columns = [
                       class: [ANCHOR_STYLE, 'text-sm']
                     },
                     () => [rpcPerson ? rpcPerson.name : '']
-                  )
-                )
+                  ),
+                  heldAssignments.includes(assignment)
+                    ? h('span', { class: 'block text-xs italic text-gray-500' }, 'on hold')
+                    : null
+                ])
               })
             ),
             h(BaseBadge, { label: roleName(role) }),
@@ -394,21 +403,22 @@ const columns = [
               ? blockingReasonsList(blockingReasons, data.row.original.actionholderSet)
               : null,
             h('span', [
-              h(
-                BaseButton,
-                {
-                  btnType: 'outline',
-                  size: 'xs',
-                  onClick: () =>
-                    openAssignmentModal({
-                      type: 'change',
-                      assignments: assignmentsOfRole,
-                      role,
-                      rfcToBeId
-                    })
-                },
-                () => 'Change'
-              ),
+              role === 'blocked'
+                ? null
+                : h(
+                    BaseButton,
+                    {
+                      btnType: 'outline',
+                      size: 'xs',
+                      onClick: () =>
+                        openAssignmentModal({
+                          rfcToBeId,
+                          role,
+                          assignments: currentAssignments(activeAssignments, heldAssignments)
+                        })
+                    },
+                    () => 'Change'
+                  ),
               ...redundantAssignmentsOfSamePersonToSameRole.map((redundantAssignment) => {
                 return h(
                   BaseButton,
@@ -445,31 +455,32 @@ const columns = [
         )
       }
 
-      const isBlocked =
-        data.row.original.assignmentSet?.some(
-          (a) => a.role === 'blocked' && a.state === 'in_progress'
-        ) ?? false
-
       return h(
         'ul',
         { class: 'flex flex-col gap-3' },
         value.map((rpcRole) =>
           h('li', { class: 'flex flex-row gap-2' }, [
             h('div', h(BaseBadge, { label: rpcRole.name })),
-            !isBlocked &&
+            h(
+              'div',
               h(
-                'div',
-                h(
-                  BaseButton,
-                  {
-                    btnType: 'outline',
-                    size: 'xs',
-                    onClick: () =>
-                      openAssignmentModal({ type: 'assign', role: rpcRole.slug, rfcToBeId })
-                  },
-                  () => 'Assign'
-                )
+                BaseButton,
+                {
+                  btnType: 'outline',
+                  size: 'xs',
+                  onClick: () =>
+                    openAssignmentModal({
+                      rfcToBeId,
+                      role: rpcRole.slug,
+                      assignments: currentAssignments(
+                        data.row.original.assignmentSet,
+                        data.row.original.heldAssignmentSet
+                      )
+                    })
+                },
+                () => 'Assign'
               )
+            )
           ])
         )
       )

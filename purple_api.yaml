@@ -6262,6 +6262,11 @@ components:
           items:
             $ref: "#/components/schemas/Assignment"
           readOnly: true
+        held_assignment_set:
+          type: array
+          items:
+            $ref: "#/components/schemas/Assignment"
+          readOnly: true
         actionholder_set:
           type: array
           items:
@@ -6557,6 +6562,11 @@ components:
             - $ref: "#/components/schemas/BaseDatatrackerPerson"
           readOnly: true
         assignment_set:
+          type: array
+          items:
+            $ref: "#/components/schemas/Assignment"
+          readOnly: true
+        held_assignment_set:
           type: array
           items:
             $ref: "#/components/schemas/Assignment"
