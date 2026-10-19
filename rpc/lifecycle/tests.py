@@ -34,7 +34,12 @@ from .activities import (
     complete_activities,
     pending_activities,
 )
-from .blocked_assignments import apply_manual_block, get_block_reasons
+from .blocked_assignments import (
+    apply_blocked_assignment_for_rfc,
+    apply_manual_block,
+    get_block_reasons,
+    held_assignments,
+)
 from .publication import (
     AmbiguousFilesError,
     MissingFilesError,
@@ -625,9 +630,11 @@ class ReassignWhileBlockedTests(TestCase):
         self.assertEqual(self.active("ref_checker"), {self.alice.pk})
 
     def withdraw_hold(self, person, role):
-        held = self.rfc.assignment_set.get(
-            person=person, role=role, state=Assignment.State.CLOSED_FOR_HOLD
-        )
+        (held,) = [
+            a
+            for a in held_assignments(self.rfc)
+            if a.person_id == person.pk and a.role_id == role.slug
+        ]
         with self.captureOnCommitCallbacks(execute=True):
             held.state = Assignment.State.WITHDRAWN
             held.save()
@@ -656,6 +663,38 @@ class ReassignWhileBlockedTests(TestCase):
         self.unblock()
 
         self.assertEqual(self.active("formatting"), set())
+
+    def test_role_blocked_again_is_held_once(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        self.unblock()
+        self.block()
+
+        self.assertEqual(
+            [(a.role_id, a.person_id) for a in held_assignments(self.rfc)],
+            [("formatting", self.alice.pk)],
+        )
+
+        self.withdraw_hold(self.alice, self.formatting)
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), set())
+
+    def test_assigned_blocked_assignment_of_a_holder_is_reused(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        blocked = self.rfc.assignment_set.filter(role__slug="blocked").active().get()
+        blocked.state = Assignment.State.ASSIGNED
+        blocked.save()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            apply_blocked_assignment_for_rfc(self.rfc)
+
+        blocked.refresh_from_db()
+        self.assertEqual(blocked.state, Assignment.State.IN_PROGRESS)
+        self.assertEqual(
+            self.rfc.assignment_set.filter(role__slug="blocked").active().count(), 1
+        )
 
     def test_api_lists_held_assignments_only_while_blocked(self):
         self.assign(self.alice, self.formatting)

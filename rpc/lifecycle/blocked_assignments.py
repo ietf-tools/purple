@@ -237,27 +237,25 @@ def _create_blocked_assignments(rfc: RfcToBe, reasons: set[str] | None = None) -
 
 
 def held_assignments(rfc: RfcToBe) -> list[Assignment]:
-    """Return the assignments the current block holds.
+    """Return the closed_for_hold assignments of the current block.
 
-    A hold stays in closed_for_hold after the block ends, so only holds newer
-    than the last finished assignment of the same role count.
+    Older holds are skipped: those followed by a done assignment of the role or
+    by a later assignment of the same person to it.
     """
     held = []
-    assignments = rfc.assignment_set.exclude(role__slug="blocked").exclude(
-        state=Assignment.State.WITHDRAWN
-    )
-    roles = (
-        assignments.filter(state=Assignment.State.CLOSED_FOR_HOLD)
-        .values_list("role", flat=True)
-        .distinct()
-    )
-    for role in roles:
-        of_role = assignments.filter(role=role)
-        last_done = of_role.filter(state=Assignment.State.DONE).order_by("-pk").first()
-        holds = of_role.filter(state=Assignment.State.CLOSED_FOR_HOLD)
-        if last_done is not None:
-            holds = holds.filter(pk__gt=last_done.pk)
-        held.extend(holds)
+    seen = set()  # (role, person) pairs with a later assignment
+    done_roles = set()  # roles with a later done assignment
+    for assignment in rfc.assignment_set.exclude(role__slug="blocked").order_by("-pk"):
+        key = (assignment.role_id, assignment.person_id)
+        if (
+            assignment.state == Assignment.State.CLOSED_FOR_HOLD
+            and key not in seen
+            and assignment.role_id not in done_roles
+        ):
+            held.append(assignment)
+        seen.add(key)
+        if assignment.state == Assignment.State.DONE:
+            done_roles.add(assignment.role_id)
     return held
 
 
@@ -283,18 +281,23 @@ def _sync_blocked_assignments(rfc: RfcToBe) -> bool:
     holders = {h.person for h in held_assignments(rfc)}
     changed = False
     for person in holders:
-        _, created = Assignment.objects.get_or_create(
-            rfc_to_be=rfc,
-            role=role,
-            person=person,
-            state=Assignment.State.IN_PROGRESS,
-        )
-        changed |= created
+        if not rfc.assignment_set.filter(role=role, person=person).active().exists():
+            Assignment.objects.create(
+                rfc_to_be=rfc,
+                role=role,
+                person=person,
+                state=Assignment.State.IN_PROGRESS,
+            )
+            changed = True
     for blocked in rfc.assignment_set.filter(role=role).active():
         if blocked.person not in holders and (holders or blocked.person is not None):
             blocked.state = Assignment.State.WITHDRAWN
-            blocked.save(update_fields=["state"])
-            changed = True
+        elif blocked.state != Assignment.State.IN_PROGRESS:
+            blocked.state = Assignment.State.IN_PROGRESS
+        else:
+            continue
+        blocked.save(update_fields=["state"])
+        changed = True
     if not rfc.assignment_set.filter(role=role).active().exists():
         Assignment.objects.create(
             rfc_to_be=rfc, role=role, state=Assignment.State.IN_PROGRESS
