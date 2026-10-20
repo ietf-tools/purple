@@ -39,14 +39,14 @@ class AnalyticsAutoSchema(AutoSchema):
         return ["analytics"]
 
 
-class AnalyticsAccess:
+class AnalyticsApiMixin:
     authentication_classes = [ApiKeyAuthentication]
     permission_classes = [HasApiKey]
     api_key_endpoint = ANALYTICS_API_KEY_ENDPOINT
     schema = AnalyticsAutoSchema()
 
 
-class DocumentList(AnalyticsAccess, ListAPIView):
+class DocumentList(AnalyticsApiMixin, ListAPIView):
     """All documents, in every disposition, with their labels and assignments"""
 
     serializer_class = AnalyticsDocumentSerializer
@@ -79,7 +79,7 @@ class DocumentList(AnalyticsAccess, ListAPIView):
         }
 
 
-class StaffList(AnalyticsAccess, ListAPIView):
+class StaffList(AnalyticsApiMixin, ListAPIView):
     """All RPC staff, current and former"""
 
     serializer_class = AnalyticsStaffSerializer
@@ -94,28 +94,28 @@ class StaffList(AnalyticsAccess, ListAPIView):
         }
 
 
-class LabelList(AnalyticsAccess, ListAPIView):
+class LabelList(AnalyticsApiMixin, ListAPIView):
     """All labels, including unused and non-public ones"""
 
     serializer_class = AnalyticsLabelSerializer
     queryset = Label.objects.order_by("slug")
 
 
-class SourceFormatList(AnalyticsAccess, ListAPIView):
+class SourceFormatList(AnalyticsApiMixin, ListAPIView):
     """All source formats"""
 
     serializer_class = AnalyticsSourceFormatSerializer
     queryset = SourceFormatName.objects.order_by("slug")
 
 
-class RoleList(AnalyticsAccess, ListAPIView):
+class RoleList(AnalyticsApiMixin, ListAPIView):
     """All roles staff can hold on a document"""
 
     serializer_class = AnalyticsRoleSerializer
     queryset = RpcRole.objects.order_by("slug")
 
 
-class DispositionList(AnalyticsAccess, ListAPIView):
+class DispositionList(AnalyticsApiMixin, ListAPIView):
     """All document lifecycle states"""
 
     serializer_class = AnalyticsDispositionSerializer
@@ -123,7 +123,7 @@ class DispositionList(AnalyticsAccess, ListAPIView):
 
 
 @extend_schema_view(get=extend_schema(exclude=True))
-class SchemaView(AnalyticsAccess, SpectacularAPIView):
+class SchemaView(AnalyticsApiMixin, SpectacularAPIView):
     """OpenAPI schema covering only the analytics API"""
 
     urlconf = "analytics.urls"

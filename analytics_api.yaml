@@ -188,11 +188,10 @@ components:
           format: date-time
           readOnly: true
           nullable: true
-        source_format:
+        submitted_format:
           type: string
           readOnly: true
-          description: Slug of the format the document was submitted in.
-        source_format_name:
+        submitted_format_name:
           type: string
           readOnly: true
         pages:

@@ -58,12 +58,7 @@ class AnalyticsDocumentSerializer(serializers.ModelSerializer):
         source="draft.datatracker_id", read_only=True, allow_null=True
     )
     disposition_name = serializers.CharField(source="disposition.name", read_only=True)
-    source_format = serializers.CharField(
-        source="submitted_format_id",
-        read_only=True,
-        help_text="Slug of the format the document was submitted in.",
-    )
-    source_format_name = serializers.CharField(
+    submitted_format_name = serializers.CharField(
         source="submitted_format.name", read_only=True
     )
     cluster = serializers.IntegerField(
@@ -87,8 +82,8 @@ class AnalyticsDocumentSerializer(serializers.ModelSerializer):
             "disposition",
             "disposition_name",
             "published_at",
-            "source_format",
-            "source_format_name",
+            "submitted_format",
+            "submitted_format_name",
             "pages",
             "cluster",
             "labels",
