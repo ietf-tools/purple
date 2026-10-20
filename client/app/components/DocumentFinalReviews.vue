@@ -5,7 +5,7 @@
 
   <BaseCard>
     <template #header>
-      <CardHeader title="Final Reviews">
+      <CardHeader title="Author Approvals">
         <template v-if="queueUrl" #titleSuffix>
           <span class="inline-flex items-center gap-2 text-sm font-normal">
             <button

@@ -54,6 +54,7 @@ from .dt_v1_api_utils import (
     datatracker_group_list_email,
     datatracker_group_name,
 )
+from .lifecycle import draft_repo
 from .lifecycle.blocked_assignments import (
     apply_manual_block,
     apply_manual_unblock,
@@ -172,6 +173,7 @@ from .stats.rollups import (
 from .stats.timeline import build_document_timeline
 from .tasks import (
     compute_deep_references_task,
+    create_draft_repo_task,
     publish_rfctobe_task,
     send_mail_task,
     set_stream_manager_task,
@@ -777,6 +779,12 @@ def import_submission(request, document_id, rpcapi: rpcapi_client.PurpleApi):
             )
 
             transaction.on_commit(lambda: set_stream_manager_task.delay(rfctobe.pk))
+            if draft_repo.is_enabled():
+                importer = request.user.rpcperson()
+                importer_id = importer.pk if importer else None
+                transaction.on_commit(
+                    lambda: create_draft_repo_task.delay(rfctobe.pk, importer_id)
+                )
 
             # create the authors
             if draft_info is None:
@@ -1627,6 +1635,26 @@ class RfcToBeViewSet(viewsets.ModelViewSet):
         return Response(RfcToBeSerializer(rfctobe, context={"request": request}).data)
 
     @extend_schema(
+        operation_id="documents_create_repo",
+        request=None,
+        responses={202: None},
+    )
+    @action(detail=True, methods=["post"], url_path="create_repo")
+    def create_repo(self, request, draft__name=None):
+        """Retry creating the document's repository in the background. Only a
+        failure is reported, as a notification to the caller."""
+        rfctobe = self.get_object()
+        if not draft_repo.is_enabled():
+            raise serializers.ValidationError("Creating repos is not configured.")
+        if rfctobe.repository:
+            raise serializers.ValidationError(
+                f"{rfctobe.name} already has a repository: {rfctobe.repository}"
+            )
+        requester = request.user.rpcperson()
+        create_draft_repo_task.delay(rfctobe.pk, requester.pk if requester else None)
+        return Response(status=status.HTTP_202_ACCEPTED)
+
+    @extend_schema(
         operation_id="documents_pub_status_retrieve",
         request=None,
         responses=PublishRfcStatusSerializer,
@@ -2002,9 +2030,10 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         slug_filter = request.query_params.getlist("relationship")
 
         class _ReverseRelationship:
-            def __init__(self, slug):
+            def __init__(self, slug, name):
                 self.pk = slug
                 self.slug = slug
+                self.name = name
 
         class _ReverseRpcRelatedDocument:
             def __init__(self, id, relationship, source, target_rfctobe):
@@ -2014,7 +2043,7 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 self.target_rfctobe = target_rfctobe
                 self.target_document = None
 
-        def append_reverse(rel_slug, fake_slug):
+        def append_reverse(rel_slug, fake_slug, fake_name):
             if slug_filter and fake_slug not in slug_filter:
                 return
 
@@ -2029,14 +2058,14 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
                 results.append(
                     _ReverseRpcRelatedDocument(
                         id=rel.id,
-                        relationship=_ReverseRelationship(fake_slug),
+                        relationship=_ReverseRelationship(fake_slug, fake_name),
                         source=rel.target_rfctobe,
                         target_rfctobe=rel.source,
                     )
                 )
 
-        append_reverse("updates", "updated_by")
-        append_reverse("obs", "obsoleted_by")
+        append_reverse("updates", "updated_by", "Updated By")
+        append_reverse("obs", "obsoleted_by", "Obsoleted By")
 
         page = self.paginate_queryset(results)
         if page is not None:

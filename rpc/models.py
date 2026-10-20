@@ -1534,6 +1534,7 @@ class Notification(models.Model):
 
     class EventType(models.TextChoices):
         UNBLOCKED = "unblocked", "document unblocked"
+        REPO_NOT_CREATED = "repo_not_created", "document repo not created"
 
     recipient = models.ForeignKey(
         "RpcPerson",

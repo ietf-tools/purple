@@ -4,9 +4,9 @@ document is in the RFC Editor queue. The subject and recipients are set in
 rpc.api.RfcMailTemplatesList.
 
 The items under "To be sent as needed" apply only to some documents. The
-cluster and errata items are filled in, or left out, from the document's
-cluster and the RFCs it obsoletes or updates; the editor removes any of the
-others that don't apply before sending.
+missing-XML, cluster and errata items are filled in, or left out, from the
+document's submitted format, cluster and the RFCs it obsoletes or updates; the
+editor removes any of the others that don't apply before sending.
 {% endcomment %}Author(s),
 
 Congratulations, your document has been successfully added to the RFC Editor queue!
@@ -59,7 +59,15 @@ https://authors.ietf.org/en/reference-style-guidance.
 4) Is there any text that requires special handling? For example,
 are there any contentious sections that should be edited more carefully?
 
----
+{% if rfc_to_be.submitted_format_id == "txt" %}
+5) We were unable to obtain an xml file from the Datatracker.
+If an xml source file that can be converted using the xml2rfc tool
+at https://author-tools.ietf.org exists, please send us the file as soon
+as possible as this will increase the pace with which documents move
+through the RFC Editor queue. Note that files must be self-contained.
+If no xml file exists, please let us know so that we may move forward.
+
+{% endif %}---
 
 To be sent as needed:
 
@@ -76,7 +84,7 @@ updated xml/md file to the RPC and note the intended style usage.
 X) Since this document appears to contain a formal language
 (see https://authors.ietf.org/formal-languages) or code / code
 snippets that will be marked with <sourcecode> in this document's
-XML file, please confirm that:
+xml file, please confirm that:
 
 * it validates
 
@@ -99,7 +107,7 @@ closely as possible, and
 * the figures fit on the pages of the PDF output.
 
 
-X) Because there are some author comments present in the XML, please confirm
+X) Because there are some author comments present in the xml, please confirm
 that there are no outstanding updates related to these comments.
 
 

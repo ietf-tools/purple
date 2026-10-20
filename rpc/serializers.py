@@ -1592,7 +1592,9 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.CharField())
     def get_draft_name(self, obj: RpcRelatedDocument) -> str:
         """Get the draft name of the source document"""
-        return obj.source.draft.name
+        if obj.source.draft is not None:
+            return obj.source.draft.name
+        return None
 
     @extend_schema_field(serializers.IntegerField())
     def get_target_rfc_number(self, obj: RpcRelatedDocument) -> int:

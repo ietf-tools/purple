@@ -12,6 +12,8 @@ from purple.crossref import submit as submit_to_crossref
 from rpc.lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
 from utils.task_utils import RetryTask
 
+from .lifecycle import draft_repo
+from .lifecycle.draft_repo import DraftRepoError, DraftRepoExists, create_draft_repo
 from .lifecycle.metadata import Metadata
 from .lifecycle.notifications import (
     SkippedChangeNotification,
@@ -28,7 +30,9 @@ from .models import (
     DocRelationshipName,
     MailMessage,
     MetadataValidationResults,
+    Notification,
     RfcToBe,
+    RpcPerson,
     RpcRelatedDocument,
 )
 from .rfcindex import mark_rfcindex_as_processed, refresh_rfc_index, rfcindex_is_dirty
@@ -48,6 +52,27 @@ def set_stream_manager_task(rfc_to_be_id: int):
     person = rfctobe.resolve_stream_manager_person()
     rfctobe.stream_manager = person
     rfctobe.save(update_fields=["stream_manager"])
+
+
+@shared_task
+def create_draft_repo_task(rfc_to_be_id: int, notify_person_id: int | None = None):
+    """Create the document's repository in the drafts organization.
+
+    Only failures are notified: to the RpcPerson with pk notify_person_id, or to
+    everyone if there is none. On success the repository is recorded on the document.
+    """
+    rfctobe = RfcToBe.objects.get(pk=rfc_to_be_id)
+    try:
+        create_draft_repo(rfctobe)
+    except DraftRepoError as err:
+        # Retrying cannot succeed while the repository exists.
+        hint = " (needs manual fix)" if isinstance(err, DraftRepoExists) else ""
+        Notification.emit(
+            Notification.EventType.REPO_NOT_CREATED,
+            f"No repo created{hint} for {rfctobe.name}: {err}"[:255],
+            rfc_to_be=rfctobe,
+            recipient=RpcPerson.objects.filter(pk=notify_person_id).first(),
+        )
 
 
 logger = get_task_logger(__name__)
@@ -203,6 +228,37 @@ class PublishRfcToBeTask(RetryTask):
 def publish_rfctobe_task(self, rfctobe_id, expected_head):
     rfctobe = RfcToBe.objects.get(pk=rfctobe_id)
     publish_rfctobe(rfctobe, expected_head=expected_head)
+
+
+@shared_task
+def create_draft_repos_task():
+    """Create repositories for all queued documents that have none yet.
+
+    Documents whose repository already exists on GitHub are skipped. Other failures
+    are logged and processing continues. Intended to be run manually from the
+    periodic tasks admin.
+    """
+    if not draft_repo.is_enabled():
+        logger.warning("Draft repos not created: PURPLE_GH_DRAFTS_WRITE_TOKEN is unset")
+        return "Draft repos not created (no write token)"
+    created = skipped = failed = 0
+    for rfctobe in RfcToBe.objects.filter(
+        disposition_id__in=("created", "in_progress"), repository=""
+    ).order_by("pk"):
+        try:
+            repository = create_draft_repo(rfctobe)
+        except DraftRepoExists as err:
+            skipped += 1
+            logger.info("Skipped %s: %s", rfctobe.name, err)
+        except DraftRepoError as err:
+            failed += 1
+            logger.warning("Failed %s: %s", rfctobe.name, err)
+        else:
+            created += 1
+            logger.info("Created %s", repository)
+    summary = f"{created} created, {skipped} skipped (already exist), {failed} failed"
+    logger.info("Draft repos: %s", summary)
+    return f"Draft repos: {summary}"
 
 
 @shared_task

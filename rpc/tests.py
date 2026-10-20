@@ -7,7 +7,7 @@ from unittest.mock import MagicMock, patch
 import rpcapi_client
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import SimpleTestCase, TestCase
+from django.test import SimpleTestCase, TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 from rest_framework.exceptions import NotFound
@@ -26,6 +26,7 @@ from rpc.models import (
     Notification,
     NotificationReadMarker,
     RfcAuthor,
+    RfcToBe,
     RpcPerson,
     RpcRelatedDocument,
     RpcRole,
@@ -194,6 +195,82 @@ class RelatedDocumentClusterSyncTests(TestCase):
         self.assertEqual(target.cluster.number, cluster.number)
 
 
+class RelatedDocumentListTests(TestCase):
+    def setUp(self):
+        self.user = get_user_model().objects.create_user(
+            username="test-user",
+            password="test-password",
+            name="Test User",
+        )
+        self.client.force_login(self.user)
+
+    def test_list_includes_updated_by_and_obsoleted_by(self):
+        target = RfcToBeFactory(draft__name="draft-target-doc")
+        for slug, name, source_name in [
+            ("updates", "Updates", "draft-updating-doc"),
+            ("obs", "Obsoletes", "draft-obsoleting-doc"),
+        ]:
+            relationship, _ = DocRelationshipName.objects.get_or_create(
+                slug=slug, defaults={"name": name, "desc": ""}
+            )
+            RpcRelatedDocument.objects.create(
+                source=RfcToBeFactory(draft__name=source_name),
+                relationship=relationship,
+                target_rfctobe=target,
+            )
+
+        response = self.client.get(
+            reverse("documents-related-list", kwargs={"draft_name": "draft-target-doc"})
+        )
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertCountEqual(
+            [
+                (
+                    rel["relationship"],
+                    rel["relationship_name"],
+                    rel["target_draft_name"],
+                )
+                for rel in response.json()
+            ],
+            [
+                ("updated_by", "Updated By", "draft-updating-doc"),
+                ("obsoleted_by", "Obsoleted By", "draft-obsoleting-doc"),
+            ],
+        )
+
+    def test_list_for_rfcs_without_drafts(self):
+        relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug="obs", defaults={"name": "Obsoletes", "desc": ""}
+        )
+        source = RfcToBeFactory(draft=None, rfc_number=10)
+        target = RfcToBeFactory(draft=None, rfc_number=3)
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=relationship, target_rfctobe=target
+        )
+
+        for identifier, expected in [
+            ("rfc10", ("obs", None, None, 3)),
+            ("rfc3", ("obsoleted_by", None, None, 10)),
+        ]:
+            response = self.client.get(
+                reverse("documents-related-list", kwargs={"draft_name": identifier})
+            )
+            self.assertEqual(response.status_code, 200, response.content)
+            self.assertEqual(
+                [
+                    (
+                        rel["relationship"],
+                        rel["draft_name"],
+                        rel["target_draft_name"],
+                        rel["target_rfc_number"],
+                    )
+                    for rel in response.json()
+                ],
+                [expected],
+            )
+
+
 class ApplySubmissionClusterMembershipTests(TestCase):
     def test_no_refs_creates_no_cluster(self):
         doc = RfcToBeFactory().draft
@@ -323,6 +400,12 @@ class ImportSubmissionClusteringTests(TestCase):
             name="Import Cluster User",
         )
         self.client.force_login(self.user)
+        # Import as an RPC team member. The real lookup goes to the datatracker,
+        # which these tests mock only for drafts and references.
+        self.importer = RpcPersonFactory()
+        patcher = patch("rpcauth.models.User.rpcperson", return_value=self.importer)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.fmt = SourceFormatNameFactory(slug="xml-v3")
         self.boilerplate = TlpBoilerplateChoiceNameFactory(slug="trust200902")
         self.std_level = StdLevelNameFactory(slug="ps")
@@ -444,6 +527,29 @@ class ImportSubmissionClusteringTests(TestCase):
 
         doc_b = Document.objects.get(datatracker_id=B_ID)
         self.assertEqual(doc_b.intended_std_level, "")
+
+    @override_settings(GITHUB_DRAFTS_WRITE_TOKEN="write-token")
+    @patch("rpc.api.create_draft_repo_task")
+    def test_import_queues_the_draft_repo_for_the_importer(
+        self, mock_repo_task, mock_sst, mock_cdr
+    ):
+        rpcapi = self._make_rpcapi(drafts_by_id={4001: "draft-repo-a"})
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._do_import(4001, rpcapi)
+        self.assertEqual(response.status_code, 200, response.content)
+        rfc_to_be = RfcToBe.objects.get(draft__name="draft-repo-a")
+        mock_repo_task.delay.assert_called_once_with(rfc_to_be.pk, self.importer.pk)
+
+    @override_settings(GITHUB_DRAFTS_WRITE_TOKEN=None)
+    @patch("rpc.api.create_draft_repo_task")
+    def test_import_without_a_write_token_creates_no_repo(
+        self, mock_repo_task, mock_sst, mock_cdr
+    ):
+        rpcapi = self._make_rpcapi(drafts_by_id={4002: "draft-repo-b"})
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self._do_import(4002, rpcapi)
+        self.assertEqual(response.status_code, 200, response.content)
+        mock_repo_task.delay.assert_not_called()
 
 
 class DocumentSearchTests(TestCase):
@@ -1353,6 +1459,13 @@ class ImportRequestsAuthorApprovalsTests(TestCase):
                 username="import-approvals-user", password="pw", name="Importer"
             )
         )
+        # Import as an RPC team member. The real lookup goes to the datatracker,
+        # which these tests mock only for drafts and references.
+        patcher = patch(
+            "rpcauth.models.User.rpcperson", return_value=RpcPersonFactory()
+        )
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.fmt = SourceFormatNameFactory(slug="xml-v3")
         self.boilerplate = TlpBoilerplateChoiceNameFactory(slug="trust200902")
         self.std_level = StdLevelNameFactory(slug="ps")
@@ -1496,8 +1609,21 @@ class IntakeMailTemplateTests(TestCase):
             self.intake()["body"],
         )
 
+    def test_missing_xml_section_for_a_plaintext_submission(self, *_):
+        self.rfc_to_be.submitted_format = SourceFormatNameFactory(slug="txt")
+        self.rfc_to_be.save()
+        body = self.intake()["body"]
+        self.assertIn(
+            "edited more carefully?\n\n\n"
+            "5) We were unable to obtain an xml file from the Datatracker.\n",
+            body,
+        )
+        self.assertIn("so that we may move forward.\n\n---\n", body)
+
     def test_sections_that_do_not_apply_are_left_out(self, *_):
         body = self.intake()["body"]
+        self.assertNotIn("unable to obtain an xml file", body)
+        self.assertIn("edited more carefully?\n\n---\n", body)
         self.assertNotIn("This document is part of Cluster", body)
         self.assertNotIn("reported errata", body)
         # The item before them is followed by the usual two blank lines.

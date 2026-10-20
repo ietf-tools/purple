@@ -193,6 +193,24 @@ DOI_AUTHOR_ORGS = [
 
 # Github
 GITHUB_AUTH_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_READ_TOKEN")
+# Repository creation on import is disabled while this is unset.
+GITHUB_DRAFTS_WRITE_TOKEN = os.environ.get("PURPLE_GH_DRAFTS_WRITE_TOKEN")
+# Organization in which document repositories are created, from its template
+# repository GITHUB_DRAFTS_TEMPLATE_REPO.
+GITHUB_DRAFTS_ORG = os.environ.get("PURPLE_GH_DRAFTS_ORG") or "rfc-editor-drafts"
+GITHUB_DRAFTS_TEMPLATE_REPO = (
+    os.environ.get("PURPLE_GH_DRAFTS_TEMPLATE_REPO") or "base-template"
+)
+# GitHub populates a repository created from a template asynchronously, so its
+# branch is polled for before the first commit.
+GITHUB_DRAFTS_BRANCH_WAIT_ATTEMPTS = 10
+GITHUB_DRAFTS_BRANCH_WAIT_SECONDS = 2
+
+# Where a new document repository's txt and xml are downloaded from.
+ID_ARCHIVE_URL = (
+    os.environ.get("PURPLE_ID_ARCHIVE_URL") or "https://www.ietf.org/archive/id/"
+)
+ID_ARCHIVE_TIMEOUT = 30  # in seconds
 
 # API tokens
 APP_API_TOKENS = {

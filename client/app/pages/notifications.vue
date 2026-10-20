@@ -21,7 +21,7 @@
     <ul v-else class="divide-y divide-gray-100 dark:divide-gray-700">
       <li v-for="n in items" :key="n.id">
         <Anchor
-          :href="`/docs/${n.draftName}/assignments`"
+          :href="documentPathBuilder({ name: n.draftName })"
           class="flex items-start gap-3 py-3 px-2 -mx-2 rounded hover:bg-gray-50 dark:hover:bg-gray-700"
           :class="n.unread ? 'bg-violet-50/60 dark:bg-violet-900/20' : ''">
           <span
@@ -29,8 +29,9 @@
             :class="n.unread ? 'bg-violet-600' : 'bg-transparent'"
             aria-hidden="true" />
           <Icon
-            name="solar:lock-keyhole-unlocked-bold-duotone"
-            class="mt-0.5 h-5 w-5 shrink-0 text-green-600" />
+            :name="notificationIcon(n.eventType).name"
+            class="mt-0.5 h-5 w-5 shrink-0"
+            :class="notificationIcon(n.eventType).class" />
           <div class="min-w-0 flex-1">
             <div class="text-sm text-gray-900 dark:text-gray-100">{{ n.message }}</div>
           </div>
@@ -47,6 +48,8 @@
 
 <script setup lang="ts">
 import { DateTime } from 'luxon'
+import { EventTypeEnum } from '~/purple_client'
+import { documentPathBuilder } from '~/utils/url'
 
 const api = useApi()
 const { markAllRead } = useNotifications()
@@ -61,6 +64,11 @@ const { data, pending, error, refresh } = await useAsyncData(
 )
 
 const items = computed(() => data.value?.results ?? [])
+
+const notificationIcon = (eventType: EventTypeEnum) =>
+  eventType === EventTypeEnum.RepoNotCreated
+    ? { name: 'uil:github', class: 'text-red-600' }
+    : { name: 'solar:lock-keyhole-unlocked-bold-duotone', class: 'text-green-600' }
 
 const relativeTime = (d?: Date) => (d ? (DateTime.fromJSDate(d).toRelative() ?? '') : '')
 
