@@ -6,8 +6,7 @@ in the organization GITHUB_DRAFTS_ORG, is private, is named after the draft with
 its revision, and uses the draft title as its description. A single commit on the
 Approved branch replaces the README and adds the approved I-D's txt and xml from the
 IETF archive (ID_ARCHIVE_URL), each together with a ".original" copy. The RPC-edits
-branch is created at the same commit and made the default branch. Markdown sources
-are committed manually.
+branch is created at the same commit and made the default branch.
 
 Every failure raises DraftRepoError with a message intended for the user, for
 example an existing repository, a file missing from the archive, or GitHub being
