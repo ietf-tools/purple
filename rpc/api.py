@@ -172,8 +172,6 @@ from .stats.rollups import (
 )
 from .stats.timeline import build_document_timeline
 from .tasks import (
-    RPC_PERSON_NAME_MAP_CACHE_KEY,
-    RPC_PERSON_NAME_MAP_CACHE_TTL,
     compute_deep_references_task,
     create_draft_repo_task,
     publish_rfctobe_task,
@@ -187,6 +185,7 @@ from .utils import (
     create_cluster,
     create_rpc_related_document,
     get_or_create_draft_by_name,
+    rpc_person_name_map,
 )
 
 logger = logging.getLogger(__name__)
@@ -392,32 +391,9 @@ class RpcPersonViewSet(
         """Add context to the serializer"""
         if self.action not in ("list", "retrieve"):
             return super().get_serializer_context()
-        person_ids = list(
-            RpcPerson.objects.values_list(
-                "datatracker_person__datatracker_id", flat=True
-            )
-        )
-
-        name_map: dict[int, str] = cache.get(RPC_PERSON_NAME_MAP_CACHE_KEY) or {}
-        missing_ids = [pid for pid in person_ids if pid not in name_map]
-        if missing_ids:
-            with datatracker_api():
-                fetched = {
-                    person.id: person.plain_name
-                    for person in rpcapi.get_persons(missing_ids)
-                }
-            name_map = {**name_map, **fetched}
-            cache.set(
-                RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL
-            )
-            # Add "Unknown" for IDs not returned by the API
-            name_map = name_map | {
-                missing_id: "Unknown"
-                for missing_id in missing_ids
-                if missing_id not in name_map
-            }
-
-        return super().get_serializer_context() | {"name_map": name_map}
+        return super().get_serializer_context() | {
+            "name_map": rpc_person_name_map(rpcapi)
+        }
 
 
 class RpcPersonAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
