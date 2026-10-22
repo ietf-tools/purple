@@ -8,18 +8,9 @@
         </span>
       </h1>
       <div class="m-2 flex items-center gap-2">
-        <BaseButton
-          btnType="default"
-          class="flex items-center disabled:opacity-60 disabled:cursor-not-allowed"
-          :disabled="isBlocked"
-          :title="
-            isBlocked
-              ? 'This document is blocked — resolve the block before adding an assignment.'
-              : undefined
-          "
-          @click="openAddAssignmentModal">
-          <span>Add assignment</span>
-          <span v-if="isLoadingAdd" class="w-3">
+        <BaseButton btnType="default" class="flex items-center" @click="openAssignmentModal()">
+          <span>Assign…</span>
+          <span v-if="isLoadingAssignmentModal" class="w-3">
             <Icon name="ei:spinner-3" size="1rem" class="animate-spin" />
           </span>
         </BaseButton>
@@ -35,8 +26,15 @@
           v-for="([role, assignments], assignmentIndex) in assignmentsByRoles"
           :key="role"
           class="w-full flex mx-1 flex-row gap-4 items-start">
-          <div class="w-[15em] shrink-0 flex items-start">
+          <div class="w-[15em] shrink-0 flex flex-col items-start gap-2">
             <BaseBadge :label="roleName(role)" size="xl"></BaseBadge>
+            <BaseButton
+              v-if="role !== 'blocked'"
+              btnType="outline"
+              size="xs"
+              @click="openAssignmentModal(role)">
+              Change
+            </BaseButton>
           </div>
           <ul class="flex-1 min-w-0">
             <AssignmentFinishedModalPerson
@@ -54,12 +52,15 @@
 
 <script setup lang="ts">
 import { BaseButton, AssignmentModal } from '#components'
-import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
-import { StateEnum } from '~/purple_client'
+import type { Assignment, RpcPerson } from '~/purple_client'
 import { overlayModalKey } from '~/providers/providerKeys'
 import { groupBy } from 'es-toolkit/array'
 import { assignmentRoleOrder } from '~/utils/sort'
-import { calculatePeopleWorkload, type AssignmentMessageProps } from '~/utils/queue'
+import {
+  calculatePeopleWorkload,
+  currentAssignments,
+  type AssignmentMessageProps
+} from '~/utils/queue'
 
 type Props = {
   rfcToBe: CookedDraft
@@ -71,12 +72,6 @@ const props = defineProps<Props>()
 
 const api = useApi()
 const { roleName } = useRoleName()
-
-// A blocked doc's work assignments are closed and held by an active (in_progress)
-// 'blocked' assignment, so adding a new one would create an inconsistent state.
-const isBlocked = computed(() =>
-  props.assignments.some((a) => a.role === 'blocked' && a.state === StateEnum.InProgress)
-)
 
 const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
 
@@ -102,51 +97,38 @@ if (!overlayModalKeyInjection) {
 
 const { openOverlayModal, closeOverlayModal } = overlayModalKeyInjection
 
-// "Add assignment" — folds the standalone add-assignment flow into this modal.
-// Loads the data the add picker needs, then opens AssignmentModal in 'add' mode
-// (which replaces this modal in the single overlay slot).
-const isLoadingAdd = ref(false)
+const isLoadingAssignmentModal = ref(false)
 
 const roleOrderIndex = (slug: string) =>
   assignmentRoleOrder.indexOf(slug as (typeof assignmentRoleOrder)[number])
 
-const openAddAssignmentModal = async () => {
+// Opens the assignment picker on `role`, or on the draft's next pending activity.
+const openAssignmentModal = async (role?: Assignment['role']) => {
   const rfcToBeId = props.rfcToBe.id
-  if (rfcToBeId === undefined || isBlocked.value) return
+  if (rfcToBeId === undefined) return
 
-  isLoadingAdd.value = true
+  isLoadingAssignmentModal.value = true
   try {
-    const [roles, clusters, queueItems] = await Promise.all([
-      api.rpcRolesList(),
-      api.clustersList(),
-      api.queueList()
-    ])
+    const [clusters, queueItems] = await Promise.all([api.clustersList(), api.queueList()])
 
-    // Only assignment-pipeline roles are selectable (excludes `manager` and the
-    // synthetic `blocked`), ordered by the canonical pipeline order.
-    const roleOptions = roles
-      .filter((r) => (assignmentRoleOrder as readonly string[]).includes(r.slug))
-      .sort((a, b) => roleOrderIndex(a.slug) - roleOrderIndex(b.slug))
-
-    // Default to the draft's next pending activity (earliest in pipeline order),
-    // falling back to the first selectable role.
     const pending = [...(props.rfcToBe.pendingActivities ?? [])].sort(
       (a, b) => roleOrderIndex(a.slug) - roleOrderIndex(b.slug)
     )
-    const defaultRole = pending[0]?.slug ?? roleOptions[0]?.slug ?? ''
-
-    const peopleWorkload = calculatePeopleWorkload(clusters, queueItems)
 
     openOverlayModal({
       component: AssignmentModal,
       componentProps: {
-        message: { type: 'add', rfcToBeId } satisfies AssignmentMessageProps,
+        message: {
+          rfcToBeId,
+          role: role ?? pending[0]?.slug,
+          assignments: currentAssignments(
+            props.rfcToBe.assignmentSet,
+            props.rfcToBe.heldAssignmentSet
+          )
+        } satisfies AssignmentMessageProps,
         people: props.people,
-        peopleWorkload,
+        peopleWorkload: calculatePeopleWorkload(clusters, queueItems),
         clusters,
-        allowRoleSelect: true,
-        roles: roleOptions,
-        defaultRole,
         onSuccess: props.onSuccess
       }
     }).catch((e) => {
@@ -159,7 +141,7 @@ const openAddAssignmentModal = async () => {
   } catch (e) {
     console.error(e)
   } finally {
-    isLoadingAdd.value = false
+    isLoadingAssignmentModal.value = false
   }
 }
 </script>
