@@ -107,6 +107,9 @@ class CreateDraftRepoTests(TestCase):
         self.repo.create_git_ref.assert_called_once_with(
             "refs/heads/RPC-edits", self.repo.create_git_commit.return_value.sha
         )
+        self.repo.edit.assert_called_once_with(default_branch="RPC-edits")
+        calls = [name for name, _args, _kwargs in self.repo.method_calls]
+        self.assertLess(calls.index("create_git_ref"), calls.index("edit"))
         self.rfc_to_be.refresh_from_db()
         self.assertEqual(self.rfc_to_be.repository, FULL_NAME)
 
