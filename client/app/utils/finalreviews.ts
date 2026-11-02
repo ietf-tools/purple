@@ -79,6 +79,17 @@ export const columnFormatterCluster = (clusterNumber?: Cluster['number']) => {
   ])
 }
 
+const assigneeName = (
+  rpcPerson: RpcPerson | undefined,
+  personId: Assignment['person'],
+  queueItemsIsPending: boolean
+) => {
+  if (rpcPerson) return rpcPerson.name
+  // a 'blocked' assignment made while nobody was assigned has no person
+  if (personId == null) return ''
+  return queueItemsIsPending ? '...' : '(unknown person)'
+}
+
 type ColumnFormatterAssignmentsProps = {
   assignments?: Assignment[]
   rfcToBeId?: number
@@ -116,13 +127,7 @@ export const columnFormatterAssignments = ({
 
   const listItems = sortedAssignments.map((assignment) => {
     const rpcPerson = people.find((p) => p.id === assignment.person)
-    const name = rpcPerson
-      ? rpcPerson.name
-      : assignment.person == null
-        ? ''
-        : queueItemsIsPending
-          ? '...'
-          : '(unknown person)'
+    const name = assigneeName(rpcPerson, assignment.person, queueItemsIsPending)
 
     const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role })]
     if (assignment.role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
