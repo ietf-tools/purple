@@ -116,7 +116,13 @@ export const columnFormatterAssignments = ({
 
   const listItems = sortedAssignments.map((assignment) => {
     const rpcPerson = people.find((p) => p.id === assignment.person)
-    const name = rpcPerson ? rpcPerson.name : queueItemsIsPending ? '...' : '(unknown person)'
+    const name = rpcPerson
+      ? rpcPerson.name
+      : assignment.person == null
+        ? ''
+        : queueItemsIsPending
+          ? '...'
+          : '(unknown person)'
 
     const roleBadgeChildren: VNode[] = [h(BaseBadge, { label: assignment.role })]
     if (assignment.role === 'blocked' && blockingReasons && blockingReasons.length > 0) {
