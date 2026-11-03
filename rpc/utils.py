@@ -1,10 +1,23 @@
-# Copyright The IETF Trust 2023-2024, All Rights Reserved
+# Copyright The IETF Trust 2023-2026, All Rights Reserved
+import rpcapi_client
+from django.core.cache import cache
 from django.db.models import F, Max, Subquery, Value
 from django.db.models.functions import Coalesce
 
 from datatracker.models import Document
+from datatracker.rpcapi import datatracker_api
 
-from .models import Cluster, ClusterMember, DumpInfo, RfcToBe, UnusableRfcNumber
+from .models import (
+    Cluster,
+    ClusterMember,
+    DumpInfo,
+    RfcToBe,
+    RpcPerson,
+    UnusableRfcNumber,
+)
+
+RPC_PERSON_NAME_MAP_CACHE_KEY = "rpc_person_name_map"
+RPC_PERSON_NAME_MAP_CACHE_TTL = 20 * 60  # seconds
 
 
 class VersionInfo:
@@ -106,3 +119,30 @@ def get_or_create_draft_by_name(draft_name, *, rpcapi):
         },
     )
     return document
+
+
+def rpc_person_name_map(rpcapi: rpcapi_client.PurpleApi) -> dict[int, str]:
+    """Map datatracker person ID to name for every RpcPerson"""
+    person_ids = list(
+        RpcPerson.objects.values_list("datatracker_person__datatracker_id", flat=True)
+    )
+
+    name_map: dict[int, str] = cache.get(RPC_PERSON_NAME_MAP_CACHE_KEY) or {}
+    missing_ids = [pid for pid in person_ids if pid not in name_map]
+    if missing_ids:
+        with datatracker_api():
+            fetched = {
+                person.id: person.plain_name
+                for person in rpcapi.get_persons(missing_ids)
+            }
+        name_map = {**name_map, **fetched}
+        cache.set(
+            RPC_PERSON_NAME_MAP_CACHE_KEY, name_map, RPC_PERSON_NAME_MAP_CACHE_TTL
+        )
+        # Add "Unknown" for IDs not returned by the API
+        name_map = name_map | {
+            missing_id: "Unknown"
+            for missing_id in missing_ids
+            if missing_id not in name_map
+        }
+    return name_map

@@ -10,6 +10,7 @@ paths:
       tags:
         - purple
       security:
+        - apiKeyAuth: []
         - cookieAuth: []
       responses:
         "200":
@@ -34,6 +35,7 @@ paths:
       tags:
         - purple
       security:
+        - apiKeyAuth: []
         - cookieAuth: []
       responses:
         "200":
@@ -77,6 +79,7 @@ paths:
       tags:
         - purple
       security:
+        - apiKeyAuth: []
         - cookieAuth: []
       responses:
         "200":
@@ -7224,6 +7227,10 @@ components:
           format: date-time
           readOnly: true
   securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
     cookieAuth:
       type: apiKey
       in: cookie

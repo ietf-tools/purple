@@ -2,6 +2,7 @@
 #
 # Originated as ietf.api.authentication in datatracker
 from django.contrib.auth.models import AnonymousUser
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework import authentication
 
 
@@ -19,3 +20,17 @@ class ApiKeyAuthentication(authentication.BaseAuthentication):
         if token is None:
             return None
         return AnonymousUser(), token  # available as request.user and request.auth
+
+
+class ApiKeyAuthenticationScheme(OpenApiAuthenticationExtension):
+    target_class = ApiKeyAuthentication
+    name = "apiKeyAuth"
+
+    def get_security_requirement(self, auto_schema):
+        # Only views that accept an API key list it as a way to authenticate.
+        if getattr(auto_schema.view, "api_key_endpoint", None) is None:
+            return None
+        return super().get_security_requirement(auto_schema)
+
+    def get_security_definition(self, auto_schema):
+        return {"type": "apiKey", "in": "header", "name": "X-API-KEY"}
