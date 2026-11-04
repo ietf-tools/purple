@@ -27,6 +27,13 @@
               <Icon name="fluent:mail-list-16-regular" class="mr-1" />
               Search messages
             </Anchor>
+            <Anchor
+              v-if="datatrackerHref"
+              :href="datatrackerHref"
+              :class="[classForBtnType.cancel, classesForBtnSize.xs]">
+              <Icon name="solar:database-bold-duotone" class="mr-1" />
+              Datatracker
+            </Anchor>
             <template v-if="isEditing">
               <BaseButton btn-type="cancel" size="xs" :disabled="isSaving" @click="cancelEdit">
                 Cancel
@@ -78,6 +85,7 @@ import { mailArchiveSearchUrl } from '~/utils/url'
 const route = useRoute()
 const api = useApi()
 const snackbar = useSnackbar()
+const datatrackerLinks = useDatatrackerLinks()
 
 const currentTab: DocTabId = 'editorial-notes'
 const draftName = computed(() => route.params.id?.toString() ?? '')
@@ -105,6 +113,11 @@ const draftText = ref('')
 const mailArchiveHref = computed(() => {
   const name = rfcToBe.value?.name
   return name?.startsWith('draft-') ? mailArchiveSearchUrl(name) : undefined
+})
+
+const datatrackerHref = computed(() => {
+  const name = rfcToBe.value?.name
+  return name?.startsWith('draft-') ? datatrackerLinks.document(name) : undefined
 })
 
 const updatedAgo = computed(() =>
