@@ -158,6 +158,15 @@ class ActivitiesTests(TestCase):
         ref_check.save()
         self.assertEqual(pending_activities(rfc_to_be), {FIRST_EDITOR})
 
+    def test_no_pending_activities_in_terminal_disposition(self):
+        for slug in ("published", "withdrawn"):
+            with self.subTest(disposition=slug):
+                rfc_to_be = RfcToBeFactory(
+                    disposition=DispositionNameFactory(slug=slug)
+                )
+                self.assign(rfc_to_be, "enqueuer", Assignment.State.DONE)
+                self.assertEqual(pending_activities(rfc_to_be), set())
+
 
 class PublicationTests(TestCase):
     def test_begin_publication_attempt(self):
