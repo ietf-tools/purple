@@ -21,6 +21,7 @@ from datatracker.models import DatatrackerPerson, Document
 from datatracker.rpcapi import datatracker_api, with_rpcapi
 from datatracker.utils import build_datatracker_url
 from rpc.lifecycle.activities import pending_activities
+from rpc.lifecycle.blocked_assignments import held_assignments
 from rpc.lifecycle.metadata import MetadataComparator
 from rpc.lifecycle.repo import normalize_github_repo
 from rpc.stats.rollups import PUBLISHED_STATUS_ORDER, PUBLISHED_STREAMS
@@ -322,6 +323,16 @@ class AssignmentSerializer(serializers.ModelSerializer):
                 data["state"] = self.instance.state
 
         return super().to_internal_value(data)
+
+
+def held_assignment_data(obj: RfcToBe, context) -> list:
+    """Serialize the assignments a blocked document holds; others hold none."""
+    active = getattr(obj, "active_assignments", None)
+    if active is None:
+        active = obj.assignment_set.active()
+    if not any(a.role_id == "blocked" for a in active):
+        return []
+    return AssignmentSerializer(held_assignments(obj), many=True, context=context).data
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -757,6 +768,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
     assignment_set = AssignmentSerializer(
         source="active_assignments", many=True, read_only=True
     )
+    held_assignment_set = serializers.SerializerMethodField()
     actionholder_set = ActionHolderSerializer(
         source="active_actionholders", many=True, read_only=True
     )
@@ -782,6 +794,7 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "labels",
             "cluster",
             "assignment_set",
+            "held_assignment_set",
             "actionholder_set",
             "pending_activities",
             "rfc_number",
@@ -792,6 +805,10 @@ class QueueItemSerializer(serializers.ModelSerializer):
             "iana_status",
             "blocking_reasons",
         ]
+
+    @extend_schema_field(AssignmentSerializer(many=True))
+    def get_held_assignment_set(self, obj):
+        return held_assignment_data(obj, self.context)
 
     @extend_schema_field(RpcRoleSerializer(many=True))
     def get_pending_activities(self, obj):
@@ -937,6 +954,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
     labels = serializers.PrimaryKeyRelatedField(many=True, queryset=Label.objects.all())
     authors = RfcAuthorSerializer(many=True)
     assignment_set = serializers.SerializerMethodField()
+    held_assignment_set = serializers.SerializerMethodField()
     actionholder_set = serializers.SerializerMethodField()
     pending_activities = RpcRoleSerializer(many=True, read_only=True)
 
@@ -1056,6 +1074,10 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             assignments = obj.assignment_set.active()
         return AssignmentSerializer(assignments, many=True, context=self.context).data
 
+    @extend_schema_field(AssignmentSerializer(many=True))
+    def get_held_assignment_set(self, obj: RfcToBe):
+        return held_assignment_data(obj, self.context)
+
     @extend_schema_field(ActionHolderSerializer(many=True))
     def get_actionholder_set(self, obj: RfcToBe):
         holders = getattr(obj, "active_actionholders", None)
@@ -1095,6 +1117,7 @@ class RfcToBeSerializer(serializers.ModelSerializer):
             "iesg_contact",
             "iesg_contact_id",
             "assignment_set",
+            "held_assignment_set",
             "actionholder_set",
             "pending_activities",
             "rfc_number",

@@ -24,6 +24,7 @@ from rpc.models import (
     RfcToBe,
     RfcToBeBlockingReason,
 )
+from rpc.serializers import RfcToBeSerializer
 
 from .activities import (
     ENQUEUER,
@@ -33,7 +34,12 @@ from .activities import (
     complete_activities,
     pending_activities,
 )
-from .blocked_assignments import apply_manual_block, get_block_reasons
+from .blocked_assignments import (
+    apply_blocked_assignment_for_rfc,
+    apply_manual_block,
+    get_block_reasons,
+    held_assignments,
+)
 from .publication import (
     AmbiguousFilesError,
     MissingFilesError,
@@ -565,3 +571,172 @@ class FinalReviewBlockingTests(TestCase):
                 state=Assignment.State.ASSIGNED,
             ).exists()
         )
+
+
+class ReassignWhileBlockedTests(TestCase):
+    """Changes to who holds a role during a block carry over when it ends."""
+
+    def setUp(self):
+        self.rfc = RfcToBeFactory(
+            disposition=DispositionNameFactory(slug="in_progress")
+        )
+        self.label = LabelFactory(slug="author-input-required")
+        self.alice = RpcPersonFactory()
+        self.bob = RpcPersonFactory()
+        self.formatting = RpcRoleFactory(slug="formatting")
+
+    def assign(self, person, role):
+        with self.captureOnCommitCallbacks(execute=True):
+            return AssignmentFactory(
+                rfc_to_be=self.rfc,
+                person=person,
+                role=role,
+                state=Assignment.State.IN_PROGRESS,
+            )
+
+    def block(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.rfc.labels.add(self.label)
+
+    def unblock(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            self.rfc.labels.remove(self.label)
+
+    def active(self, role_slug):
+        return set(
+            self.rfc.assignment_set.filter(role__slug=role_slug)
+            .active()
+            .values_list("person", flat=True)
+        )
+
+    def test_unblock_gives_role_back(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        self.assertEqual(self.active("formatting"), set())
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), {self.alice.pk})
+        self.assertEqual(self.active("blocked"), set())
+
+    def test_unblock_gives_back_every_role_a_person_held(self):
+        self.assign(self.alice, self.formatting)
+        self.assign(self.alice, RpcRoleFactory(slug="ref_checker"))
+        self.block()
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), {self.alice.pk})
+        self.assertEqual(self.active("ref_checker"), {self.alice.pk})
+
+    def withdraw_hold(self, person, role):
+        (held,) = [
+            a
+            for a in held_assignments(self.rfc)
+            if a.person_id == person.pk and a.role_id == role.slug
+        ]
+        with self.captureOnCommitCallbacks(execute=True):
+            held.state = Assignment.State.WITHDRAWN
+            held.save()
+
+    def test_replacing_a_held_person(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+
+        self.withdraw_hold(self.alice, self.formatting)
+        self.assign(self.bob, self.formatting)
+
+        self.assertEqual(self.active("blocked"), {self.bob.pk})
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), {self.bob.pk})
+
+    def test_withdrawing_the_only_hold_keeps_the_document_blocked(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+
+        self.withdraw_hold(self.alice, self.formatting)
+
+        self.assertEqual(self.active("blocked"), {None})
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), set())
+
+    def test_role_blocked_again_is_held_once(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        self.unblock()
+        self.block()
+
+        self.assertEqual(
+            [(a.role_id, a.person_id) for a in held_assignments(self.rfc)],
+            [("formatting", self.alice.pk)],
+        )
+
+        self.withdraw_hold(self.alice, self.formatting)
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), set())
+
+    def test_assigned_blocked_assignment_of_a_holder_is_reused(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        blocked = self.rfc.assignment_set.filter(role__slug="blocked").active().get()
+        blocked.state = Assignment.State.ASSIGNED
+        blocked.save()
+
+        with self.captureOnCommitCallbacks(execute=True):
+            apply_blocked_assignment_for_rfc(self.rfc)
+
+        blocked.refresh_from_db()
+        self.assertEqual(blocked.state, Assignment.State.IN_PROGRESS)
+        self.assertEqual(
+            self.rfc.assignment_set.filter(role__slug="blocked").active().count(), 1
+        )
+
+    def test_api_lists_held_assignments_only_while_blocked(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+
+        held = RfcToBeSerializer(self.rfc).data["held_assignment_set"]
+        self.assertEqual(
+            [(a["person"], a["role"]) for a in held], [(self.alice.pk, "formatting")]
+        )
+
+        self.unblock()
+
+        self.assertEqual(RfcToBeSerializer(self.rfc).data["held_assignment_set"], [])
+
+    def test_assignment_made_while_blocked_is_held_next_to_the_others(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+
+        bob_formatting = self.assign(self.bob, self.formatting)
+
+        bob_formatting.refresh_from_db()
+        self.assertEqual(bob_formatting.state, Assignment.State.CLOSED_FOR_HOLD)
+        self.assertEqual(bob_formatting.comment, "Assigned while blocked")
+        self.assertEqual(self.active("formatting"), set())
+        self.assertEqual(self.active("blocked"), {self.alice.pk, self.bob.pk})
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), {self.alice.pk, self.bob.pk})
+
+    def test_assignment_made_as_the_block_ends_keeps_the_held_one(self):
+        self.assign(self.alice, self.formatting)
+        self.block()
+        # Created without running the on-commit block check, as when the same
+        # change that adds the assignment also ends the block
+        AssignmentFactory(
+            rfc_to_be=self.rfc,
+            person=self.bob,
+            role=self.formatting,
+            state=Assignment.State.ASSIGNED,
+        )
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), {self.alice.pk, self.bob.pk})
