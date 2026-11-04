@@ -2969,6 +2969,8 @@ class RfcMailTemplatesList(views.APIView):
                 interested_parties.add(f"{rfc_to_be.area}-ads@ietf.org")
             if rfc_to_be.group:
                 interested_parties.add(f"{rfc_to_be.group}-chairs@ietf.org")
+                if rfc_to_be.iesg_contact and rfc_to_be.iesg_contact.email:
+                    interested_parties.add(rfc_to_be.iesg_contact.email)
                 if list_email := datatracker_group_list_email(rfc_to_be.group):
                     publication_cc.add(list_email)
             else:
