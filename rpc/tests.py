@@ -1563,6 +1563,17 @@ class IntakeMailTemplateTests(TestCase):
     def test_goes_to_authors_and_additional_emails(self, *_):
         self.assertEqual(self.intake()["to"], "100@example.org,extra@example.org")
 
+    def test_publication_does_not_go_to_additional_emails(self, *_):
+        resp = self.client.get(f"/api/rpc/mailtemplate/{self.rfc_to_be.pk}/")
+        publication = next(
+            t["template"]
+            for t in resp.json()
+            if t["template"]["msgtype"] == "publication"
+        )
+        self.assertEqual(
+            publication["to"], "ietf-announce@ietf.org,rfc-dist@rfc-editor.org"
+        )
+
     def test_copies_the_archive_rfc_editor_and_shepherd(self, *_):
         cc = self.intake()["cc"]
         for address in (
