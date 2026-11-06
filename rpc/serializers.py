@@ -1635,7 +1635,9 @@ class RpcRelatedDocumentSerializer(serializers.ModelSerializer):
 class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
     """Serializer for creating a related document for an RfcToBe"""
 
-    target_draft_name = serializers.CharField(write_only=True, required=True)
+    target_draft_name = serializers.CharField(write_only=True, required=False)
+    # For RFCs with no draft, e.g. legacy RFCs
+    target_rfc_number = serializers.IntegerField(write_only=True, required=False)
     source = serializers.PrimaryKeyRelatedField(
         queryset=RfcToBe.objects.all(), write_only=True
     )
@@ -1653,8 +1655,31 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
             "source",
             "draft_name",
             "target_draft_name",
+            "target_rfc_number",
             "target_draft_name_output",
         ]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        has_draft_name = "target_draft_name" in attrs
+        has_rfc_number = "target_rfc_number" in attrs
+        if has_draft_name == has_rfc_number:
+            raise serializers.ValidationError(
+                "Provide exactly one of target_draft_name or target_rfc_number"
+            )
+        if has_rfc_number:
+            rfc_number = attrs.pop("target_rfc_number")
+            target_rfctobe = (
+                RfcToBe.objects.filter(rfc_number=rfc_number)
+                .exclude(disposition_id="withdrawn")
+                .first()
+            )
+            if target_rfctobe is None:
+                raise serializers.ValidationError(
+                    {"target_rfc_number": [f"RFC {rfc_number} does not exist"]}
+                )
+            attrs["target_rfctobe"] = target_rfctobe
+        return attrs
 
     @extend_schema_field(serializers.CharField())
     def get_target_draft_name_output(self, obj):
@@ -1731,16 +1756,17 @@ class CreateRpcRelatedDocumentSerializer(RpcRelatedDocumentSerializer):
         add_doc_to_cluster(cluster, target_document)
 
     def create(self, validated_data):
-        target_draft_name = validated_data.pop("target_draft_name")
-
         source = validated_data["source"]
 
-        target_rfctobe = (
-            RfcToBe.objects.filter(draft__name=target_draft_name)
-            .exclude(disposition_id="withdrawn")
-            .first()
-        )
+        target_rfctobe = validated_data.pop("target_rfctobe", None)
         target_document = None
+        if target_rfctobe is None:
+            target_draft_name = validated_data.pop("target_draft_name")
+            target_rfctobe = (
+                RfcToBe.objects.filter(draft__name=target_draft_name)
+                .exclude(disposition_id="withdrawn")
+                .first()
+            )
         if not target_rfctobe:
             target_document = Document.objects.filter(name=target_draft_name).first()
             if not target_document:

@@ -2111,17 +2111,20 @@ class RpcRelatedDocumentViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         relationship = serializer.validated_data["relationship"]
         relationship = get_object_or_404(DocRelationshipName, slug=relationship.slug)
-        target_draft_name = serializer.validated_data["target_draft_name"]
+        target_draft_name = serializer.validated_data.get("target_draft_name")
 
         # Try to find target as Document first
-        target_document = Document.objects.filter(name=target_draft_name).first()
-        if target_document is None:
-            with datatracker_api():
-                target_document = get_or_create_draft_by_name(
-                    target_draft_name, rpcapi=rpcapi
-                )
+        if target_draft_name is not None:
+            target_document = Document.objects.filter(name=target_draft_name).first()
             if target_document is None:
-                raise NotFound(f"Draft with name {target_draft_name} does not exist")
+                with datatracker_api():
+                    target_document = get_or_create_draft_by_name(
+                        target_draft_name, rpcapi=rpcapi
+                    )
+                if target_document is None:
+                    raise NotFound(
+                        f"Draft with name {target_draft_name} does not exist"
+                    )
 
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
