@@ -782,7 +782,7 @@ const updatedBy = computed(
   () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
 )
 
-// match the link label: published RFCs and RFCs without a draft by number, others by draft name
+// published RFCs and RFCs without a draft linked by number, others by draft name
 const relatedDocHref = (doc: RpcRelatedDocument) =>
   doc.targetDisposition === 'published' || !doc.targetDraftName
     ? `/docs/rfc${doc.targetRfcNumber}`
