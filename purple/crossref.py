@@ -1,4 +1,4 @@
-# Copyright The IETF Trust 2025, All Rights Reserved
+# Copyright The IETF Trust 2026, All Rights Reserved
 
 import logging
 from uuid import uuid4
@@ -13,7 +13,7 @@ from rpc.models import RfcToBe
 logger = logging.getLogger(__name__)
 
 DATETIME_FMT = "%Y%m%d%H%M%S"
-CROSSREF_VERSION = "4.4.2"
+CROSSREF_VERSION = "5.4.0"
 
 
 class CrossrefError(Exception):
