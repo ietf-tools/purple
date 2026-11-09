@@ -194,6 +194,54 @@ class RelatedDocumentClusterSyncTests(TestCase):
         target.refresh_from_db()
         self.assertEqual(target.cluster.number, cluster.number)
 
+    def test_create_related_document_by_rfc_number_without_draft(self, mock_task):
+        DocRelationshipName.objects.get_or_create(
+            slug="obs", defaults={"name": "Obsoletes", "desc": ""}
+        )
+        source = RfcToBeFactory(draft__name="draft-source-doc")
+        target = RfcToBeFactory(draft=None, rfc_number=1846)
+
+        response = self.client.post(
+            reverse(
+                "documents-related-list", kwargs={"draft_name": "draft-source-doc"}
+            ),
+            data=json.dumps(
+                {
+                    "source": source.id,
+                    "relationship": "obs",
+                    "target_rfc_number": 1846,
+                }
+            ),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        related = RpcRelatedDocument.objects.get(source=source)
+        self.assertEqual(related.relationship.slug, "obs")
+        self.assertEqual(related.target_rfctobe, target)
+        self.assertIsNone(related.target_document)
+
+    def test_create_related_document_rejects_bad_target(self, mock_task):
+        source = RfcToBeFactory(draft__name="draft-source-doc")
+        RfcToBeFactory(draft__name="draft-target-doc", rfc_number=1846)
+
+        for target in [
+            {"target_rfc_number": 9999},
+            {},
+            {"target_rfc_number": 1846, "target_draft_name": "draft-target-doc"},
+        ]:
+            response = self.client.post(
+                reverse(
+                    "documents-related-list", kwargs={"draft_name": "draft-source-doc"}
+                ),
+                data=json.dumps(
+                    {"source": source.id, "relationship": "updates", **target}
+                ),
+                content_type="application/json",
+            )
+            self.assertEqual(response.status_code, 400, (target, response.content))
+        self.assertFalse(RpcRelatedDocument.objects.filter(source=source).exists())
+
 
 class RelatedDocumentListTests(TestCase):
     def setUp(self):

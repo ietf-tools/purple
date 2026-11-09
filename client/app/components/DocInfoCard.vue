@@ -782,9 +782,11 @@ const updatedBy = computed(
   () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
 )
 
-// if RFC has no draft name (legacy or April1st), link those by RFC number
+// published RFCs and RFCs without a draft linked by number, others by draft name
 const relatedDocHref = (doc: RpcRelatedDocument) =>
-  doc.targetDraftName ? `/docs/${doc.targetDraftName}` : `/docs/rfc${doc.targetRfcNumber}`
+  doc.targetDisposition === 'published' || !doc.targetDraftName
+    ? `/docs/rfc${doc.targetRfcNumber}`
+    : `/docs/${doc.targetDraftName}`
 
 const isEditingObsoletes = ref(false)
 const isEditingUpdates = ref(false)
@@ -812,23 +814,21 @@ const addRelatedDocument = async (rfcNumber: string, relationshipType: 'obs' | '
 
   // Parse RFC number - handle "9999" or "rfc9999" formats
   const cleaned = rfcNumber.toLowerCase().replace(/^rfc/, '').trim()
-  const rfcLookup = `rfc${cleaned}`
+  if (!/^\d+$/.test(cleaned)) {
+    snackbar.add({
+      type: 'error',
+      text: `"${rfcNumber}" is not an RFC number.`
+    })
+    return
+  }
 
   try {
-    // First, check if the target RFC exists
-    const targetDoc = await api.documentsRetrieve({ draftName: rfcLookup })
-
-    if (!targetDoc.name) {
-      throw new Error('Document found but has no name')
-    }
-
-    // Create the relationship using the draft name from the retrieved document
     await api.documentsRelatedCreate({
       draftName: props.draftName,
       createRpcRelatedDocumentRequest: {
         source: props.rfcToBe.id,
         relationship: relationshipType,
-        targetDraftName: targetDoc.name
+        targetRfcNumber: Number(cleaned)
       }
     })
 
@@ -844,15 +844,11 @@ const addRelatedDocument = async (rfcNumber: string, relationshipType: 'obs' | '
     let msg = `Failed to add ${relationshipType === 'obs' ? 'obsoletes' : 'updates'} relationship.`
 
     if (error instanceof ResponseError) {
-      if (error.response.status === 404) {
-        msg = `RFC ${cleaned} does not exist in the system.`
-      } else {
-        const data = await error.response.json()
-        if (data?.target_draft_name) {
-          msg = data.target_draft_name[0]
-        } else if (data?.detail) {
-          msg = data.detail
-        }
+      const data = await error.response.json()
+      if (data?.target_rfc_number) {
+        msg = data.target_rfc_number[0]
+      } else if (data?.detail) {
+        msg = data.detail
       }
     }
 

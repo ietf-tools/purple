@@ -4650,10 +4650,12 @@ components:
           type: string
           writeOnly: true
           minLength: 1
+        target_rfc_number:
+          type: integer
+          writeOnly: true
       required:
         - relationship
         - source
-        - target_draft_name
     DatatrackerPerson:
       type: object
       description: Serializer a DatatrackerPerson, including all the bells and whistles
