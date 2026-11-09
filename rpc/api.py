@@ -3030,8 +3030,11 @@ class RfcMailTemplatesList(views.APIView):
             },
         }
 
-        # Every template also sends to the document's additional emails.
-        for override in template_overrides.values():
+        # Every template except the publication announcement also sends to the
+        # document's additional emails.
+        for msgtype, override in template_overrides.items():
+            if msgtype == "publication":
+                continue
             override["to"] = list(dict.fromkeys([*override["to"], *additional_emails]))
 
         # For the intake form's errata question: the published RFCs this
