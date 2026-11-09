@@ -3,7 +3,7 @@
 
 from collections.abc import Iterable
 
-from ..models import Assignment
+from ..models import Assignment, DispositionName
 
 
 class Activity:
@@ -103,7 +103,12 @@ def pending_activities(rfctobe):
     pending activities that don't yet have an Assignment. This logic will need
     adjustment if Activities that depend on models other than Assignment are ever
     created.
+
+    A document in a terminal disposition has no pending activities: work on it
+    is over, so only its actual assignments are of interest.
     """
+    if rfctobe.disposition_id not in DispositionName.ACTIVE_SLUGS:
+        return set()
     states = _assignment_states(rfctobe)
     # need an assignment for any without a non-withdrawn Assignment
     need_assignment = ACTIVITIES - {ROLE_MAP[slug] for slug in states}
