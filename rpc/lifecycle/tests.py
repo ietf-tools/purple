@@ -638,15 +638,18 @@ class ReassignWhileBlockedTests(TestCase):
         self.assertEqual(self.active("formatting"), {self.alice.pk})
         self.assertEqual(self.active("ref_checker"), {self.alice.pk})
 
-    def withdraw_hold(self, person, role):
+    def end_hold(self, person, role, state):
         (held,) = [
             a
             for a in held_assignments(self.rfc)
             if a.person_id == person.pk and a.role_id == role.slug
         ]
         with self.captureOnCommitCallbacks(execute=True):
-            held.state = Assignment.State.WITHDRAWN
+            held.state = state
             held.save()
+
+    def withdraw_hold(self, person, role):
+        self.end_hold(person, role, Assignment.State.WITHDRAWN)
 
     def test_replacing_a_held_person(self):
         self.assign(self.alice, self.formatting)
@@ -672,6 +675,24 @@ class ReassignWhileBlockedTests(TestCase):
         self.unblock()
 
         self.assertEqual(self.active("formatting"), set())
+
+    def test_finishing_a_hold_keeps_the_document_blocked(self):
+        self.assign(self.alice, self.formatting)
+        self.assign(self.bob, RpcRoleFactory(slug="ref_checker"))
+        self.block()
+
+        self.end_hold(self.alice, self.formatting, Assignment.State.DONE)
+
+        self.assertEqual(
+            [(a.role_id, a.person_id) for a in held_assignments(self.rfc)],
+            [("ref_checker", self.bob.pk)],
+        )
+        self.assertEqual(self.active("blocked"), {self.bob.pk})
+
+        self.unblock()
+
+        self.assertEqual(self.active("formatting"), set())
+        self.assertEqual(self.active("ref_checker"), {self.bob.pk})
 
     def test_role_blocked_again_is_held_once(self):
         self.assign(self.alice, self.formatting)

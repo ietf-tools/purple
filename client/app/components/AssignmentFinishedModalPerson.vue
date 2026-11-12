@@ -26,7 +26,7 @@
               Start
             </BaseButton>
             <BaseButton
-              v-else-if="props.assignment.state === 'in_progress'"
+              v-else-if="props.assignment.state === 'in_progress' || props.isHeld"
               btnType="default"
               @mousedown="isFinishing = true"
               @click="finishAssignment"
@@ -57,6 +57,8 @@ type Props = {
   assignment: Assignment
   personName: string
   onSuccess: () => void
+  // On hold in the document's current block, which can still be finished.
+  isHeld?: boolean
 }
 const props = defineProps<Props>()
 

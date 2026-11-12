@@ -41,7 +41,8 @@
               v-for="assignment in assignments"
               :assignment="assignment"
               :on-success="props.onSuccess"
-              :person-name="getPersonNameById(assignment.person)" />
+              :person-name="getPersonNameById(assignment.person)"
+              :is-held="heldIds.has(assignment.id)" />
           </ul>
         </li>
         <li v-else class="italic">(no assignments)</li>
@@ -72,6 +73,8 @@ const props = defineProps<Props>()
 
 const api = useApi()
 const { roleName } = useRoleName()
+
+const heldIds = new Set((props.rfcToBe.heldAssignmentSet ?? []).map((held) => held.id))
 
 const assignmentsByRolesObj = groupBy(props.assignments, (assignment) => assignment.role)
 
