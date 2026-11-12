@@ -4,7 +4,10 @@
       <template #header>
         <CardHeader title="Publishing Dependencies">
           <template #actions>
-            <BaseButton btn-type="default" @click="isOpenDependencyModal = true"
+            <BaseButton
+              v-if="!props.readonly"
+              btn-type="default"
+              @click="isOpenDependencyModal = true"
               >Add Dependency</BaseButton
             >
           </template>
@@ -12,7 +15,7 @@
       </template>
       <DocumentTable
         v-if="relatedDocuments"
-        :columns="columns"
+        :columns="visibleColumns"
         :data="relatedDocuments"
         row-key="id" />
       <div
@@ -85,6 +88,11 @@ const columns: Column[] = [
     classes: 'text-sm font-medium',
     format: (row: any) => {
       const info = relatedDocsInfo.value?.[row] || {}
+      if (info.disposition === 'published') {
+        return h(BaseBadge, {
+          label: info.rfc_number ? `Published as RFC ${info.rfc_number}` : 'Published'
+        })
+      }
       const assignments = info.assignment_set
       if (!assignments || !Array.isArray(assignments) || assignments.length === 0) return '—'
       const nodes: (string | VNode)[] = []
@@ -166,6 +174,7 @@ type Props = {
   draftName: string
   id: number
   people?: RpcPerson[]
+  readonly?: boolean
 }
 
 const clusterNumber = defineModel<number | undefined>('clusterNumber')
@@ -173,6 +182,10 @@ const clusterNumber = defineModel<number | undefined>('clusterNumber')
 const api = useApi()
 const snackbar = useSnackbar()
 const props = defineProps<Props>()
+
+const visibleColumns = computed(() =>
+  props.readonly ? columns.filter((column) => column.key !== 'delete') : columns
+)
 
 const people = computed(() => props.people ?? fetchedPeople.value)
 
@@ -217,6 +230,8 @@ watch(
         const refqueueCount = relDocs.filter((doc) => doc.relationship === 'refqueue').length
         const notReceivedCount = relDocs.filter((doc) => doc.relationship === 'not-received').length
         relatedDocsInfo.value[name] = {
+          disposition: info.disposition?.slug,
+          rfc_number: info.rfcNumber,
           assignment_set: info.assignmentSet,
           pending_activities: info.pendingActivities,
           refqueue_count: refqueueCount,
