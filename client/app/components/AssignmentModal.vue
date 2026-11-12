@@ -1,28 +1,15 @@
 <template>
   <div class="h-full flex flex-col text-gray-900 dark:text-neutral-100">
     <div class="flex flex-row justify-between border-b border-gray-300 dark:border-neutral-700">
-      <h1 class="text-xl font-bold pt-4 px-4 py-3">
-        <span v-if="props.message.type === 'assign'">
-          Assign
-          <BaseBadge :label="roleName(props.message.role)" size="xl"></BaseBadge>
-        </span>
-        <span v-else-if="props.message.type === 'change'">
-          Change
-          <BaseBadge :label="roleName(props.message.role)" size="xl"></BaseBadge>
-          assignment
-        </span>
-        <span v-else-if="props.message.type === 'add'" class="flex items-center gap-2">
-          Add
-          <select
-            v-if="props.allowRoleSelect"
-            v-model="selectedRole"
-            class="text-base font-normal border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 min-w-[14rem]">
-            <option v-for="role in roleOptions" :key="role.slug" :value="role.slug">
-              {{ role.name }}
-            </option>
-          </select>
-          assignment
-        </span>
+      <h1 class="text-xl font-bold pt-4 px-4 py-3 flex items-center gap-2">
+        Assignments for
+        <select
+          v-model="selectedRole"
+          class="text-base font-normal border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-neutral-800 min-w-[14rem]">
+          <option v-for="role in roleOptions" :key="role.slug" :value="role.slug">
+            {{ role.name }}
+          </option>
+        </select>
       </h1>
       <BaseButton btnType="cancel" class="m-2 flex items-center" @click="closeOverlayModal">
         <Icon name="uil:times" class="h-5 w-5" aria-hidden="true" />
@@ -47,6 +34,11 @@
               {{ person.name }}
               <span class="font-normal text-gray-700 dark:text-neutral-400"
                 >(#{{ person.id }})</span
+              >
+              <span
+                v-if="person.id && heldPeople.has(person.id)"
+                class="ml-1 font-normal italic text-gray-700 dark:text-neutral-400"
+                >on hold</span
               >
             </label>
             <div v-if="person.capabilities?.length" class="text-sm mb-1">
@@ -90,7 +82,7 @@
             </p>
           </div>
           <p v-else-if="action.type === 'assign'">
-            &bull; <b>Assign</b> editor <b>{{ getPersonNameById(action.personId) }}</b> #{{
+            &bull; <b>Assign</b> <b>{{ getPersonNameById(action.personId) }}</b> #{{
               action.personId
             }}
           </p>
@@ -109,6 +101,8 @@
 import { watch } from 'vue'
 import { BaseButton } from '#components'
 import type { Assignment, RpcPerson, RpcRole } from '~/purple_client'
+import { StateEnum } from '~/purple_client'
+import { assignmentRoleOrder } from '~/utils/sort'
 import type { AssignmentMessageProps } from '~/utils/queue'
 import type { ResolvedQueueItem } from './AssignmentsTypes'
 import { overlayModalKey } from '~/providers/providerKeys'
@@ -124,25 +118,33 @@ type Props = {
   peopleWorkload: Record<number, RpcPersonWorkload>
   clusters: ResolvedCluster[]
   onSuccess: () => void
-  // Role-picker props (add flow): offer `roles`, pre-selecting `defaultRole`.
-  allowRoleSelect?: boolean
-  roles?: RpcRole[]
-  defaultRole?: Assignment['role']
 }
 const props = defineProps<Props>()
 
-const { roleName } = useRoleName()
+const api = useApi()
 
-// Exclude the synthetic 'blocked' role from the picker.
-const roleOptions = computed(() => (props.roles ?? []).filter((role) => role.slug !== 'blocked'))
+const roles = ref<RpcRole[]>([])
+api.rpcRolesList().then((list) => {
+  roles.value = list
+})
 
-const selectedRole = ref<Assignment['role']>(
-  props.allowRoleSelect ? (props.defaultRole ?? roleOptions.value[0]?.slug ?? '') : ''
+const roleOrderIndex = (slug: string) =>
+  assignmentRoleOrder.indexOf(slug as (typeof assignmentRoleOrder)[number])
+
+// Pipeline roles in pipeline order, plus the role the dialog was opened for.
+const roleOptions = computed(() =>
+  roles.value
+    .filter((role) => roleOrderIndex(role.slug) !== -1 || role.slug === props.message.role)
+    .sort((a, b) => roleOrderIndex(a.slug) - roleOrderIndex(b.slug))
 )
 
-const effectiveRole = computed<Assignment['role']>(() =>
-  props.allowRoleSelect || !('role' in props.message) ? selectedRole.value : props.message.role
-)
+const selectedRole = ref<Assignment['role']>(props.message.role ?? '')
+
+watch(roleOptions, (options) => {
+  if (!selectedRole.value && options[0]) {
+    selectedRole.value = options[0].slug
+  }
+})
 
 const generateId = (personId: number | undefined, personIndex: number): string =>
   `person-${personId ?? personIndex}`
@@ -155,21 +157,29 @@ if (!overlayModalKeyInjection) {
 
 type SelectedPeople = Record<number, boolean>
 
-const getInitialState = (message: AssignmentMessageProps): SelectedPeople => {
-  // 'assign' and 'add' start with nobody selected; only 'change' pre-selects the
-  // people currently assigned to the role.
-  if (message.type !== 'change') {
-    return {}
-  }
-  return message.assignments.reduce((acc, assignment) => {
-    if (assignment.person) {
-      acc[assignment.person] = true
-    }
-    return acc
-  }, {} as SelectedPeople)
-}
+const holders = computed(() =>
+  props.message.assignments.filter(
+    (assignment) => assignment.role === selectedRole.value && assignment.person != null
+  )
+)
 
-const isPersonSelected = ref(getInitialState(props.message))
+const heldPeople = computed(
+  () =>
+    new Set(
+      holders.value
+        .filter((assignment) => assignment.state === StateEnum.ClosedForHold)
+        .map((assignment) => assignment.person)
+    )
+)
+
+const tickHolders = (): SelectedPeople =>
+  Object.fromEntries(holders.value.map((assignment) => [assignment.person, true]))
+
+const isPersonSelected = ref<SelectedPeople>(tickHolders())
+
+watch(selectedRole, () => {
+  isPersonSelected.value = tickHolders()
+})
 
 const { closeOverlayModal } = overlayModalKeyInjection
 
@@ -205,114 +215,51 @@ const actions = ref<Action[]>([])
 watch(
   isPersonSelected,
   () => {
-    const newActions: Action[] = []
+    const withdrawals = holders.value
+      .filter((assignment) => !isPersonSelected.value[assignment.person!])
+      .map((assignmentToWithdraw): ActionWithdrawn => {
+        const person = assignmentToWithdraw.person!
+        if (!assignmentToWithdraw.id) {
+          throw Error(
+            `Assignment to withdraw was missing an id. Was ${JSON.stringify(assignmentToWithdraw)}`
+          )
+        }
+        const existingAction = actions.value.find(
+          (action) => action.type === 'withdraw' && action.personId === person
+        )
+        return {
+          type: 'withdraw',
+          personId: person,
+          reason: existingAction?.type === 'withdraw' ? existingAction.reason : '',
+          assignmentId: assignmentToWithdraw.id,
+          existingComment: assignmentToWithdraw.comment
+        }
+      })
 
-    if (props.message.type === 'change') {
-      const message = props.message
-      // withdrawals
-      newActions.push(
-        ...message.assignments
-          .filter((assignment) => {
-            const { person } = assignment
-            if (person === undefined || person === null) {
-              throw Error('Internal error: An assignment should have a person but it did not')
-            }
-            return !isPersonSelected.value[person]
-          })
-          .map((assignmentToWithdraw): ActionWithdrawn => {
-            const { person } = assignmentToWithdraw
-            if (person === undefined || person === null) {
-              throw Error('Internal error: An assignment should have a person but it did not')
-            }
-            if (!assignmentToWithdraw.id) {
-              throw Error(
-                `Assignment to withdraw was missing an id. Was ${JSON.stringify(assignmentToWithdraw)}`
-              )
-            }
+    const assignments = Object.entries(isPersonSelected.value)
+      .filter(([personIdString, isSelected]) => {
+        const personId = parseInt(personIdString, 10)
+        return isSelected && !holders.value.some((assignment) => assignment.person === personId)
+      })
+      .map(([personIdString]): ActionAssign => ({
+        type: 'assign',
+        personId: parseInt(personIdString, 10),
+        rfcToBeId: props.message.rfcToBeId,
+        role: selectedRole.value
+      }))
 
-            const existingAction = actions.value.find(
-              (action) => action.type === 'withdraw' && action.personId === person
-            )
-
-            return {
-              type: 'withdraw',
-              personId: person,
-              reason: existingAction?.type === 'withdraw' ? existingAction.reason : '',
-              assignmentId: assignmentToWithdraw.id,
-              existingComment: assignmentToWithdraw.comment
-            }
-          })
-      )
-
-      // new assignments
-      newActions.push(
-        ...Object.entries(isPersonSelected.value)
-          .filter(([personIdString, isSelected]) => {
-            if (!isSelected) return false
-            const personId = parseInt(personIdString, 10)
-            return !message.assignments.some((assignment) => assignment.person === personId)
-          })
-          .map(([personIdString]): ActionAssign => {
-            const personId = parseInt(personIdString, 10)
-            return {
-              type: 'assign',
-              personId,
-              rfcToBeId: message.rfcToBeId,
-              role: message.role
-            }
-          })
-      )
-    } else if (props.message.type === 'assign' || props.message.type === 'add') {
-      const rfcToBeId = props.message.rfcToBeId
-      // withdrawals
-      // there are no withdrawals when initially assigning or adding
-
-      // new assignments
-      newActions.push(
-        ...Object.entries(isPersonSelected.value)
-          .filter(([personIdString, isSelected]) => {
-            return isSelected
-          })
-          .map(([personIdString]): ActionAssign => {
-            const personId = parseInt(personIdString, 10)
-            return {
-              type: 'assign',
-              personId,
-              rfcToBeId,
-              role: effectiveRole.value
-            }
-          })
-      )
-    }
-
-    actions.value = newActions
+    actions.value = [...withdrawals, ...assignments]
   },
-  { deep: true }
+  { deep: true, immediate: true }
 )
 
-// Re-picking the role must update actions already built by the watch above.
-watch(selectedRole, () => {
-  actions.value = actions.value.map((action) =>
-    action.type === 'assign' ? { ...action, role: selectedRole.value } : action
+// filter the list of editors to those who are active or currently hold the role
+const visiblePeople = computed(() =>
+  props.people.filter(
+    (person) =>
+      person.isActive || holders.value.some((assignment) => assignment.person === person.id)
   )
-})
-
-// filter the list of editors to those who are active or currently assigned
-const visiblePeople = computed(() => {
-  return props.people.filter((person) => {
-    // if the person is active show them
-    if (person.isActive) {
-      return true
-    }
-    if (props.message.type === 'change') {
-      // if the person isActive===false but currently assigned show them so that we can unassign them
-      if (props.message.assignments.some((assignment) => assignment.person === person.id)) {
-        return true
-      }
-    }
-    return false
-  })
-})
+)
 
 const canSave = computed(() => {
   return actions.value.length === 0 || !isSaving.value
@@ -323,8 +270,6 @@ const getPersonNameById = (personId?: number): string => {
   const person = props.people.find((person) => person.id === personId)
   return person?.name ?? 'Unknown'
 }
-
-const api = useApi()
 
 const snackbar = useSnackbar()
 
