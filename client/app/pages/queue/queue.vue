@@ -329,7 +329,6 @@ const columns = [
         return 'No assignments'
       }
       const heldAssignments = data.row.original.heldAssignmentSet ?? []
-      const assignments = [...activeAssignments, ...heldAssignments]
 
       const rfcToBeId = data.row.original.id
       if (rfcToBeId === undefined) {
@@ -340,7 +339,7 @@ const columns = [
 
       const listItems: VNode[] = []
 
-      const assignmentsByRoles = groupBy(assignments, (assignment) => assignment.role)
+      const assignmentsByRoles = groupBy(activeAssignments, (assignment) => assignment.role)
 
       const orderedRoles = Object.keys(assignmentsByRoles).sort((a, b) => a.localeCompare(b, 'en'))
 
@@ -383,6 +382,12 @@ const columns = [
               { class: 'flex flex-col gap-2 w-36 shrink-0' },
               assignmentsOfRole.map((assignment) => {
                 const rpcPerson = people.value.find((p) => p.id === assignment.person)
+                const heldRoleNames =
+                  role === 'blocked' && assignment.person != null
+                    ? heldAssignments
+                        .filter((held) => held.person === assignment.person)
+                        .map((held) => roleName(held.role))
+                    : []
                 return h('li', [
                   h(
                     Anchor,
@@ -392,8 +397,12 @@ const columns = [
                     },
                     () => [rpcPerson ? rpcPerson.name : '']
                   ),
-                  heldAssignments.includes(assignment)
-                    ? h('span', { class: 'block text-xs italic text-gray-500' }, 'on hold')
+                  heldRoleNames.length > 0
+                    ? h(
+                        'span',
+                        { class: 'block text-xs text-gray-500' },
+                        `${heldRoleNames.join(', ')} (on hold)`
+                      )
                     : null
                 ])
               })
@@ -455,32 +464,38 @@ const columns = [
         )
       }
 
+      const isBlocked =
+        data.row.original.assignmentSet?.some(
+          (a) => a.role === 'blocked' && a.state === 'in_progress'
+        ) ?? false
+
       return h(
         'ul',
         { class: 'flex flex-col gap-3' },
         value.map((rpcRole) =>
           h('li', { class: 'flex flex-row gap-2' }, [
             h('div', h(BaseBadge, { label: rpcRole.name })),
-            h(
-              'div',
+            !isBlocked &&
               h(
-                BaseButton,
-                {
-                  btnType: 'outline',
-                  size: 'xs',
-                  onClick: () =>
-                    openAssignmentModal({
-                      rfcToBeId,
-                      role: rpcRole.slug,
-                      assignments: currentAssignments(
-                        data.row.original.assignmentSet,
-                        data.row.original.heldAssignmentSet
-                      )
-                    })
-                },
-                () => 'Assign'
+                'div',
+                h(
+                  BaseButton,
+                  {
+                    btnType: 'outline',
+                    size: 'xs',
+                    onClick: () =>
+                      openAssignmentModal({
+                        rfcToBeId,
+                        role: rpcRole.slug,
+                        assignments: currentAssignments(
+                          data.row.original.assignmentSet,
+                          data.row.original.heldAssignmentSet
+                        )
+                      })
+                  },
+                  () => 'Assign'
+                )
               )
-            )
           ])
         )
       )
