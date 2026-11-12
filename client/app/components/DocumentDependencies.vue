@@ -4,7 +4,10 @@
       <template #header>
         <CardHeader title="Publishing Dependencies">
           <template #actions>
-            <BaseButton btn-type="default" @click="isOpenDependencyModal = true"
+            <BaseButton
+              v-if="!props.readonly"
+              btn-type="default"
+              @click="isOpenDependencyModal = true"
               >Add Dependency</BaseButton
             >
           </template>
@@ -12,7 +15,7 @@
       </template>
       <DocumentTable
         v-if="relatedDocuments"
-        :columns="columns"
+        :columns="visibleColumns"
         :data="relatedDocuments"
         row-key="id" />
       <div
@@ -65,17 +68,25 @@ const columns: Column[] = [
     classes: 'text-sm font-medium',
     format: (name: any) => {
       const doc = relatedDocuments.value?.find((d) => d.targetDraftName === name)
-      if (doc?.relationship === 'refqueue') {
-        return h(
-          Anchor,
-          {
-            href: `/docs/${name}`,
-            class: 'inline-flex items-center gap-1 text-blue-600'
-          },
-          name
-        )
-      }
-      return name ?? '—'
+      const info = relatedDocsInfo.value?.[name] || {}
+      const publishedBadge =
+        info.disposition === 'published'
+          ? h(BaseBadge, {
+              label: info.rfc_number ? `Published as RFC ${info.rfc_number}` : 'Published'
+            })
+          : null
+      const nameNode =
+        doc?.relationship === 'refqueue'
+          ? h(
+              Anchor,
+              {
+                href: `/docs/${name}`,
+                class: 'inline-flex items-center gap-1 text-blue-600'
+              },
+              name
+            )
+          : (name ?? '—')
+      return publishedBadge ? h('span', [nameNode, ' ', publishedBadge]) : nameNode
     }
   },
   {
@@ -166,6 +177,7 @@ type Props = {
   draftName: string
   id: number
   people?: RpcPerson[]
+  readonly?: boolean
 }
 
 const clusterNumber = defineModel<number | undefined>('clusterNumber')
@@ -173,6 +185,10 @@ const clusterNumber = defineModel<number | undefined>('clusterNumber')
 const api = useApi()
 const snackbar = useSnackbar()
 const props = defineProps<Props>()
+
+const visibleColumns = computed(() =>
+  props.readonly ? columns.filter((column) => column.key !== 'delete') : columns
+)
 
 const people = computed(() => props.people ?? fetchedPeople.value)
 
@@ -217,6 +233,8 @@ watch(
         const refqueueCount = relDocs.filter((doc) => doc.relationship === 'refqueue').length
         const notReceivedCount = relDocs.filter((doc) => doc.relationship === 'not-received').length
         relatedDocsInfo.value[name] = {
+          disposition: info.disposition?.slug,
+          rfc_number: info.rfcNumber,
           assignment_set: info.assignmentSet,
           pending_activities: info.pendingActivities,
           refqueue_count: refqueueCount,
