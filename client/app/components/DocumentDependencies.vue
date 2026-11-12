@@ -68,17 +68,25 @@ const columns: Column[] = [
     classes: 'text-sm font-medium',
     format: (name: any) => {
       const doc = relatedDocuments.value?.find((d) => d.targetDraftName === name)
-      if (doc?.relationship === 'refqueue') {
-        return h(
-          Anchor,
-          {
-            href: `/docs/${name}`,
-            class: 'inline-flex items-center gap-1 text-blue-600'
-          },
-          name
-        )
-      }
-      return name ?? '—'
+      const info = relatedDocsInfo.value?.[name] || {}
+      const publishedBadge =
+        info.disposition === 'published'
+          ? h(BaseBadge, {
+              label: info.rfc_number ? `Published as RFC ${info.rfc_number}` : 'Published'
+            })
+          : null
+      const nameNode =
+        doc?.relationship === 'refqueue'
+          ? h(
+              Anchor,
+              {
+                href: `/docs/${name}`,
+                class: 'inline-flex items-center gap-1 text-blue-600'
+              },
+              name
+            )
+          : (name ?? '—')
+      return publishedBadge ? h('span', [nameNode, ' ', publishedBadge]) : nameNode
     }
   },
   {
@@ -88,11 +96,6 @@ const columns: Column[] = [
     classes: 'text-sm font-medium',
     format: (row: any) => {
       const info = relatedDocsInfo.value?.[row] || {}
-      if (info.disposition === 'published') {
-        return h(BaseBadge, {
-          label: info.rfc_number ? `Published as RFC ${info.rfc_number}` : 'Published'
-        })
-      }
       const assignments = info.assignment_set
       if (!assignments || !Array.isArray(assignments) || assignments.length === 0) return '—'
       const nodes: (string | VNode)[] = []
