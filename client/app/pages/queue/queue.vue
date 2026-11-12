@@ -382,13 +382,8 @@ const columns = [
               { class: 'flex flex-col gap-2 w-36 shrink-0' },
               assignmentsOfRole.map((assignment) => {
                 const rpcPerson = people.value.find((p) => p.id === assignment.person)
-                const heldRoleNames =
-                  role === 'blocked' && assignment.person != null
-                    ? heldAssignments
-                        .filter((held) => held.person === assignment.person)
-                        .map((held) => roleName(held.role))
-                    : []
-                return h('li', [
+                return h(
+                  'li',
                   h(
                     Anchor,
                     {
@@ -396,15 +391,8 @@ const columns = [
                       class: [ANCHOR_STYLE, 'text-sm']
                     },
                     () => [rpcPerson ? rpcPerson.name : '']
-                  ),
-                  heldRoleNames.length > 0
-                    ? h(
-                        'span',
-                        { class: 'block text-xs text-gray-500' },
-                        `${heldRoleNames.join(', ')} (on hold)`
-                      )
-                    : null
-                ])
+                  )
+                )
               })
             ),
             h(BaseBadge, { label: roleName(role) }),
@@ -412,22 +400,20 @@ const columns = [
               ? blockingReasonsList(blockingReasons, data.row.original.actionholderSet)
               : null,
             h('span', [
-              role === 'blocked'
-                ? null
-                : h(
-                    BaseButton,
-                    {
-                      btnType: 'outline',
-                      size: 'xs',
-                      onClick: () =>
-                        openAssignmentModal({
-                          rfcToBeId,
-                          role,
-                          assignments: currentAssignments(activeAssignments, heldAssignments)
-                        })
-                    },
-                    () => 'Change'
-                  ),
+              h(
+                BaseButton,
+                {
+                  btnType: 'outline',
+                  size: 'xs',
+                  onClick: () =>
+                    openAssignmentModal({
+                      rfcToBeId,
+                      role: role === 'blocked' ? heldAssignments[0]?.role : role,
+                      assignments: currentAssignments(activeAssignments, heldAssignments)
+                    })
+                },
+                () => 'Change'
+              ),
               ...redundantAssignmentsOfSamePersonToSameRole.map((redundantAssignment) => {
                 return h(
                   BaseButton,
