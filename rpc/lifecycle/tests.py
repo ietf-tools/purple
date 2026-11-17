@@ -545,6 +545,20 @@ class FinalReviewBlockingTests(TestCase):
             get_block_reasons(self.rfc), {BlockingReason.FINAL_APPROVAL_PENDING}
         )
 
+    def test_label_reason_listed_with_final_review_reasons(self):
+        FinalApprovalFactory(rfc_to_be=self.rfc)
+        RfcToBeActionHolderFactory(target_rfctobe=self.rfc, completed=None)
+        self.rfc.labels.add(LabelFactory(slug="tools-issue"))
+
+        self.assertEqual(
+            get_block_reasons(self.rfc),
+            {
+                BlockingReason.FINAL_APPROVAL_PENDING,
+                BlockingReason.ACTION_HOLDER_ACTIVE,
+                BlockingReason.TOOLS_ISSUE,
+            },
+        )
+
     def test_finished_final_approval_does_not_block(self):
         FinalApprovalFactory(rfc_to_be=self.rfc, approved=timezone.now())
 
