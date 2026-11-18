@@ -314,7 +314,7 @@ const columns = [
         )
       )
     },
-    sortingFn: 'alphanumeric'
+    enableSorting: false
   }),
   columnHelper.accessor('assignmentSet', {
     header: 'Assignees',
