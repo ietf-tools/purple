@@ -53,6 +53,7 @@ class DocumentList(AnalyticsApiMixin, ListAPIView):
     pagination_class = DefaultLimitOffsetPagination
     queryset = (
         RfcToBe.objects.select_related("draft", "disposition", "submitted_format")
+        .with_enqueued_at()
         .annotate(
             cluster_number=Subquery(
                 ClusterMember.objects.filter(doc=OuterRef("draft")).values(

@@ -3,6 +3,7 @@ from unittest.mock import MagicMock, patch
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.utils.dateparse import parse_datetime
 from drf_spectacular.generators import SchemaGenerator
 
 from datatracker.factories import DatatrackerPersonFactory
@@ -66,6 +67,10 @@ class AnalyticsApiTests(TestCase):
         documents = {doc["disposition"]: doc for doc in response.json()["results"]}
         self.assertEqual(documents.keys(), {"published", "withdrawn"})
         self.assertEqual(documents["withdrawn"]["draft_name"], withdrawn.draft.name)
+        enqueued_at = published.history.earliest("history_date").history_date
+        self.assertEqual(
+            parse_datetime(documents["published"].pop("enqueued_at")), enqueued_at
+        )
         self.assertEqual(
             documents["published"],
             {

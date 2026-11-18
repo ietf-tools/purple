@@ -183,6 +183,12 @@ components:
         disposition_name:
           type: string
           readOnly: true
+        enqueued_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: When the document was added to the queue.
         published_at:
           type: string
           format: date-time
