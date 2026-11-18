@@ -58,6 +58,11 @@ class AnalyticsDocumentSerializer(serializers.ModelSerializer):
         source="draft.datatracker_id", read_only=True, allow_null=True
     )
     disposition_name = serializers.CharField(source="disposition.name", read_only=True)
+    enqueued_at = serializers.DateTimeField(
+        read_only=True,
+        allow_null=True,
+        help_text="When the document was added to the queue.",
+    )
     submitted_format_name = serializers.CharField(
         source="submitted_format.name", read_only=True
     )
@@ -81,6 +86,7 @@ class AnalyticsDocumentSerializer(serializers.ModelSerializer):
             "rfc_number",
             "disposition",
             "disposition_name",
+            "enqueued_at",
             "published_at",
             "submitted_format",
             "submitted_format_name",
