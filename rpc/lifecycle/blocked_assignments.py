@@ -42,7 +42,8 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
 
     reasons: set[str] = set()
 
-    # Gate 0: Always blocks regardless of current assignment
+    # Gate 0: Always blocks regardless of current assignment. These reasons are
+    # kept alongside those of the current stage, so all of them are shown.
     if rfc.labels.filter(slug="author-input-required").exists():
         reasons.add(BlockingReason.LABEL_AUTHOR_INPUT_REQUIRED)
     if rfc.labels.filter(slug="stream-hold").exists():
@@ -53,8 +54,6 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         relationship__slug=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUG
     ).exists():
         reasons.add(BlockingReason.REFERENCE_NOT_RECEIVED)
-    if reasons:
-        return reasons
 
     # Gate 1: Blocks formatting / reference checks
     slugs = ["ref_checker", "formatting"]
