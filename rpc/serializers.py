@@ -2349,6 +2349,7 @@ class ClusterMemberHistorySerializer(serializers.Serializer):
     type = serializers.SerializerMethodField()
     draft_name = serializers.SerializerMethodField()
 
+    @extend_schema_field(BaseDatatrackerPersonSerializer(allow_null=True))
     def get_by(self, obj):
         if obj.history_user is None:
             return None

@@ -1317,7 +1317,7 @@ class ClusterViewSet(
         return Response(serializer.data)
 
 
-@extend_schema_with_draft_name()
+@extend_schema_with_draft_name(actions=["list"])
 class DocumentAssignmentViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Assignments for a specific document, including per-assignment history"""
 
