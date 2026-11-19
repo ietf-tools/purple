@@ -56,14 +56,13 @@
           <DocLabelsCard title="Other labels" v-model="selectedLabelIds" :labels="labels3" />
         </div>
 
-        <div
-          v-if="rawRfcToBe?.id && rawRfcToBe.disposition?.slug !== 'published'"
-          class="lg:col-span-full grid place-items-stretch">
+        <div v-if="rawRfcToBe?.id" class="lg:col-span-full grid place-items-stretch">
           <DocumentDependencies
             v-model="relatedDocuments"
             :id="rawRfcToBe.id"
             :draft-name="draftName"
             :people="people"
+            :readonly="rawRfcToBe.disposition?.slug === 'published'"
             :cluster-number="rawRfcToBe.cluster?.number">
           </DocumentDependencies>
         </div>
