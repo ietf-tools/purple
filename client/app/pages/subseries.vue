@@ -30,15 +30,9 @@
                   <template
                     v-for="(doc, i) in item.documents"
                     :key="doc.name + '-' + doc.rfcNumber">
-                    <NuxtLink
-                      v-if="docPath(doc)"
-                      :to="docPath(doc)"
-                      class="text-blue-600 hover:underline">
+                    <NuxtLink :to="documentPathBuilder(doc)" class="text-blue-600 hover:underline">
                       {{ doc.rfcNumber }}
                     </NuxtLink>
-                    <template v-else>
-                      {{ doc.rfcNumber }}
-                    </template>
                     <span v-if="i < item.documents.length - 1">, </span>
                   </template>
                 </span>
@@ -55,7 +49,8 @@
 <script setup lang="ts">
 import { computed, ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
-import type { MinimalRfcToBe, SubseriesDoc, SubseriesTypeName } from '~/purple_client'
+import type { SubseriesDoc, SubseriesTypeName } from '~/purple_client'
+import { documentPathBuilder } from '~/utils/url'
 
 const api = useApi()
 const subseriesList = ref<SubseriesDoc[]>([])
@@ -73,17 +68,6 @@ onMounted(async () => {
     subseriesTypes.value = []
   }
 })
-
-// RFCs published without a draft are opened by RFC number.
-const docPath = (doc: MinimalRfcToBe): string | undefined => {
-  if (doc.name?.startsWith('draft-')) {
-    return `/docs/${doc.name}`
-  }
-  if (doc.rfcNumber) {
-    return `/docs/rfc${doc.rfcNumber}`
-  }
-  return undefined
-}
 
 const groupedSubseries = computed(() => {
   const groups: Record<string, { type: string; items: SubseriesDoc[] }> = {}

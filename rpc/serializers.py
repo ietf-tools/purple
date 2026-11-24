@@ -654,9 +654,11 @@ class ClusterReorderDocumentsSerializer(serializers.Serializer):
 
 
 class MinimalRfcToBeSerializer(serializers.ModelSerializer):
+    disposition = serializers.CharField(source="disposition_id", read_only=True)
+
     class Meta:
         model = RfcToBe
-        fields = ["name", "rfc_number"]
+        fields = ["name", "rfc_number", "disposition"]
 
 
 class FinalApprovalSerializer(serializers.Serializer):
