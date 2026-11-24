@@ -1065,7 +1065,9 @@ class ClusterFilter(django_filters.FilterSet):
     is_active = django_filters.BooleanFilter(
         field_name="is_active_annotated",
         help_text="Filter by active status. A cluster is considered active if more "
-        "than one of its documents is not in terminal state (published/withdrawn).",
+        "than one of its documents is not in terminal state (published/withdrawn), "
+        "or if the one left still has a reference not yet received, directly or "
+        "further down the chain.",
     )
 
     class Meta:

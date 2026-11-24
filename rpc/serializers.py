@@ -2212,18 +2212,27 @@ class ClusterSerializer(serializers.ModelSerializer):
         fields = ["number", "documents", "draft_names", "is_active"]
 
     def get_is_active(self, cluster) -> bool:
-        """Active only while more than one document is still unpublished."""
+        """Active while more than one document is unpublished, or while the one
+        left still has a reference not yet received, directly or further down the
+        chain."""
 
         # Use annotated value if available
         if hasattr(cluster, "is_active_annotated"):
             return cluster.is_active_annotated
 
+        unpublished = RfcToBe.objects.filter(
+            draft__clustermember__cluster=cluster,
+            disposition__slug__in=DispositionName.ACTIVE_SLUGS,
+        )
+        count = unpublished.count()
+        if count > 1:
+            return True
         return (
-            RfcToBe.objects.filter(
-                draft__clustermember__cluster=cluster,
-                disposition__slug__in=DispositionName.ACTIVE_SLUGS,
-            ).count()
-            > 1
+            count == 1
+            and RpcRelatedDocument.objects.filter(
+                source__in=unpublished,
+                relationship_id__in=DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS,
+            ).exists()
         )
 
     def create(self, validated_data):
