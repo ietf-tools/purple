@@ -662,7 +662,7 @@ import {
 import { jsDateToInputTypeDate } from '~/utils/form'
 import EditSubseries from './EditSubseries.vue'
 import { useDatatrackerLinks } from '~/composables/useDatatrackerLinks'
-import { draftAssignmentsHref } from '~/utils/url'
+import { documentPathBuilder, draftAssignmentsHref } from '~/utils/url'
 import { classForBtnType } from '~/utils/button'
 import type { SelectOption } from '~/utils/html'
 import { dispositionValues } from '~/utils/document_relations-utils'
@@ -797,11 +797,12 @@ const updatedBy = computed(
   () => relatedDocs.value?.filter((d) => d.relationship === 'updated_by') ?? []
 )
 
-// published RFCs and RFCs without a draft linked by number, others by draft name
 const relatedDocHref = (doc: RpcRelatedDocument) =>
-  doc.targetDisposition === 'published' || !doc.targetDraftName
-    ? `/docs/rfc${doc.targetRfcNumber}`
-    : `/docs/${doc.targetDraftName}`
+  documentPathBuilder({
+    name: doc.targetDraftName,
+    rfcNumber: doc.targetRfcNumber,
+    disposition: doc.targetDisposition
+  })
 
 const isEditingObsoletes = ref(false)
 const isEditingUpdates = ref(false)

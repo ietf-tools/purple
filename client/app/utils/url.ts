@@ -11,8 +11,7 @@ export const documentPathBuilder = (
     disposition?: string
   }
 ) =>
-  document.rfcNumber &&
-  (document.disposition === 'published' || !document.name?.startsWith('draft-'))
+  document.rfcNumber && (document.disposition === 'published' || !document.name)
     ? `/docs/rfc${document.rfcNumber}/`
     : `/docs/${document.name}/`
 
