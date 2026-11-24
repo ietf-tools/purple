@@ -787,6 +787,114 @@ class RefqueueBlockingTests(TestCase):
         self.assertEqual(snap.history_change_reason, mod.CHANGE_REASON)
 
 
+class ReferenceLoopPublishTests(TestCase):
+    """Documents referencing each other move on to publishing together."""
+
+    BEFORE_PUBLISHING = (
+        "enqueuer",
+        "formatting",
+        "ref_checker",
+        "first_editor",
+        "second_editor",
+    )
+
+    def setUp(self):
+        RpcRole.objects.get_or_create(slug="blocked", defaults={"name": "blocked"})
+
+    def _role(self, slug):
+        role, _ = RpcRole.objects.get_or_create(slug=slug, defaults={"name": slug})
+        return role
+
+    def _in_final_review(self):
+        """An RfcToBe and its in-progress final review assignment."""
+        rfc = RfcToBeFactory()
+        for slug in self.BEFORE_PUBLISHING:
+            AssignmentFactory(
+                rfc_to_be=rfc, role=self._role(slug), state=Assignment.State.DONE
+            )
+        final_review = AssignmentFactory(
+            rfc_to_be=rfc,
+            role=self._role("final_review_editor"),
+            state=Assignment.State.IN_PROGRESS,
+        )
+        return rfc, final_review
+
+    def _at_publishing(self):
+        """An RfcToBe with final review done and no publisher assigned yet."""
+        rfc, final_review = self._in_final_review()
+        final_review.state = Assignment.State.DONE
+        final_review.save()
+        return rfc
+
+    def _ref(self, source, target):
+        relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug="refqueue", defaults={"name": "refqueue"}
+        )
+        RpcRelatedDocument.objects.create(
+            source=source, relationship=relationship, target_rfctobe=target
+        )
+
+    def _waits_on_reference(self, rfc):
+        return BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE in get_block_reasons(rfc)
+
+    def _blocked(self, rfc):
+        return rfc.assignment_set.filter(role__slug="blocked").active().exists()
+
+    def test_two_documents_referencing_each_other_do_not_wait(self):
+        a = self._at_publishing()
+        b = self._at_publishing()
+        self._ref(a, b)
+        self._ref(b, a)
+
+        self.assertFalse(self._waits_on_reference(a))
+        self.assertFalse(self._waits_on_reference(b))
+
+    def test_loop_waits_for_its_last_final_review(self):
+        a = self._at_publishing()
+        b, _ = self._in_final_review()
+        self._ref(a, b)
+        self._ref(b, a)
+
+        self.assertTrue(self._waits_on_reference(a))
+
+    def test_three_document_loop_does_not_wait(self):
+        a = self._at_publishing()
+        b = self._at_publishing()
+        c = self._at_publishing()
+        self._ref(a, b)
+        self._ref(b, c)
+        self._ref(c, a)
+
+        for rfc in (a, b, c):
+            self.assertFalse(self._waits_on_reference(rfc))
+
+    def test_one_way_reference_still_waits_for_its_publisher(self):
+        a = self._at_publishing()
+        b = self._at_publishing()
+        self._ref(a, b)
+
+        self.assertTrue(self._waits_on_reference(a))
+
+    def test_last_final_review_unblocks_the_whole_loop(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            a = self._at_publishing()
+            b = self._at_publishing()
+            c, c_final_review = self._in_final_review()
+            self._ref(a, b)
+            self._ref(b, c)
+            self._ref(c, a)
+        self.assertTrue(self._blocked(a))
+        self.assertTrue(self._blocked(b))
+
+        with self.captureOnCommitCallbacks(execute=True):
+            c_final_review.state = Assignment.State.DONE
+            c_final_review.save()
+
+        # a only references b, so it is re-evaluated through the loop
+        self.assertFalse(self._blocked(a))
+        self.assertFalse(self._blocked(b))
+
+
 class ClusterIsActiveTests(TestCase):
     """A cluster is active only while more than one document is still unpublished."""
 

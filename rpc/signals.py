@@ -4,7 +4,10 @@ from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from .lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
+from .lifecycle.blocked_assignments import (
+    apply_blocked_assignment_for_rfc,
+    reference_loop,
+)
 from .models import (
     ActionHolder,
     Assignment,
@@ -22,6 +25,18 @@ def defer_apply(rfc: RfcToBe | None):
     transaction.on_commit(lambda: apply_blocked_assignment_for_rfc(rfc))
 
 
+def defer_apply_to_reference_loop(rfc: RfcToBe | None):
+    """Re-evaluate the other documents in a reference loop with rfc.
+
+    A loop unblocks together, but only rfc and its direct referrers are
+    re-evaluated otherwise.
+    """
+    if not rfc:
+        return
+    for other in RfcToBe.objects.filter(pk__in=reference_loop(rfc) - {rfc.pk}):
+        defer_apply(other)
+
+
 @receiver([post_save, post_delete], sender=Assignment)
 def assignment_changed(sender, instance: Assignment, **kwargs):
     if instance.role_id == "blocked":
@@ -34,6 +49,7 @@ def assignment_changed(sender, instance: Assignment, **kwargs):
             target_rfctobe=rfc, relationship="refqueue"
         ):
             defer_apply(related.source)
+        defer_apply_to_reference_loop(rfc)
 
 
 @receiver([post_save, post_delete], sender=ActionHolder)
@@ -46,7 +62,9 @@ def actionholder_changed(sender, instance: ActionHolder, **kwargs):
 
 @receiver([post_save, post_delete], sender=RpcRelatedDocument)
 def related_doc_changed(sender, instance: RpcRelatedDocument, **kwargs):
-    defer_apply(getattr(instance, "source", None))
+    source = getattr(instance, "source", None)
+    defer_apply(source)
+    defer_apply_to_reference_loop(source)
 
 
 @receiver([post_save, post_delete], sender=ClusterMember)
