@@ -788,12 +788,26 @@ class RefqueueBlockingTests(TestCase):
 
 
 class ClusterIsActiveTests(TestCase):
-    """A cluster is active only while more than one document is still unpublished."""
+    """A cluster is active while more than one document is unpublished, or while
+    the one left still has a reference not yet received, directly or further down
+    the chain."""
 
     def _add(self, cluster, disposition_slug, order):
         rtb = RfcToBeFactory(disposition=DispositionNameFactory(slug=disposition_slug))
         ClusterMember.objects.create(cluster=cluster, doc=rtb.draft, order=order)
         return rtb
+
+    def _not_received_ref(self, rtb, relationship_slug="not-received"):
+        relationship, _ = DocRelationshipName.objects.get_or_create(
+            slug=relationship_slug, defaults={"name": relationship_slug, "desc": ""}
+        )
+        RpcRelatedDocument.objects.create(
+            source=rtb,
+            relationship=relationship,
+            target_document=DocumentFactory(
+                name=f"draft-not-received-{relationship_slug}", pages=1
+            ),
+        )
 
     def _is_active(self, cluster):
         annotated = Cluster.objects.with_is_active_annotated().get(pk=cluster.pk)
@@ -811,6 +825,34 @@ class ClusterIsActiveTests(TestCase):
         self._add(cluster, "published", 2)
         self.assertFalse(self._is_active(cluster))
 
+    def test_single_unpublished_waiting_on_reference_is_active(self):
+        cluster = ClusterFactory()
+        rtb = self._add(cluster, "in_progress", 1)
+        self._not_received_ref(rtb)
+        self.assertTrue(self._is_active(cluster))
+
+    def test_single_unpublished_with_published_waiting_on_reference_is_active(self):
+        cluster = ClusterFactory()
+        rtb = self._add(cluster, "in_progress", 1)
+        self._add(cluster, "published", 2)
+        self._not_received_ref(rtb)
+        self.assertTrue(self._is_active(cluster))
+
+    def test_single_unpublished_waiting_on_indirect_reference_is_active(self):
+        for slug in ("not-received-2g", "not-received-3g"):
+            with self.subTest(slug=slug):
+                cluster = ClusterFactory()
+                rtb = self._add(cluster, "in_progress", 1)
+                self._not_received_ref(rtb, slug)
+                self.assertTrue(self._is_active(cluster))
+
+    def test_published_waiting_on_reference_is_inactive(self):
+        cluster = ClusterFactory()
+        rtb = self._add(cluster, "published", 1)
+        self._add(cluster, "published", 2)
+        self._not_received_ref(rtb)
+        self.assertFalse(self._is_active(cluster))
+
     def test_all_published_is_inactive(self):
         cluster = ClusterFactory()
         self._add(cluster, "published", 1)
@@ -825,6 +867,11 @@ class ClusterIsActiveTests(TestCase):
         self._add(cluster, "published", 2)
         # A plain instance has no annotation, exercising the fallback query.
         self.assertFalse(ClusterSerializer().get_is_active(cluster))
+
+        waiting = ClusterFactory()
+        rtb = self._add(waiting, "in_progress", 1)
+        self._not_received_ref(rtb)
+        self.assertTrue(ClusterSerializer().get_is_active(waiting))
 
 
 class PublicClusterConsistencyTests(TestCase):

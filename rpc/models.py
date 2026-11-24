@@ -759,9 +759,8 @@ class ClusterQuerySet(models.QuerySet):
     def with_is_active_annotated(self):
         """Annotate clusters with is_active status.
 
-        Active only while more than one document is still unpublished (not in a
-        terminal published/withdrawn state) — a lone remaining doc has nothing
-        left to coordinate with.
+        Active while more than one document is unpublished, or while the one left
+        still has a reference not yet received, directly or further down the chain.
         """
         return self.annotate(
             _unpublished_count=Count(
@@ -773,9 +772,23 @@ class ClusterQuerySet(models.QuerySet):
                 ),
                 distinct=True,
             ),
+            _waiting_on_reference=Exists(
+                RpcRelatedDocument.objects.filter(
+                    source__draft__clustermember__cluster=OuterRef("pk"),
+                    source__disposition__slug__in=DispositionName.ACTIVE_SLUGS,
+                    relationship_id__in=(
+                        DocRelationshipName.NOT_RECEIVED_RELATIONSHIP_SLUGS
+                    ),
+                )
+            ),
         ).annotate(
             is_active_annotated=Case(
                 When(_unpublished_count__gt=1, then=Value(True)),
+                When(
+                    _unpublished_count=1,
+                    _waiting_on_reference=True,
+                    then=Value(True),
+                ),
                 default=Value(False),
                 output_field=BooleanField(),
             )

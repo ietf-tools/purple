@@ -266,7 +266,9 @@ paths:
           schema:
             type: boolean
           description: Filter by active status. A cluster is considered active if more
-            than one of its documents is not in terminal state (published/withdrawn).
+            than one of its documents is not in terminal state (published/withdrawn),
+            or if the one left still has a reference not yet received, directly or further
+            down the chain.
         - name: ordering
           required: false
           in: query
@@ -4120,7 +4122,10 @@ components:
           readOnly: true
         is_active:
           type: boolean
-          description: Active only while more than one document is still unpublished.
+          description: |-
+            Active while more than one document is unpublished, or while the one
+            left still has a reference not yet received, directly or further down the
+            chain.
           readOnly: true
       required:
         - number
@@ -5836,7 +5841,10 @@ components:
           readOnly: true
         is_active:
           type: boolean
-          description: Active only while more than one document is still unpublished.
+          description: |-
+            Active while more than one document is unpublished, or while the one
+            left still has a reference not yet received, directly or further down the
+            chain.
           readOnly: true
       required:
         - number
