@@ -4195,7 +4195,9 @@ components:
           format: date-time
           readOnly: true
         by:
-          type: string
+          allOf:
+            - $ref: "#/components/schemas/BaseDatatrackerPerson"
+          nullable: true
           readOnly: true
         type:
           type: string
