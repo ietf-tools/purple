@@ -635,6 +635,18 @@
           </DescriptionListDetails>
         </DescriptionListItem>
       </DescriptionList>
+      <div v-if="rfcToBe.disposition?.slug === 'in_progress'" class="flex justify-end mt-6">
+        <button
+          type="button"
+          class="text-sm text-gray-500 underline hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-400"
+          @click="isWithdrawDialogShown = true">
+          Withdraw document…
+        </button>
+      </div>
+      <WithdrawDraftDialog
+        v-model:is-shown="isWithdrawDialogShown"
+        :draft-name="props.draftName"
+        @success="emit('withdrawn')" />
     </div>
   </BaseCard>
 </template>
@@ -701,7 +713,10 @@ const props = defineProps<Props>()
 const emit = defineEmits<{
   update: [rfcToBe: RfcToBe]
   refresh: []
+  withdrawn: []
 }>()
+
+const isWithdrawDialogShown = ref(false)
 
 const api = useApi()
 const snackbar = useSnackbar()

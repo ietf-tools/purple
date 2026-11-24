@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -149,7 +149,7 @@ const {
   { server: false, lazy: true }
 )
 
-const { data: rfcToBe, refresh: rfcToBeRefresh } = await useAsyncData(
+const { data: rfcToBe } = await useAsyncData(
   () => `timeline-draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false, lazy: true, deep: true }

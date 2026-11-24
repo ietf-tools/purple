@@ -1,10 +1,6 @@
 <template>
   <div>
-    <DocHeader
-      :draft-name="draftName"
-      :rfc-to-be="rawRfcToBe"
-      @assignments-changed="refreshAll"
-      @withdrawn="rfcToBeRefresh" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" @assignments-changed="refreshAll" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 

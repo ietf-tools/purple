@@ -1,14 +1,6 @@
 <template>
   <div>
-    <DocHeader
-      :draft-name="draftName"
-      :rfc-to-be="rawRfcToBe"
-      @withdrawn="
-        () => {
-          rfcToBeRefresh()
-          commentsReload()
-        }
-      " />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rawRfcToBe" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -25,7 +17,13 @@
           :rfc-to-be="rawRfcToBe"
           :draft-name="draftName"
           :refresh="rfcToBeRefresh"
-          :is-read-only="Boolean(rawRfcToBe?.publishedAt)" />
+          :is-read-only="Boolean(rawRfcToBe?.publishedAt)"
+          @withdrawn="
+            () => {
+              rfcToBeRefresh()
+              commentsReload()
+            }
+          " />
 
         <!-- Complexities + Other labels stacked in the 3rd column -->
         <div class="flex flex-col gap-y-8">

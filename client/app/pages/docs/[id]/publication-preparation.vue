@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -315,8 +315,7 @@ const step = ref<Step>({ type: 'loading' })
 const {
   data: rfcToBe,
   error: rfcToBeError,
-  status: rfcToBeStatus,
-  refresh: rfcToBeRefresh
+  status: rfcToBeStatus
 } = await useAsyncData(
   () => `draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),

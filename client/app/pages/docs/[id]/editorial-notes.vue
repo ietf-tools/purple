@@ -1,6 +1,6 @@
 <template>
   <div>
-    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" @withdrawn="rfcToBeRefresh" />
+    <DocHeader :draft-name="draftName" :rfc-to-be="rfcToBe" />
 
     <DocTabs :current-tab="currentTab" :draft-name="draftName" />
 
@@ -90,7 +90,7 @@ const datatrackerLinks = useDatatrackerLinks()
 const currentTab: DocTabId = 'editorial-notes'
 const draftName = computed(() => route.params.id?.toString() ?? '')
 
-const { data: rfcToBe, refresh: rfcToBeRefresh } = await useAsyncData(
+const { data: rfcToBe } = await useAsyncData(
   () => `editorial-notes-draft-${draftName.value}`,
   () => api.documentsRetrieve({ draftName: draftName.value }),
   { server: false, lazy: true, deep: true }
