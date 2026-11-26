@@ -875,6 +875,54 @@ class ReferenceLoopPublishTests(TestCase):
 
         self.assertTrue(self._waits_on_reference(a))
 
+    def test_loop_waits_for_reference_leaving_it(self):
+        a = self._at_publishing()
+        b = self._at_publishing()
+        outside, _ = self._in_final_review()
+        self._ref(a, b)
+        self._ref(b, a)
+        self._ref(b, outside)
+
+        # a only references b, but must not be published ahead of it
+        self.assertTrue(self._waits_on_reference(a))
+        self.assertTrue(self._waits_on_reference(b))
+
+    def test_publisher_on_reference_leaving_loop_unblocks_the_loop(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            a = self._at_publishing()
+            b = self._at_publishing()
+            outside = self._at_publishing()
+            self._ref(a, b)
+            self._ref(b, a)
+            self._ref(b, outside)
+        self.assertTrue(self._blocked(a))
+        self.assertTrue(self._blocked(b))
+
+        with self.captureOnCommitCallbacks(execute=True):
+            AssignmentFactory(
+                rfc_to_be=outside,
+                role=self._role("publisher"),
+                state=Assignment.State.IN_PROGRESS,
+            )
+
+        self.assertFalse(self._blocked(a))
+        self.assertFalse(self._blocked(b))
+
+    def test_removing_a_reference_ends_the_loop(self):
+        with self.captureOnCommitCallbacks(execute=True):
+            a = self._at_publishing()
+            b = self._at_publishing()
+            self._ref(a, b)
+            self._ref(b, a)
+        self.assertFalse(self._blocked(b))
+
+        with self.captureOnCommitCallbacks(execute=True):
+            RpcRelatedDocument.objects.get(source=a, target_rfctobe=b).delete()
+
+        # b still references a, which has no publisher
+        self.assertTrue(self._blocked(b))
+        self.assertFalse(self._blocked(a))
+
     def test_last_final_review_unblocks_the_whole_loop(self):
         with self.captureOnCommitCallbacks(execute=True):
             a = self._at_publishing()

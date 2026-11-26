@@ -25,16 +25,22 @@ def defer_apply(rfc: RfcToBe | None):
     transaction.on_commit(lambda: apply_blocked_assignment_for_rfc(rfc))
 
 
-def defer_apply_to_reference_loop(rfc: RfcToBe | None):
-    """Re-evaluate the other documents in a reference loop with rfc.
+def defer_apply_with_reference_loops(*rfcs: RfcToBe | None):
+    """Re-evaluate the given documents and those in a reference loop with them.
 
-    A loop unblocks together, but only rfc and its direct referrers are
-    re-evaluated otherwise.
+    A loop unblocks together, so a change to one member or to a document it
+    references affects all of them.
     """
-    if not rfc:
-        return
-    for other in RfcToBe.objects.filter(pk__in=reference_loop(rfc) - {rfc.pk}):
-        defer_apply(other)
+    seen: set[int] = set()
+    for rfc in rfcs:
+        if not rfc or rfc.pk in seen:
+            continue
+        seen.add(rfc.pk)
+        defer_apply(rfc)
+        others = reference_loop(rfc) - seen
+        seen |= others
+        for other in RfcToBe.objects.filter(pk__in=others):
+            defer_apply(other)
 
 
 @receiver([post_save, post_delete], sender=Assignment)
@@ -42,14 +48,16 @@ def assignment_changed(sender, instance: Assignment, **kwargs):
     if instance.role_id == "blocked":
         return
     rfc = getattr(instance, "rfc_to_be", None)
-    defer_apply(rfc)
+    if not rfc:
+        return
     # Re-evaluate any RFC that has this rfc as a refqueue target
-    if rfc:
+    referrers = [
+        related.source
         for related in RpcRelatedDocument.objects.filter(
             target_rfctobe=rfc, relationship="refqueue"
-        ):
-            defer_apply(related.source)
-        defer_apply_to_reference_loop(rfc)
+        )
+    ]
+    defer_apply_with_reference_loops(rfc, *referrers)
 
 
 @receiver([post_save, post_delete], sender=ActionHolder)
@@ -62,9 +70,10 @@ def actionholder_changed(sender, instance: ActionHolder, **kwargs):
 
 @receiver([post_save, post_delete], sender=RpcRelatedDocument)
 def related_doc_changed(sender, instance: RpcRelatedDocument, **kwargs):
-    source = getattr(instance, "source", None)
-    defer_apply(source)
-    defer_apply_to_reference_loop(source)
+    # The target too: removing a reference can take it out of a loop.
+    defer_apply_with_reference_loops(
+        getattr(instance, "source", None), getattr(instance, "target_rfctobe", None)
+    )
 
 
 @receiver([post_save, post_delete], sender=ClusterMember)
