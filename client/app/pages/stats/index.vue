@@ -54,6 +54,10 @@
           Each bin covers the documents in the queue during that period; bars show the time spent in
           each assignment role <em>within</em> the period (a per-period flow, not a running
           cumulative total).
+          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">
+            IETF bins run from the first day of the previous meeting up to the first day of the
+            named meeting (00:00 UTC); the latest bin runs to today.
+          </template>
         </p>
 
         <!-- View mode: immediate, drives both the chart and the summary table. -->

@@ -52,7 +52,12 @@
 
         <p class="mt-1 text-xs opacity-60">
           Count of RFCs published each period, grouped by publication stream and broken down by
-          status. Streams and statuses with no publications in the shown range are omitted.
+          status (a per-period count, not a running cumulative total). Streams and statuses with no
+          publications in the shown range are omitted.
+          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">
+            IETF bins run from the first day of the previous meeting up to the first day of the
+            named meeting (00:00 UTC); the latest bin runs to today.
+          </template>
         </p>
 
         <div v-if="periods.length === 0" class="mt-4 px-3 py-3 text-center text-sm opacity-60">
