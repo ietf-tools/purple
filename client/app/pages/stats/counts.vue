@@ -53,6 +53,9 @@
         <p class="mt-1 text-xs opacity-60">
           Counts of documents and pages moving through the queue each period. Page counts are summed
           over the documents involved.
+          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">{{
+            IETF_BIN_NOTE
+          }}</template>
         </p>
 
         <div v-if="periods.length === 0" class="mt-4 px-3 py-3 text-center text-sm opacity-60">
@@ -145,7 +148,7 @@ import {
   type QueueCountStatPeriod,
   type QueueCountStats
 } from '~/purple_client'
-import { formatWeekRange, isWeekLabel } from '~/utils/statsViz'
+import { IETF_BIN_NOTE, formatWeekRange, isWeekLabel } from '~/utils/statsViz'
 
 const api = useApi()
 

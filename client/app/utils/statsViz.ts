@@ -10,6 +10,10 @@ import {
 export const SECONDS_PER_DAY = 86_400
 export const MS_PER_DAY = 86_400_000
 
+export const IETF_BIN_NOTE =
+  'IETF bins run from the first day of the previous meeting up to the first day of the ' +
+  'named meeting (00:00 UTC); the latest bin runs to today.'
+
 // Segment kinds, sourced from the generated client's KindEnum (backed by the
 // backend's KIND_* choices in rpc.lifecycle.timeline) so there is one source of
 // truth rather than a hand-kept copy.

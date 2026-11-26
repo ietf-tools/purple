@@ -54,6 +54,9 @@
           Each bin covers the documents in the queue during that period; bars show the time spent in
           each assignment role <em>within</em> the period (a per-period flow, not a running
           cumulative total).
+          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">{{
+            IETF_BIN_NOTE
+          }}</template>
         </p>
 
         <!-- View mode: immediate, drives both the chart and the summary table. -->
@@ -221,7 +224,13 @@
 
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePeriodStat, type QueueStats } from '~/purple_client'
-import { formatDays, formatWeekRange, isWeekLabel, orderedRoles } from '~/utils/statsViz'
+import {
+  IETF_BIN_NOTE,
+  formatDays,
+  formatWeekRange,
+  isWeekLabel,
+  orderedRoles
+} from '~/utils/statsViz'
 
 const api = useApi()
 
