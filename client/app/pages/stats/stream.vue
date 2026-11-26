@@ -54,10 +54,9 @@
           Count of RFCs published each period, grouped by publication stream and broken down by
           status (a per-period count, not a running cumulative total). Streams and statuses with no
           publications in the shown range are omitted.
-          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">
-            IETF bins run from the first day of the previous meeting up to the first day of the
-            named meeting (00:00 UTC); the latest bin runs to today.
-          </template>
+          <template v-if="appliedPeriod === StatsQueuePeriodEnum.Ietf">{{
+            IETF_BIN_NOTE
+          }}</template>
         </p>
 
         <div v-if="periods.length === 0" class="mt-4 px-3 py-3 text-center text-sm opacity-60">
@@ -158,6 +157,7 @@
 <script setup lang="ts">
 import { StatsQueuePeriodEnum, type QueuePublishedStats } from '~/purple_client'
 import {
+  IETF_BIN_NOTE,
   formatWeekRange,
   isWeekLabel,
   statusColor,
