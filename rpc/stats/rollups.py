@@ -19,6 +19,7 @@ from django.utils import timezone
 from ..dt_v1_api_utils import datatracker_ietf_meetings
 from ..models import (
     Assignment,
+    ClusterMember,
     DocRelationshipName,
     Label,
     RfcToBe,
@@ -627,6 +628,30 @@ def _blocked_reason_intervals_by_doc(
     }
 
 
+def _cluster_intervals_by_doc(
+    draft_ids: list[int], now: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """``{draft_id: [(start, end), ...]}`` of cluster membership, from the
+    ``ClusterMember`` history (added opens a span, removed closes it). Open spans
+    run to ``now``."""
+    events = (
+        ClusterMember.history.model.objects.filter(doc_id__in=draft_ids)
+        .exclude(history_type="~")
+        .order_by("history_date", "history_id")
+        .values_list("doc_id", "history_type", "history_date")
+    )
+    open_start: dict[int, datetime.datetime] = {}
+    spans: dict[int, list] = {}
+    for doc_id, history_type, when in events:
+        if history_type == "+":
+            open_start.setdefault(doc_id, when)
+        elif doc_id in open_start:
+            spans.setdefault(doc_id, []).append((open_start.pop(doc_id), when))
+    for doc_id, start in open_start.items():
+        spans.setdefault(doc_id, []).append((start, None))
+    return {pk: merge_intervals(iv, now) for pk, iv in spans.items()}
+
+
 def queue_counts_rollup(
     period: str, count: int, now: datetime.datetime | None = None
 ) -> list[dict]:
@@ -648,6 +673,10 @@ def queue_counts_rollup(
     enqueue to publication, over docs published in the period. Final review
     starts at the first ``final_review_editor`` assignment or, before the
     transition, the first legacy AUTH48 label, whichever is earlier.
+
+    Also counts, among docs in the queue during the period, those in a cluster
+    and, for each label in use, those that carried it while in the queue. Cluster
+    membership is dated from the cluster history.
     """
     now = now or timezone.now()
     windows = period_windows(period, count, now)
@@ -761,6 +790,19 @@ def queue_counts_rollup(
         missing = notrecv.get(pk, []) + missref_intervals.get(pk, [])
         blocked_intervals[pk] = merge_intervals(base_blocked.get(pk, []) + missing, now)
 
+    # Membership is dated from the cluster history, which starts with the initial import
+    draft_by_doc = dict(
+        RfcToBe.objects.filter(pk__in=doc_ids).values_list("pk", "draft_id")
+    )
+    cluster_intervals = _cluster_intervals_by_doc(list(draft_by_doc.values()), now)
+    used_labels = list(Label.objects.filter(used=True).order_by("slug"))
+    used_label_intervals: dict[int, dict[int, list]] = {
+        pk: {lpk: merge_intervals(spans, now) for lpk, spans in labels.items()}
+        for pk, labels in _label_intervals_by_doc(
+            doc_ids, {label.pk for label in used_labels}
+        ).items()
+    }
+
     periods: list[dict] = []
     for window in windows:
         start = window["start"]
@@ -770,6 +812,8 @@ def queue_counts_rollup(
         pages_at_start = rfcs_published = pages_published = pages_to_edit = 0
         pages_blocked_end = pages_in_progress_end = 0
         docs_blocked_entire = rest = 0
+        docs_in_cluster = 0
+        label_counts = {label.pk: 0 for label in used_labels}
         pct_sum = 0.0
         to_final_review_seconds: list[float] = []
         to_publish_seconds: list[float] = []
@@ -821,6 +865,20 @@ def queue_counts_rollup(
                 ).total_seconds()
                 if in_queue <= 0:
                     continue
+                in_queue_start = max(enq, start)
+                in_queue_end = min(pub or eff_end, eff_end)
+                if (
+                    overlap_seconds(
+                        cluster_intervals.get(draft_by_doc[d["pk"]], []),
+                        in_queue_start,
+                        in_queue_end,
+                    )
+                    > 0
+                ):
+                    docs_in_cluster += 1
+                for lpk, spans in used_label_intervals.get(d["pk"], {}).items():
+                    if overlap_seconds(spans, in_queue_start, in_queue_end) > 0:
+                        label_counts[lpk] += 1
                 blocked = overlap_seconds(
                     blocked_intervals.get(d["pk"], []), start, eff_end
                 )
@@ -856,6 +914,12 @@ def queue_counts_rollup(
                 ),
                 "avg_weeks_to_final_review": _mean_weeks(to_final_review_seconds),
                 "avg_weeks_in_queue": _mean_weeks(to_publish_seconds),
+                "docs_in_queue": rest + docs_blocked_entire,
+                "docs_in_cluster": docs_in_cluster,
+                "label_counts": [
+                    {"slug": label.slug, "count": label_counts[label.pk]}
+                    for label in used_labels
+                ],
                 "legacy_included": start < TRANSITION_DATE,
             }
         )

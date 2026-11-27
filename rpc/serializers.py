@@ -440,6 +440,13 @@ class QueueStatsSerializer(serializers.Serializer):
     periods = QueuePeriodStatSerializer(many=True)
 
 
+class LabelCountSerializer(serializers.Serializer):
+    """Number of docs carrying one label in a period."""
+
+    slug = serializers.CharField()
+    count = serializers.IntegerField()
+
+
 class QueueCountStatPeriodSerializer(serializers.Serializer):
     """Document/page counts for one period (bin)."""
 
@@ -461,6 +468,9 @@ class QueueCountStatPeriodSerializer(serializers.Serializer):
     avg_pct_blocked_all = serializers.FloatField()
     avg_weeks_to_final_review = serializers.FloatField(allow_null=True)
     avg_weeks_in_queue = serializers.FloatField(allow_null=True)
+    docs_in_queue = serializers.IntegerField()
+    docs_in_cluster = serializers.IntegerField()
+    label_counts = LabelCountSerializer(many=True)
     legacy_included = serializers.BooleanField()
 
 

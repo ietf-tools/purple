@@ -134,6 +134,28 @@
                   {{ cell(row, p) }}
                 </td>
               </tr>
+              <tr
+                class="border-t-4 border-gray-300 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800">
+                <th :colspan="periods.length + 1" class="py-2 pl-4 pr-3 text-left font-semibold">
+                  Clusters and labels
+                </th>
+              </tr>
+              <tr>
+                <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal">
+                  Docs in queue during period
+                </th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
+                  {{ int(p.docsInQueue) }}
+                </td>
+              </tr>
+              <tr v-for="row in shareRows" :key="`share-${row.label}`">
+                <th scope="row" class="py-2 pl-6 pr-3 text-left font-normal">
+                  {{ row.label }}
+                </th>
+                <td v-for="p in periods" :key="p.label" class="px-3 py-2 text-right tabular-nums">
+                  {{ share(row.get(p), p.docsInQueue) }}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -246,6 +268,27 @@ const pageCountRows: MetricRow[] = [
   { label: 'Pages blocked at end of period', get: (p) => p.pagesBlockedEnd, format: int },
   { label: 'Pages in progress at end of period', get: (p) => p.pagesInProgressEnd, format: int }
 ]
+
+type ShareRow = {
+  label: string
+  get: (p: QueueCountStatPeriod) => number
+}
+
+// Share of the docs in the queue during the period.
+const share = (n: number, total: number) =>
+  total ? `${int(n)} (${Math.round((n / total) * 100)}%)` : '—'
+
+// Labels with no docs in any shown period are left out.
+const shareRows = computed<ShareRow[]>(() => {
+  const slugs = [...new Set(periods.value.flatMap((p) => p.labelCounts.map((lc) => lc.slug)))]
+  const labelRows = slugs
+    .map((slug) => ({
+      label: slug,
+      get: (p: QueueCountStatPeriod) => p.labelCounts.find((lc) => lc.slug === slug)?.count ?? 0
+    }))
+    .filter((row) => periods.value.some((p) => row.get(p) > 0))
+  return [{ label: 'In a cluster', get: (p) => p.docsInCluster }, ...labelRows]
+})
 
 useHeadSafe({ title: 'Queue counts' })
 </script>
