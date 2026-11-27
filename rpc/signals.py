@@ -4,7 +4,10 @@ from django.db import transaction
 from django.db.models.signals import m2m_changed, post_delete, post_save
 from django.dispatch import receiver
 
-from .lifecycle.blocked_assignments import apply_blocked_assignment_for_rfc
+from .lifecycle.blocked_assignments import (
+    apply_blocked_assignment_for_rfc,
+    reference_loop,
+)
 from .models import (
     ActionHolder,
     Assignment,
@@ -16,10 +19,25 @@ from .models import (
 )
 
 
-def defer_apply(rfc: RfcToBe | None):
-    if not rfc:
-        return
-    transaction.on_commit(lambda: apply_blocked_assignment_for_rfc(rfc))
+def defer_apply(*rfcs: RfcToBe | None, reference_loops: bool = False):
+    """Re-evaluate the given documents after commit.
+
+    If reference_loops is set, documents in a reference loop with any of them
+    are re-evaluated too. The documents in a loop are unblocked together, so a
+    change to one of them, or to a document the loop references, affects all.
+    """
+    seen: set[int] = set()
+    for rfc in rfcs:
+        if not rfc or rfc.pk in seen:
+            continue
+        seen.add(rfc.pk)
+        to_apply = [rfc]
+        if reference_loops:
+            others = reference_loop(rfc) - seen
+            seen |= others
+            to_apply += RfcToBe.objects.filter(pk__in=others)
+        for doc in to_apply:
+            transaction.on_commit(lambda doc=doc: apply_blocked_assignment_for_rfc(doc))
 
 
 @receiver([post_save, post_delete], sender=Assignment)
@@ -27,13 +45,16 @@ def assignment_changed(sender, instance: Assignment, **kwargs):
     if instance.role_id == "blocked":
         return
     rfc = getattr(instance, "rfc_to_be", None)
-    defer_apply(rfc)
+    if not rfc:
+        return
     # Re-evaluate any RFC that has this rfc as a refqueue target
-    if rfc:
+    referrers = [
+        related.source
         for related in RpcRelatedDocument.objects.filter(
             target_rfctobe=rfc, relationship="refqueue"
-        ):
-            defer_apply(related.source)
+        )
+    ]
+    defer_apply(rfc, *referrers, reference_loops=True)
 
 
 @receiver([post_save, post_delete], sender=ActionHolder)
@@ -46,7 +67,12 @@ def actionholder_changed(sender, instance: ActionHolder, **kwargs):
 
 @receiver([post_save, post_delete], sender=RpcRelatedDocument)
 def related_doc_changed(sender, instance: RpcRelatedDocument, **kwargs):
-    defer_apply(getattr(instance, "source", None))
+    # The target too: removing a reference can take it out of a loop.
+    defer_apply(
+        getattr(instance, "source", None),
+        getattr(instance, "target_rfctobe", None),
+        reference_loops=True,
+    )
 
 
 @receiver([post_save, post_delete], sender=ClusterMember)

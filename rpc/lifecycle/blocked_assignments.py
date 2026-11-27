@@ -12,6 +12,7 @@ from ..models import (
     Notification,
     RfcToBe,
     RfcToBeBlockingReason,
+    RpcRelatedDocument,
     RpcRole,
 )
 
@@ -29,6 +30,89 @@ def _is_active_or_pending_assignment(rfc: RfcToBe, slugs) -> bool:
         return True
 
     return False
+
+
+def _refqueue_targets(source_ids: set[int]) -> set[int]:
+    return set(
+        RpcRelatedDocument.objects.filter(
+            source_id__in=source_ids,
+            relationship_id=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+            target_rfctobe__isnull=False,
+        ).values_list("target_rfctobe_id", flat=True)
+    )
+
+
+def _refqueue_sources(target_ids: set[int]) -> set[int]:
+    return set(
+        RpcRelatedDocument.objects.filter(
+            target_rfctobe_id__in=target_ids,
+            relationship_id=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+        ).values_list("source_id", flat=True)
+    )
+
+
+def _reachable(start_id: int, step) -> set[int]:
+    """Ids reached from start_id by repeatedly applying step.
+
+    step maps a set of document ids to the ids one refqueue reference away from
+    them, in one direction: _refqueue_targets (forward) or _refqueue_sources
+    (backward). Includes start_id only when a path leads back to it.
+    """
+    reached: set[int] = set()
+    frontier = {start_id}
+    while frontier:
+        frontier = step(frontier) - reached
+        reached |= frontier
+    return reached
+
+
+def reference_loop(rfc: RfcToBe) -> set[int]:
+    """Ids of the documents in a normative reference loop with rfc, rfc included.
+
+    Walks the references forward from rfc. If that never leads back to rfc, rfc is
+    in no loop and the result is empty. Otherwise the loop is the documents rfc
+    reaches that also reach rfc, found by walking backward and intersecting.
+    """
+    referenced = _reachable(rfc.pk, _refqueue_targets)
+    if rfc.pk not in referenced:
+        return set()
+    return referenced & _reachable(rfc.pk, _refqueue_sources)
+
+
+def _final_review_finished(rfc_ids: set[int]) -> bool:
+    return not any(
+        doc.incomplete_activities().filter(slug="final_review_editor").exists()
+        for doc in RfcToBe.objects.filter(pk__in=rfc_ids)
+    )
+
+
+def _publisher_done_or_active(rfc: RfcToBe) -> bool:
+    publisher_qs = rfc.assignment_set.filter(role__slug="publisher")
+    return (
+        publisher_qs.active() | publisher_qs.filter(state=Assignment.State.DONE)
+    ).exists()
+
+
+def _loop_ready_to_publish(loop: set[int]) -> bool:
+    """Whether the documents of a reference loop can move on to publishing.
+
+    All of them finished final review, and every reference leaving the loop has
+    a publisher, so no member is published ahead of one still waiting.
+    """
+    if not _final_review_finished(loop):
+        return False
+    leaving = (
+        RpcRelatedDocument.objects.filter(
+            source_id__in=loop,
+            relationship_id=DocRelationshipName.REFQUEUE_RELATIONSHIP_SLUG,
+        )
+        .exclude(target_rfctobe_id__in=loop)
+        .select_related("target_rfctobe")
+    )
+    return all(
+        ref.target_rfctobe is not None and _publisher_done_or_active(ref.target_rfctobe)
+        for ref in leaving
+    )
 
 
 def get_block_reasons(rfc: RfcToBe) -> set[str]:
@@ -131,6 +215,8 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
         # any document this draft normatively references is not ready for publication
         refqueue_qs = rfc.rpcrelateddocument_set.filter(relationship="refqueue")
         if refqueue_qs.exists():
+            loop = None
+            loop_ready = False
             for ref in refqueue_qs:
                 target = ref.target_rfctobe
                 if target is None:
@@ -138,13 +224,16 @@ def get_block_reasons(rfc: RfcToBe) -> set[str]:
                     reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
                     continue
                 # block if publisher has no done or active assignment
-                publisher_qs = target.assignment_set.filter(role__slug="publisher")
-                publisher_done_or_active = (
-                    publisher_qs.active()
-                    | publisher_qs.filter(state=Assignment.State.DONE)
-                ).exists()
-                if not publisher_done_or_active:
-                    reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
+                if _publisher_done_or_active(target):
+                    continue
+                # Documents referencing each other would otherwise wait on each
+                # other forever; they move on together.
+                if loop is None:
+                    loop = reference_loop(rfc)
+                    loop_ready = bool(loop) and _loop_ready_to_publish(loop)
+                if target.pk in loop and loop_ready:
+                    continue
+                reasons.add(BlockingReason.REFQUEUE_PUBLISH_INCOMPLETE)
         if rfc.finalapproval_set.active().exists():
             reasons.add(BlockingReason.FINAL_APPROVAL_PENDING)
         if rfc.actionholder_set.active().exists():
