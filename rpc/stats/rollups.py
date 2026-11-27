@@ -648,6 +648,10 @@ def queue_counts_rollup(
     enqueue to publication, over docs published in the period. Final review
     starts at the first ``final_review_editor`` assignment or, before the
     transition, the first legacy AUTH48 label, whichever is earlier.
+
+    Of the docs in the queue at some point in the period, it also counts those in
+    a cluster and, per label in use, those carrying the label at some point while
+    in the queue during the period.
     """
     now = now or timezone.now()
     windows = period_windows(period, count, now)
@@ -761,6 +765,21 @@ def queue_counts_rollup(
         missing = notrecv.get(pk, []) + missref_intervals.get(pk, [])
         blocked_intervals[pk] = merge_intervals(base_blocked.get(pk, []) + missing, now)
 
+    # Cluster membership is not dated before the clusters were imported, so a
+    # doc counts as clustered in every period if it is a cluster member.
+    clustered_ids = set(
+        RfcToBe.objects.filter(
+            pk__in=doc_ids, draft__clustermember__isnull=False
+        ).values_list("pk", flat=True)
+    )
+    used_labels = list(Label.objects.filter(used=True).order_by("slug"))
+    used_label_intervals: dict[int, dict[int, list]] = {
+        pk: {lpk: merge_intervals(spans, now) for lpk, spans in labels.items()}
+        for pk, labels in _label_intervals_by_doc(
+            doc_ids, {label.pk for label in used_labels}
+        ).items()
+    }
+
     periods: list[dict] = []
     for window in windows:
         start = window["start"]
@@ -770,6 +789,8 @@ def queue_counts_rollup(
         pages_at_start = rfcs_published = pages_published = pages_to_edit = 0
         pages_blocked_end = pages_in_progress_end = 0
         docs_blocked_entire = rest = 0
+        docs_in_cluster = 0
+        label_counts = {label.pk: 0 for label in used_labels}
         pct_sum = 0.0
         to_final_review_seconds: list[float] = []
         to_publish_seconds: list[float] = []
@@ -821,6 +842,13 @@ def queue_counts_rollup(
                 ).total_seconds()
                 if in_queue <= 0:
                     continue
+                if d["pk"] in clustered_ids:
+                    docs_in_cluster += 1
+                in_queue_start = max(enq, start)
+                in_queue_end = min(pub or eff_end, eff_end)
+                for lpk, spans in used_label_intervals.get(d["pk"], {}).items():
+                    if overlap_seconds(spans, in_queue_start, in_queue_end) > 0:
+                        label_counts[lpk] += 1
                 blocked = overlap_seconds(
                     blocked_intervals.get(d["pk"], []), start, eff_end
                 )
@@ -856,6 +884,12 @@ def queue_counts_rollup(
                 ),
                 "avg_weeks_to_final_review": _mean_weeks(to_final_review_seconds),
                 "avg_weeks_in_queue": _mean_weeks(to_publish_seconds),
+                "docs_in_queue": rest + docs_blocked_entire,
+                "docs_in_cluster": docs_in_cluster,
+                "label_counts": [
+                    {"slug": label.slug, "count": label_counts[label.pk]}
+                    for label in used_labels
+                ],
                 "legacy_included": start < TRANSITION_DATE,
             }
         )

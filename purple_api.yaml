@@ -5031,6 +5031,17 @@ components:
       required:
         - slug
         - text
+    LabelCount:
+      type: object
+      description: Number of docs carrying one label in a period.
+      properties:
+        slug:
+          type: string
+        count:
+          type: integer
+      required:
+        - count
+        - slug
     LabelRequest:
       type: object
       properties:
@@ -6181,6 +6192,14 @@ components:
           type: number
           format: double
           nullable: true
+        docs_in_queue:
+          type: integer
+        docs_in_cluster:
+          type: integer
+        label_counts:
+          type: array
+          items:
+            $ref: "#/components/schemas/LabelCount"
         legacy_included:
           type: boolean
       required:
@@ -6192,8 +6211,11 @@ components:
         - docs_blocked_entire
         - docs_entered
         - docs_entered_missing_ref
+        - docs_in_cluster
+        - docs_in_queue
         - end
         - label
+        - label_counts
         - legacy_included
         - pages_at_start
         - pages_blocked_end
