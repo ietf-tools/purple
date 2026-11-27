@@ -674,10 +674,9 @@ def queue_counts_rollup(
     starts at the first ``final_review_editor`` assignment or, before the
     transition, the first legacy AUTH48 label, whichever is earlier.
 
-    Of the docs in the queue at some point in the period, it also counts those in
-    a cluster and, per label in use, those carrying the label at some point while
-    in the queue during the period. Cluster membership is dated from the cluster
-    history.
+    Also counts, among docs in the queue during the period, those in a cluster
+    and, for each label in use, those that carried it while in the queue. Cluster
+    membership is dated from the cluster history.
     """
     now = now or timezone.now()
     windows = period_windows(period, count, now)
@@ -792,7 +791,6 @@ def queue_counts_rollup(
         blocked_intervals[pk] = merge_intervals(base_blocked.get(pk, []) + missing, now)
 
     # Membership is dated from the cluster history, which starts with the initial import
-    # periods before that show no clustered docs.
     draft_by_doc = dict(
         RfcToBe.objects.filter(pk__in=doc_ids).values_list("pk", "draft_id")
     )
