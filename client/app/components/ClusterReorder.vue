@@ -1,7 +1,7 @@
 <template>
   <BaseCard>
     <template #header>
-      <CardHeader :title="`Cluster-Members C${props.cluster.number}`">
+      <CardHeader :title="`Cluster-Members C${props.cluster.number}`" :description="orderSetText">
         <template #actions>
           <Icon
             v-if="queueStatus === 'pending'"
@@ -15,7 +15,7 @@
         </template>
       </CardHeader>
     </template>
-    <p class="italic text-sm mb-2">(drag to reorder)</p>
+    <p class="italic text-sm mb-2">(drag and save to reorder)</p>
     <table class="w-full text-sm">
       <thead>
         <tr
@@ -206,6 +206,19 @@ const [parent] = useDragAndDrop(clusterDocumentsRef)
 
 const api = useApi()
 
+const { data: history, refresh: refreshHistory } = useAsyncData(
+  () => `cluster-order-set-${props.cluster.number}`,
+  () => api.clustersHistoryList({ number: props.cluster.number, limit: 200 }),
+  { server: false, lazy: true }
+)
+
+const orderSetText = computed(() => {
+  const entry = history.value?.results.find((e) => e.type === 'reordered')
+  if (!entry?.time) return undefined
+  const when = entry.time.toLocaleString()
+  return entry.by?.name ? `Order set by ${entry.by.name}, ${when}` : `Order set ${when}`
+})
+
 const removeDocument = async (name: string) => {
   const reallyRemove = confirm(`Really remove ${JSON.stringify(name)} from cluster?`)
   if (!reallyRemove) {
@@ -276,6 +289,7 @@ const handleSaveReorder = async () => {
     }
 
     snackbar.add({ type: 'success', title: `Cluster reorder succeeded`, text: '' })
+    refreshHistory()
     props.onSuccess()
   } catch (error) {
     snackbarForErrors({ snackbar, error, defaultTitle: "Can't reorder cluster" })
