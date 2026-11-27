@@ -19,6 +19,7 @@ from django.utils import timezone
 from ..dt_v1_api_utils import datatracker_ietf_meetings
 from ..models import (
     Assignment,
+    ClusterMember,
     DocRelationshipName,
     Label,
     RfcToBe,
@@ -627,6 +628,30 @@ def _blocked_reason_intervals_by_doc(
     }
 
 
+def _cluster_intervals_by_doc(
+    draft_ids: list[int], now: datetime.datetime
+) -> dict[int, list[tuple[datetime.datetime, datetime.datetime]]]:
+    """``{draft_id: [(start, end), ...]}`` of cluster membership, from the
+    ``ClusterMember`` history (added opens a span, removed closes it). Open spans
+    run to ``now``."""
+    events = (
+        ClusterMember.history.model.objects.filter(doc_id__in=draft_ids)
+        .exclude(history_type="~")
+        .order_by("history_date", "history_id")
+        .values_list("doc_id", "history_type", "history_date")
+    )
+    open_start: dict[int, datetime.datetime] = {}
+    spans: dict[int, list] = {}
+    for doc_id, history_type, when in events:
+        if history_type == "+":
+            open_start.setdefault(doc_id, when)
+        elif doc_id in open_start:
+            spans.setdefault(doc_id, []).append((open_start.pop(doc_id), when))
+    for doc_id, start in open_start.items():
+        spans.setdefault(doc_id, []).append((start, None))
+    return {pk: merge_intervals(iv, now) for pk, iv in spans.items()}
+
+
 def queue_counts_rollup(
     period: str, count: int, now: datetime.datetime | None = None
 ) -> list[dict]:
@@ -651,7 +676,8 @@ def queue_counts_rollup(
 
     Of the docs in the queue at some point in the period, it also counts those in
     a cluster and, per label in use, those carrying the label at some point while
-    in the queue during the period.
+    in the queue during the period. Cluster membership is dated from the cluster
+    history.
     """
     now = now or timezone.now()
     windows = period_windows(period, count, now)
@@ -765,13 +791,12 @@ def queue_counts_rollup(
         missing = notrecv.get(pk, []) + missref_intervals.get(pk, [])
         blocked_intervals[pk] = merge_intervals(base_blocked.get(pk, []) + missing, now)
 
-    # Cluster membership is not dated before the clusters were imported, so a
-    # doc counts as clustered in every period if it is a cluster member.
-    clustered_ids = set(
-        RfcToBe.objects.filter(
-            pk__in=doc_ids, draft__clustermember__isnull=False
-        ).values_list("pk", flat=True)
+    # Membership is dated from the cluster history, which starts with the initial import
+    # periods before that show no clustered docs.
+    draft_by_doc = dict(
+        RfcToBe.objects.filter(pk__in=doc_ids).values_list("pk", "draft_id")
     )
+    cluster_intervals = _cluster_intervals_by_doc(list(draft_by_doc.values()), now)
     used_labels = list(Label.objects.filter(used=True).order_by("slug"))
     used_label_intervals: dict[int, dict[int, list]] = {
         pk: {lpk: merge_intervals(spans, now) for lpk, spans in labels.items()}
@@ -842,10 +867,17 @@ def queue_counts_rollup(
                 ).total_seconds()
                 if in_queue <= 0:
                     continue
-                if d["pk"] in clustered_ids:
-                    docs_in_cluster += 1
                 in_queue_start = max(enq, start)
                 in_queue_end = min(pub or eff_end, eff_end)
+                if (
+                    overlap_seconds(
+                        cluster_intervals.get(draft_by_doc[d["pk"]], []),
+                        in_queue_start,
+                        in_queue_end,
+                    )
+                    > 0
+                ):
+                    docs_in_cluster += 1
                 for lpk, spans in used_label_intervals.get(d["pk"], {}).items():
                     if overlap_seconds(spans, in_queue_start, in_queue_end) > 0:
                         label_counts[lpk] += 1

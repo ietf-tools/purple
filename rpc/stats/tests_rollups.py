@@ -436,7 +436,9 @@ class QueueCountsRollupTests(TestCase):
         legacy = LabelFactory(slug="xfer", used=False)
         # A: clustered, carries github for part of June.
         a = self._doc(dt(2026, 5, 1))
-        ClusterMember.objects.create(cluster=ClusterFactory(), doc=a.draft, order=1)
+        cluster = ClusterFactory()
+        ClusterMember.objects.create(cluster=cluster, doc=a.draft, order=1)
+        ClusterMember.history.filter(doc=a.draft).update(history_date=dt(2026, 6, 5))
         apply_label_over(a, github, dt(2026, 6, 5), dt(2026, 6, 10))
         # B: github only in April, so not counted for June.
         b = self._doc(dt(2026, 3, 1))
@@ -446,11 +448,15 @@ class QueueCountsRollupTests(TestCase):
         apply_label_over(c, legacy, dt(2026, 6, 1), dt(2026, 6, 20))
         # D: enters after June, so not in the June population.
         self._doc(dt(2026, 7, 5))
+        # E: joins a cluster only after June.
+        e = self._doc(dt(2026, 5, 1))
+        ClusterMember.objects.create(cluster=cluster, doc=e.draft, order=2)
+        ClusterMember.history.filter(doc=e.draft).update(history_date=dt(2026, 7, 10))
 
         june = queue_counts_rollup("month", 2, self.now)[0]
         counts = {lc["slug"]: lc["count"] for lc in june["label_counts"]}
-        assert june["docs_in_queue"] == 3  # A, B, C
-        assert june["docs_in_cluster"] == 1  # A
+        assert june["docs_in_queue"] == 4  # A, B, C, E
+        assert june["docs_in_cluster"] == 1  # A; E joins in July
         assert counts["github"] == 1  # A
         assert "xfer" not in counts
 

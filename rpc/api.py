@@ -2313,7 +2313,7 @@ class StatsQueueCounts(_StatsPeriodView):
         period, count = self._period_count(request)
         try:
             periods = self._cached_rollup(
-                "stats_queue_counts_v2", period, count, queue_counts_rollup
+                "stats_queue_counts", period, count, queue_counts_rollup
             )
         except DatatrackerFetchFailure:
             return self._datatracker_503()
