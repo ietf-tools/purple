@@ -54,7 +54,9 @@ def _refqueue_sources(target_ids: set[int]) -> set[int]:
 def _reachable(start_id: int, step) -> set[int]:
     """Ids reached from start_id by repeatedly applying step.
 
-    Includes start_id only when a path leads back to it.
+    step maps a set of document ids to the ids one refqueue reference away from
+    them, in one direction: _refqueue_targets (forward) or _refqueue_sources
+    (backward). Includes start_id only when a path leads back to it.
     """
     reached: set[int] = set()
     frontier = {start_id}
@@ -67,7 +69,9 @@ def _reachable(start_id: int, step) -> set[int]:
 def reference_loop(rfc: RfcToBe) -> set[int]:
     """Ids of the documents in a normative reference loop with rfc, rfc included.
 
-    Empty when rfc is in no loop.
+    Walks the references forward from rfc. If that never leads back to rfc, rfc is
+    in no loop and the result is empty. Otherwise the loop is the documents rfc
+    reaches that also reach rfc, found by walking backward and intersecting.
     """
     referenced = _reachable(rfc.pk, _refqueue_targets)
     if rfc.pk not in referenced:
