@@ -4,8 +4,16 @@ export const AUTH_PATH = '/auth'
 
 export const testIsAuthRoute = (path: string) => path.startsWith(AUTH_PATH)
 
-export const documentPathBuilder = (document: Pick<ResolvedQueueItem, 'name'>) =>
-  `/docs/${document.name}/`
+// Published RFCs and RFCs without a draft are opened by RFC number, others by draft name.
+export const documentPathBuilder = (
+  document: Pick<ResolvedQueueItem, 'name'> & {
+    rfcNumber?: number | null
+    disposition?: string
+  }
+) =>
+  document.rfcNumber && (document.disposition === 'published' || !document.name)
+    ? `/docs/rfc${document.rfcNumber}/`
+    : `/docs/${document.name}/`
 
 export const QUEUE_QUEUE_PATH = '/queue/queue'
 export const QUEUE_SUBMISSIONS_PATH = '/queue/submissions'

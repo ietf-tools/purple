@@ -30,14 +30,9 @@
                   <template
                     v-for="(doc, i) in item.documents"
                     :key="doc.name + '-' + doc.rfcNumber">
-                    <template v-if="doc.name?.startsWith('draft-')">
-                      <NuxtLink :to="`/docs/${doc.name}`" class="text-blue-600 hover:underline">
-                        {{ doc.rfcNumber }}
-                      </NuxtLink>
-                    </template>
-                    <template v-else>
+                    <NuxtLink :to="documentPathBuilder(doc)" class="text-blue-600 hover:underline">
                       {{ doc.rfcNumber }}
-                    </template>
+                    </NuxtLink>
                     <span v-if="i < item.documents.length - 1">, </span>
                   </template>
                 </span>
@@ -55,6 +50,7 @@
 import { computed, ref, onMounted } from 'vue'
 import { useApi } from '~/composables/useApi'
 import type { SubseriesDoc, SubseriesTypeName } from '~/purple_client'
+import { documentPathBuilder } from '~/utils/url'
 
 const api = useApi()
 const subseriesList = ref<SubseriesDoc[]>([])
